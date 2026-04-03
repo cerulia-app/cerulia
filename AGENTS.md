@@ -25,10 +25,22 @@ When a task requires design judgment, implementation judgment, tradeoff analysis
 
 ## Commit Rule
 
+- Unless the user explicitly says otherwise, commit autonomously when the smallest meaningful implementation unit is complete.
 - When the smallest meaningful implementation unit is complete, make a git commit.
 - Never use whole-worktree staging or commit shortcuts such as `git add .`, `git add -A`, or `git commit -a`.
 - Always specify the exact target files when staging for a commit, and keep each commit limited to those files.
 - Use Conventional Commits with an English prefix and a Japanese subject, for example: `feat: ルータ初期化を追加`
+
+## Review Rule
+
+- Unless the user explicitly says otherwise, run periodic reviews during substantial work.
+- Review for architectural fit, boundary violations, regressions, and missing tests before considering a unit complete.
+
+## Completion Hook
+
+- Treat review and commit as the required completion hook for each implementation task unless the user explicitly says otherwise.
+- Before declaring an implementation task complete, run the review for that unit, then make the commit for that same unit.
+- Do not treat an implementation task as finished until both steps have been completed.
 
 ## Cerulia Invariants
 
