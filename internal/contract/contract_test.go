@@ -35,8 +35,11 @@ func TestBuildBundle(t *testing.T) {
 		"CHANGELOG-contract.md",
 		filepath.FromSlash("lexicon/app.cerulia.defs.json"),
 		filepath.FromSlash("lexicon/app.cerulia.core.campaign.json"),
+		filepath.FromSlash("lexicon/app.cerulia.run.session.json"),
 		filepath.FromSlash("lexicon/app.cerulia.rpc.createCampaign.json"),
+		filepath.FromSlash("lexicon/app.cerulia.rpc.createSessionDraft.json"),
 		filepath.FromSlash("examples/rpc/createCampaign.request.json"),
+		filepath.FromSlash("examples/rpc/createSessionDraft.request.json"),
 	}
 
 	for _, relativePath := range requiredPaths {

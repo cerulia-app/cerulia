@@ -92,5 +92,44 @@ func ExampleDocuments() map[string]any {
 		"examples/rpc/exportServiceLog.response.json": map[string]any{
 			"items": []map[string]any{},
 		},
+		"examples/rpc/createSessionDraft.request.json": map[string]any{
+			"sessionId":                 "session-starfield-001",
+			"campaignRef":               "at://did:plc:steward1/app.cerulia.core.campaign/main",
+			"title":                     "星見ヶ原 第1卓",
+			"visibility":                "unlisted",
+			"rulesetNsid":               "app.cerulia.rules.swords-world",
+			"rulesetManifestRef":        "at://did:plc:rules/app.cerulia.core.rulesetManifest/manifest-sw-1",
+			"ruleProfileRefs":           []string{"at://did:plc:house/app.cerulia.core.ruleProfile/house-profile-1"},
+			"controllerDids":            []string{"did:plc:gm1"},
+			"recoveryControllerDids":    []string{"did:plc:recovery1"},
+			"transferPolicy":            "majority-controllers",
+			"expectedRulesetManifestRef": "at://did:plc:rules/app.cerulia.core.rulesetManifest/manifest-sw-1",
+			"requestId":                 "req-create-session-001",
+		},
+		"examples/rpc/getSessionAccessPreflight.response.json": map[string]any{
+			"sessionRef":       "at://did:plc:gm1/app.cerulia.run.session/session-starfield-001",
+			"decisionKind":     "sign-in",
+			"reasonCode":       "anonymous-reader",
+			"recommendedRoute": "/signin",
+		},
+		"examples/rpc/getSessionView.response.json": map[string]any{
+			"session": map[string]any{
+				"sessionRef":         "at://did:plc:gm1/app.cerulia.run.session/session-starfield-001",
+				"title":              "星見ヶ原 第1卓",
+				"visibility":         "unlisted",
+				"state":              "planning",
+				"rulesetManifestRef": "at://did:plc:rules/app.cerulia.core.rulesetManifest/manifest-sw-1",
+				"ruleProfileRefs":    []string{},
+			},
+			"authoritySummary": map[string]any{
+				"authorityRef":        "at://did:plc:gm1/app.cerulia.run.sessionAuthority/session-starfield-001",
+				"transferPhase":       "stable",
+				"authorityHealthKind": "healthy",
+				"leaseState":          "active",
+			},
+			"memberships": []map[string]any{},
+			"handoutCount": 0,
+			"appealCount":  0,
+		},
 	}
 }
