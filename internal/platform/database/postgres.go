@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -13,6 +14,8 @@ import (
 )
 
 const BaselineMigration = "0001_phase0_ledger.sql"
+
+var ErrDisabled = errors.New("database disabled")
 
 type DB struct {
 	pool *pgxpool.Pool
@@ -76,6 +79,62 @@ func (db *DB) Close() {
 	db.pool.Close()
 }
 
+func (db *DB) Exec(ctx context.Context, sql string, args ...any) error {
+	if !db.Enabled() {
+		return ErrDisabled
+	}
+
+	_, err := db.pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("exec query: %w", err)
+	}
+
+	return nil
+}
+
+func (db *DB) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	if !db.Enabled() {
+		return nil, ErrDisabled
+	}
+
+	rows, err := db.pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query rows: %w", err)
+	}
+
+	return rows, nil
+}
+
+func (db *DB) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
+	if !db.Enabled() {
+		return rowError{err: ErrDisabled}
+	}
+
+	return db.pool.QueryRow(ctx, sql, args...)
+}
+
+func (db *DB) WithTx(ctx context.Context, fn func(pgx.Tx) error) error {
+	if !db.Enabled() {
+		return ErrDisabled
+	}
+
+	tx, err := db.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if err := fn(tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 func (db *DB) HasAppliedMigration(ctx context.Context, filename string) (bool, error) {
 	if !db.Enabled() {
 		return false, nil
@@ -105,4 +164,12 @@ func (db *DB) HasAppliedMigration(ctx context.Context, filename string) (bool, e
 	}
 
 	return exists, nil
+}
+
+type rowError struct {
+	err error
+}
+
+func (row rowError) Scan(dest ...any) error {
+	return row.err
 }
