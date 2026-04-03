@@ -3,7 +3,7 @@ name: "Cerulia 実装整合性レビュー"
 description: "Use when: Cerulia の実装を README、CeruliaPlanning docs、config、HTTP surface、package boundary、environment contract と照らして一貫性レビューしたいとき。"
 tools: [read, search]
 argument-hint: "突き合わせたい docs や package を書く。未指定なら Cerulia の実装と README、および必要な CeruliaPlanning docs を照合する。"
-agents: []
+model: GPT-5.4 mini (copilot)
 ---
 You are a specialist reviewer for consistency between Cerulia's implementation and its declared intent.
 

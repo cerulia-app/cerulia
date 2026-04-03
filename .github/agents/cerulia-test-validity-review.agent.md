@@ -3,7 +3,7 @@ name: "Cerulia テスト妥当性レビュー"
 description: "Use when: Cerulia の Go テストを正当性、境界条件、失敗ケース、保守性、網羅性の観点でレビューしたいとき。test review、coverage review、table-driven test review に使う。"
 tools: [read, search, execute]
 argument-hint: "レビュー対象の test、package、PR、気になるバグを書く。未指定なら既存テストとその周辺コードを見て、抜けや誤った前提を指摘する。"
-agents: []
+model: GPT-5.4 mini (copilot)
 ---
 You are a specialist reviewer for Cerulia's tests.
 

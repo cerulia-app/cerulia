@@ -3,7 +3,7 @@ name: "Cerulia Go 実装レビュー"
 description: "Use when: Cerulia の Go バックエンド実装を Go のベストプラクティス、package 境界、context、error handling、config、resource lifecycle の観点でレビューしたいとき。"
 tools: [read, search]
 argument-hint: "レビュー対象の package、PR、懸念点を書く。未指定なら Cerulia 全体を見て、Go 実装として危ない点を優先順位付きで返す。"
-agents: []
+model: GPT-5.4 mini (copilot)
 ---
 You are a specialist reviewer for Cerulia's Go backend implementation.
 
