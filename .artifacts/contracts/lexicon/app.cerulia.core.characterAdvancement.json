@@ -1,0 +1,63 @@
+{
+  "defs": {
+    "main": {
+      "key": "tid",
+      "record": {
+        "properties": {
+          "advancementKind": {
+            "ref": "app.cerulia.defs#advancementKind",
+            "type": "ref"
+          },
+          "approvedByDid": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          },
+          "characterBranchRef": {
+            "ref": "app.cerulia.defs#characterBranchRef",
+            "type": "ref"
+          },
+          "createdAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "deltaPayloadRef": {
+            "format": "at-uri",
+            "type": "string"
+          },
+          "effectiveAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "note": {
+            "type": "string"
+          },
+          "requestId": {
+            "ref": "app.cerulia.defs#requestId",
+            "type": "ref"
+          },
+          "sourceRunRef": {
+            "ref": "app.cerulia.defs#sourceRunRef",
+            "type": "ref"
+          },
+          "supersedesRef": {
+            "ref": "app.cerulia.defs#characterAdvancementRef",
+            "type": "ref"
+          }
+        },
+        "required": [
+          "characterBranchRef",
+          "advancementKind",
+          "deltaPayloadRef",
+          "approvedByDid",
+          "effectiveAt",
+          "requestId",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "type": "record"
+    }
+  },
+  "id": "app.cerulia.core.characterAdvancement",
+  "lexicon": 1
+}

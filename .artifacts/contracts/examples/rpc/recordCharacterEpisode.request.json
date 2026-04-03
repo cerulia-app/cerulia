@@ -1,0 +1,15 @@
+{
+  "advancementRefs": [
+    "at://did:plc:owner1/app.cerulia.core.characterAdvancement/3k4i5j"
+  ],
+  "campaignRef": "at://did:plc:steward1/app.cerulia.core.campaign/main",
+  "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/starfield",
+  "effectiveRuleProfileRefs": [
+    "at://did:plc:house/app.cerulia.core.ruleProfile/house-profile-1"
+  ],
+  "outcomeSummary": "帰還と再契約を確定した。",
+  "recordedByDid": "did:plc:owner1",
+  "requestId": "req-episode-001",
+  "rulesetManifestRef": "at://did:plc:rules/app.cerulia.core.rulesetManifest/manifest-sw-1",
+  "scenarioLabel": "第一話 帰還"
+}

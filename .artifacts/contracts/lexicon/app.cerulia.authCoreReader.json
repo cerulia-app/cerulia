@@ -1,0 +1,23 @@
+{
+  "defs": {
+    "main": {
+      "permissions": [
+        {
+          "inheritAud": true,
+          "lxm": [
+            "app.cerulia.rpc.getCharacterHome",
+            "app.cerulia.rpc.getCampaignView",
+            "app.cerulia.rpc.listCharacterEpisodes",
+            "app.cerulia.rpc.listReuseGrants",
+            "app.cerulia.rpc.listPublications"
+          ],
+          "resource": "rpc",
+          "type": "permission"
+        }
+      ],
+      "type": "permission-set"
+    }
+  },
+  "id": "app.cerulia.authCoreReader",
+  "lexicon": 1
+}

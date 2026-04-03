@@ -1,0 +1,1087 @@
+{
+  "defs": {
+    "advancementKind": {
+      "enum": [
+        "milestone",
+        "xp-spend",
+        "retrain",
+        "respec",
+        "correction",
+        "import-sync"
+      ],
+      "type": "string"
+    },
+    "appealBlockedReason": {
+      "enum": [
+        "quorum-impossible",
+        "deadline-expired"
+      ],
+      "type": "string"
+    },
+    "appealCaseRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "appealNextResolverKind": {
+      "enum": [
+        "controller-review",
+        "blocked",
+        "recovery-review",
+        "none"
+      ],
+      "type": "string"
+    },
+    "appealRequestedOutcomeKind": {
+      "enum": [
+        "supersede-ruling",
+        "restore-membership",
+        "reconsider-membership"
+      ],
+      "type": "string"
+    },
+    "appealResolutionKind": {
+      "enum": [
+        "accepted",
+        "denied",
+        "withdrawn"
+      ],
+      "type": "string"
+    },
+    "appealReviewDecisionKind": {
+      "enum": [
+        "approve",
+        "deny",
+        "abstain",
+        "withdraw"
+      ],
+      "type": "string"
+    },
+    "appealReviewEntryRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "appealReviewPhaseKind": {
+      "enum": [
+        "controller-review",
+        "recovery-review"
+      ],
+      "type": "string"
+    },
+    "appealStatus": {
+      "enum": [
+        "controller-review",
+        "recovery-review",
+        "accepted",
+        "denied",
+        "withdrawn"
+      ],
+      "type": "string"
+    },
+    "appealTargetKind": {
+      "enum": [
+        "ruling-event",
+        "membership"
+      ],
+      "type": "string"
+    },
+    "assetRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "audienceGrantRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "audienceKind": {
+      "enum": [
+        "role-based",
+        "explicit",
+        "derived"
+      ],
+      "type": "string"
+    },
+    "audienceRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "authorityHealthKind": {
+      "enum": [
+        "healthy",
+        "lease-expired",
+        "controller-missing",
+        "transfer-in-progress",
+        "blocked-appeal"
+      ],
+      "type": "string"
+    },
+    "authorityRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "boardOpRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "boardSnapshotRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "branchKind": {
+      "enum": [
+        "campaign-fork",
+        "imported-fork",
+        "local-override"
+      ],
+      "type": "string"
+    },
+    "branchSummary": {
+      "properties": {
+        "baseSheetRef": {
+          "ref": "app.cerulia.defs#characterSheetRef",
+          "type": "ref"
+        },
+        "branchKind": {
+          "ref": "app.cerulia.defs#branchKind",
+          "type": "ref"
+        },
+        "branchLabel": {
+          "type": "string"
+        },
+        "characterBranchRef": {
+          "ref": "app.cerulia.defs#characterBranchRef",
+          "type": "ref"
+        },
+        "ownerDid": {
+          "ref": "app.cerulia.defs#did",
+          "type": "ref"
+        },
+        "revision": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "characterBranchRef",
+        "baseSheetRef",
+        "branchLabel",
+        "branchKind",
+        "ownerDid",
+        "revision"
+      ],
+      "type": "object"
+    },
+    "campaignRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "campaignSummary": {
+      "properties": {
+        "archivedAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "campaignRef": {
+          "ref": "app.cerulia.defs#campaignRef",
+          "type": "ref"
+        },
+        "houseRef": {
+          "ref": "app.cerulia.defs#houseRef",
+          "type": "ref"
+        },
+        "rulesetManifestRef": {
+          "ref": "app.cerulia.defs#rulesetManifestRef",
+          "type": "ref"
+        },
+        "rulesetNsid": {
+          "ref": "app.cerulia.defs#rulesetNsid",
+          "type": "ref"
+        },
+        "title": {
+          "type": "string"
+        },
+        "visibility": {
+          "ref": "app.cerulia.defs#visibility",
+          "type": "ref"
+        },
+        "worldRef": {
+          "ref": "app.cerulia.defs#worldRef",
+          "type": "ref"
+        }
+      },
+      "required": [
+        "campaignRef",
+        "title",
+        "visibility"
+      ],
+      "type": "object"
+    },
+    "characterAdvancementRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "characterBranchRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "characterConversionRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "characterEpisodeRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "characterInstanceRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "characterSheetRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "characterStateRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "continuityScopeKind": {
+      "enum": [
+        "world",
+        "house",
+        "campaign"
+      ],
+      "type": "string"
+    },
+    "controllerAudienceRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "conversionAuthorityKind": {
+      "enum": [
+        "same-owner",
+        "campaign-steward",
+        "grant-backed"
+      ],
+      "type": "string"
+    },
+    "conversionSummary": {
+      "properties": {
+        "authorityKind": {
+          "ref": "app.cerulia.defs#conversionAuthorityKind",
+          "type": "ref"
+        },
+        "characterConversionRef": {
+          "ref": "app.cerulia.defs#characterConversionRef",
+          "type": "ref"
+        },
+        "convertedAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "convertedByDid": {
+          "ref": "app.cerulia.defs#did",
+          "type": "ref"
+        },
+        "reuseGrantRef": {
+          "ref": "app.cerulia.defs#reuseGrantRef",
+          "type": "ref"
+        },
+        "sourceBranchRef": {
+          "ref": "app.cerulia.defs#characterBranchRef",
+          "type": "ref"
+        },
+        "sourceRulesetManifestRef": {
+          "ref": "app.cerulia.defs#rulesetManifestRef",
+          "type": "ref"
+        },
+        "sourceSheetRef": {
+          "ref": "app.cerulia.defs#characterSheetRef",
+          "type": "ref"
+        },
+        "sourceSheetVersion": {
+          "type": "integer"
+        },
+        "targetBranchRef": {
+          "ref": "app.cerulia.defs#characterBranchRef",
+          "type": "ref"
+        },
+        "targetRulesetManifestRef": {
+          "ref": "app.cerulia.defs#rulesetManifestRef",
+          "type": "ref"
+        },
+        "targetSheetRef": {
+          "ref": "app.cerulia.defs#characterSheetRef",
+          "type": "ref"
+        },
+        "targetSheetVersion": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "characterConversionRef",
+        "sourceSheetRef",
+        "sourceSheetVersion",
+        "targetSheetRef",
+        "targetSheetVersion",
+        "targetBranchRef",
+        "sourceRulesetManifestRef",
+        "targetRulesetManifestRef",
+        "convertedByDid",
+        "authorityKind",
+        "convertedAt"
+      ],
+      "type": "object"
+    },
+    "cursor": {
+      "type": "string"
+    },
+    "datetime": {
+      "format": "datetime",
+      "type": "string"
+    },
+    "detailEnvelopeRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "did": {
+      "format": "did",
+      "type": "string"
+    },
+    "episodeSummary": {
+      "properties": {
+        "campaignRef": {
+          "ref": "app.cerulia.defs#campaignRef",
+          "type": "ref"
+        },
+        "characterBranchRef": {
+          "ref": "app.cerulia.defs#characterBranchRef",
+          "type": "ref"
+        },
+        "characterEpisodeRef": {
+          "ref": "app.cerulia.defs#characterEpisodeRef",
+          "type": "ref"
+        },
+        "createdAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "outcomeSummary": {
+          "type": "string"
+        },
+        "scenarioLabel": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "characterEpisodeRef",
+        "characterBranchRef",
+        "outcomeSummary",
+        "createdAt"
+      ],
+      "type": "object"
+    },
+    "gmAudienceRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "governingRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "grantStatus": {
+      "enum": [
+        "pending",
+        "active",
+        "revoked"
+      ],
+      "type": "string"
+    },
+    "handoutRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "houseRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "membershipRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "membershipRole": {
+      "enum": [
+        "gm",
+        "player",
+        "viewer",
+        "spectator"
+      ],
+      "type": "string"
+    },
+    "membershipStatus": {
+      "enum": [
+        "invited",
+        "joined",
+        "left",
+        "removed",
+        "banned"
+      ],
+      "type": "string"
+    },
+    "messageRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "mutationAck": {
+      "properties": {
+        "caseRevision": {
+          "type": "integer"
+        },
+        "controllerDids": {
+          "items": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "currentRevision": {
+          "type": "integer"
+        },
+        "currentState": {
+          "ref": "app.cerulia.defs#sessionState",
+          "type": "ref"
+        },
+        "currentVisibility": {
+          "ref": "app.cerulia.defs#visibility",
+          "type": "ref"
+        },
+        "emittedRecordRefs": {
+          "items": {
+            "ref": "app.cerulia.defs#subjectRef",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "keyVersion": {
+          "type": "integer"
+        },
+        "leaseHolderDid": {
+          "ref": "app.cerulia.defs#did",
+          "type": "ref"
+        },
+        "message": {
+          "type": "string"
+        },
+        "pendingControllerDids": {
+          "items": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "publicationRef": {
+          "ref": "app.cerulia.defs#publicationRef",
+          "type": "ref"
+        },
+        "requestId": {
+          "ref": "app.cerulia.defs#requestId",
+          "type": "ref"
+        },
+        "resultKind": {
+          "ref": "app.cerulia.defs#mutationResultKind",
+          "type": "ref"
+        },
+        "reviewRevision": {
+          "type": "integer"
+        },
+        "sessionPublicationRef": {
+          "ref": "app.cerulia.defs#sessionPublicationRef",
+          "type": "ref"
+        },
+        "snapshotRef": {
+          "ref": "app.cerulia.defs#boardSnapshotRef",
+          "type": "ref"
+        },
+        "transferCompletedAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "transferPhase": {
+          "ref": "app.cerulia.defs#transferPhase",
+          "type": "ref"
+        },
+        "updatedGrantRefs": {
+          "items": {
+            "ref": "app.cerulia.defs#audienceGrantRef",
+            "type": "ref"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "requestId",
+        "resultKind"
+      ],
+      "type": "object"
+    },
+    "mutationResultKind": {
+      "enum": [
+        "accepted",
+        "rejected",
+        "rebase-needed",
+        "manual-review"
+      ],
+      "type": "string"
+    },
+    "privateStateEnvelopeRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "projectionSurfaceKind": {
+      "enum": [
+        "character-home",
+        "campaign-view",
+        "publication-summary"
+      ],
+      "type": "string"
+    },
+    "publicationPurposeKind": {
+      "enum": [
+        "discovery",
+        "stable-entry",
+        "archive-link"
+      ],
+      "type": "string"
+    },
+    "publicationRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "publicationStatus": {
+      "enum": [
+        "active",
+        "retired"
+      ],
+      "type": "string"
+    },
+    "publicationSubjectKind": {
+      "enum": [
+        "campaign",
+        "character-branch",
+        "character-episode"
+      ],
+      "type": "string"
+    },
+    "publicationSummaryRow": {
+      "properties": {
+        "entryUrl": {
+          "format": "uri",
+          "type": "string"
+        },
+        "grantBacked": {
+          "type": "boolean"
+        },
+        "preferredSurfaceKind": {
+          "ref": "app.cerulia.defs#publicationSurfaceKind",
+          "type": "ref"
+        },
+        "publicationRef": {
+          "ref": "app.cerulia.defs#publicationRef",
+          "type": "ref"
+        },
+        "publishedAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "retiredAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "sourceRulesetManifestRef": {
+          "ref": "app.cerulia.defs#rulesetManifestRef",
+          "type": "ref"
+        },
+        "status": {
+          "ref": "app.cerulia.defs#publicationStatus",
+          "type": "ref"
+        },
+        "subjectKind": {
+          "ref": "app.cerulia.defs#publicationSubjectKind",
+          "type": "ref"
+        },
+        "subjectRef": {
+          "ref": "app.cerulia.defs#subjectRef",
+          "type": "ref"
+        },
+        "surfaces": {
+          "items": {
+            "ref": "app.cerulia.defs#surfaceDescriptor",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "targetRulesetManifestRef": {
+          "ref": "app.cerulia.defs#rulesetManifestRef",
+          "type": "ref"
+        }
+      },
+      "required": [
+        "publicationRef",
+        "subjectRef",
+        "subjectKind",
+        "entryUrl",
+        "preferredSurfaceKind",
+        "surfaces",
+        "status",
+        "publishedAt"
+      ],
+      "type": "object"
+    },
+    "publicationSurfaceKind": {
+      "enum": [
+        "post",
+        "thread",
+        "profile",
+        "app-card"
+      ],
+      "type": "string"
+    },
+    "redactionEventRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "redactionMode": {
+      "enum": [
+        "hide",
+        "retract",
+        "replace"
+      ],
+      "type": "string"
+    },
+    "requestId": {
+      "type": "string"
+    },
+    "reuseGrantRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "reuseGrantSummary": {
+      "properties": {
+        "expiresAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "grantedAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "reuseGrantRef": {
+          "ref": "app.cerulia.defs#reuseGrantRef",
+          "type": "ref"
+        },
+        "reuseMode": {
+          "ref": "app.cerulia.defs#reuseMode",
+          "type": "ref"
+        },
+        "revokedAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "sourceCampaignRef": {
+          "ref": "app.cerulia.defs#sourceCampaignRef",
+          "type": "ref"
+        },
+        "targetDid": {
+          "ref": "app.cerulia.defs#targetDid",
+          "type": "ref"
+        },
+        "targetKind": {
+          "ref": "app.cerulia.defs#reuseTargetKind",
+          "type": "ref"
+        },
+        "targetRef": {
+          "ref": "app.cerulia.defs#targetRef",
+          "type": "ref"
+        }
+      },
+      "required": [
+        "reuseGrantRef",
+        "sourceCampaignRef",
+        "targetKind",
+        "reuseMode",
+        "grantedAt"
+      ],
+      "type": "object"
+    },
+    "reuseMode": {
+      "enum": [
+        "fork-only",
+        "fork-and-advance",
+        "summary-share",
+        "full-share"
+      ],
+      "type": "string"
+    },
+    "reusePolicyKind": {
+      "enum": [
+        "same-campaign-default",
+        "explicit-cross-campaign",
+        "explicit-cross-scope",
+        "public-library"
+      ],
+      "type": "string"
+    },
+    "reuseTargetKind": {
+      "enum": [
+        "campaign",
+        "house",
+        "world",
+        "actor",
+        "public"
+      ],
+      "type": "string"
+    },
+    "revealEventRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "revealMode": {
+      "enum": [
+        "broaden-audience",
+        "publish-publicly"
+      ],
+      "type": "string"
+    },
+    "rollRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "ruleProfileRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "ruleProfileScopeKind": {
+      "enum": [
+        "world-shared",
+        "house-shared",
+        "campaign-shared"
+      ],
+      "type": "string"
+    },
+    "ruleProfileStatus": {
+      "enum": [
+        "provisional",
+        "active",
+        "retired"
+      ],
+      "type": "string"
+    },
+    "rulesetManifestRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "rulesetNsid": {
+      "format": "nsid",
+      "type": "string"
+    },
+    "rulingEventRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "sceneRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "scopeRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "secretEnvelopeRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "selectorPolicyDerivedMembership": {
+      "properties": {
+        "kind": {
+          "const": "derived-membership",
+          "type": "string"
+        },
+        "membershipStatuses": {
+          "items": {
+            "ref": "app.cerulia.defs#membershipStatus",
+            "type": "ref"
+          },
+          "minLength": 1,
+          "type": "array"
+        },
+        "roles": {
+          "items": {
+            "ref": "app.cerulia.defs#membershipRole",
+            "type": "ref"
+          },
+          "minLength": 1,
+          "type": "array"
+        },
+        "sessionStates": {
+          "items": {
+            "ref": "app.cerulia.defs#sessionState",
+            "type": "ref"
+          },
+          "minLength": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "roles",
+        "sessionStates"
+      ],
+      "type": "object"
+    },
+    "selectorPolicyExplicitMembers": {
+      "properties": {
+        "actorDids": {
+          "items": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          },
+          "minLength": 1,
+          "type": "array"
+        },
+        "kind": {
+          "const": "explicit-members",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "actorDids"
+      ],
+      "type": "object"
+    },
+    "selectorPolicyKind": {
+      "enum": [
+        "role-members",
+        "explicit-members",
+        "derived-membership"
+      ],
+      "type": "string"
+    },
+    "selectorPolicyRoleMembers": {
+      "properties": {
+        "kind": {
+          "const": "role-members",
+          "type": "string"
+        },
+        "membershipStatuses": {
+          "items": {
+            "ref": "app.cerulia.defs#membershipStatus",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "roles": {
+          "items": {
+            "ref": "app.cerulia.defs#membershipRole",
+            "type": "ref"
+          },
+          "minLength": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "roles"
+      ],
+      "type": "object"
+    },
+    "serviceLogRow": {
+      "properties": {
+        "actorDid": {
+          "ref": "app.cerulia.defs#did",
+          "type": "ref"
+        },
+        "createdAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "emittedRecordRefs": {
+          "items": {
+            "ref": "app.cerulia.defs#subjectRef",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "governingRef": {
+          "ref": "app.cerulia.defs#governingRef",
+          "type": "ref"
+        },
+        "message": {
+          "type": "string"
+        },
+        "operationNsid": {
+          "format": "nsid",
+          "type": "string"
+        },
+        "rawPayload": {
+          "type": "unknown"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "requestId": {
+          "ref": "app.cerulia.defs#requestId",
+          "type": "ref"
+        },
+        "resultKind": {
+          "ref": "app.cerulia.defs#mutationResultKind",
+          "type": "ref"
+        }
+      },
+      "required": [
+        "requestId",
+        "operationNsid",
+        "resultKind",
+        "governingRef",
+        "createdAt",
+        "emittedRecordRefs"
+      ],
+      "type": "object"
+    },
+    "sessionPublicationRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "sessionRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "sessionState": {
+      "enum": [
+        "planning",
+        "open",
+        "active",
+        "paused",
+        "ended",
+        "archived"
+      ],
+      "type": "string"
+    },
+    "sourceCampaignRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "sourceRunRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "sourceType": {
+      "enum": [
+        "player-character",
+        "npc",
+        "preset",
+        "proxy"
+      ],
+      "type": "string"
+    },
+    "subjectRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "surfaceDescriptor": {
+      "properties": {
+        "purposeKind": {
+          "ref": "app.cerulia.defs#publicationPurposeKind",
+          "type": "ref"
+        },
+        "retiredAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
+        "status": {
+          "ref": "app.cerulia.defs#surfaceStatus",
+          "type": "ref"
+        },
+        "surfaceKind": {
+          "ref": "app.cerulia.defs#publicationSurfaceKind",
+          "type": "ref"
+        },
+        "surfaceUri": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "surfaceKind",
+        "purposeKind",
+        "surfaceUri",
+        "status"
+      ],
+      "type": "object"
+    },
+    "surfaceStatus": {
+      "enum": [
+        "active",
+        "retired"
+      ],
+      "type": "string"
+    },
+    "syncMode": {
+      "enum": [
+        "snapshot",
+        "manual-rebase",
+        "pinned-upstream"
+      ],
+      "type": "string"
+    },
+    "targetDid": {
+      "format": "did",
+      "type": "string"
+    },
+    "targetRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "tokenFacetKind": {
+      "enum": [
+        "public-facet",
+        "secret-facet-envelope",
+        "controller-dids",
+        "visibility-mode"
+      ],
+      "type": "string"
+    },
+    "tokenRef": {
+      "format": "at-uri",
+      "type": "string"
+    },
+    "transferPhase": {
+      "enum": [
+        "stable",
+        "preparing",
+        "rotating-grants",
+        "finalizing"
+      ],
+      "type": "string"
+    },
+    "transferPolicyKind": {
+      "enum": [
+        "majority-controllers",
+        "unanimous-controllers",
+        "recovery-fallback-majority"
+      ],
+      "type": "string"
+    },
+    "visibility": {
+      "enum": [
+        "public",
+        "unlisted",
+        "private"
+      ],
+      "type": "string"
+    },
+    "worldRef": {
+      "format": "at-uri",
+      "type": "string"
+    }
+  },
+  "id": "app.cerulia.defs",
+  "lexicon": 1
+}

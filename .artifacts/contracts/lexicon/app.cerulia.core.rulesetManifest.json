@@ -1,0 +1,67 @@
+{
+  "defs": {
+    "main": {
+      "key": "any",
+      "record": {
+        "properties": {
+          "actionSchemaRefs": {
+            "items": {
+              "format": "uri",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "capabilityKinds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "manifestVersion": {
+            "type": "integer"
+          },
+          "outputSchemaRefs": {
+            "items": {
+              "format": "uri",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "publishedAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "resolverRef": {
+            "format": "uri",
+            "type": "string"
+          },
+          "resolverVersion": {
+            "type": "integer"
+          },
+          "retiredAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "rulesetNsid": {
+            "ref": "app.cerulia.defs#rulesetNsid",
+            "type": "ref"
+          }
+        },
+        "required": [
+          "rulesetNsid",
+          "manifestVersion",
+          "actionSchemaRefs",
+          "outputSchemaRefs",
+          "resolverRef",
+          "resolverVersion",
+          "capabilityKinds",
+          "publishedAt"
+        ],
+        "type": "object"
+      },
+      "type": "record"
+    }
+  },
+  "id": "app.cerulia.core.rulesetManifest",
+  "lexicon": 1
+}

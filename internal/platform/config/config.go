@@ -16,12 +16,14 @@ type Config struct {
 	PublicBaseURL   string
 	LogLevel        slog.Level
 	ShutdownTimeout time.Duration
+	MigrationsDir   string
 	Database        DatabaseConfig
 	Blob            BlobConfig
 }
 
 type DatabaseConfig struct {
 	URL         string
+	DirectURL   string
 	MaxConns    int32
 	MinConns    int32
 	PingTimeout time.Duration
@@ -44,8 +46,10 @@ func Load() (Config, error) {
 		HTTPAddr:        envOrDefault("HTTP_ADDR", ":8080"),
 		PublicBaseURL:   envOrDefault("PUBLIC_BASE_URL", "http://localhost:8080"),
 		ShutdownTimeout: 10 * time.Second,
+		MigrationsDir:   envOrDefault("MIGRATIONS_DIR", "migrations"),
 		Database: DatabaseConfig{
-			URL:         strings.TrimSpace(os.Getenv("DATABASE_URL")),
+			URL:         firstNonEmptyEnv("DATABASE_URL_POOLED", "DATABASE_URL"),
+			DirectURL:   firstNonEmptyEnv("DATABASE_URL_DIRECT", "DATABASE_URL"),
 			MaxConns:    10,
 			MinConns:    0,
 			PingTimeout: 3 * time.Second,
@@ -90,6 +94,17 @@ func envOrDefault(key string, fallback string) string {
 	}
 
 	return value
+}
+
+func firstNonEmptyEnv(keys ...string) string {
+	for _, key := range keys {
+		value := strings.TrimSpace(os.Getenv(key))
+		if value != "" {
+			return value
+		}
+	}
+
+	return ""
 }
 
 func parseLogLevel(value string) (slog.Level, error) {

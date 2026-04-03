@@ -1,0 +1,63 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "NotFound"
+        }
+      ],
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "cursor": {
+              "ref": "app.cerulia.defs#cursor",
+              "type": "ref"
+            },
+            "items": {
+              "items": {
+                "ref": "app.cerulia.defs#reuseGrantSummary",
+                "type": "ref"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "parameters": {
+        "properties": {
+          "characterBranchRef": {
+            "format": "at-uri",
+            "type": "string"
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "revoked",
+              "expired",
+              "all"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "characterBranchRef"
+        ],
+        "type": "params"
+      },
+      "type": "query"
+    }
+  },
+  "id": "app.cerulia.rpc.listReuseGrants",
+  "lexicon": 1
+}

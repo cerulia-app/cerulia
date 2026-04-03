@@ -1,0 +1,9 @@
+{
+  "campaign": {
+    "campaignRef": "at://did:plc:steward1/app.cerulia.core.campaign/main",
+    "title": "星見ヶ原キャンペーン",
+    "visibility": "unlisted"
+  },
+  "mode": "owner-steward",
+  "publishedArtifacts": []
+}

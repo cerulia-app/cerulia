@@ -1,0 +1,72 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "NotFound"
+        }
+      ],
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "cursor": {
+              "ref": "app.cerulia.defs#cursor",
+              "type": "ref"
+            },
+            "items": {
+              "items": {
+                "ref": "app.cerulia.defs#publicationSummaryRow",
+                "type": "ref"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "parameters": {
+        "properties": {
+          "cursor": {
+            "type": "string"
+          },
+          "includeRetired": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "owner-steward",
+              "public"
+            ],
+            "type": "string"
+          },
+          "subjectKind": {
+            "enum": [
+              "campaign",
+              "character-branch",
+              "character-episode"
+            ],
+            "type": "string"
+          },
+          "subjectRef": {
+            "format": "at-uri",
+            "type": "string"
+          }
+        },
+        "type": "params"
+      },
+      "type": "query"
+    }
+  },
+  "id": "app.cerulia.rpc.listPublications",
+  "lexicon": 1
+}

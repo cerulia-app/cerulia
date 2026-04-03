@@ -1,0 +1,19 @@
+{
+  "defs": {
+    "main": {
+      "permissions": [
+        {
+          "inheritAud": true,
+          "lxm": [
+            "app.cerulia.rpc.exportServiceLog"
+          ],
+          "resource": "rpc",
+          "type": "permission"
+        }
+      ],
+      "type": "permission-set"
+    }
+  },
+  "id": "app.cerulia.authAuditReader",
+  "lexicon": 1
+}

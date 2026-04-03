@@ -1,0 +1,82 @@
+{
+  "defs": {
+    "main": {
+      "key": "tid",
+      "record": {
+        "properties": {
+          "characterBranchRef": {
+            "ref": "app.cerulia.defs#characterBranchRef",
+            "type": "ref"
+          },
+          "expiresAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "grantedAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "grantedByDid": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          },
+          "note": {
+            "type": "string"
+          },
+          "requestId": {
+            "ref": "app.cerulia.defs#requestId",
+            "type": "ref"
+          },
+          "reuseMode": {
+            "ref": "app.cerulia.defs#reuseMode",
+            "type": "ref"
+          },
+          "revokeReasonCode": {
+            "type": "string"
+          },
+          "revokedAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "revokedByDid": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          },
+          "revokesRef": {
+            "ref": "app.cerulia.defs#reuseGrantRef",
+            "type": "ref"
+          },
+          "sourceCampaignRef": {
+            "ref": "app.cerulia.defs#sourceCampaignRef",
+            "type": "ref"
+          },
+          "targetDid": {
+            "ref": "app.cerulia.defs#targetDid",
+            "type": "ref"
+          },
+          "targetKind": {
+            "ref": "app.cerulia.defs#reuseTargetKind",
+            "type": "ref"
+          },
+          "targetRef": {
+            "ref": "app.cerulia.defs#targetRef",
+            "type": "ref"
+          }
+        },
+        "required": [
+          "characterBranchRef",
+          "sourceCampaignRef",
+          "targetKind",
+          "reuseMode",
+          "grantedByDid",
+          "grantedAt",
+          "requestId"
+        ],
+        "type": "object"
+      },
+      "type": "record"
+    }
+  },
+  "id": "app.cerulia.core.reuseGrant",
+  "lexicon": 1
+}

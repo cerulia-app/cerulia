@@ -1,0 +1,96 @@
+package contract
+
+func ExampleDocuments() map[string]any {
+	return map[string]any{
+		"examples/rpc/createCampaign.request.json": map[string]any{
+			"title":                  "星見ヶ原キャンペーン",
+			"visibility":             "unlisted",
+			"rulesetNsid":            "app.cerulia.rules.swords-world",
+			"rulesetManifestRef":     "at://did:plc:rules/app.cerulia.core.rulesetManifest/manifest-sw-1",
+			"sharedRuleProfileRefs":  []string{"at://did:plc:house/app.cerulia.core.ruleProfile/house-profile-1"},
+			"defaultReusePolicyKind": "explicit-cross-campaign",
+			"stewardDids":            []string{"did:plc:steward1"},
+			"requestId":              "req-create-campaign-001",
+		},
+		"examples/rpc/createCampaign.response.json": map[string]any{
+			"requestId":         "req-create-campaign-001",
+			"resultKind":        "accepted",
+			"emittedRecordRefs": []string{"at://did:plc:steward1/app.cerulia.core.campaign/main"},
+			"currentRevision":   1,
+		},
+		"examples/rpc/createCharacterBranch.request.json": map[string]any{
+			"ownerDid":     "did:plc:owner1",
+			"baseSheetRef": "at://did:plc:owner1/app.cerulia.core.characterSheet/hero",
+			"branchKind":   "campaign-fork",
+			"branchLabel":  "星見ヶ原本編",
+			"requestId":    "req-create-branch-001",
+		},
+		"examples/rpc/recordCharacterAdvancement.request.json": map[string]any{
+			"characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/starfield",
+			"advancementKind":    "milestone",
+			"deltaPayloadRef":    "at://did:plc:owner1/app.cerulia.blob.delta/milestone-1",
+			"approvedByDid":      "did:plc:steward1",
+			"effectiveAt":        "2026-04-03T00:00:00Z",
+			"requestId":          "req-advancement-001",
+		},
+		"examples/rpc/recordCharacterEpisode.request.json": map[string]any{
+			"characterBranchRef":       "at://did:plc:owner1/app.cerulia.core.characterBranch/starfield",
+			"campaignRef":              "at://did:plc:steward1/app.cerulia.core.campaign/main",
+			"scenarioLabel":            "第一話 帰還",
+			"rulesetManifestRef":       "at://did:plc:rules/app.cerulia.core.rulesetManifest/manifest-sw-1",
+			"effectiveRuleProfileRefs": []string{"at://did:plc:house/app.cerulia.core.ruleProfile/house-profile-1"},
+			"outcomeSummary":           "帰還と再契約を確定した。",
+			"advancementRefs":          []string{"at://did:plc:owner1/app.cerulia.core.characterAdvancement/3k4i5j"},
+			"recordedByDid":            "did:plc:owner1",
+			"requestId":                "req-episode-001",
+		},
+		"examples/rpc/publishSubject.request.json": map[string]any{
+			"subjectRef":           "at://did:plc:owner1/app.cerulia.core.characterEpisode/3k4i5j",
+			"subjectKind":          "character-episode",
+			"entryUrl":             "https://cerulia.example/publications/episode-1",
+			"preferredSurfaceKind": "app-card",
+			"surfaces": []map[string]any{{
+				"surfaceKind": "app-card",
+				"purposeKind": "stable-entry",
+				"surfaceUri":  "https://cerulia.example/publications/episode-1",
+				"status":      "active",
+			}},
+			"requestId": "req-publish-001",
+		},
+		"examples/rpc/retirePublication.request.json": map[string]any{
+			"publicationRef": "at://did:plc:owner1/app.cerulia.core.publication/3k4i5j",
+			"requestId":      "req-retire-publication-001",
+			"note":           "後続版へ差し替え",
+		},
+		"examples/rpc/getCharacterHome.response.json": map[string]any{
+			"ownerDid": "did:plc:owner1",
+			"primaryBranch": map[string]any{
+				"characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/starfield",
+				"baseSheetRef":       "at://did:plc:owner1/app.cerulia.core.characterSheet/hero",
+				"branchLabel":        "星見ヶ原本編",
+				"branchKind":         "campaign-fork",
+				"ownerDid":           "did:plc:owner1",
+				"revision":           1,
+			},
+			"branches":       []map[string]any{},
+			"recentEpisodes": []map[string]any{},
+			"reuseGrants":    []map[string]any{},
+			"publications":   []map[string]any{},
+		},
+		"examples/rpc/getCampaignView.response.json": map[string]any{
+			"mode": "owner-steward",
+			"campaign": map[string]any{
+				"campaignRef": "at://did:plc:steward1/app.cerulia.core.campaign/main",
+				"title":       "星見ヶ原キャンペーン",
+				"visibility":  "unlisted",
+			},
+			"publishedArtifacts": []map[string]any{},
+		},
+		"examples/rpc/listPublications.response.json": map[string]any{
+			"items": []map[string]any{},
+		},
+		"examples/rpc/exportServiceLog.response.json": map[string]any{
+			"items": []map[string]any{},
+		},
+	}
+}

@@ -8,8 +8,11 @@ import (
 
 	"cerulia/internal/platform/config"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+const BaselineMigration = "0001_phase0_ledger.sql"
 
 type DB struct {
 	pool *pgxpool.Pool
@@ -71,4 +74,35 @@ func (db *DB) Close() {
 	}
 
 	db.pool.Close()
+}
+
+func (db *DB) HasAppliedMigration(ctx context.Context, filename string) (bool, error) {
+	if !db.Enabled() {
+		return false, nil
+	}
+
+	var exists bool
+	err := db.pool.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM information_schema.tables
+			WHERE table_schema = 'public' AND table_name = 'schema_migrations'
+		)
+	`).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("check schema_migrations table: %w", err)
+	}
+	if !exists {
+		return false, nil
+	}
+
+	err = db.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE filename = $1)`, filename).Scan(&exists)
+	if err != nil {
+		if pgx.ErrNoRows == err {
+			return false, nil
+		}
+		return false, fmt.Errorf("check applied migration: %w", err)
+	}
+
+	return exists, nil
 }

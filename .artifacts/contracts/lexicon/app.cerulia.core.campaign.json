@@ -1,0 +1,93 @@
+{
+  "defs": {
+    "main": {
+      "key": "any",
+      "record": {
+        "properties": {
+          "archivedAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "campaignId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "defaultReusePolicyKind": {
+            "ref": "app.cerulia.defs#reusePolicyKind",
+            "type": "ref"
+          },
+          "houseRef": {
+            "ref": "app.cerulia.defs#houseRef",
+            "type": "ref"
+          },
+          "requestId": {
+            "ref": "app.cerulia.defs#requestId",
+            "type": "ref"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "rulesetManifestRef": {
+            "ref": "app.cerulia.defs#rulesetManifestRef",
+            "type": "ref"
+          },
+          "rulesetNsid": {
+            "ref": "app.cerulia.defs#rulesetNsid",
+            "type": "ref"
+          },
+          "sharedRuleProfileRefs": {
+            "items": {
+              "ref": "app.cerulia.defs#ruleProfileRef",
+              "type": "ref"
+            },
+            "type": "array"
+          },
+          "stewardDids": {
+            "items": {
+              "ref": "app.cerulia.defs#did",
+              "type": "ref"
+            },
+            "minLength": 1,
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "visibility": {
+            "ref": "app.cerulia.defs#visibility",
+            "type": "ref"
+          },
+          "worldRef": {
+            "ref": "app.cerulia.defs#worldRef",
+            "type": "ref"
+          }
+        },
+        "required": [
+          "campaignId",
+          "title",
+          "visibility",
+          "rulesetNsid",
+          "rulesetManifestRef",
+          "sharedRuleProfileRefs",
+          "defaultReusePolicyKind",
+          "stewardDids",
+          "createdAt",
+          "revision",
+          "requestId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "type": "record"
+    }
+  },
+  "id": "app.cerulia.core.campaign",
+  "lexicon": 1
+}

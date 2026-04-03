@@ -1,0 +1,63 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
+          "name": "NotFound"
+        },
+        {
+          "name": "UnsupportedRuleset"
+        },
+        {
+          "name": "InternalError"
+        }
+      ],
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "characterBranchRef": {
+              "ref": "app.cerulia.defs#characterBranchRef",
+              "type": "ref"
+            },
+            "expectedRevision": {
+              "type": "integer"
+            },
+            "reasonCode": {
+              "type": "string"
+            },
+            "requestId": {
+              "ref": "app.cerulia.defs#requestId",
+              "type": "ref"
+            }
+          },
+          "required": [
+            "characterBranchRef",
+            "expectedRevision",
+            "requestId"
+          ],
+          "type": "object"
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "ref": "app.cerulia.defs#mutationAck",
+          "type": "ref"
+        }
+      },
+      "type": "procedure"
+    }
+  },
+  "id": "app.cerulia.rpc.retireCharacterBranch",
+  "lexicon": 1
+}

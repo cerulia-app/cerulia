@@ -70,6 +70,19 @@ func (h *handler) handleReadyz(w http.ResponseWriter, r *http.Request) {
 			h.logger.Warn("readiness check failed", "error", err)
 		} else {
 			response.Checks["database"] = "ok"
+			applied, err := h.db.HasAppliedMigration(r.Context(), database.BaselineMigration)
+			if err != nil {
+				response.Status = "not_ready"
+				response.Checks["migration"] = "error"
+				statusCode = http.StatusServiceUnavailable
+				h.logger.Warn("migration readiness check failed", "error", err)
+			} else if !applied {
+				response.Status = "not_ready"
+				response.Checks["migration"] = "missing"
+				statusCode = http.StatusServiceUnavailable
+			} else {
+				response.Checks["migration"] = "ok"
+			}
 		}
 	}
 
