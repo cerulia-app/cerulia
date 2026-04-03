@@ -22,3 +22,11 @@ func UnmarshalStable[T any](record store.StableRecord) (T, error) {
 	}
 	return value, nil
 }
+
+func UnmarshalAppend[T any](record store.AppendRecord) (T, error) {
+	var value T
+	if err := json.Unmarshal(record.Body, &value); err != nil {
+		return value, fmt.Errorf("decode run append record %s: %w", record.Ref, err)
+	}
+	return value, nil
+}

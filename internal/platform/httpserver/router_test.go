@@ -192,6 +192,90 @@ func TestGovernanceViewRejectsWrongBundle(t *testing.T) {
 	assertXRPCError(t, rec, http.StatusForbidden, "Forbidden")
 }
 
+func TestListSessionPublicationsPublicModeAllowsAuthenticatedWithoutBundle(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	campaignRef := createCampaign(t, handler, "did:plc:gm1", "req-campaign-session-publication")
+	publicationRef := publishCampaignAndReturnRef(t, handler, "did:plc:gm1", campaignRef, "req-publication-session-publication")
+	sessionRef := createSessionDraft(t, handler, "did:plc:gm1", "req-session-publication")
+	publishSessionLink(t, handler, "did:plc:gm1", sessionRef, publicationRef, publicationRef, "", "req-session-link")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listSessionPublications?sessionRef="+sessionRef+"&mode=public", nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:reader1")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode session publications: %v", err)
+	}
+	if len(response.Items) != 1 {
+		t.Fatalf("expected one session publication, got %d", len(response.Items))
+	}
+}
+
+func TestSessionAccessPreflightReturnsAppealOnlyForRemovedActor(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	sessionRef := createSessionDraft(t, handler, "did:plc:gm1", "req-session-appeal-preflight")
+	inviteSession(t, handler, "did:plc:gm1", sessionRef, "did:plc:player1", "player", "", "req-invite-appeal-preflight")
+	joinSession(t, handler, "did:plc:player1", sessionRef, "did:plc:player1", "invited", "req-join-appeal-preflight")
+	removedRef := removeMembership(t, handler, "did:plc:gm1", sessionRef, "did:plc:player1", "joined", "req-remove-appeal-preflight")
+	submitAppeal(t, handler, "did:plc:player1", authz.AppealOriginator, sessionRef, removedRef, "req-remove-appeal-preflight", "req-appeal-preflight")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getSessionAccessPreflight?sessionRef="+sessionRef, nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:player1")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		DecisionKind string `json:"decisionKind"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode preflight response: %v", err)
+	}
+	if response.DecisionKind != "appeal-only" {
+		t.Fatalf("expected appeal-only decision, got %q", response.DecisionKind)
+	}
+}
+
+func TestListAppealCasesParticipantView(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	sessionRef := createSessionDraft(t, handler, "did:plc:gm1", "req-session-appeal-list")
+	inviteSession(t, handler, "did:plc:gm1", sessionRef, "did:plc:player1", "player", "", "req-invite-appeal-list")
+	joinSession(t, handler, "did:plc:player1", sessionRef, "did:plc:player1", "invited", "req-join-appeal-list")
+	removedRef := removeMembership(t, handler, "did:plc:gm1", sessionRef, "did:plc:player1", "joined", "req-remove-appeal-list")
+	submitAppeal(t, handler, "did:plc:player1", authz.AppealOriginator, sessionRef, removedRef, "req-remove-appeal-list", "req-appeal-list")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listAppealCases?sessionRef="+sessionRef+"&view=participant", nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:player1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.AppealOriginator)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []struct {
+			Status           string `json:"status"`
+			NextResolverKind string `json:"nextResolverKind"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode appeal cases: %v", err)
+	}
+	if len(response.Items) != 1 || response.Items[0].NextResolverKind != "blocked" || response.Items[0].Status != "controller-review" {
+		t.Fatalf("expected one blocked controller-review appeal, got %+v", response.Items)
+	}
+}
+
 func testConfig() config.Config {
 	return config.Config{
 		AppEnv:          "test",
@@ -225,7 +309,7 @@ func performJSONRequest(handler http.Handler, method string, path string, body s
 
 func createCampaign(t *testing.T, handler http.Handler, actorDid string, requestID string) string {
 	t.Helper()
-	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", `{"title":"Campaign","visibility":"public","rulesetNsid":"app.cerulia.rules.core","rulesetManifestRef":"at://did:plc:alice/app.cerulia.core.rulesetManifest/ruleset-1","defaultReusePolicyKind":"same-campaign-default","stewardDids":["did:plc:alice"],"requestId":"`+requestID+`"}`, map[string]string{
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", `{"title":"Campaign","visibility":"public","rulesetNsid":"app.cerulia.rules.core","rulesetManifestRef":"at://did:plc:alice/app.cerulia.core.rulesetManifest/ruleset-1","defaultReusePolicyKind":"same-campaign-default","stewardDids":["`+actorDid+`"],"requestId":"`+requestID+`"}`, map[string]string{
 		authz.HeaderActorDID:       actorDid,
 		authz.HeaderPermissionSets: authz.CoreWriter,
 	})
@@ -297,6 +381,86 @@ func publishCampaign(t *testing.T, handler http.Handler, actorDid string, campai
 	if rec.Code != http.StatusOK {
 		t.Fatalf("publish campaign failed: %d %s", rec.Code, rec.Body.String())
 	}
+}
+
+func publishCampaignAndReturnRef(t *testing.T, handler http.Handler, actorDid string, campaignRef string, requestID string) string {
+	t.Helper()
+	body := `{"subjectRef":"` + campaignRef + `","subjectKind":"campaign","entryUrl":"https://example.test/campaigns/public","preferredSurfaceKind":"app-card","surfaces":[{"surfaceKind":"app-card","purposeKind":"stable-entry","surfaceUri":"https://example.test/campaigns/public","status":"active"}],"requestId":"` + requestID + `"}`
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.publishSubject", body, map[string]string{
+		authz.HeaderActorDID:       actorDid,
+		authz.HeaderPermissionSets: authz.CorePublicationWriter,
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("publish campaign failed: %d %s", rec.Code, rec.Body.String())
+	}
+	var ack struct {
+		PublicationRef string `json:"publicationRef"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &ack); err != nil {
+		t.Fatalf("decode publish campaign ack: %v", err)
+	}
+	return ack.PublicationRef
+}
+
+func publishSessionLink(t *testing.T, handler http.Handler, actorDid string, sessionRef string, publicationRef string, expectedPublicationHeadRef string, expectedSessionHeadRef string, requestID string) string {
+	t.Helper()
+	body := `{"sessionRef":"` + sessionRef + `","publicationRef":"` + publicationRef + `","expectedPublicationHeadRef":"` + expectedPublicationHeadRef + `","expectedSessionPublicationHeadRef":"` + expectedSessionHeadRef + `","entryUrl":"https://example.test/sessions/public","replayUrl":"https://example.test/sessions/public/replay","preferredSurfaceKind":"app-card","surfaces":[{"surfaceKind":"app-card","purposeKind":"stable-entry","surfaceUri":"https://example.test/sessions/public","status":"active"}],"requestId":"` + requestID + `"}`
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.publishSessionLink", body, map[string]string{
+		authz.HeaderActorDID:       actorDid,
+		authz.HeaderPermissionSets: authz.PublicationOperator,
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("publish session link failed: %d %s", rec.Code, rec.Body.String())
+	}
+	var ack struct {
+		SessionPublicationRef string `json:"sessionPublicationRef"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &ack); err != nil {
+		t.Fatalf("decode publish session link ack: %v", err)
+	}
+	return ack.SessionPublicationRef
+}
+
+func removeMembership(t *testing.T, handler http.Handler, actorDid string, sessionRef string, targetDid string, expectedStatus string, requestID string) string {
+	t.Helper()
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.moderateMembership", `{"sessionRef":"`+sessionRef+`","actorDid":"`+targetDid+`","expectedStatus":"`+expectedStatus+`","nextStatus":"removed","requestId":"`+requestID+`","reasonCode":"moderation"}`, map[string]string{
+		authz.HeaderActorDID:       actorDid,
+		authz.HeaderPermissionSets: authz.GovernanceOperator,
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("remove membership failed: %d %s", rec.Code, rec.Body.String())
+	}
+	var ack struct {
+		EmittedRecordRefs []string `json:"emittedRecordRefs"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &ack); err != nil {
+		t.Fatalf("decode remove membership ack: %v", err)
+	}
+	if len(ack.EmittedRecordRefs) != 1 {
+		t.Fatalf("expected one removed membership ref, got %d", len(ack.EmittedRecordRefs))
+	}
+	return ack.EmittedRecordRefs[0]
+}
+
+func submitAppeal(t *testing.T, handler http.Handler, actorDid string, permissionSet string, sessionRef string, targetRef string, targetRequestID string, requestID string) string {
+	t.Helper()
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.submitAppeal", `{"sessionRef":"`+sessionRef+`","targetKind":"membership","targetRef":"`+targetRef+`","targetRequestId":"`+targetRequestID+`","affectedActorDid":"`+actorDid+`","requestedOutcomeKind":"restore-membership","requestId":"`+requestID+`"}`, map[string]string{
+		authz.HeaderActorDID:       actorDid,
+		authz.HeaderPermissionSets: permissionSet,
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("submit appeal failed: %d %s", rec.Code, rec.Body.String())
+	}
+	var ack struct {
+		EmittedRecordRefs []string `json:"emittedRecordRefs"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &ack); err != nil {
+		t.Fatalf("decode submit appeal ack: %v", err)
+	}
+	if len(ack.EmittedRecordRefs) != 1 {
+		t.Fatalf("expected one appeal case ref, got %d", len(ack.EmittedRecordRefs))
+	}
+	return ack.EmittedRecordRefs[0]
 }
 
 func assertXRPCError(t *testing.T, rec *httptest.ResponseRecorder, statusCode int, shortName string) {

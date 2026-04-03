@@ -131,5 +131,35 @@ func ExampleDocuments() map[string]any {
 			"handoutCount": 0,
 			"appealCount":  0,
 		},
+		"examples/rpc/publishSessionLink.request.json": map[string]any{
+			"sessionRef":                 "at://did:plc:gm1/app.cerulia.run.session/session-starfield-001",
+			"publicationRef":             "at://did:plc:owner1/app.cerulia.core.publication/publication-1",
+			"expectedPublicationHeadRef": "at://did:plc:owner1/app.cerulia.core.publication/publication-1",
+			"entryUrl":                   "https://cerulia.example/sessions/starfield",
+			"replayUrl":                  "https://cerulia.example/sessions/starfield/replay",
+			"preferredSurfaceKind":       "app-card",
+			"surfaces": []map[string]any{{
+				"surfaceKind": "app-card",
+				"purposeKind": "stable-entry",
+				"surfaceUri":  "https://cerulia.example/sessions/starfield",
+				"status":      "active",
+			}},
+			"requestId": "req-publish-session-link-001",
+		},
+		"examples/rpc/submitAppeal.request.json": map[string]any{
+			"sessionRef":           "at://did:plc:gm1/app.cerulia.run.session/session-starfield-001",
+			"targetKind":           "membership",
+			"targetRef":            "at://did:plc:gm1/app.cerulia.run.membership/membership-req-remove-001",
+			"targetRequestId":      "req-remove-001",
+			"affectedActorDid":     "did:plc:player1",
+			"requestedOutcomeKind": "restore-membership",
+			"requestId":            "req-submit-appeal-001",
+		},
+		"examples/rpc/listSessionPublications.response.json": map[string]any{
+			"items": []map[string]any{},
+		},
+		"examples/rpc/listAppealCases.response.json": map[string]any{
+			"items": []map[string]any{},
+		},
 	}
 }

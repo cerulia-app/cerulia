@@ -61,6 +61,50 @@ func (h *handler) handleGetGovernanceView(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, view)
 }
 
+func (h *handler) handleListSessionPublications(w http.ResponseWriter, r *http.Request) {
+	mode := r.URL.Query().Get("mode")
+	includeRetired, err := parseBoolQuery(r.URL.Query().Get("includeRetired"))
+	if err != nil {
+		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", err.Error())
+		return
+	}
+	subject, err := h.authorize(r, "app.cerulia.rpc.listSessionPublications", mode == "public" || mode == "")
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	limit, err := parseLimit(r.URL.Query().Get("limit"))
+	if err != nil {
+		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", err.Error())
+		return
+	}
+	page, err := h.runProjections.ListSessionPublications(r.Context(), subject.ActorDID, r.URL.Query().Get("sessionRef"), mode, includeRetired, limit, r.URL.Query().Get("cursor"))
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+func (h *handler) handleListAppealCases(w http.ResponseWriter, r *http.Request) {
+	subject, err := h.authorize(r, "app.cerulia.rpc.listAppealCases", false)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	limit, err := parseLimit(r.URL.Query().Get("limit"))
+	if err != nil {
+		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", err.Error())
+		return
+	}
+	page, err := h.runProjections.ListAppealCases(r.Context(), subject.ActorDID, r.URL.Query().Get("sessionRef"), r.URL.Query().Get("view"), r.URL.Query().Get("status"), limit, r.URL.Query().Get("cursor"))
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
 func (h *handler) handleGetCharacterHome(w http.ResponseWriter, r *http.Request) {
 	subject, err := h.authorize(r, "app.cerulia.rpc.getCharacterHome", false)
 	if err != nil {

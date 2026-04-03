@@ -20,10 +20,14 @@ func TestAuthorizeRequest(t *testing.T) {
 		{name: "anonymous public query", operationNSID: "app.cerulia.rpc.getCampaignView", allowAnonymous: true, wantAnonymous: true},
 		{name: "anonymous session preflight", operationNSID: "app.cerulia.rpc.getSessionAccessPreflight", allowAnonymous: true, wantAnonymous: true},
 		{name: "authenticated session preflight without bundle", operationNSID: "app.cerulia.rpc.getSessionAccessPreflight", actorDid: "did:plc:alice"},
+		{name: "authenticated public query without bundle passes", operationNSID: "app.cerulia.rpc.getCampaignView", allowAnonymous: true, actorDid: "did:plc:alice"},
 		{name: "missing actor rejects private query", operationNSID: "app.cerulia.rpc.getCharacterHome", wantErr: ErrUnauthorized},
 		{name: "wrong bundle rejects", operationNSID: "app.cerulia.rpc.createCampaign", actorDid: "did:plc:alice", bundles: CoreReader, wantErr: ErrForbidden},
 		{name: "governance operator passes", operationNSID: "app.cerulia.rpc.createSessionDraft", actorDid: "did:plc:alice", bundles: GovernanceOperator},
 		{name: "participant passes", operationNSID: "app.cerulia.rpc.getSessionView", actorDid: "did:plc:alice", bundles: SessionParticipant},
+		{name: "appeal originator passes", operationNSID: "app.cerulia.rpc.submitAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator},
+		{name: "appeal resolver passes", operationNSID: "app.cerulia.rpc.submitAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
+		{name: "publication operator passes", operationNSID: "app.cerulia.rpc.publishSessionLink", actorDid: "did:plc:alice", bundles: PublicationOperator},
 		{name: "exact bundle passes", operationNSID: "app.cerulia.rpc.createCampaign", actorDid: "did:plc:alice", bundles: CoreWriter},
 	}
 

@@ -11,6 +11,7 @@ func runAuthCatalog() map[string]map[string]any {
 		"lexicon/app.cerulia.authGovernanceOperator.json": permissionSetDoc(
 			"app.cerulia.authGovernanceOperator",
 			"app.cerulia.rpc.getGovernanceView",
+			"app.cerulia.rpc.listSessionPublications",
 			"app.cerulia.rpc.createSessionDraft",
 			"app.cerulia.rpc.openSession",
 			"app.cerulia.rpc.startSession",
@@ -23,6 +24,23 @@ func runAuthCatalog() map[string]map[string]any {
 			"app.cerulia.rpc.inviteSession",
 			"app.cerulia.rpc.cancelInvitation",
 			"app.cerulia.rpc.moderateMembership",
+		),
+		"lexicon/app.cerulia.authPublicationOperator.json": permissionSetDoc(
+			"app.cerulia.authPublicationOperator",
+			"app.cerulia.rpc.publishSessionLink",
+			"app.cerulia.rpc.retireSessionLink",
+		),
+		"lexicon/app.cerulia.authAppealOriginator.json": permissionSetDoc(
+			"app.cerulia.authAppealOriginator",
+			"app.cerulia.rpc.listAppealCases",
+			"app.cerulia.rpc.submitAppeal",
+			"app.cerulia.rpc.withdrawAppeal",
+		),
+		"lexicon/app.cerulia.authAppealResolver.json": permissionSetDoc(
+			"app.cerulia.authAppealResolver",
+			"app.cerulia.rpc.listAppealCases",
+			"app.cerulia.rpc.submitAppeal",
+			"app.cerulia.rpc.withdrawAppeal",
 		),
 	}
 }

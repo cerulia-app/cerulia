@@ -16,6 +16,9 @@ const (
 	AuditReader           = "app.cerulia.authAuditReader"
 	SessionParticipant    = "app.cerulia.authSessionParticipant"
 	GovernanceOperator    = "app.cerulia.authGovernanceOperator"
+	PublicationOperator   = "app.cerulia.authPublicationOperator"
+	AppealOriginator      = "app.cerulia.authAppealOriginator"
+	AppealResolver        = "app.cerulia.authAppealResolver"
 )
 
 var (
@@ -31,55 +34,61 @@ type Subject struct {
 }
 
 type Gateway struct {
-	requiredBundleByOperation map[string]string
+	requiredBundlesByOperation map[string][]string
 }
 
 func NewGateway() *Gateway {
 	return &Gateway{
-		requiredBundleByOperation: map[string]string{
-			"app.cerulia.rpc.getCharacterHome":           CoreReader,
-			"app.cerulia.rpc.getCampaignView":            CoreReader,
-			"app.cerulia.rpc.getSessionAccessPreflight":  "",
-			"app.cerulia.rpc.getSessionView":             SessionParticipant,
-			"app.cerulia.rpc.getGovernanceView":          GovernanceOperator,
-			"app.cerulia.rpc.listCharacterEpisodes":      CoreReader,
-			"app.cerulia.rpc.listReuseGrants":            CoreReader,
-			"app.cerulia.rpc.listPublications":           CoreReader,
-			"app.cerulia.rpc.exportServiceLog":           AuditReader,
-			"app.cerulia.rpc.createCampaign":             CoreWriter,
-			"app.cerulia.rpc.createSessionDraft":         GovernanceOperator,
-			"app.cerulia.rpc.openSession":                GovernanceOperator,
-			"app.cerulia.rpc.startSession":               GovernanceOperator,
-			"app.cerulia.rpc.pauseSession":               GovernanceOperator,
-			"app.cerulia.rpc.resumeSession":              GovernanceOperator,
-			"app.cerulia.rpc.closeSession":               GovernanceOperator,
-			"app.cerulia.rpc.archiveSession":             GovernanceOperator,
-			"app.cerulia.rpc.reopenSession":              GovernanceOperator,
-			"app.cerulia.rpc.transferAuthority":          GovernanceOperator,
-			"app.cerulia.rpc.inviteSession":              GovernanceOperator,
-			"app.cerulia.rpc.cancelInvitation":           GovernanceOperator,
-			"app.cerulia.rpc.joinSession":                SessionParticipant,
-			"app.cerulia.rpc.leaveSession":               SessionParticipant,
-			"app.cerulia.rpc.moderateMembership":         GovernanceOperator,
-			"app.cerulia.rpc.attachRuleProfile":          CoreWriter,
-			"app.cerulia.rpc.retireRuleProfile":          CoreWriter,
-			"app.cerulia.rpc.importCharacterSheet":       CoreWriter,
-			"app.cerulia.rpc.createCharacterBranch":      CoreWriter,
-			"app.cerulia.rpc.updateCharacterBranch":      CoreWriter,
-			"app.cerulia.rpc.retireCharacterBranch":      CoreWriter,
-			"app.cerulia.rpc.recordCharacterAdvancement": CoreWriter,
-			"app.cerulia.rpc.recordCharacterEpisode":     CoreWriter,
-			"app.cerulia.rpc.recordCharacterConversion":  CoreWriter,
-			"app.cerulia.rpc.publishSubject":             CorePublicationWriter,
-			"app.cerulia.rpc.retirePublication":          CorePublicationWriter,
-			"app.cerulia.rpc.grantReuse":                 ReuseOperator,
-			"app.cerulia.rpc.revokeReuse":                ReuseOperator,
+		requiredBundlesByOperation: map[string][]string{
+			"app.cerulia.rpc.getCharacterHome":           {CoreReader},
+			"app.cerulia.rpc.getCampaignView":            {CoreReader},
+			"app.cerulia.rpc.getSessionAccessPreflight":  nil,
+			"app.cerulia.rpc.getSessionView":             {SessionParticipant},
+			"app.cerulia.rpc.getGovernanceView":          {GovernanceOperator},
+			"app.cerulia.rpc.listCharacterEpisodes":      {CoreReader},
+			"app.cerulia.rpc.listReuseGrants":            {CoreReader},
+			"app.cerulia.rpc.listPublications":           {CoreReader},
+			"app.cerulia.rpc.listSessionPublications":    {GovernanceOperator},
+			"app.cerulia.rpc.listAppealCases":            {AppealOriginator, AppealResolver},
+			"app.cerulia.rpc.exportServiceLog":           {AuditReader},
+			"app.cerulia.rpc.createCampaign":             {CoreWriter},
+			"app.cerulia.rpc.createSessionDraft":         {GovernanceOperator},
+			"app.cerulia.rpc.openSession":                {GovernanceOperator},
+			"app.cerulia.rpc.startSession":               {GovernanceOperator},
+			"app.cerulia.rpc.pauseSession":               {GovernanceOperator},
+			"app.cerulia.rpc.resumeSession":              {GovernanceOperator},
+			"app.cerulia.rpc.closeSession":               {GovernanceOperator},
+			"app.cerulia.rpc.archiveSession":             {GovernanceOperator},
+			"app.cerulia.rpc.reopenSession":              {GovernanceOperator},
+			"app.cerulia.rpc.transferAuthority":          {GovernanceOperator},
+			"app.cerulia.rpc.inviteSession":              {GovernanceOperator},
+			"app.cerulia.rpc.cancelInvitation":           {GovernanceOperator},
+			"app.cerulia.rpc.joinSession":                {SessionParticipant},
+			"app.cerulia.rpc.leaveSession":               {SessionParticipant},
+			"app.cerulia.rpc.moderateMembership":         {GovernanceOperator},
+			"app.cerulia.rpc.publishSessionLink":         {PublicationOperator},
+			"app.cerulia.rpc.retireSessionLink":          {PublicationOperator},
+			"app.cerulia.rpc.submitAppeal":               {AppealOriginator, AppealResolver},
+			"app.cerulia.rpc.withdrawAppeal":             {AppealOriginator, AppealResolver},
+			"app.cerulia.rpc.attachRuleProfile":          {CoreWriter},
+			"app.cerulia.rpc.retireRuleProfile":          {CoreWriter},
+			"app.cerulia.rpc.importCharacterSheet":       {CoreWriter},
+			"app.cerulia.rpc.createCharacterBranch":      {CoreWriter},
+			"app.cerulia.rpc.updateCharacterBranch":      {CoreWriter},
+			"app.cerulia.rpc.retireCharacterBranch":      {CoreWriter},
+			"app.cerulia.rpc.recordCharacterAdvancement": {CoreWriter},
+			"app.cerulia.rpc.recordCharacterEpisode":     {CoreWriter},
+			"app.cerulia.rpc.recordCharacterConversion":  {CoreWriter},
+			"app.cerulia.rpc.publishSubject":             {CorePublicationWriter},
+			"app.cerulia.rpc.retirePublication":          {CorePublicationWriter},
+			"app.cerulia.rpc.grantReuse":                 {ReuseOperator},
+			"app.cerulia.rpc.revokeReuse":                {ReuseOperator},
 		},
 	}
 }
 
 func (gateway *Gateway) AuthorizeRequest(request *http.Request, operationNSID string, allowAnonymous bool) (Subject, error) {
-	requiredBundle, ok := gateway.requiredBundleByOperation[operationNSID]
+	requiredBundles, ok := gateway.requiredBundlesByOperation[operationNSID]
 	if !ok {
 		return Subject{}, ErrUnknownLXM
 	}
@@ -95,13 +104,18 @@ func (gateway *Gateway) AuthorizeRequest(request *http.Request, operationNSID st
 		}
 		return Subject{}, ErrUnauthorized
 	}
-	if requiredBundle == "" {
+	if allowAnonymous {
 		return subject, nil
 	}
-	if _, ok := subject.PermissionSets[requiredBundle]; !ok {
-		return Subject{}, ErrForbidden
+	if len(requiredBundles) == 0 {
+		return subject, nil
 	}
-	return subject, nil
+	for _, requiredBundle := range requiredBundles {
+		if _, ok := subject.PermissionSets[requiredBundle]; ok {
+			return subject, nil
+		}
+	}
+	return Subject{}, ErrForbidden
 }
 
 func parsePermissionSets(raw string) map[string]struct{} {

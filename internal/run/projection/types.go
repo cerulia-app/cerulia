@@ -2,6 +2,11 @@ package projection
 
 import "time"
 
+type Page[T any] struct {
+	Items  []T    `json:"items"`
+	Cursor string `json:"cursor,omitempty"`
+}
+
 type AccessPreflight struct {
 	SessionRef            string `json:"sessionRef"`
 	DecisionKind          string `json:"decisionKind"`
@@ -75,6 +80,23 @@ type SessionPublicationSummary struct {
 	UpdatedByDid          string     `json:"updatedByDid,omitempty"`
 }
 
+type AppealCaseSummary struct {
+	AppealCaseRef              string     `json:"appealCaseRef"`
+	TargetKind                 string     `json:"targetKind"`
+	TargetRef                  string     `json:"targetRef"`
+	RequestedOutcomeKind       string     `json:"requestedOutcomeKind"`
+	Status                     string     `json:"status"`
+	BlockedReasonCode          string     `json:"blockedReasonCode,omitempty"`
+	NextResolverKind           string     `json:"nextResolverKind"`
+	OpenedAt                   time.Time  `json:"openedAt"`
+	ResolvedAt                 *time.Time `json:"resolvedAt,omitempty"`
+	HandoffSummary             string     `json:"handoffSummary,omitempty"`
+	ResultSummary              string     `json:"resultSummary,omitempty"`
+	ReviewOutcomeSummary       string     `json:"reviewOutcomeSummary,omitempty"`
+	ControllerReviewDueAt      *time.Time `json:"controllerReviewDueAt,omitempty"`
+	RecoveryAuthorityRequestID string     `json:"recoveryAuthorityRequestId,omitempty"`
+}
+
 type SessionView struct {
 	Session             SessionSummary              `json:"session"`
 	AuthoritySummary    ParticipantAuthoritySummary `json:"authoritySummary"`
@@ -91,5 +113,5 @@ type GovernanceView struct {
 	Memberships         []MembershipSummary         `json:"memberships"`
 	ActiveSceneRef      string                      `json:"activeSceneRef,omitempty"`
 	PublicationCarriers []SessionPublicationSummary `json:"publicationCarriers,omitempty"`
-	PendingAppeals      []map[string]any            `json:"pendingAppeals,omitempty"`
+	PendingAppeals      []AppealCaseSummary         `json:"pendingAppeals,omitempty"`
 }

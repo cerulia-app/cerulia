@@ -189,6 +189,58 @@ func (h *handler) handleModerateMembership(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, ack)
 }
 
+func (h *handler) handlePublishSessionLink(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.PublishSessionLinkInput](h, w, r, "app.cerulia.rpc.publishSessionLink")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.PublishSessionLink(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleRetireSessionLink(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.RetireSessionLinkInput](h, w, r, "app.cerulia.rpc.retireSessionLink")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.RetireSessionLink(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleSubmitAppeal(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SubmitAppealInput](h, w, r, "app.cerulia.rpc.submitAppeal")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.SubmitAppeal(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleWithdrawAppeal(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.WithdrawAppealInput](h, w, r, "app.cerulia.rpc.withdrawAppeal")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.WithdrawAppeal(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
 func (h *handler) handleCreateCampaign(w http.ResponseWriter, r *http.Request) {
 	input, subject, ok := decodeProcedure[command.CreateCampaignInput](h, w, r, "app.cerulia.rpc.createCampaign")
 	if !ok {

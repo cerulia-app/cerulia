@@ -176,6 +176,20 @@ func decodeRunStable[T any](ctx context.Context, reader store.Reader, ref string
 	return record, value, nil
 }
 
+func decodeRunAppend[T any](ctx context.Context, reader store.Reader, ref string) (store.AppendRecord, T, error) {
+	record, err := reader.GetAppend(ctx, ref)
+	if err != nil {
+		var zero T
+		return store.AppendRecord{}, zero, err
+	}
+	value, err := runmodel.UnmarshalAppend[T](record)
+	if err != nil {
+		var zero T
+		return store.AppendRecord{}, zero, err
+	}
+	return record, value, nil
+}
+
 func decodeCampaign(ctx context.Context, reader store.Reader, ref string) (coremodel.Campaign, error) {
 	record, err := reader.GetStable(ctx, ref)
 	if err != nil {
@@ -198,4 +212,28 @@ func marshalStable(collection string, ref string, requestID string, revision int
 		return store.StableRecord{}, err
 	}
 	return store.StableRecord{Ref: ref, Collection: collection, RepoDID: parts.RepoDID, RecordKey: parts.RecordKey, RequestID: requestID, Revision: revision, Body: body, CreatedAt: createdAt, UpdatedAt: updatedAt}, nil
+}
+
+func marshalAppend(collection string, ref string, governingRef string, requestID string, createdAt time.Time, value any) (store.AppendRecord, error) {
+	body, err := runmodel.Marshal(value)
+	if err != nil {
+		return store.AppendRecord{}, err
+	}
+	parts, err := store.ParseRef(ref)
+	if err != nil {
+		return store.AppendRecord{}, err
+	}
+	return store.AppendRecord{Ref: ref, Collection: collection, RepoDID: parts.RepoDID, RecordKey: parts.RecordKey, GoverningRef: governingRef, RequestID: requestID, Body: body, CreatedAt: createdAt}, nil
+}
+
+func appendRef(repoDID string, collection string, prefix string, requestID string) string {
+	return store.BuildRef(repoDID, collection, prefix+"-"+requestID)
+}
+
+func refRepoDID(ref string) (string, error) {
+	parts, err := store.ParseRef(ref)
+	if err != nil {
+		return "", err
+	}
+	return parts.RepoDID, nil
 }
