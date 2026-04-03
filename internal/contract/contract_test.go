@@ -38,13 +38,13 @@ func TestBuildBundle(t *testing.T) {
 		filepath.FromSlash("lexicon/app.cerulia.run.session.json"),
 		filepath.FromSlash("lexicon/app.cerulia.rpc.createCampaign.json"),
 		filepath.FromSlash("lexicon/app.cerulia.rpc.createSessionDraft.json"),
-			filepath.FromSlash("lexicon/app.cerulia.rpc.createCharacterInstance.json"),
-			filepath.FromSlash("lexicon/app.cerulia.rpc.createSecretEnvelope.json"),
+		filepath.FromSlash("lexicon/app.cerulia.rpc.createCharacterInstance.json"),
+		filepath.FromSlash("lexicon/app.cerulia.rpc.createSecretEnvelope.json"),
 		filepath.FromSlash("examples/rpc/createCampaign.request.json"),
 		filepath.FromSlash("examples/rpc/createSessionDraft.request.json"),
-			filepath.FromSlash("examples/rpc/createCharacterInstance.request.json"),
-			filepath.FromSlash("examples/rpc/createSecretEnvelope.request.json"),
-			filepath.FromSlash("examples/rpc/sendMessage.request.json"),
+		filepath.FromSlash("examples/rpc/createCharacterInstance.request.json"),
+		filepath.FromSlash("examples/rpc/createSecretEnvelope.request.json"),
+		filepath.FromSlash("examples/rpc/sendMessage.request.json"),
 	}
 
 	for _, relativePath := range requiredPaths {

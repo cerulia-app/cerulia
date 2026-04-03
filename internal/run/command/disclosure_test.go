@@ -128,11 +128,11 @@ func TestSecretEnvelopeRevealAndRedactFlow_Sprint2(t *testing.T) {
 		t.Fatalf("unexpected reveal ack: %+v", revealAck)
 	}
 	mismatchAck, err := service.RevealSubject(context.Background(), "did:plc:gm1", RevealSubjectInput{
-		SessionRef:      sessionRef,
-		SubjectRef:      envelopeRef,
-		ToAudienceRef:   gmAudienceRef,
-		RevealMode:      "broaden-audience",
-		RequestID:       "req-reveal-mismatch-sprint2",
+		SessionRef:    sessionRef,
+		SubjectRef:    envelopeRef,
+		ToAudienceRef: gmAudienceRef,
+		RevealMode:    "broaden-audience",
+		RequestID:     "req-reveal-mismatch-sprint2",
 	})
 	if err != nil {
 		t.Fatalf("reveal subject mismatch: %v", err)

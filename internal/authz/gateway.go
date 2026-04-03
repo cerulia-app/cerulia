@@ -28,7 +28,7 @@ const (
 	ReuseOperator         = "app.cerulia.authReuseOperator"
 	AuditReader           = "app.cerulia.authAuditReader"
 	SessionParticipant    = "app.cerulia.authSessionParticipant"
-	SecretOperator       = "app.cerulia.authSecretOperator"
+	SecretOperator        = "app.cerulia.authSecretOperator"
 	GovernanceOperator    = "app.cerulia.authGovernanceOperator"
 	PublicationOperator   = "app.cerulia.authPublicationOperator"
 	AppealOriginator      = "app.cerulia.authAppealOriginator"
