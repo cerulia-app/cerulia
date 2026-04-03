@@ -1,13 +1,20 @@
 package authz
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestAuthorizeRequest(t *testing.T) {
-	gateway := NewGateway()
+	gateway := NewGateway(Config{AllowInsecureDirect: true})
 	tests := []struct {
 		name           string
 		operationNSID  string
@@ -54,4 +61,98 @@ func TestAuthorizeRequest(t *testing.T) {
 			t.Fatalf("%s: expected anonymous=%v, got %v", test.name, test.wantAnonymous, subject.Anonymous)
 		}
 	}
+}
+
+func TestAuthorizeRequestRequiresVerifiedHeadersWhenConfigured(t *testing.T) {
+	gateway := NewGateway(Config{TrustedProxyHMACSecret: "test-secret"})
+	req := httptest.NewRequest(http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", strings.NewReader(`{"requestId":"req-1"}`))
+	req.Header.Set(HeaderActorDID, "did:plc:alice")
+	req.Header.Set(HeaderPermissionSets, CoreWriter)
+
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createCampaign", false); err != ErrUnauthorized {
+		t.Fatalf("expected unauthorized without signature, got %v", err)
+	}
+
+	signRequest(t, req, "test-secret", "app.cerulia.rpc.createCampaign", time.Now().UTC(), "nonce-1")
+
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createCampaign", false); err != nil {
+		t.Fatalf("expected signed request to pass, got %v", err)
+	}
+}
+
+func TestAuthorizeRequestRejectsReplayedNonce(t *testing.T) {
+	gateway := NewGateway(Config{TrustedProxyHMACSecret: "test-secret"})
+	req := httptest.NewRequest(http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", strings.NewReader(`{"requestId":"req-1"}`))
+	req.Header.Set(HeaderActorDID, "did:plc:alice")
+	req.Header.Set(HeaderPermissionSets, CoreWriter)
+	signRequest(t, req, "test-secret", "app.cerulia.rpc.createCampaign", time.Now().UTC(), "nonce-replay")
+
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createCampaign", false); err != nil {
+		t.Fatalf("expected first request to pass, got %v", err)
+	}
+	req.Body = io.NopCloser(strings.NewReader(`{"requestId":"req-1"}`))
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createCampaign", false); err != ErrUnauthorized {
+		t.Fatalf("expected replayed nonce to be unauthorized, got %v", err)
+	}
+}
+
+func TestAuthorizeRequestRejectsMismatchedOperation(t *testing.T) {
+	gateway := NewGateway(Config{TrustedProxyHMACSecret: "test-secret"})
+	req := httptest.NewRequest(http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", strings.NewReader(`{"requestId":"req-1"}`))
+	req.Header.Set(HeaderActorDID, "did:plc:alice")
+	req.Header.Set(HeaderPermissionSets, GovernanceOperator)
+	signRequest(t, req, "test-secret", "app.cerulia.rpc.createCampaign", time.Now().UTC(), "nonce-op")
+
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createSessionDraft", false); err != ErrUnauthorized {
+		t.Fatalf("expected mismatched operation to be unauthorized, got %v", err)
+	}
+}
+
+func TestAuthorizeRequestRejectsExpiredTimestamp(t *testing.T) {
+	gateway := NewGateway(Config{TrustedProxyHMACSecret: "test-secret", TrustedProxyMaxSkew: time.Minute})
+	req := httptest.NewRequest(http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", strings.NewReader(`{"requestId":"req-1"}`))
+	req.Header.Set(HeaderActorDID, "did:plc:alice")
+	req.Header.Set(HeaderPermissionSets, CoreWriter)
+	signRequest(t, req, "test-secret", "app.cerulia.rpc.createCampaign", time.Now().UTC().Add(-2*time.Minute), "nonce-expired")
+
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createCampaign", false); err != ErrUnauthorized {
+		t.Fatalf("expected expired timestamp to be unauthorized, got %v", err)
+	}
+}
+
+func TestAuthorizeRequestRejectsBodyTampering(t *testing.T) {
+	gateway := NewGateway(Config{TrustedProxyHMACSecret: "test-secret"})
+	req := httptest.NewRequest(http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", strings.NewReader(`{"requestId":"req-1"}`))
+	req.Header.Set(HeaderActorDID, "did:plc:alice")
+	req.Header.Set(HeaderPermissionSets, CoreWriter)
+	signRequest(t, req, "test-secret", "app.cerulia.rpc.createCampaign", time.Now().UTC(), "nonce-body")
+	req.Body = io.NopCloser(strings.NewReader(`{"requestId":"req-2"}`))
+
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createCampaign", false); err != ErrUnauthorized {
+		t.Fatalf("expected body tampering to be unauthorized, got %v", err)
+	}
+}
+
+func signRequest(t *testing.T, req *http.Request, secret string, operationNSID string, timestamp time.Time, nonce string) {
+	t.Helper()
+	stamp := strconvFormatInt(timestamp.Unix())
+	req.Header.Set(HeaderAuthTimestamp, stamp)
+	req.Header.Set(HeaderAuthNonce, nonce)
+	subject := Subject{
+		ActorDID:       strings.TrimSpace(req.Header.Get(HeaderActorDID)),
+		PermissionSets: parsePermissionSets(req.Header.Get(HeaderPermissionSets)),
+	}
+	canonical, err := canonicalSignaturePayload(req, subject, operationNSID, stamp, nonce)
+	if err != nil {
+		t.Fatalf("canonical signature payload: %v", err)
+	}
+	mac := hmac.New(sha256.New, []byte(secret))
+	if _, err := mac.Write([]byte(canonical)); err != nil {
+		t.Fatalf("sign request: %v", err)
+	}
+	req.Header.Set(HeaderAuthSignature, hex.EncodeToString(mac.Sum(nil)))
+}
+
+func strconvFormatInt(value int64) string {
+	return strconv.FormatInt(value, 10)
 }

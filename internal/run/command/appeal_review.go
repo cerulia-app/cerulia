@@ -184,11 +184,7 @@ func (service *Service) EscalateAppeal(ctx context.Context, actorDid string, inp
 		if err != nil {
 			return ledger.MutationAck{}, err
 		}
-		authorityActorDid, err := refRepoDID(appealCase.SessionRef)
-		if err != nil {
-			return ledger.MutationAck{}, err
-		}
-		if !sameActor(actorDid, authorityActorDid) && !sameActor(actorDid, authorityModel.ControllerDids...) && !sameActor(actorDid, authorityModel.RecoveryControllerDids...) {
+		if !sameActor(actorDid, authorityModel.ControllerDids...) && !sameActor(actorDid, authorityModel.RecoveryControllerDids...) {
 			return ledger.MutationAck{}, ErrForbidden
 		}
 		if appealCase.Status == "recovery-review" && appealCase.EscalatedAt != nil && appealCase.ResolvedAt == nil && appealCase.WithdrawnAt == nil {

@@ -4,6 +4,8 @@
 
 secret payload と disclosure workflow は continuity core の必須要件ではない。この文書で扱うのは、optional extension が秘匿 data と後公開を on-platform で扱いたい場合だけである。
 
+`AUTH_TRUSTED_PROXY_HMAC_SECRET` のような transport/auth 用の runtime secret は、この disclosure extension とは別系統で扱う。audience や secret-envelope の payload secret と混同しない。
+
 ## core との境界
 
 - core は publication と retire を扱う

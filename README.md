@@ -46,9 +46,9 @@ scripts/
 4. contract artifact を出す場合は `go run ./cmd/contracts -out .artifacts/contracts` を実行する
 5. PowerShell では `./scripts/dev.ps1`、もしくは直接 `go run ./cmd/api` で起動する
 6. `http://localhost:8080/healthz` と `http://localhost:8080/readyz` を確認する
-7. XRPC を叩く場合は `X-Cerulia-Actor-Did` と `X-Cerulia-Permission-Sets` を付ける
+7. ローカル直叩きでは `APP_ENV=development` のまま `X-Cerulia-Actor-Did` と `X-Cerulia-Permission-Sets` を付ける。deployed 環境では trusted proxy が `X-Cerulia-Auth-Timestamp`、`X-Cerulia-Auth-Nonce`、`X-Cerulia-Auth-Signature` を付与する前提にする
 
-デフォルトでは `DATABASE_URL` が空なら DB 接続なしで起動します。Neon dev branch を使う場合は `DATABASE_URL` に接続文字列を入れてください。オフライン検証や CI 向けに、Docker Compose の `local-db` プロファイルも用意しています。
+デフォルトではローカルの `APP_ENV=development` で `DATABASE_URL` が空なら DB 接続なしで起動します。Cloud Run などの deployed 環境では `APP_ENV` を明示し、API は `AUTH_TRUSTED_PROXY_HMAC_SECRET` と DB 接続がないと起動しません。Neon dev branch を使う場合は `DATABASE_URL` に接続文字列を入れてください。オフライン検証や CI 向けに、Docker Compose の `local-db` プロファイルも用意しています。
 
 運用前提では、API は `DATABASE_URL_POOLED`、migration は `DATABASE_URL_DIRECT` を優先して読みます。ローカルでは `DATABASE_URL` 1 本でも動作します。
 

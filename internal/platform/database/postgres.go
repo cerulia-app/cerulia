@@ -14,6 +14,7 @@ import (
 )
 
 const BaselineMigration = "0001_phase0_ledger.sql"
+const CurrentSchemaMigration = "0002_core_records.sql"
 
 var ErrDisabled = errors.New("database disabled")
 

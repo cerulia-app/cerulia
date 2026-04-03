@@ -63,7 +63,7 @@ func (service *Service) GetCharacterHome(ctx context.Context, actorDid string, o
 	if err != nil {
 		return CharacterHomeView{}, err
 	}
-	publications, err := service.publicationSummaries(ctx, "", "", "owner-steward", true, actorDid)
+	publications, err := service.publicationSummaries(ctx, "", "", "owner-steward", false, actorDid)
 	if err != nil && !errors.Is(err, store.ErrNotFound) {
 		return CharacterHomeView{}, err
 	}
@@ -255,7 +255,11 @@ func (service *Service) GetCampaignView(ctx context.Context, actorDid string, ca
 			activeBranches = append(activeBranches, branch)
 		}
 		view.ActiveBranches = activeBranches
-		view.ArchivedCounts = &ArchivedCounts{Episodes: 0, Publications: countRetiredPublications(publishedArtifacts)}
+		archivedPublications, err := service.campaignRetiredPublicationCount(ctx, campaignRef, actorDid)
+		if err != nil {
+			return CampaignView{}, err
+		}
+		view.ArchivedCounts = &ArchivedCounts{Episodes: 0, Publications: archivedPublications}
 	}
 
 	return view, nil
@@ -347,7 +351,6 @@ func (service *Service) ExportServiceLog(ctx context.Context, governingRef strin
 			EmittedRecordRefs: append([]string(nil), entry.EmittedRecordRefs...),
 			ReasonCode:        entry.ReasonCode,
 			Message:           entry.Message,
-			RawPayload:        jsonRaw(entry.RawPayload),
 		})
 	}
 	if len(items) == 0 {

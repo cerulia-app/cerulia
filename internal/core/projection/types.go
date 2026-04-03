@@ -132,5 +132,4 @@ type ServiceLogRow struct {
 	EmittedRecordRefs []string  `json:"emittedRecordRefs,omitempty"`
 	ReasonCode        string    `json:"reasonCode,omitempty"`
 	Message           string    `json:"message,omitempty"`
-	RawPayload        any       `json:"rawPayload,omitempty"`
 }

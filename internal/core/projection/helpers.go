@@ -234,7 +234,7 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 }
 
 func (service *Service) campaignPublishedArtifacts(ctx context.Context, campaignRef string, mode string, actorDid string) ([]PublicationSummary, error) {
-	publications, err := service.publicationSummaries(ctx, "", "", mode, mode != "public", actorDid)
+	publications, err := service.publicationSummaries(ctx, "", "", mode, false, actorDid)
 	if err != nil && !errors.Is(err, store.ErrNotFound) {
 		return nil, err
 	}
@@ -259,6 +259,37 @@ func (service *Service) campaignPublishedArtifacts(ctx context.Context, campaign
 		}
 	}
 	return items, nil
+}
+
+func (service *Service) campaignRetiredPublicationCount(ctx context.Context, campaignRef string, actorDid string) (int, error) {
+	publications, err := service.publicationSummaries(ctx, "", "", "owner-steward", true, actorDid)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		return 0, err
+	}
+	episodes, err := service.currentEpisodes(ctx)
+	if err != nil {
+		return 0, err
+	}
+	episodeRefs := map[string]struct{}{}
+	for _, episode := range episodes {
+		if episode.CampaignRef == campaignRef {
+			episodeRefs[episode.CharacterEpisodeRef] = struct{}{}
+		}
+	}
+	count := 0
+	for _, publication := range publications {
+		if publication.Status != "retired" {
+			continue
+		}
+		if publication.SubjectRef == campaignRef {
+			count++
+			continue
+		}
+		if _, ok := episodeRefs[publication.SubjectRef]; ok {
+			count++
+		}
+	}
+	return count, nil
 }
 
 func (service *Service) campaignSummary(ctx context.Context, ref string, includePrivate bool) (CampaignSummary, error) {

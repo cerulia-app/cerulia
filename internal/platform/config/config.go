@@ -17,8 +17,14 @@ type Config struct {
 	LogLevel        slog.Level
 	ShutdownTimeout time.Duration
 	MigrationsDir   string
+	Auth            AuthConfig
 	Database        DatabaseConfig
 	Blob            BlobConfig
+}
+
+type AuthConfig struct {
+	TrustedProxyHMACSecret string
+	TrustedProxyMaxSkew    time.Duration
 }
 
 type DatabaseConfig struct {
@@ -42,11 +48,15 @@ type BlobConfig struct {
 
 func Load() (Config, error) {
 	cfg := Config{
-		AppEnv:          envOrDefault("APP_ENV", "development"),
+		AppEnv:          envOrDefault("APP_ENV", defaultAppEnv()),
 		HTTPAddr:        envOrDefault("HTTP_ADDR", ":8080"),
 		PublicBaseURL:   envOrDefault("PUBLIC_BASE_URL", "http://localhost:8080"),
 		ShutdownTimeout: 10 * time.Second,
 		MigrationsDir:   envOrDefault("MIGRATIONS_DIR", "migrations"),
+		Auth: AuthConfig{
+			TrustedProxyHMACSecret: strings.TrimSpace(os.Getenv("AUTH_TRUSTED_PROXY_HMAC_SECRET")),
+			TrustedProxyMaxSkew:    5 * time.Minute,
+		},
 		Database: DatabaseConfig{
 			URL:         firstNonEmptyEnv("DATABASE_URL_POOLED", "DATABASE_URL"),
 			DirectURL:   firstNonEmptyEnv("DATABASE_URL_DIRECT", "DATABASE_URL"),
@@ -67,6 +77,9 @@ func Load() (Config, error) {
 	}
 
 	var errs []error
+	if err := validateAppEnv(cfg.AppEnv); err != nil {
+		errs = append(errs, fmt.Errorf("APP_ENV: %w", err))
+	}
 
 	level, err := parseLogLevel(envOrDefault("LOG_LEVEL", "info"))
 	if err != nil {
@@ -76,6 +89,7 @@ func Load() (Config, error) {
 	}
 
 	cfg.ShutdownTimeout, errs = parseDurationEnv("SHUTDOWN_TIMEOUT", cfg.ShutdownTimeout, errs)
+	cfg.Auth.TrustedProxyMaxSkew, errs = parseDurationEnv("AUTH_TRUSTED_PROXY_MAX_SKEW", cfg.Auth.TrustedProxyMaxSkew, errs)
 	cfg.Database.PingTimeout, errs = parseDurationEnv("DATABASE_PING_TIMEOUT", cfg.Database.PingTimeout, errs)
 	cfg.Database.MaxConns, errs = parseInt32Env("DATABASE_MAX_CONNS", cfg.Database.MaxConns, errs)
 	cfg.Database.MinConns, errs = parseInt32Env("DATABASE_MIN_CONNS", cfg.Database.MinConns, errs)
@@ -85,6 +99,22 @@ func Load() (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func defaultAppEnv() string {
+	if strings.TrimSpace(os.Getenv("K_SERVICE")) != "" || strings.TrimSpace(os.Getenv("K_REVISION")) != "" || strings.TrimSpace(os.Getenv("CLOUD_RUN_JOB")) != "" {
+		return "production"
+	}
+	return "development"
+}
+
+func validateAppEnv(value string) error {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "development", "test", "staging", "production":
+		return nil
+	default:
+		return fmt.Errorf("unsupported app env %q", value)
+	}
 }
 
 func envOrDefault(key string, fallback string) string {

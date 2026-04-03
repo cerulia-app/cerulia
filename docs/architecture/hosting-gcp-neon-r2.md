@@ -244,14 +244,14 @@ env 名は実装時に多少調整してよいが、役割は固定する。
 
 | 種別 | 例 |
 | --- | --- |
-| app runtime | `APP_ENV`, `PUBLIC_BASE_URL`, `INTERNAL_API_BASE_URL` |
+| app runtime | `APP_ENV`, `PUBLIC_BASE_URL`, `INTERNAL_API_BASE_URL`, `AUTH_TRUSTED_PROXY_HMAC_SECRET`, `AUTH_TRUSTED_PROXY_MAX_SKEW` |
 | Neon pooled | `DATABASE_URL_POOLED` |
 | Neon direct | `DATABASE_URL_DIRECT` |
 | R2 | `R2_ACCOUNT_ID`, `R2_ASSET_BUCKET`, `R2_SECRET_BUCKET`, `R2_AUDIT_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
 | OAuth / auth | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `SESSION_COOKIE_SECRET` |
 | observability | `OTEL_EXPORTER_OTLP_ENDPOINT`, `LOG_LEVEL` |
 
-`DATABASE_URL_DIRECT` は migration と backup job に限定し、通常の app traffic に使わない。
+`DATABASE_URL_DIRECT` は migration と backup job に限定し、通常の app traffic に使わない。`APP_ENV` は Cloud Run revision ごとに明示し、`api` では `AUTH_TRUSTED_PROXY_HMAC_SECRET` を Secret Manager から注入する。
 
 ## 既定の runtime サイズ
 

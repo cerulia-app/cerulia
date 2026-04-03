@@ -204,6 +204,7 @@ func (service *Service) executeMutation(ctx context.Context, governingRef string
 	if err != nil {
 		return ledger.MutationAck{}, fmt.Errorf("marshal payload: %w", err)
 	}
+	redactedPayload := ledger.RedactPayload(rawPayload)
 
 	key := ledger.IdempotencyKey{
 		GoverningRef:  governingRef,
@@ -244,7 +245,7 @@ func (service *Service) executeMutation(ctx context.Context, governingRef string
 			EmittedRecordRefs: append([]string(nil), ack.EmittedRecordRefs...),
 			CreatedAt:         now,
 			RawPayload:        append(json.RawMessage(nil), rawPayload...),
-			RedactedPayload:   append(json.RawMessage(nil), rawPayload...),
+			RedactedPayload:   append(json.RawMessage(nil), redactedPayload...),
 		}); err != nil {
 			return err
 		}
@@ -252,6 +253,9 @@ func (service *Service) executeMutation(ctx context.Context, governingRef string
 		return nil
 	})
 	if err != nil {
+		if errors.Is(err, store.ErrConflict) {
+			return ledger.MutationAck{RequestID: requestID, ResultKind: ledger.ResultRebaseNeeded, Message: err.Error()}, nil
+		}
 		return ledger.MutationAck{}, err
 	}
 

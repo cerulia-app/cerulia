@@ -1,14 +1,27 @@
 package authz
 
 import (
+	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"errors"
+	"io"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
 	HeaderActorDID        = "X-Cerulia-Actor-Did"
 	HeaderPermissionSets  = "X-Cerulia-Permission-Sets"
+	HeaderAuthTimestamp   = "X-Cerulia-Auth-Timestamp"
+	HeaderAuthNonce       = "X-Cerulia-Auth-Nonce"
+	HeaderAuthSignature   = "X-Cerulia-Auth-Signature"
 	CoreReader            = "app.cerulia.authCoreReader"
 	CoreWriter            = "app.cerulia.authCoreWriter"
 	CorePublicationWriter = "app.cerulia.authCorePublicationOperator"
@@ -49,9 +62,29 @@ func (subject Subject) HasAnyPermissionSet(permissionSets ...string) bool {
 
 type Gateway struct {
 	requiredBundlesByOperation map[string][]string
+	trustedProxyHMACSecret     string
+	trustedProxyMaxSkew        time.Duration
+	allowInsecureDirect        bool
+	mu                         sync.Mutex
+	usedNonces                 map[string]time.Time
 }
 
-func NewGateway() *Gateway {
+type Config struct {
+	TrustedProxyHMACSecret string
+	TrustedProxyMaxSkew    time.Duration
+	AllowInsecureDirect    bool
+}
+
+func NewGateway(configs ...Config) *Gateway {
+	config := Config{
+		TrustedProxyMaxSkew: 5 * time.Minute,
+	}
+	if len(configs) > 0 {
+		config = configs[0]
+		if config.TrustedProxyMaxSkew <= 0 {
+			config.TrustedProxyMaxSkew = 5 * time.Minute
+		}
+	}
 	return &Gateway{
 		requiredBundlesByOperation: map[string][]string{
 			"app.cerulia.rpc.getCharacterHome":           {CoreReader},
@@ -82,11 +115,20 @@ func NewGateway() *Gateway {
 			"app.cerulia.rpc.moderateMembership":         {GovernanceOperator},
 			"app.cerulia.rpc.publishSessionLink":         {PublicationOperator},
 			"app.cerulia.rpc.retireSessionLink":          {PublicationOperator},
+			"app.cerulia.rpc.createCharacterInstance":    {GovernanceOperator},
+			"app.cerulia.rpc.updateCharacterState":       {SessionParticipant, GovernanceOperator},
+			"app.cerulia.rpc.createSecretEnvelope":       {SessionParticipant, GovernanceOperator},
+			"app.cerulia.rpc.sendMessage":                {SessionParticipant, GovernanceOperator},
+			"app.cerulia.rpc.rollDice":                   {SessionParticipant, GovernanceOperator},
+			"app.cerulia.rpc.submitAction":               {GovernanceOperator},
 			"app.cerulia.rpc.submitAppeal":               {AppealOriginator, AppealResolver},
 			"app.cerulia.rpc.withdrawAppeal":             {AppealOriginator, AppealResolver},
 			"app.cerulia.rpc.reviewAppeal":               {AppealResolver},
 			"app.cerulia.rpc.escalateAppeal":             {AppealResolver},
 			"app.cerulia.rpc.resolveAppeal":              {AppealResolver},
+			"app.cerulia.rpc.revealSubject":              {GovernanceOperator},
+			"app.cerulia.rpc.redactRecord":               {GovernanceOperator},
+			"app.cerulia.rpc.rotateAudienceKey":          {GovernanceOperator},
 			"app.cerulia.rpc.attachRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.retireRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.importCharacterSheet":       {CoreWriter},
@@ -101,6 +143,10 @@ func NewGateway() *Gateway {
 			"app.cerulia.rpc.grantReuse":                 {ReuseOperator},
 			"app.cerulia.rpc.revokeReuse":                {ReuseOperator},
 		},
+		trustedProxyHMACSecret: strings.TrimSpace(config.TrustedProxyHMACSecret),
+		trustedProxyMaxSkew:    config.TrustedProxyMaxSkew,
+		allowInsecureDirect:    config.AllowInsecureDirect,
+		usedNonces:             map[string]time.Time{},
 	}
 }
 
@@ -121,6 +167,9 @@ func (gateway *Gateway) AuthorizeRequest(request *http.Request, operationNSID st
 		}
 		return Subject{}, ErrUnauthorized
 	}
+	if !gateway.verifyRequest(request, subject, operationNSID) {
+		return Subject{}, ErrUnauthorized
+	}
 	if allowAnonymous {
 		return subject, nil
 	}
@@ -135,6 +184,110 @@ func (gateway *Gateway) AuthorizeRequest(request *http.Request, operationNSID st
 	return Subject{}, ErrForbidden
 }
 
+func (gateway *Gateway) verifyRequest(request *http.Request, subject Subject, operationNSID string) bool {
+	if subject.ActorDID == "" {
+		return false
+	}
+	if gateway.allowInsecureDirect && gateway.trustedProxyHMACSecret == "" {
+		return true
+	}
+	if gateway.trustedProxyHMACSecret == "" {
+		return false
+	}
+	timestampRaw := strings.TrimSpace(request.Header.Get(HeaderAuthTimestamp))
+	nonce := strings.TrimSpace(request.Header.Get(HeaderAuthNonce))
+	signatureRaw := strings.TrimSpace(request.Header.Get(HeaderAuthSignature))
+	if timestampRaw == "" || nonce == "" || signatureRaw == "" {
+		return false
+	}
+	timestampUnix, err := strconv.ParseInt(timestampRaw, 10, 64)
+	if err != nil {
+		return false
+	}
+	timestamp := time.Unix(timestampUnix, 0).UTC()
+	now := time.Now().UTC()
+	if gateway.trustedProxyMaxSkew > 0 {
+		delta := now.Sub(timestamp)
+		if delta < 0 {
+			delta = -delta
+		}
+		if delta > gateway.trustedProxyMaxSkew {
+			return false
+		}
+	}
+	canonical, err := canonicalSignaturePayload(request, subject, operationNSID, timestampRaw, nonce)
+	if err != nil {
+		return false
+	}
+	mac := hmac.New(sha256.New, []byte(gateway.trustedProxyHMACSecret))
+	_, _ = mac.Write([]byte(canonical))
+	expected := mac.Sum(nil)
+	provided, err := hex.DecodeString(signatureRaw)
+	if err != nil {
+		return false
+	}
+	if subtle.ConstantTimeCompare(expected, provided) != 1 {
+		return false
+	}
+	return gateway.consumeNonce(subject.ActorDID, nonce, now)
+}
+
+func canonicalSignaturePayload(request *http.Request, subject Subject, operationNSID string, timestampRaw string, nonce string) (string, error) {
+	bodyDigest, err := requestBodyDigest(request)
+	if err != nil {
+		return "", err
+	}
+	canonicalBundles := canonicalPermissionSetList(subject.PermissionSets)
+	return strings.Join([]string{
+		subject.ActorDID,
+		strings.Join(canonicalBundles, ","),
+		timestampRaw,
+		nonce,
+		operationNSID,
+		request.Method,
+		request.URL.EscapedPath(),
+		request.URL.RawQuery,
+		bodyDigest,
+	}, "\n"), nil
+}
+
+func requestBodyDigest(request *http.Request) (string, error) {
+	var body []byte
+	if request.Body != nil {
+		readBody, err := io.ReadAll(request.Body)
+		if err != nil {
+			return "", err
+		}
+		body = readBody
+		request.Body = io.NopCloser(bytes.NewReader(body))
+	}
+	sum := sha256.Sum256(body)
+	return hex.EncodeToString(sum[:]), nil
+}
+
+func (gateway *Gateway) consumeNonce(actorDID string, nonce string, now time.Time) bool {
+	if nonce == "" {
+		return false
+	}
+	ttl := gateway.trustedProxyMaxSkew
+	if ttl <= 0 {
+		ttl = 5 * time.Minute
+	}
+	gateway.mu.Lock()
+	defer gateway.mu.Unlock()
+	for key, expiresAt := range gateway.usedNonces {
+		if !expiresAt.After(now) {
+			delete(gateway.usedNonces, key)
+		}
+	}
+	key := actorDID + "\n" + nonce
+	if expiresAt, ok := gateway.usedNonces[key]; ok && expiresAt.After(now) {
+		return false
+	}
+	gateway.usedNonces[key] = now.Add(ttl)
+	return true
+}
+
 func parsePermissionSets(raw string) map[string]struct{} {
 	items := map[string]struct{}{}
 	for _, part := range strings.Split(raw, ",") {
@@ -144,5 +297,14 @@ func parsePermissionSets(raw string) map[string]struct{} {
 		}
 		items[value] = struct{}{}
 	}
+	return items
+}
+
+func canonicalPermissionSetList(values map[string]struct{}) []string {
+	items := make([]string, 0, len(values))
+	for value := range values {
+		items = append(items, value)
+	}
+	sort.Strings(items)
 	return items
 }

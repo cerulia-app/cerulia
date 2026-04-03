@@ -64,6 +64,7 @@ func writeXRPCError(w http.ResponseWriter, statusCode int, shortName string, mes
 func writeXRPCFailure(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, authz.ErrUnauthorized):
+		w.Header().Set("WWW-Authenticate", `Bearer realm="cerulia", error="invalid_token"`)
 		writeXRPCError(w, http.StatusUnauthorized, "Unauthorized", err.Error())
 	case errors.Is(err, authz.ErrForbidden), errors.Is(err, corecommand.ErrForbidden), errors.Is(err, coreprojection.ErrForbidden), errors.Is(err, runcommand.ErrForbidden), errors.Is(err, runprojection.ErrForbidden):
 		writeXRPCError(w, http.StatusForbidden, "Forbidden", err.Error())

@@ -44,10 +44,14 @@ func NewHandler(logger *slog.Logger, cfg config.Config, db *database.DB) http.Ha
 	}
 
 	h := &handler{
-		logger:         logger,
-		config:         cfg,
-		db:             db,
-		auth:           authz.NewGateway(),
+		logger: logger,
+		config: cfg,
+		db:     db,
+		auth: authz.NewGateway(authz.Config{
+			TrustedProxyHMACSecret: cfg.Auth.TrustedProxyHMACSecret,
+			TrustedProxyMaxSkew:    cfg.Auth.TrustedProxyMaxSkew,
+			AllowInsecureDirect:    cfg.AppEnv == "development" || cfg.AppEnv == "test",
+		}),
 		commands:       command.NewService(dataStore),
 		projections:    projection.NewService(dataStore),
 		runCommands:    runcommand.NewService(dataStore),
@@ -139,7 +143,7 @@ func (h *handler) handleReadyz(w http.ResponseWriter, r *http.Request) {
 			h.logger.Warn("readiness check failed", "error", err)
 		} else {
 			response.Checks["database"] = "ok"
-			applied, err := h.db.HasAppliedMigration(r.Context(), database.BaselineMigration)
+			applied, err := h.db.HasAppliedMigration(r.Context(), database.CurrentSchemaMigration)
 			if err != nil {
 				response.Status = "not_ready"
 				response.Checks["migration"] = "error"

@@ -27,6 +27,7 @@ When a task requires design judgment, implementation judgment, tradeoff analysis
 
 - Unless the user explicitly says otherwise, commit autonomously when the smallest meaningful implementation unit is complete.
 - When the smallest meaningful implementation unit is complete, make a git commit.
+- If work is organized into roadmap sprints or similarly named milestones, treat each sprint as its own smallest meaningful implementation unit. Do not batch multiple completed sprints into one review or one commit.
 - Never use whole-worktree staging or commit shortcuts such as `git add .`, `git add -A`, or `git commit -a`.
 - Always specify the exact target files when staging for a commit, and keep each commit limited to those files.
 - Use Conventional Commits with an English prefix and a Japanese subject, for example: `feat: ルータ初期化を追加`
@@ -41,6 +42,7 @@ When a task requires design judgment, implementation judgment, tradeoff analysis
 - Treat review and commit as the required completion hook for each implementation task unless the user explicitly says otherwise.
 - Before declaring an implementation task complete, run the review for that unit with the `cerulia-implementation-review` skill, then make the commit for that same unit.
 - Do not treat an implementation task as finished until both steps have been completed.
+- If multiple sprints are requested in one pass, finish the completion hook for sprint N before starting sprint N+1. If changes from multiple sprints accumulate in one worktree, split them back into sprint-sized units before review and commit.
 
 ## Cerulia Invariants
 

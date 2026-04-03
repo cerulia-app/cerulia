@@ -25,6 +25,10 @@ func main() {
 		slog.Error("load config", "error", err)
 		os.Exit(1)
 	}
+	if cfg.AppEnv != "development" && cfg.AppEnv != "test" && cfg.Auth.TrustedProxyHMACSecret == "" {
+		slog.Error("missing trusted proxy auth secret", "appEnv", cfg.AppEnv)
+		os.Exit(1)
+	}
 
 	logger := logging.New(cfg.LogLevel)
 
@@ -34,6 +38,10 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+	if cfg.AppEnv != "development" && cfg.AppEnv != "test" && !db.Enabled() {
+		logger.Error("database is required outside local development", "appEnv", cfg.AppEnv)
+		os.Exit(1)
+	}
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,

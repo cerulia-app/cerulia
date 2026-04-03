@@ -1,9 +1,10 @@
 package store
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
-	"unicode"
 )
 
 type RefParts struct {
@@ -32,6 +33,9 @@ func ParseRef(ref string) (RefParts, error) {
 	if parsed.RepoDID == "" || parsed.Collection == "" || parsed.RecordKey == "" {
 		return RefParts{}, fmt.Errorf("invalid ref %q", ref)
 	}
+	if err := ValidateRecordKey(parsed.RecordKey); err != nil {
+		return RefParts{}, fmt.Errorf("invalid ref %q", ref)
+	}
 
 	return parsed, nil
 }
@@ -41,35 +45,39 @@ func NormalizeRecordKey(raw string) string {
 	if trimmed == "" {
 		return "main"
 	}
+	if err := ValidateRecordKey(trimmed); err == nil {
+		return trimmed
+	}
+	sum := sha256.Sum256([]byte(trimmed))
+	return "rk-" + hex.EncodeToString(sum[:12])
+}
 
-	var builder strings.Builder
-	lastDash := false
+func ValidateRecordKey(raw string) error {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || len(trimmed) > 512 {
+		return fmt.Errorf("invalid record key")
+	}
 	for _, r := range trimmed {
-		switch {
-		case unicode.IsLetter(r) || unicode.IsDigit(r):
-			builder.WriteRune(unicode.ToLower(r))
-			lastDash = false
-		case r == '-' || r == '_':
-			if lastDash {
-				continue
-			}
-			builder.WriteByte('-')
-			lastDash = true
-		default:
-			if lastDash {
-				continue
-			}
-			builder.WriteByte('-')
-			lastDash = true
+		if !validRecordKeyRune(r) {
+			return fmt.Errorf("invalid record key")
 		}
 	}
+	return nil
+}
 
-	normalized := strings.Trim(builder.String(), "-")
-	if normalized == "" {
-		return "main"
+func validRecordKeyRune(r rune) bool {
+	switch {
+	case r >= 'a' && r <= 'z':
+		return true
+	case r >= 'A' && r <= 'Z':
+		return true
+	case r >= '0' && r <= '9':
+		return true
+	case r == '-', r == '_', r == '.', r == ':', r == '~':
+		return true
+	default:
+		return false
 	}
-
-	return normalized
 }
 
 func RecordKey(ref string) string {

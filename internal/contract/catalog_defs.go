@@ -86,6 +86,7 @@ func defsCatalog() map[string]map[string]any {
 		"membershipRole":             {"gm", "player", "viewer", "spectator"},
 		"membershipStatus":           {"invited", "joined", "left", "removed", "banned"},
 		"audienceKind":               {"role-based", "explicit", "derived"},
+		"audienceStatus":             {"active", "rotating", "retired"},
 		"grantStatus":                {"pending", "active", "revoked"},
 		"mutationResultKind":         {"accepted", "rejected", "rebase-needed", "manual-review"},
 		"tokenFacetKind":             {"public-facet", "secret-facet-envelope", "controller-dids", "visibility-mode"},
@@ -239,7 +240,6 @@ func defsCatalog() map[string]map[string]any {
 			"emittedRecordRefs": arrayDef(refDef("app.cerulia.defs#subjectRef")),
 			"reasonCode":        stringDef(""),
 			"message":           stringDef(""),
-			"rawPayload":        map[string]any{"type": "unknown"},
 		},
 	)
 	defs["mutationAck"] = objectDef(
