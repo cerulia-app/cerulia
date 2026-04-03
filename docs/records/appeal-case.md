@@ -67,7 +67,7 @@ appeal の起票は affected participant または controller が行ってよい
 - targetKind が membership のときは targetRequestId を必須にし、争点になっている membership change の requestId を pin する。
 - affectedActorDid はこの appeal の直接の当事者を指し、通常 view の closed case 可視性は openedByDid と affectedActorDid を基準にしてよい。
 - caseRevision は submitAppeal で 1 から始め、withdrawAppeal、escalateAppeal、resolveAppeal の compare-and-set 更新ごとに増やす。
-- reviewRevision は submitAppeal で 0 から始め、accepted された reviewAppeal ごとに 1 ずつ増やす。
+- reviewRevision は submitAppeal で 0 から始め、accepted された appeal-review-entry append ごとに 1 ずつ増やす。
 - authoritySnapshotRequestId は appeal open 時点の session-authority.requestId を固定し、controllerEligibleDids と controllerTransferPolicyKind の provenance に使う。
 - controllerTransferPolicyKind は appeal open 時点の transferPolicy kind を immutable snapshot として固定する。
 - requestId は submitAppeal で確定した opening anchor とし、appeal-case の起票要求を指す immutable requestId として扱う。
@@ -92,7 +92,7 @@ appeal の起票は affected participant または controller が行ってよい
 - quorum-impossible または deadline-expired に達した case は recovery-review へ速やかに handoff しなければならず、authority service が自動で escalateAppeal を実行してよい。explicit な escalateAppeal はその idempotent fallback として扱う。
 - handoffSummary は blocked から recovery-review へ上げた participant-facing の説明を持ち、通常 view で escalatedAt と併せて返してよい。
 - resultSummary は participant-facing の最終説明に限定し、accepted、denied、withdrawn の terminal outcome だけに使う。
-- reviewOutcomeSummary は resolver-facing の redacted snapshot であり、escalateAppeal または resolveAppeal の時点で latest effective approve / deny と固定の attribution policy から計算して凍結してよい。participant view には出さず、resolver view では reviewerDid と effective decision だけを返し、audit view では raw appeal-review-entry を使う。
+- reviewOutcomeSummary は resolver-facing の redacted aggregate summary である。resolver view では persisted な snapshot があればそれを返し、snapshot がまだ無い controller-review 中は current reviewRevision に対する latest effective approve / deny から live aggregate を補助表示してよい。escalateAppeal または resolveAppeal は、その時点の aggregate string を appeal-case に固定して凍結してよい。participant view には出さず、audit view では raw appeal-review-entry を使う。
 - listAppealCases の participant view では blockedReasonCode、nextResolverKind、handoffSummary、resultSummary を返し、resolver view ではそれに加えて reviewOutcomeSummary、controllerReviewDueAt、recoveryAuthorityRequestId を返してよい。
 - detailEnvelopeRef は audit-only の詳細や controller ごとの補足説明を指してよい。
 - withdraw は review action の撤回であり、appeal-case 自体の取り下げは withdrawAppeal で withdrawn 状態に遷移させる。

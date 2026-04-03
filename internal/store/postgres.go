@@ -393,15 +393,19 @@ func (tx *postgresTx) PutIdempotency(ctx context.Context, key ledger.Idempotency
 }
 
 func (tx *postgresTx) PutStable(ctx context.Context, record StableRecord) error {
-	_, err := tx.tx.Exec(ctx, `
+	result, err := tx.tx.Exec(ctx, `
 		INSERT INTO cerulia_stable_records (
 			record_ref, collection_nsid, repo_did, record_key, request_id, revision, body, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		ON CONFLICT (record_ref)
 		DO UPDATE SET request_id = EXCLUDED.request_id, revision = EXCLUDED.revision, body = EXCLUDED.body, updated_at = EXCLUDED.updated_at
+		WHERE cerulia_stable_records.revision = EXCLUDED.revision - 1
 	`, record.Ref, record.Collection, record.RepoDID, record.RecordKey, record.RequestID, record.Revision, record.Body, record.CreatedAt, record.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("upsert stable record %s: %w", record.Ref, err)
+	}
+	if result.RowsAffected() == 0 {
+		return ErrConflict
 	}
 
 	return nil

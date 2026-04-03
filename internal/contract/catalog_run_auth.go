@@ -41,6 +41,9 @@ func runAuthCatalog() map[string]map[string]any {
 			"app.cerulia.rpc.listAppealCases",
 			"app.cerulia.rpc.submitAppeal",
 			"app.cerulia.rpc.withdrawAppeal",
+			"app.cerulia.rpc.reviewAppeal",
+			"app.cerulia.rpc.escalateAppeal",
+			"app.cerulia.rpc.resolveAppeal",
 		),
 	}
 }

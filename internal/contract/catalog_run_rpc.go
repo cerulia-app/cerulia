@@ -35,7 +35,7 @@ func runRPCCatalog() map[string]map[string]any {
 				"activeSceneRef":      refDef("app.cerulia.defs#sceneRef"),
 				"handoutCount":        integerDef(),
 				"appealCount":         integerDef(),
-				"publicationCarriers": arrayDef(sessionPublicationSummaryObject()),
+				"publicationCarriers": arrayDef(sessionPublicationPublicSummaryObject()),
 			}), []string{"NotFound"}),
 		}),
 		"lexicon/app.cerulia.rpc.getGovernanceView.json": document("app.cerulia.rpc.getGovernanceView", map[string]any{
@@ -46,19 +46,8 @@ func runRPCCatalog() map[string]map[string]any {
 				"authority":           governanceAuthorityObject(),
 				"memberships":         arrayDef(governanceMembershipObject()),
 				"activeSceneRef":      refDef("app.cerulia.defs#sceneRef"),
-				"publicationCarriers": arrayDef(sessionPublicationSummaryObject()),
-				"pendingAppeals": arrayDef(objectDef(nil, map[string]any{
-					"appealCaseRef":         refDef("app.cerulia.defs#appealCaseRef"),
-					"targetKind":            refDef("app.cerulia.defs#appealTargetKind"),
-					"targetRef":             refDef("app.cerulia.defs#targetRef"),
-					"requestedOutcomeKind":  refDef("app.cerulia.defs#appealRequestedOutcomeKind"),
-					"status":                refDef("app.cerulia.defs#appealStatus"),
-					"nextResolverKind":      refDef("app.cerulia.defs#appealNextResolverKind"),
-					"openedAt":              refDef("app.cerulia.defs#datetime"),
-					"resolvedAt":            refDef("app.cerulia.defs#datetime"),
-					"reviewOutcomeSummary":  stringDef(""),
-					"controllerReviewDueAt": refDef("app.cerulia.defs#datetime"),
-				})),
+				"publicationCarriers": arrayDef(sessionPublicationGovernanceSummaryObject()),
+				"pendingAppeals":      arrayDef(appealResolverSummaryObject()),
 			}), []string{"NotFound"}),
 		}),
 		"lexicon/app.cerulia.rpc.listSessionPublications.json": document("app.cerulia.rpc.listSessionPublications", map[string]any{
@@ -69,9 +58,11 @@ func runRPCCatalog() map[string]map[string]any {
 				"limit":          integerDef(),
 				"cursor":         refDef("app.cerulia.defs#cursor"),
 			}, objectDef([]string{"items"}, map[string]any{
-				"items":  arrayDef(sessionPublicationSummaryObject()),
+				"items":  arrayDef(unionRefs("app.cerulia.rpc.listSessionPublications#publicSessionPublicationSummary", "app.cerulia.rpc.listSessionPublications#governanceSessionPublicationSummary")),
 				"cursor": refDef("app.cerulia.defs#cursor"),
 			}), []string{"InvalidRequest", "NotFound"}),
+			"publicSessionPublicationSummary":     sessionPublicationPublicSummaryObject(),
+			"governanceSessionPublicationSummary": sessionPublicationGovernanceSummaryObject(),
 		}),
 		"lexicon/app.cerulia.rpc.listAppealCases.json": document("app.cerulia.rpc.listAppealCases", map[string]any{
 			"main": queryMain([]string{"sessionRef"}, map[string]any{
@@ -81,24 +72,11 @@ func runRPCCatalog() map[string]map[string]any {
 				"limit":      integerDef(),
 				"cursor":     refDef("app.cerulia.defs#cursor"),
 			}, objectDef([]string{"items"}, map[string]any{
-				"items": arrayDef(objectDef([]string{"appealCaseRef", "targetKind", "targetRef", "requestedOutcomeKind", "status", "nextResolverKind", "openedAt"}, map[string]any{
-					"appealCaseRef":              refDef("app.cerulia.defs#appealCaseRef"),
-					"targetKind":                 refDef("app.cerulia.defs#appealTargetKind"),
-					"targetRef":                  refDef("app.cerulia.defs#targetRef"),
-					"requestedOutcomeKind":       refDef("app.cerulia.defs#appealRequestedOutcomeKind"),
-					"status":                     refDef("app.cerulia.defs#appealStatus"),
-					"blockedReasonCode":          refDef("app.cerulia.defs#appealBlockedReason"),
-					"nextResolverKind":           refDef("app.cerulia.defs#appealNextResolverKind"),
-					"openedAt":                   refDef("app.cerulia.defs#datetime"),
-					"resolvedAt":                 refDef("app.cerulia.defs#datetime"),
-					"handoffSummary":             stringDef(""),
-					"resultSummary":              stringDef(""),
-					"reviewOutcomeSummary":       stringDef(""),
-					"controllerReviewDueAt":      refDef("app.cerulia.defs#datetime"),
-					"recoveryAuthorityRequestId": refDef("app.cerulia.defs#requestId"),
-				})),
+				"items":  arrayDef(unionRefs("app.cerulia.rpc.listAppealCases#participantAppealSummary", "app.cerulia.rpc.listAppealCases#resolverAppealSummary")),
 				"cursor": refDef("app.cerulia.defs#cursor"),
 			}), []string{"NotFound"}),
+			"participantAppealSummary": participantAppealSummaryObject(),
+			"resolverAppealSummary":    appealResolverSummaryObject(),
 		}),
 		"lexicon/app.cerulia.rpc.createSessionDraft.json": document("app.cerulia.rpc.createSessionDraft", map[string]any{
 			"main": procedureMain([]string{"sessionId", "title", "visibility", "rulesetNsid", "rulesetManifestRef", "controllerDids", "recoveryControllerDids", "transferPolicy", "expectedRulesetManifestRef", "requestId"}, map[string]any{
@@ -243,6 +221,38 @@ func runRPCCatalog() map[string]map[string]any {
 				"requestId":              refDef("app.cerulia.defs#requestId"),
 			}, mutationAck, commonErrors),
 		}),
+		"lexicon/app.cerulia.rpc.reviewAppeal.json": document("app.cerulia.rpc.reviewAppeal", map[string]any{
+			"main": procedureMain([]string{"appealCaseRef", "reviewPhaseKind", "reviewDecisionKind", "expectedCaseRevision", "expectedReviewRevision", "requestId"}, map[string]any{
+				"appealCaseRef":          refDef("app.cerulia.defs#appealCaseRef"),
+				"reviewPhaseKind":        refDef("app.cerulia.defs#appealReviewPhaseKind"),
+				"reviewDecisionKind":     refDef("app.cerulia.defs#appealReviewDecisionKind"),
+				"expectedCaseRevision":   integerDef(),
+				"expectedReviewRevision": integerDef(),
+				"supersedesRef":          refDef("app.cerulia.defs#appealReviewEntryRef"),
+				"note":                   stringDef(""),
+				"detailEnvelopeRef":      refDef("app.cerulia.defs#detailEnvelopeRef"),
+				"requestId":              refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.escalateAppeal.json": document("app.cerulia.rpc.escalateAppeal", map[string]any{
+			"main": procedureMain([]string{"appealCaseRef", "expectedCaseRevision", "expectedReviewRevision", "requestId"}, map[string]any{
+				"appealCaseRef":          refDef("app.cerulia.defs#appealCaseRef"),
+				"expectedCaseRevision":   integerDef(),
+				"expectedReviewRevision": integerDef(),
+				"handoffSummary":         stringDef(""),
+				"requestId":              refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.resolveAppeal.json": document("app.cerulia.rpc.resolveAppeal", map[string]any{
+			"main": procedureMain([]string{"appealCaseRef", "expectedCaseRevision", "expectedReviewRevision", "decisionKind", "resultSummary", "requestId"}, map[string]any{
+				"appealCaseRef":          refDef("app.cerulia.defs#appealCaseRef"),
+				"expectedCaseRevision":   integerDef(),
+				"expectedReviewRevision": integerDef(),
+				"decisionKind":           enumDef("accepted", "denied"),
+				"resultSummary":          stringDef(""),
+				"requestId":              refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
 	}
 }
 
@@ -314,18 +324,49 @@ func governanceAuthorityObject() map[string]any {
 	})
 }
 
-func sessionPublicationSummaryObject() map[string]any {
+func sessionPublicationPublicSummaryObject() map[string]any {
 	return objectDef([]string{"sessionPublicationRef", "publicationRef", "entryUrl", "preferredSurfaceKind"}, map[string]any{
 		"sessionPublicationRef": refDef("app.cerulia.defs#sessionPublicationRef"),
 		"publicationRef":        refDef("app.cerulia.defs#publicationRef"),
 		"entryUrl":              stringDef("uri"),
 		"replayUrl":             stringDef("uri"),
 		"preferredSurfaceKind":  refDef("app.cerulia.defs#publicationSurfaceKind"),
-		"surfaces":              arrayDef(refDef("app.cerulia.defs#surfaceDescriptor")),
-		"retiredAt":             refDef("app.cerulia.defs#datetime"),
-		"retireReasonCode":      stringDef(""),
-		"updatedAt":             refDef("app.cerulia.defs#datetime"),
-		"publishedByDid":        refDef("app.cerulia.defs#did"),
-		"updatedByDid":          refDef("app.cerulia.defs#did"),
 	})
+}
+
+func sessionPublicationGovernanceSummaryObject() map[string]any {
+	definition := sessionPublicationPublicSummaryObject()
+	properties := definition["properties"].(map[string]any)
+	properties["surfaces"] = arrayDef(refDef("app.cerulia.defs#surfaceDescriptor"))
+	properties["retiredAt"] = refDef("app.cerulia.defs#datetime")
+	properties["retireReasonCode"] = stringDef("")
+	properties["updatedAt"] = refDef("app.cerulia.defs#datetime")
+	properties["publishedByDid"] = refDef("app.cerulia.defs#did")
+	properties["updatedByDid"] = refDef("app.cerulia.defs#did")
+	return definition
+}
+
+func participantAppealSummaryObject() map[string]any {
+	return objectDef([]string{"appealCaseRef", "targetKind", "targetRef", "requestedOutcomeKind", "status", "nextResolverKind", "openedAt"}, map[string]any{
+		"appealCaseRef":        refDef("app.cerulia.defs#appealCaseRef"),
+		"targetKind":           refDef("app.cerulia.defs#appealTargetKind"),
+		"targetRef":            refDef("app.cerulia.defs#targetRef"),
+		"requestedOutcomeKind": refDef("app.cerulia.defs#appealRequestedOutcomeKind"),
+		"status":               refDef("app.cerulia.defs#appealStatus"),
+		"blockedReasonCode":    refDef("app.cerulia.defs#appealBlockedReason"),
+		"nextResolverKind":     refDef("app.cerulia.defs#appealNextResolverKind"),
+		"openedAt":             refDef("app.cerulia.defs#datetime"),
+		"resolvedAt":           refDef("app.cerulia.defs#datetime"),
+		"handoffSummary":       stringDef(""),
+		"resultSummary":        stringDef(""),
+	})
+}
+
+func appealResolverSummaryObject() map[string]any {
+	definition := participantAppealSummaryObject()
+	properties := definition["properties"].(map[string]any)
+	properties["reviewOutcomeSummary"] = stringDef("")
+	properties["controllerReviewDueAt"] = refDef("app.cerulia.defs#datetime")
+	properties["recoveryAuthorityRequestId"] = refDef("app.cerulia.defs#requestId")
+	return definition
 }

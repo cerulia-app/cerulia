@@ -103,7 +103,7 @@
 | appealTargetKind | ruling-event / membership |
 | appealRequestedOutcomeKind | supersede-ruling / restore-membership / reconsider-membership |
 | appealStatus | controller-review / recovery-review / accepted / denied / withdrawn |
-| appealResolutionKind | accepted / denied / withdrawn |
+| appealResolutionKind | accepted / denied |
 | appealBlockedReason | quorum-impossible / deadline-expired |
 | appealNextResolverKind | controller-review / blocked / recovery-review / none |
 | appealReviewPhaseKind | controller-review / recovery-review |

@@ -9,7 +9,10 @@ import (
 	"cerulia/internal/ledger"
 )
 
-var ErrNotFound = errors.New("store record not found")
+var (
+	ErrNotFound = errors.New("store record not found")
+	ErrConflict = errors.New("store revision conflict")
+)
 
 type StableRecord struct {
 	Ref        string

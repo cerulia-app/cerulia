@@ -32,6 +32,14 @@ func refDef(ref string) map[string]any {
 	}
 }
 
+func unionRefs(refs ...string) map[string]any {
+	return map[string]any{
+		"type":   "union",
+		"closed": true,
+		"refs":   refs,
+	}
+}
+
 func enumDef(values ...string) map[string]any {
 	return map[string]any{
 		"type": "string",

@@ -6,8 +6,10 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
+	coremodel "cerulia/internal/core/model"
 	runauthority "cerulia/internal/run/authority"
 	runmodel "cerulia/internal/run/model"
 	"cerulia/internal/store"
@@ -31,6 +33,16 @@ type membershipHead struct {
 type appealCaseRecord struct {
 	ref   string
 	value runmodel.AppealCase
+}
+
+type appealReviewEntryRecord struct {
+	ref   string
+	value runmodel.AppealReviewEntry
+}
+
+type sessionPublicationHead struct {
+	ref   string
+	value runmodel.SessionPublication
 }
 
 func NewService(reader store.Reader) *Service {
@@ -98,11 +110,11 @@ func (service *Service) GetSessionAccessPreflight(ctx context.Context, actorDid 
 		decision.MembershipRequestID = current.value.RequestID
 		return decision, nil
 	}
-	publicationCarrier, hasCarrier, err := service.currentSessionPublication(ctx, sessionRef)
+	publicationCarrier, hasCarrier, err := service.activeSessionPublication(ctx, sessionRef, false)
 	if err != nil {
 		return AccessPreflight{}, err
 	}
-	if hasCarrier && publicationCarrier.RetiredAt == nil {
+	if hasCarrier {
 		decision.DecisionKind = "public-replay"
 		decision.ReasonCode = "active-carrier"
 		decision.RecommendedRoute = route + "/replay"
@@ -162,9 +174,9 @@ func (service *Service) GetSessionView(ctx context.Context, actorDid string, ses
 		return SessionView{}, err
 	}
 	carriers := make([]SessionPublicationSummary, 0, 1)
-	if carrier, ok, err := service.currentSessionPublication(ctx, sessionRef); err != nil {
+	if carrier, ok, err := service.activeSessionPublication(ctx, sessionRef, false); err != nil {
 		return SessionView{}, err
-	} else if ok && carrier.RetiredAt == nil {
+	} else if ok {
 		carriers = append(carriers, carrier)
 	}
 
@@ -203,7 +215,7 @@ func (service *Service) GetGovernanceView(ctx context.Context, actorDid string, 
 		memberships = append(memberships, membershipSummary(head.value, true))
 	}
 	carriers := make([]SessionPublicationSummary, 0, 1)
-	if carrier, ok, err := service.currentSessionPublication(ctx, sessionRef); err != nil {
+	if carrier, ok, err := service.activeSessionPublication(ctx, sessionRef, true); err != nil {
 		return GovernanceView{}, err
 	} else if ok {
 		carriers = append(carriers, carrier)
@@ -214,7 +226,10 @@ func (service *Service) GetGovernanceView(ctx context.Context, actorDid string, 
 	}
 	pendingAppeals := make([]AppealCaseSummary, 0)
 	for _, record := range appealRecords {
-		summary := appealSummary(record.ref, record.value, true)
+		summary, err := service.appealSummary(ctx, record.ref, record.value, true, service.now().UTC())
+		if err != nil {
+			return GovernanceView{}, err
+		}
 		if summary.NextResolverKind == "none" {
 			continue
 		}
@@ -242,9 +257,16 @@ func (service *Service) GetGovernanceView(ctx context.Context, actorDid string, 
 }
 
 func (service *Service) ListSessionPublications(ctx context.Context, actorDid string, sessionRef string, mode string, includeRetired bool, limit int, cursor string) (Page[SessionPublicationSummary], error) {
+	if strings.TrimSpace(sessionRef) == "" {
+		return Page[SessionPublicationSummary]{}, ErrInvalidInput
+	}
 	resolvedMode := mode
-	if resolvedMode == "" {
+	switch resolvedMode {
+	case "":
 		resolvedMode = "public"
+	case "public", "governance":
+	default:
+		return Page[SessionPublicationSummary]{}, ErrInvalidInput
 	}
 	if resolvedMode == "public" && includeRetired {
 		return Page[SessionPublicationSummary]{}, ErrInvalidInput
@@ -264,14 +286,20 @@ func (service *Service) ListSessionPublications(ctx context.Context, actorDid st
 	}
 
 	items := make([]SessionPublicationSummary, 0, 1)
-	if current, ok, err := service.currentSessionPublication(ctx, sessionRef); err != nil {
+	head, ok, err := service.sessionPublicationHead(ctx, sessionRef)
+	if err != nil {
 		return Page[SessionPublicationSummary]{}, err
-	} else if ok {
-		if current.RetiredAt == nil || includeRetired || resolvedMode == "governance" {
-			if resolvedMode == "public" && current.RetiredAt != nil {
-				return Page[SessionPublicationSummary]{}, store.ErrNotFound
-			}
-			items = append(items, current)
+	}
+	if ok {
+		active, err := service.sessionPublicationHeadIsActive(ctx, head)
+		if err != nil {
+			return Page[SessionPublicationSummary]{}, err
+		}
+		switch {
+		case active:
+			items = append(items, sessionPublicationSummary(head.ref, head.value, resolvedMode == "governance"))
+		case head.value.RetiredAt != nil && includeRetired:
+			items = append(items, sessionPublicationSummary(head.ref, head.value, true))
 		}
 	}
 	if len(items) == 0 {
@@ -281,9 +309,27 @@ func (service *Service) ListSessionPublications(ctx context.Context, actorDid st
 }
 
 func (service *Service) ListAppealCases(ctx context.Context, actorDid string, sessionRef string, view string, status string, limit int, cursor string) (Page[AppealCaseSummary], error) {
+	if strings.TrimSpace(sessionRef) == "" {
+		return Page[AppealCaseSummary]{}, ErrInvalidInput
+	}
 	resolvedView := view
 	if resolvedView == "" {
 		resolvedView = "participant"
+	}
+	var authorityModel runmodel.SessionAuthority
+	if resolvedView == "resolver" {
+		_, sessionModel, err := decodeRunStable[runmodel.Session](ctx, service.reader, sessionRef)
+		if err != nil {
+			return Page[AppealCaseSummary]{}, err
+		}
+		_, authority, err := decodeRunStable[runmodel.SessionAuthority](ctx, service.reader, sessionModel.AuthorityRef)
+		if err != nil {
+			return Page[AppealCaseSummary]{}, err
+		}
+		authorityModel = authority
+		if !sameActor(actorDid, authorityModel.ControllerDids...) && !sameActor(actorDid, authorityModel.RecoveryControllerDids...) {
+			return Page[AppealCaseSummary]{}, ErrForbidden
+		}
 	}
 	records, err := service.appealCasesForSession(ctx, sessionRef)
 	if err != nil {
@@ -299,20 +345,17 @@ func (service *Service) ListAppealCases(ctx context.Context, actorDid string, se
 			if actorDid == "" || (!sameActor(actorDid, record.value.OpenedByDid) && !sameActor(actorDid, record.value.AffectedActorDid)) {
 				continue
 			}
-			items = append(items, appealSummary(record.ref, record.value, false))
+			summary, err := service.appealSummary(ctx, record.ref, record.value, false, service.now().UTC())
+			if err != nil {
+				return Page[AppealCaseSummary]{}, err
+			}
+			items = append(items, summary)
 		case "resolver":
-			_, sessionModel, err := decodeRunStable[runmodel.Session](ctx, service.reader, sessionRef)
+			summary, err := service.appealSummary(ctx, record.ref, record.value, true, service.now().UTC())
 			if err != nil {
 				return Page[AppealCaseSummary]{}, err
 			}
-			_, authorityModel, err := decodeRunStable[runmodel.SessionAuthority](ctx, service.reader, sessionModel.AuthorityRef)
-			if err != nil {
-				return Page[AppealCaseSummary]{}, err
-			}
-			if !sameActor(actorDid, authorityModel.ControllerDids...) {
-				return Page[AppealCaseSummary]{}, ErrForbidden
-			}
-			items = append(items, appealSummary(record.ref, record.value, true))
+			items = append(items, summary)
 		default:
 			return Page[AppealCaseSummary]{}, ErrInvalidInput
 		}
@@ -372,22 +415,64 @@ func (service *Service) currentMembershipHeads(ctx context.Context, sessionRef s
 	return items, nil
 }
 
-func (service *Service) currentSessionPublication(ctx context.Context, sessionRef string) (SessionPublicationSummary, bool, error) {
+func (service *Service) sessionPublicationHead(ctx context.Context, sessionRef string) (sessionPublicationHead, bool, error) {
 	head, err := service.reader.GetCurrentHead(ctx, sessionRef, "session-publication")
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			return SessionPublicationSummary{}, false, nil
+			return sessionPublicationHead{}, false, nil
 		}
-		return SessionPublicationSummary{}, false, err
+		return sessionPublicationHead{}, false, err
 	}
 	if head == nil {
-		return SessionPublicationSummary{}, false, nil
+		return sessionPublicationHead{}, false, nil
 	}
 	_, publication, err := decodeRunAppend[runmodel.SessionPublication](ctx, service.reader, head.CurrentHeadRef)
 	if err != nil {
+		return sessionPublicationHead{}, false, err
+	}
+	return sessionPublicationHead{ref: head.CurrentHeadRef, value: publication}, true, nil
+}
+
+func (service *Service) activeSessionPublication(ctx context.Context, sessionRef string, governance bool) (SessionPublicationSummary, bool, error) {
+	head, ok, err := service.sessionPublicationHead(ctx, sessionRef)
+	if err != nil || !ok {
+		return SessionPublicationSummary{}, ok, err
+	}
+	active, err := service.sessionPublicationHeadIsActive(ctx, head)
+	if err != nil {
 		return SessionPublicationSummary{}, false, err
 	}
-	return sessionPublicationSummary(head.CurrentHeadRef, publication, true), true, nil
+	if !active {
+		return SessionPublicationSummary{}, false, nil
+	}
+	return sessionPublicationSummary(head.ref, head.value, governance), true, nil
+}
+
+func (service *Service) sessionPublicationHeadIsActive(ctx context.Context, head sessionPublicationHead) (bool, error) {
+	if head.value.RetiredAt != nil {
+		return false, nil
+	}
+	_, publication, err := decodeCorePublicationAppend(ctx, service.reader, head.value.PublicationRef)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	if publication.RetiredAt != nil {
+		return false, nil
+	}
+	currentHead, err := service.reader.GetCurrentHead(ctx, publication.SubjectRef, publication.SubjectKind)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	if currentHead == nil || currentHead.CurrentHeadRef != head.value.PublicationRef {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (service *Service) appealCasesForSession(ctx context.Context, sessionRef string) ([]appealCaseRecord, error) {
@@ -428,6 +513,129 @@ func (service *Service) appealOnlyCandidate(ctx context.Context, sessionRef stri
 	return AppealCaseSummary{}, false, nil
 }
 
+func (service *Service) appealSummary(ctx context.Context, ref string, value runmodel.AppealCase, resolverView bool, now time.Time) (AppealCaseSummary, error) {
+	blockedReason := value.BlockedReasonCode
+	reviewOutcomeSummary := value.ReviewOutcomeSummary
+	if value.Status == "controller-review" || value.Status == "recovery-review" {
+		approveCount, denyCount, derivedBlockedReason, err := service.appealReviewState(ctx, ref, value, now)
+		if err != nil {
+			return AppealCaseSummary{}, err
+		}
+		if derivedBlockedReason != "" {
+			blockedReason = derivedBlockedReason
+		}
+		if resolverView && reviewOutcomeSummary == "" && (approveCount > 0 || denyCount > 0 || blockedReason != "") {
+			reviewOutcomeSummary = formatAppealReviewOutcomeSummary(approveCount, denyCount)
+		}
+	}
+	summary := AppealCaseSummary{
+		AppealCaseRef:        ref,
+		TargetKind:           value.TargetKind,
+		TargetRef:            value.TargetRef,
+		RequestedOutcomeKind: value.RequestedOutcomeKind,
+		Status:               value.Status,
+		BlockedReasonCode:    blockedReason,
+		NextResolverKind:     appealNextResolverKind(value.Status, blockedReason),
+		OpenedAt:             value.OpenedAt,
+		ResolvedAt:           value.ResolvedAt,
+		HandoffSummary:       value.HandoffSummary,
+		ResultSummary:        value.ResultSummary,
+	}
+	if resolverView {
+		summary.ReviewOutcomeSummary = reviewOutcomeSummary
+		summary.ControllerReviewDueAt = ptrTimeIfSet(value.ControllerReviewDueAt)
+		summary.RecoveryAuthorityRequestID = value.RecoveryAuthorityRequestID
+	}
+	return summary, nil
+}
+
+func (service *Service) appealReviewState(ctx context.Context, appealCaseRef string, appealCase runmodel.AppealCase, now time.Time) (int64, int64, string, error) {
+	records, err := service.appealReviewEntriesForCase(ctx, appealCaseRef, appealCase.SessionRef)
+	if err != nil {
+		return 0, 0, "", err
+	}
+	latestByActor := latestEffectiveAppealReviewEntries(records)
+	approveCount, denyCount := countAppealReviewDecisions(latestByActor, appealCase.Status)
+	return approveCount, denyCount, deriveAppealBlockedReason(appealCase, approveCount, denyCount, now), nil
+}
+
+func (service *Service) appealReviewEntriesForCase(ctx context.Context, appealCaseRef string, sessionRef string) ([]appealReviewEntryRecord, error) {
+	records, err := service.reader.ListAppendByCollection(ctx, runmodel.CollectionAppealReviewEntry)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]appealReviewEntryRecord, 0)
+	for _, record := range records {
+		value, err := runmodel.UnmarshalAppend[runmodel.AppealReviewEntry](record)
+		if err != nil {
+			return nil, err
+		}
+		if value.SessionRef != sessionRef || value.AppealCaseRef != appealCaseRef || record.GoverningRef != appealCaseRef {
+			continue
+		}
+		items = append(items, appealReviewEntryRecord{ref: record.Ref, value: value})
+	}
+	sort.Slice(items, func(left int, right int) bool {
+		return items[left].value.ReviewRevision < items[right].value.ReviewRevision
+	})
+	return items, nil
+}
+
+func latestEffectiveAppealReviewEntries(records []appealReviewEntryRecord) map[string]appealReviewEntryRecord {
+	superseded := map[string]struct{}{}
+	for _, record := range records {
+		if record.value.SupersedesRef != "" {
+			superseded[record.value.SupersedesRef] = struct{}{}
+		}
+	}
+	latestByActor := map[string]appealReviewEntryRecord{}
+	for _, record := range records {
+		if _, ok := superseded[record.ref]; ok {
+			continue
+		}
+		latestByActor[appealReviewActorKey(record.value.ReviewPhaseKind, record.value.ReviewerDid)] = record
+	}
+	return latestByActor
+}
+
+func countAppealReviewDecisions(latestByActor map[string]appealReviewEntryRecord, phase string) (int64, int64) {
+	var approveCount int64
+	var denyCount int64
+	for _, record := range latestByActor {
+		if record.value.ReviewPhaseKind != phase {
+			continue
+		}
+		switch record.value.ReviewDecisionKind {
+		case "approve":
+			approveCount++
+		case "deny":
+			denyCount++
+		}
+	}
+	return approveCount, denyCount
+}
+
+func appealReviewActorKey(phase string, actorDid string) string {
+	return phase + "\x00" + actorDid
+}
+
+func deriveAppealBlockedReason(appealCase runmodel.AppealCase, approveCount int64, denyCount int64, now time.Time) string {
+	if appealCase.BlockedReasonCode != "" {
+		return appealCase.BlockedReasonCode
+	}
+	if int64(len(appealCase.ControllerEligibleDids)) < appealCase.ControllerRequiredCount {
+		return "quorum-impossible"
+	}
+	if appealCase.Status == "controller-review" && !appealCase.ControllerReviewDueAt.IsZero() && !now.Before(appealCase.ControllerReviewDueAt) && approveCount < appealCase.ControllerRequiredCount && denyCount < appealCase.ControllerRequiredCount {
+		return "deadline-expired"
+	}
+	return ""
+}
+
+func formatAppealReviewOutcomeSummary(approveCount int64, denyCount int64) string {
+	return "approve=" + strconv.FormatInt(approveCount, 10) + " deny=" + strconv.FormatInt(denyCount, 10)
+}
+
 func decodeRunStable[T any](ctx context.Context, reader store.Reader, ref string) (store.StableRecord, T, error) {
 	record, err := reader.GetStable(ctx, ref)
 	if err != nil {
@@ -456,6 +664,18 @@ func decodeRunAppend[T any](ctx context.Context, reader store.Reader, ref string
 	return record, value, nil
 }
 
+func decodeCorePublicationAppend(ctx context.Context, reader store.Reader, ref string) (store.AppendRecord, coremodel.Publication, error) {
+	record, err := reader.GetAppend(ctx, ref)
+	if err != nil {
+		return store.AppendRecord{}, coremodel.Publication{}, err
+	}
+	value, err := coremodel.UnmarshalAppend[coremodel.Publication](record)
+	if err != nil {
+		return store.AppendRecord{}, coremodel.Publication{}, err
+	}
+	return record, value, nil
+}
+
 func sameActor(actorDid string, allowed ...string) bool {
 	for _, candidate := range allowed {
 		if actorDid == candidate {
@@ -475,6 +695,7 @@ func sessionPublicationSummary(ref string, value runmodel.SessionPublication, go
 		RetiredAt:             value.RetiredAt,
 	}
 	if governance {
+		summary.Surfaces = append([]coremodel.SurfaceDescriptor(nil), value.Surfaces...)
 		summary.RetireReasonCode = value.RetireReasonCode
 		summary.UpdatedAt = ptrTimeIfSet(value.UpdatedAt)
 		summary.PublishedByDid = value.PublishedByDid
@@ -483,36 +704,14 @@ func sessionPublicationSummary(ref string, value runmodel.SessionPublication, go
 	return summary
 }
 
-func appealSummary(ref string, value runmodel.AppealCase, resolverView bool) AppealCaseSummary {
-	summary := AppealCaseSummary{
-		AppealCaseRef:        ref,
-		TargetKind:           value.TargetKind,
-		TargetRef:            value.TargetRef,
-		RequestedOutcomeKind: value.RequestedOutcomeKind,
-		Status:               value.Status,
-		BlockedReasonCode:    value.BlockedReasonCode,
-		NextResolverKind:     appealNextResolverKind(value),
-		OpenedAt:             value.OpenedAt,
-		ResolvedAt:           value.ResolvedAt,
-		HandoffSummary:       value.HandoffSummary,
-		ResultSummary:        value.ResultSummary,
-	}
-	if resolverView {
-		summary.ReviewOutcomeSummary = value.ReviewOutcomeSummary
-		summary.ControllerReviewDueAt = ptrTimeIfSet(value.ControllerReviewDueAt)
-		summary.RecoveryAuthorityRequestID = value.RecoveryAuthorityRequestID
-	}
-	return summary
-}
-
-func appealNextResolverKind(value runmodel.AppealCase) string {
-	switch value.Status {
+func appealNextResolverKind(status string, blockedReason string) string {
+	switch status {
 	case "accepted", "denied", "withdrawn":
 		return "none"
 	case "recovery-review":
 		return "recovery-review"
 	case "controller-review":
-		if value.BlockedReasonCode != "" {
+		if blockedReason != "" {
 			return "blocked"
 		}
 		return "controller-review"

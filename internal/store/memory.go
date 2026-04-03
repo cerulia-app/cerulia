@@ -140,6 +140,13 @@ func (tx *memoryTx) PutIdempotency(_ context.Context, key ledger.IdempotencyKey,
 }
 
 func (tx *memoryTx) PutStable(_ context.Context, record StableRecord) error {
+	if current, ok := tx.state.stable[record.Ref]; ok {
+		if record.Revision != current.Revision+1 {
+			return ErrConflict
+		}
+	} else if record.Revision != 1 {
+		return ErrConflict
+	}
 	tx.state.stable[record.Ref] = cloneStableRecord(record)
 	return nil
 }

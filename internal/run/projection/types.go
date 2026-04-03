@@ -1,6 +1,9 @@
 package projection
 
-import "time"
+import (
+	coremodel "cerulia/internal/core/model"
+	"time"
+)
 
 type Page[T any] struct {
 	Items  []T    `json:"items"`
@@ -68,16 +71,17 @@ type MembershipSummary struct {
 }
 
 type SessionPublicationSummary struct {
-	SessionPublicationRef string     `json:"sessionPublicationRef"`
-	PublicationRef        string     `json:"publicationRef"`
-	EntryURL              string     `json:"entryUrl"`
-	ReplayURL             string     `json:"replayUrl,omitempty"`
-	PreferredSurfaceKind  string     `json:"preferredSurfaceKind"`
-	RetiredAt             *time.Time `json:"retiredAt,omitempty"`
-	RetireReasonCode      string     `json:"retireReasonCode,omitempty"`
-	UpdatedAt             *time.Time `json:"updatedAt,omitempty"`
-	PublishedByDid        string     `json:"publishedByDid,omitempty"`
-	UpdatedByDid          string     `json:"updatedByDid,omitempty"`
+	SessionPublicationRef string                        `json:"sessionPublicationRef"`
+	PublicationRef        string                        `json:"publicationRef"`
+	EntryURL              string                        `json:"entryUrl"`
+	ReplayURL             string                        `json:"replayUrl,omitempty"`
+	PreferredSurfaceKind  string                        `json:"preferredSurfaceKind"`
+	Surfaces              []coremodel.SurfaceDescriptor `json:"surfaces,omitempty"`
+	RetiredAt             *time.Time                    `json:"retiredAt,omitempty"`
+	RetireReasonCode      string                        `json:"retireReasonCode,omitempty"`
+	UpdatedAt             *time.Time                    `json:"updatedAt,omitempty"`
+	PublishedByDid        string                        `json:"publishedByDid,omitempty"`
+	UpdatedByDid          string                        `json:"updatedByDid,omitempty"`
 }
 
 type AppealCaseSummary struct {

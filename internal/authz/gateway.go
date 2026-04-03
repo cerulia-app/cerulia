@@ -33,6 +33,20 @@ type Subject struct {
 	Anonymous      bool
 }
 
+func (subject Subject) HasPermissionSet(permissionSet string) bool {
+	_, ok := subject.PermissionSets[permissionSet]
+	return ok
+}
+
+func (subject Subject) HasAnyPermissionSet(permissionSets ...string) bool {
+	for _, permissionSet := range permissionSets {
+		if subject.HasPermissionSet(permissionSet) {
+			return true
+		}
+	}
+	return false
+}
+
 type Gateway struct {
 	requiredBundlesByOperation map[string][]string
 }
@@ -70,6 +84,9 @@ func NewGateway() *Gateway {
 			"app.cerulia.rpc.retireSessionLink":          {PublicationOperator},
 			"app.cerulia.rpc.submitAppeal":               {AppealOriginator, AppealResolver},
 			"app.cerulia.rpc.withdrawAppeal":             {AppealOriginator, AppealResolver},
+			"app.cerulia.rpc.reviewAppeal":               {AppealResolver},
+			"app.cerulia.rpc.escalateAppeal":             {AppealResolver},
+			"app.cerulia.rpc.resolveAppeal":              {AppealResolver},
 			"app.cerulia.rpc.attachRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.retireRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.importCharacterSheet":       {CoreWriter},

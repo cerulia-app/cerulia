@@ -241,6 +241,45 @@ func (h *handler) handleWithdrawAppeal(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, ack)
 }
 
+func (h *handler) handleReviewAppeal(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.ReviewAppealInput](h, w, r, "app.cerulia.rpc.reviewAppeal")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.ReviewAppeal(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleEscalateAppeal(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.EscalateAppealInput](h, w, r, "app.cerulia.rpc.escalateAppeal")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.EscalateAppeal(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleResolveAppeal(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.ResolveAppealInput](h, w, r, "app.cerulia.rpc.resolveAppeal")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.ResolveAppeal(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
 func (h *handler) handleCreateCampaign(w http.ResponseWriter, r *http.Request) {
 	input, subject, ok := decodeProcedure[command.CreateCampaignInput](h, w, r, "app.cerulia.rpc.createCampaign")
 	if !ok {

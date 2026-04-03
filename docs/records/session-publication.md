@@ -62,6 +62,6 @@ session authority。publish / retire は extension governance 扱いで確定す
 - retired または superseded な carrier direct link は、public replay や current publication への CTA を返す explanatory preflight / tombstone に解決する。旧 carrier を current head のように見せ続けてはならない。
 - publishSessionLink は既存の core publication を mirror するためにだけ使い、canonical publication を新規作成してはならない。
 - publicationRef が retired になった場合、session-publication は active surface を残してはならない。archive 用 carrier を残す場合でも、それは retired surface としてだけ保持する。
-- publicationRef が superseded された場合も、session-publication は古い publicationRef を指したまま active で残ってはならない。linked publication の更新と adapter の更新は同じ requestId / service-log chain で追えるようにする。
-- accepted な core publication supersede / retire と stale な active carrier を別々に残してはならない。linked publication の更新が成功した時点で adapter rewrite / retire も同じ transaction か同じ service-log chain の completion まで完了している必要がある。
+- publicationRef が superseded された場合も、session-publication は古い publicationRef を指したまま active で残ってはならない。linked publication の更新と adapter の更新は、同じ requestId / service-log chain で追跡できなければならない。
+- accepted な core publication supersede / retire と stale な active carrier を別々に残してはならない。linked publication の更新が成功した時点で adapter rewrite / retire も同じ transaction か同じ service-log chain の completion まで完了している必要がある。障害復旧や非同期再構築の途中でも、read side は stale carrier を active current head として返さず、rewrite / retire 完了までは fail-closed に扱わなければならない。
 - session を public actor / feed にしない。公開導線は Bluesky の既存 surface を使って説明する。

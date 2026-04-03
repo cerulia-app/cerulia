@@ -5,6 +5,7 @@ const (
 	CollectionSessionAuthority   = "app.cerulia.run.sessionAuthority"
 	CollectionMembership         = "app.cerulia.run.membership"
 	CollectionSessionPublication = "app.cerulia.run.sessionPublication"
+	CollectionRulingEvent        = "app.cerulia.run.rulingEvent"
 	CollectionAppealCase         = "app.cerulia.run.appealCase"
 	CollectionAppealReviewEntry  = "app.cerulia.run.appealReviewEntry"
 	CollectionAudience           = "app.cerulia.secret.audience"

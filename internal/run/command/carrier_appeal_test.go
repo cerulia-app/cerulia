@@ -109,7 +109,7 @@ func TestSubmitAndWithdrawAppeal(t *testing.T) {
 		RulesetNSID:                "app.cerulia.rules.core",
 		RulesetManifestRef:         "at://manifest/1",
 		ExpectedRulesetManifestRef: "at://manifest/1",
-		ControllerDids:             []string{"did:plc:gm1"},
+		ControllerDids:             []string{"did:plc:gm1", "did:plc:gm2"},
 		RecoveryControllerDids:     []string{"did:plc:recovery1"},
 		TransferPolicy:             "majority-controllers",
 		RequestID:                  "req-session-1",
@@ -154,8 +154,8 @@ func TestSubmitAndWithdrawAppeal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode appeal case: %v", err)
 	}
-	if appealCase.BlockedReasonCode != "quorum-impossible" {
-		t.Fatalf("expected blocked reason quorum-impossible, got %q", appealCase.BlockedReasonCode)
+	if appealCase.BlockedReasonCode != "" {
+		t.Fatalf("expected non-blocked appeal case, got %q", appealCase.BlockedReasonCode)
 	}
 
 	withdrawAck, err := service.WithdrawAppeal(context.Background(), "did:plc:player1", WithdrawAppealInput{

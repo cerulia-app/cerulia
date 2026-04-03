@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	coremodel "cerulia/internal/core/model"
@@ -68,6 +69,11 @@ func (service *Service) PublishSessionLink(ctx context.Context, actorDid string,
 			return rejectedAck(input.RequestID, "session publication head mismatch"), nil
 		}
 
+		replayURL := input.ReplayURL
+		if strings.TrimSpace(replayURL) == "" {
+			replayURL = strings.TrimRight(input.EntryURL, "/") + "/replay"
+		}
+
 		repoDID, err := refRepoDID(input.SessionRef)
 		if err != nil {
 			return ledger.MutationAck{}, err
@@ -77,7 +83,7 @@ func (service *Service) PublishSessionLink(ctx context.Context, actorDid string,
 			SessionRef:           input.SessionRef,
 			PublicationRef:       input.PublicationRef,
 			EntryURL:             input.EntryURL,
-			ReplayURL:            input.ReplayURL,
+			ReplayURL:            replayURL,
 			PreferredSurfaceKind: input.PreferredSurfaceKind,
 			Surfaces:             append([]coremodel.SurfaceDescriptor(nil), input.Surfaces...),
 			RequestID:            input.RequestID,

@@ -129,6 +129,9 @@ func (service *Service) executeMutation(ctx context.Context, governingRef string
 		return nil
 	})
 	if err != nil {
+		if errors.Is(err, store.ErrConflict) {
+			return ledger.MutationAck{RequestID: requestID, ResultKind: ledger.ResultRebaseNeeded, Message: err.Error()}, nil
+		}
 		return ledger.MutationAck{}, err
 	}
 	return ack, nil

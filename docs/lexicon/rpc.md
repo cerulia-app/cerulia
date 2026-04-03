@@ -135,7 +135,7 @@ Lexicon `errors` で列挙する short name は次を共通語彙にする。
 | field | type | required | notes |
 | --- | --- | --- | --- |
 | sessionRef | app.cerulia.defs#sessionRef | yes | target session |
-| decisionKind | string | yes | participant-shell / public-replay / join / sign-in / appeal-only / governance-console / retired-carrier / no-access |
+| decisionKind | string | yes | participant-shell / public-replay / join / sign-in / appeal-only / governance-console / retired-carrier(reserved) / no-access |
 | reasonCode | string | yes | なぜその target surface になったかの固定理由コード |
 | recommendedRoute | string | yes | AppView が最初に開く route |
 | authorityRequestId | app.cerulia.defs#requestId | no | authority snapshot を根拠にした場合 |
@@ -144,7 +144,7 @@ Lexicon `errors` で列挙する short name は次を共通語彙にする。
 | sessionPublicationRef | app.cerulia.defs#sessionPublicationRef | no | carrier row に基づく場合 |
 
 - errors: `NotFound`
-- note: generic な重複適格時の precedence は `participant-shell -> governance-console -> appeal-only -> join -> public-replay -> sign-in -> no-access` に固定する。`retired-carrier` は retired carrier deep-link を解決しているときだけ使う source-link override とし、generic precedence の前に評価してよい。
+- note: generic な重複適格時の precedence は `participant-shell -> governance-console -> appeal-only -> join -> public-replay -> sign-in -> no-access` に固定する。`retired-carrier` は carrier-specific deep-link preflight を追加した段階で使う予約値とし、現在の `sessionRef` ベース preflight では到達させない。
 
 ### app.cerulia.rpc.getSessionView
 
@@ -415,12 +415,12 @@ Lexicon `errors` で列挙する short name は次を共通語彙にする。
 | app.cerulia.rpc.withdrawAppeal | appealCaseRef, expectedCaseRevision, expectedReviewRevision, requestId | caseRevision, reviewRevision | current caseRevision + current reviewRevision |
 | app.cerulia.rpc.reviewAppeal | appealCaseRef, reviewPhaseKind, reviewDecisionKind, expectedCaseRevision, expectedReviewRevision, supersedesRef?, note?, detailEnvelopeRef?, requestId | emittedRecordRefs = [appealReviewEntryRef], caseRevision, reviewRevision | current caseRevision + current reviewRevision |
 | app.cerulia.rpc.escalateAppeal | appealCaseRef, expectedCaseRevision, expectedReviewRevision, requestId, handoffSummary? | caseRevision, reviewRevision, transferPhase? | current caseRevision + current reviewRevision |
-| app.cerulia.rpc.resolveAppeal | appealCaseRef, expectedCaseRevision, expectedReviewRevision, decisionKind(app.cerulia.defs#appealResolutionKind), resultSummary, requestId | caseRevision, reviewRevision, emittedRecordRefs, message | current caseRevision + current reviewRevision |
+| app.cerulia.rpc.resolveAppeal | appealCaseRef, expectedCaseRevision, expectedReviewRevision, decisionKind(accepted / denied), resultSummary, requestId | caseRevision, reviewRevision, emittedRecordRefs, message | current caseRevision + current reviewRevision |
 | app.cerulia.rpc.revealSubject | sessionRef, subjectRef, fromAudienceRef, toAudienceRef, revealMode, requestId, note? | emittedRecordRefs = [revealEventRef] | current disclosure state |
 | app.cerulia.rpc.redactRecord | sessionRef, subjectRef, redactionMode, replacementRef?, reasonCode, requestId | emittedRecordRefs = [redactionEventRef] | current subject head |
 | app.cerulia.rpc.rotateAudienceKey | sessionRef, audienceRef, expectedKeyVersion, requestId, note? | keyVersion, updatedGrantRefs | current audience keyVersion + grant snapshot |
 
-- `resolveAppeal` で `decisionKind = accepted` の場合、membership target では corrective domain record としてちょうど 1 件の `membershipRef` を emit し、ruling-event target では `supersedesRef` 付きのちょうど 1 件の `rulingEventRef` を emit する。`decisionKind = denied` または `withdrawn` では新しい domain correction record を emit しない。
+- `resolveAppeal` で `decisionKind = accepted` の場合、membership target では corrective domain record としてちょうど 1 件の `membershipRef` を emit し、ruling-event target では `supersedesRef` 付きのちょうど 1 件の `rulingEventRef` を emit する。`decisionKind = denied` では新しい domain correction record を emit しない。
 - `revealSubject` の transport enum は `publish-publicly` を canonical にする。AppView copy で `reveal-publicly` を使ってもよいが、API enum と同義の表示語として扱う。
 
 ## resultKind の使い分け

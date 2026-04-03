@@ -27,6 +27,12 @@ func TestAuthorizeRequest(t *testing.T) {
 		{name: "participant passes", operationNSID: "app.cerulia.rpc.getSessionView", actorDid: "did:plc:alice", bundles: SessionParticipant},
 		{name: "appeal originator passes", operationNSID: "app.cerulia.rpc.submitAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator},
 		{name: "appeal resolver passes", operationNSID: "app.cerulia.rpc.submitAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
+		{name: "review appeal resolver passes", operationNSID: "app.cerulia.rpc.reviewAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
+		{name: "review appeal wrong bundle rejects", operationNSID: "app.cerulia.rpc.reviewAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator, wantErr: ErrForbidden},
+		{name: "escalate appeal resolver passes", operationNSID: "app.cerulia.rpc.escalateAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
+		{name: "escalate appeal wrong bundle rejects", operationNSID: "app.cerulia.rpc.escalateAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator, wantErr: ErrForbidden},
+		{name: "resolve appeal resolver passes", operationNSID: "app.cerulia.rpc.resolveAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
+		{name: "resolve appeal wrong bundle rejects", operationNSID: "app.cerulia.rpc.resolveAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator, wantErr: ErrForbidden},
 		{name: "publication operator passes", operationNSID: "app.cerulia.rpc.publishSessionLink", actorDid: "did:plc:alice", bundles: PublicationOperator},
 		{name: "exact bundle passes", operationNSID: "app.cerulia.rpc.createCampaign", actorDid: "did:plc:alice", bundles: CoreWriter},
 	}

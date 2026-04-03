@@ -161,9 +161,9 @@
 | E-4 | integration | projection exclusion | extension record を注入しても core projection family の canonical row が変わらないこと |
 | E-5 | integration | anonymous core read matrix | getCampaignView(public) と listPublications(public) が anonymous で documented field だけを返し、includeRetired を拒否すること |
 | E-6 | integration | session vs governance read split | getSessionView は participant-safe summary に留まり、getGovernanceView だけが controller / recovery / pendingAppeals / governance detail を返すこと |
-| E-7 | integration | access preflight and route guard | participant-shell、public-replay、join、sign-in、appeal-only、governance-console、retired-carrier、no-access が decisionKind / recommendedRoute と一致し、重複適格時は documented precedence で 1 つに決まること。/sessions/:sessionRef/governance と /sessions/:sessionRef/audit は documented operator / audit 権限でしか開かないこと |
+| E-7 | integration | access preflight and route guard | participant-shell、public-replay、join、sign-in、appeal-only、governance-console、no-access が decisionKind / recommendedRoute と一致し、重複適格時は documented precedence で 1 つに決まること。current `sessionRef` ベース preflight では `retired-carrier` を返さないこと。`/sessions/:sessionRef/governance` と `/sessions/:sessionRef/audit` は documented operator / audit 権限でしか開かないこと |
 | E-8 | integration | publication tombstone | retired / superseded publication deep-link が explanatory tombstone / preflight を返すこと。successor が非 public の場合は neutral tombstone だけを返し、hidden successor CTA を出さないこと |
-| E-9 | integration | carrier tombstone | retired / superseded session carrier deep-link が explanatory preflight に解決すること。successor が非 public の場合は neutral tombstone だけを返すこと |
+| E-9 | integration | carrier deep-link reservation | retired / superseded session carrier deep-link 用の explanatory preflight は carrier-specific preflight 追加まで release scope 外であり、current `sessionRef` ベース preflight が `retired-carrier` を返さないこと |
 | E-10 | integration | return path and appeal-only summary | removed / banned の appeal-only actor、restored actor、joined participant、public reader が expected return path を持つこと。appeal-only summary は resolver detail を含まないこと |
 | E-11 | integration | public explanation copy | public top、campaign shell、publication detail / tombstone、access preflight が mode badge と公開境界の説明を表示すること |
 

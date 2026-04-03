@@ -121,7 +121,7 @@ AppView の正常稼働は、次の 6 段で証明する。
 | A-1 | integration | canonical landing | anonymous は `/`、認可直後の canonical landing は `/home`、明示的に `/` を開いた signed-in user は public badge のまま public lens を保つこと |
 | A-2 | integration | global nav order and hub routes | primary nav が Home、Characters、Campaigns、Publications を中心に構成され、session が global root を奪わないこと。`/characters` と `/campaigns` の hub route が first-class surface として entry CTA、mode badge、public/owner-steward split を正しく持つこと |
 | A-3 | integration | session subtree route matrix | `/sessions/:sessionRef`、`/sessions/:sessionRef/appeals`、`/sessions/:sessionRef/board/:sceneRef`、`/sessions/:sessionRef/handouts`、`/sessions/:sessionRef/replay`、`/sessions/:sessionRef/governance`、`/sessions/:sessionRef/audit` の lens、CTA、fallback shell が table-driven に一致し、no-access explanation も固定されること |
-| A-4 | integration | deep-link resolution | publication / carrier / session deep-link が active detail、tombstone、preflight、neutral notice に正しく分岐すること |
+| A-4 | integration | deep-link resolution | publication / session deep-link が active detail、tombstone、preflight、neutral notice に正しく分岐すること。carrier-specific deep-link preflight は将来拡張まで release scope 外であること |
 | A-5 | integration | hidden route policy | 認可不足の route が無言の 404 ではなく、「この lens では見えない」説明に落ちること |
 | A-6 | integration | return path | public reader、participant、appeal-only actor、operator が docs どおりの return path を持つこと |
 | A-7 | integration | route-to-auth matrix | 各 AppView surface が exact auth bundle または anonymous public mode と結びつき、wrong bundle では preflight / forbidden / hidden-route policy に落ちること |

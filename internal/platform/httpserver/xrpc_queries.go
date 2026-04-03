@@ -2,6 +2,8 @@ package httpserver
 
 import (
 	"net/http"
+
+	"cerulia/internal/authz"
 )
 
 func (h *handler) handleGetSessionAccessPreflight(w http.ResponseWriter, r *http.Request) {
@@ -92,12 +94,28 @@ func (h *handler) handleListAppealCases(w http.ResponseWriter, r *http.Request) 
 		writeXRPCFailure(w, err)
 		return
 	}
+	view := r.URL.Query().Get("view")
+	if view == "" {
+		view = "participant"
+	}
+	switch view {
+	case "participant":
+		if !subject.HasPermissionSet(authz.AppealOriginator) {
+			writeXRPCFailure(w, authz.ErrForbidden)
+			return
+		}
+	case "resolver":
+		if !subject.HasPermissionSet(authz.AppealResolver) {
+			writeXRPCFailure(w, authz.ErrForbidden)
+			return
+		}
+	}
 	limit, err := parseLimit(r.URL.Query().Get("limit"))
 	if err != nil {
 		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", err.Error())
 		return
 	}
-	page, err := h.runProjections.ListAppealCases(r.Context(), subject.ActorDID, r.URL.Query().Get("sessionRef"), r.URL.Query().Get("view"), r.URL.Query().Get("status"), limit, r.URL.Query().Get("cursor"))
+	page, err := h.runProjections.ListAppealCases(r.Context(), subject.ActorDID, r.URL.Query().Get("sessionRef"), view, r.URL.Query().Get("status"), limit, r.URL.Query().Get("cursor"))
 	if err != nil {
 		writeXRPCFailure(w, err)
 		return

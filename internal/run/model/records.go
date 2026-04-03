@@ -82,6 +82,26 @@ type SessionPublication struct {
 	RetireReasonCode     string                        `json:"retireReasonCode,omitempty"`
 }
 
+type RulingEvent struct {
+	SessionRef          string    `json:"sessionRef"`
+	AppealCaseRef       string    `json:"appealCaseRef,omitempty"`
+	ActionKind          string    `json:"actionKind"`
+	ActorDid            string    `json:"actorDid"`
+	NormalizedActionRef string    `json:"normalizedActionRef,omitempty"`
+	RulesetNSID         string    `json:"rulesetNsid"`
+	RulesetManifestRef  string    `json:"rulesetManifestRef"`
+	RuleProfileRefs     []string  `json:"ruleProfileRefs,omitempty"`
+	DecisionKind        string    `json:"decisionKind"`
+	AudienceRef         string    `json:"audienceRef,omitempty"`
+	ResultSummary       string    `json:"resultSummary"`
+	DetailEnvelopeRef   string    `json:"detailEnvelopeRef,omitempty"`
+	EmittedRecordRefs   []string  `json:"emittedRecordRefs,omitempty"`
+	SupersedesRef       string    `json:"supersedesRef,omitempty"`
+	DecidedByDid        string    `json:"decidedByDid"`
+	RequestID           string    `json:"requestId"`
+	CreatedAt           time.Time `json:"createdAt"`
+}
+
 type AppealCase struct {
 	SessionRef                    string     `json:"sessionRef"`
 	TargetRef                     string     `json:"targetRef"`
