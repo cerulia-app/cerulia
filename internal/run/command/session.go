@@ -33,7 +33,10 @@ func (service *Service) CreateSessionDraft(ctx context.Context, actorDid string,
 		}
 
 		authorityBodySeed := rnauthorityCreateInput(sessionRef, input.SessionID, actorDid, input, now)
-		gmAudienceRef := store.BuildRef(actorDid, runmodel.CollectionAudience, input.SessionID+"-gm-"+input.RequestID)
+		gmAudienceRef, err := newAudienceRef(sessionRef, input.SessionID+"-gm-"+input.RequestID)
+		if err != nil {
+			return ledger.MutationAck{}, err
+		}
 		authorityBodySeed.GMAudienceRef = gmAudienceRef
 		authorityBody, err := runauthority.Create(authorityBodySeed)
 		if err != nil {
@@ -61,19 +64,6 @@ func (service *Service) CreateSessionDraft(ctx context.Context, actorDid string,
 			return ledger.MutationAck{}, err
 		}
 
-		audienceBody := runmodel.Audience{
-			AudienceKind:            "explicit",
-			SelectorPolicyKind:      "explicit-members",
-			ActorDids:               append([]string(nil), input.ControllerDids...),
-			SnapshotSourceRequestID: input.RequestID,
-			CreatedAt:               now,
-			UpdatedAt:               now,
-		}
-
-		storedAudience, err := marshalStable(runmodel.CollectionAudience, gmAudienceRef, input.RequestID, 1, now, now, audienceBody)
-		if err != nil {
-			return ledger.MutationAck{}, err
-		}
 		storedAuthority, err := marshalStable(runmodel.CollectionSessionAuthority, authorityRef, input.RequestID, 1, now, now, authorityToModel(authorityBody))
 		if err != nil {
 			return ledger.MutationAck{}, err
@@ -82,7 +72,7 @@ func (service *Service) CreateSessionDraft(ctx context.Context, actorDid string,
 		if err != nil {
 			return ledger.MutationAck{}, err
 		}
-		if err := tx.PutStable(ctx, storedAudience); err != nil {
+		if _, _, err := service.createExplicitAudienceWithGrants(ctx, tx, sessionRef, input.SessionID+"-gm-"+input.RequestID, "GM controllers", input.ControllerDids, input.RequestID, input.RequestID, actorDid, now); err != nil {
 			return ledger.MutationAck{}, err
 		}
 		if err := tx.PutStable(ctx, storedAuthority); err != nil {
@@ -169,20 +159,8 @@ func (service *Service) TransferAuthority(ctx context.Context, actorDid string, 
 		leaseHolder := stringPtrIfSet(input.LeaseHolderDid)
 		nextAudienceRef := ""
 		if authorityState.TransferPhase == "rotating-grants" {
-			nextAudienceRef = store.BuildRef(record.RepoDID, runmodel.CollectionAudience, record.RecordKey+"-gm-"+input.RequestID)
-			audienceBody := runmodel.Audience{
-				AudienceKind:            "explicit",
-				SelectorPolicyKind:      "explicit-members",
-				ActorDids:               append([]string(nil), input.PendingControllerDids...),
-				SnapshotSourceRequestID: input.RequestID,
-				CreatedAt:               now,
-				UpdatedAt:               now,
-			}
-			storedAudience, err := marshalStable(runmodel.CollectionAudience, nextAudienceRef, input.RequestID, 1, now, now, audienceBody)
+			nextAudienceRef, err = newAudienceRef(authorityModel.SessionRef, record.RecordKey+"-gm-"+input.RequestID)
 			if err != nil {
-				return ledger.MutationAck{}, err
-			}
-			if err := tx.PutStable(ctx, storedAudience); err != nil {
 				return ledger.MutationAck{}, err
 			}
 		}
@@ -202,6 +180,18 @@ func (service *Service) TransferAuthority(ctx context.Context, actorDid string, 
 		if err != nil {
 			return rejectedAck(input.RequestID, err.Error()), nil
 		}
+		updatedGrantRefs := make([]string, 0)
+		if authorityState.TransferPhase == "rotating-grants" {
+			_, updatedGrantRefs, err = service.createExplicitAudienceWithGrants(ctx, tx, authorityModel.SessionRef, record.RecordKey+"-gm-"+input.RequestID, "Pending GM controllers", input.PendingControllerDids, input.RequestID, input.RequestID, actorDid, now)
+			if err != nil {
+				return ledger.MutationAck{}, err
+			}
+			retiredGrantRefs, err := service.retireAudienceAndGrants(ctx, tx, authorityModel.GMAudienceRef, input.RequestID, actorDid, "authority-transfer", now)
+			if err != nil {
+				return ledger.MutationAck{}, err
+			}
+			updatedGrantRefs = append(updatedGrantRefs, retiredGrantRefs...)
+		}
 		storedAuthority, err := marshalStable(runmodel.CollectionSessionAuthority, input.AuthorityRef, input.RequestID, record.Revision+1, record.CreatedAt, now, authorityToModel(updated))
 		if err != nil {
 			return ledger.MutationAck{}, err
@@ -214,6 +204,7 @@ func (service *Service) TransferAuthority(ctx context.Context, actorDid string, 
 		ack.PendingControllerDids = append([]string(nil), updated.PendingControllerDids...)
 		ack.LeaseHolderDid = updated.LeaseHolderDid
 		ack.TransferPhase = updated.TransferPhase
+		ack.UpdatedGrantRefs = append([]string(nil), updatedGrantRefs...)
 		if updated.TransferCompletedAt != nil {
 			ack.TransferCompletedAt = updated.TransferCompletedAt.UTC().Format(time.RFC3339)
 		}
