@@ -1,6 +1,6 @@
 # Cerulia Backend
 
-Cerulia の Go バックエンド実装です。現時点では phase 0 の foundation として、API の起動土台、設定読み込み、構造化ログ、任意の Postgres 接続、ヘルスチェック、ledger kernel 向け migration、contract artifact 生成、ローカル開発用の最小構成を用意しています。
+Cerulia の Go バックエンド実装です。現時点では phase 0 foundation に加えて、continuity core の最小 write path、core read surface、trusted-header ベースの auth gateway までを用意しています。
 
 ## 現在入っているもの
 
@@ -9,9 +9,13 @@ Cerulia の Go バックエンド実装です。現時点では phase 0 の foun
 - slog を使った JSON ログ
 - pgx/v5 による Postgres 接続の受け皿
 - phase 0 の SQL migration runner と ledger kernel 初期スキーマ
+- stable record / append-only record を保持する generic core store
 - JSON Lexicon と example payload を出力する contract artifact generator
 - requestId idempotency / current head / revision CAS の最小 helper
-- `/healthz` と `/readyz` エンドポイント
+- continuity core の write path
+- character home / campaign view / publication list などの core projection query
+- trusted header で permission-set を検証する auth gateway と anonymous public mode
+- `/healthz`、`/readyz`、`/xrpc/app.cerulia.rpc.*` エンドポイント
 - optional local-db 用の Docker Compose
 
 ## ディレクトリ構成
@@ -20,13 +24,16 @@ Cerulia の Go バックエンド実装です。現時点では phase 0 の foun
 cmd/
   api/
 internal/
+  authz/
   contract/
+  core/
   ledger/
   platform/
     config/
     database/
     httpserver/
     logging/
+  store/
 migrations/
 scripts/
 ```
@@ -39,6 +46,7 @@ scripts/
 4. contract artifact を出す場合は `go run ./cmd/contracts -out .artifacts/contracts` を実行する
 5. PowerShell では `./scripts/dev.ps1`、もしくは直接 `go run ./cmd/api` で起動する
 6. `http://localhost:8080/healthz` と `http://localhost:8080/readyz` を確認する
+7. XRPC を叩く場合は `X-Cerulia-Actor-Did` と `X-Cerulia-Permission-Sets` を付ける
 
 デフォルトでは `DATABASE_URL` が空なら DB 接続なしで起動します。Neon dev branch を使う場合は `DATABASE_URL` に接続文字列を入れてください。オフライン検証や CI 向けに、Docker Compose の `local-db` プロファイルも用意しています。
 
@@ -55,9 +63,24 @@ docker compose --profile local-db up -d
 docker compose --profile local-db down
 ```
 
+## XRPC スモーク例
+
+```powershell
+$headers = @{
+  "X-Cerulia-Actor-Did" = "did:plc:alice"
+  "X-Cerulia-Permission-Sets" = "app.cerulia.authCoreWriter"
+}
+
+Invoke-RestMethod \
+  -Method Post \
+  -Uri http://localhost:8080/xrpc/app.cerulia.rpc.createCampaign \
+  -Headers $headers \
+  -ContentType application/json \
+  -Body '{"title":"Campaign","visibility":"public","rulesetNsid":"app.cerulia.rules.core","rulesetManifestRef":"at://did:plc:alice/app.cerulia.core.rulesetManifest/ruleset-1","defaultReusePolicyKind":"same-campaign-default","stewardDids":["did:plc:alice"],"requestId":"req-1"}'
+```
+
 ## 次の実装対象
 
-- ATProto / auth gateway の実装
-- core write path の永続化
-- core projection と XRPC surface
+- proper OAuth / ATProto token validation
+- session / authority / membership の control plane
 - blob abstraction の実装
