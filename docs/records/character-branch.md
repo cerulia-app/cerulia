@@ -1,0 +1,52 @@
+# character-branch
+
+## 役割
+
+character-sheet から派生した、campaign/local な durable branch を表すrecord。分岐成長、外部シート由来の provenance、卓固有の恒久 override を受ける層になる。
+
+## 置き場所
+
+基本は owner の個人repo。community asset や shared NPC の branch でも、canonical ownership は owner または continuity steward に置く。
+
+## 主なフィールド
+
+- ownerDid
+- baseSheetRef
+- branchKind
+- branchLabel
+- overridePayloadRef
+- importedFrom
+- sourceRevision
+- syncMode
+- requestId
+- revision
+- createdAt
+- updatedAt
+- updatedByDid
+- retiredAt
+
+## 更新主体
+
+branch owner、または branch の運用を委ねられた continuity steward。
+
+## 参照関係
+
+- character-sheet
+- character-instance
+- character-advancement
+
+## 設計上の注意
+
+- branch は所有権の移譲ではなく、baseSheetRef から派生した履歴レイヤーである。
+- same baseSheetRef から複数 branch を作ることで、同じキャラの複数campaign分岐を表現できる。
+- branch は publication / reuse の durable subject なので、branchRef 自体は安定 object として扱う。branch metadata の更新で branchRef を差し替えない。
+- imported provenance と durable な local override は branch に置き、session 固有の現在値は optional extension の character-state に置く。
+- importedFrom と sourceRevision は provenance を表す field であり、外部元を live canonical source とみなすことを意味しない。
+- ruleset をまたぐ変換で生じた target branch は durable な reuse / publication subject であり、変換 provenance 自体は importedFrom だけでなく character-conversion で残す。
+- syncMode は snapshot、manual-rebase、pinned-upstream のような閉じた値で持ち、自動同期の有無を曖昧にしない。
+- character の canonical 解決順は、imported base、branch override、active な advancement sequence の順とする。optional extension の session state は run-time overlay に限る。
+- branch override は sourceRevision が指す imported snapshot に対して適用する。base を進められるのは manual-rebase か、明示的な import-sync entry のときだけにする。
+- revision は createCharacterBranch で 1 から始め、branchLabel、overridePayloadRef、importedFrom、sourceRevision、syncMode の accepted metadata update ごとに 1 ずつ増やす。
+- branch metadata update procedure は expectedRevision を受け、current revision と一致したときだけ更新してよい。advancement / episode / conversion / publication はこの revision で置き換えず、それぞれの append-only ledger に残す。
+- campaign-less な local branch は正当な first state である。AppView create flow での campaign 選択は branch field ではなく continuity scope intent であり、accepted linkage は character-episode.campaignRef、character-conversion.targetCampaignRef、publication / reuse context に materialize する。
+- retired branch の direct link は current branch detail と同一視せず、AppView 上では read-only historical detail または explanatory tombstone として扱う。
