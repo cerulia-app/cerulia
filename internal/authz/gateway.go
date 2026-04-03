@@ -14,6 +14,8 @@ const (
 	CorePublicationWriter = "app.cerulia.authCorePublicationOperator"
 	ReuseOperator         = "app.cerulia.authReuseOperator"
 	AuditReader           = "app.cerulia.authAuditReader"
+	SessionParticipant    = "app.cerulia.authSessionParticipant"
+	GovernanceOperator    = "app.cerulia.authGovernanceOperator"
 )
 
 var (
@@ -37,11 +39,28 @@ func NewGateway() *Gateway {
 		requiredBundleByOperation: map[string]string{
 			"app.cerulia.rpc.getCharacterHome":           CoreReader,
 			"app.cerulia.rpc.getCampaignView":            CoreReader,
+			"app.cerulia.rpc.getSessionAccessPreflight":  "",
+			"app.cerulia.rpc.getSessionView":             SessionParticipant,
+			"app.cerulia.rpc.getGovernanceView":          GovernanceOperator,
 			"app.cerulia.rpc.listCharacterEpisodes":      CoreReader,
 			"app.cerulia.rpc.listReuseGrants":            CoreReader,
 			"app.cerulia.rpc.listPublications":           CoreReader,
 			"app.cerulia.rpc.exportServiceLog":           AuditReader,
 			"app.cerulia.rpc.createCampaign":             CoreWriter,
+			"app.cerulia.rpc.createSessionDraft":         GovernanceOperator,
+			"app.cerulia.rpc.openSession":                GovernanceOperator,
+			"app.cerulia.rpc.startSession":               GovernanceOperator,
+			"app.cerulia.rpc.pauseSession":               GovernanceOperator,
+			"app.cerulia.rpc.resumeSession":              GovernanceOperator,
+			"app.cerulia.rpc.closeSession":               GovernanceOperator,
+			"app.cerulia.rpc.archiveSession":             GovernanceOperator,
+			"app.cerulia.rpc.reopenSession":              GovernanceOperator,
+			"app.cerulia.rpc.transferAuthority":          GovernanceOperator,
+			"app.cerulia.rpc.inviteSession":              GovernanceOperator,
+			"app.cerulia.rpc.cancelInvitation":           GovernanceOperator,
+			"app.cerulia.rpc.joinSession":                SessionParticipant,
+			"app.cerulia.rpc.leaveSession":               SessionParticipant,
+			"app.cerulia.rpc.moderateMembership":         GovernanceOperator,
 			"app.cerulia.rpc.attachRuleProfile":          CoreWriter,
 			"app.cerulia.rpc.retireRuleProfile":          CoreWriter,
 			"app.cerulia.rpc.importCharacterSheet":       CoreWriter,
@@ -75,6 +94,9 @@ func (gateway *Gateway) AuthorizeRequest(request *http.Request, operationNSID st
 			return subject, nil
 		}
 		return Subject{}, ErrUnauthorized
+	}
+	if requiredBundle == "" {
+		return subject, nil
 	}
 	if _, ok := subject.PermissionSets[requiredBundle]; !ok {
 		return Subject{}, ErrForbidden

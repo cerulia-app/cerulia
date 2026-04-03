@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"cerulia/internal/ledger"
 	runauthority "cerulia/internal/run/authority"
 	runmodel "cerulia/internal/run/model"
 	runsession "cerulia/internal/run/session"
-	"cerulia/internal/ledger"
 	"cerulia/internal/store"
 )
 
@@ -252,21 +252,21 @@ func (service *Service) transitionSession(ctx context.Context, actorDid string, 
 }
 
 func (service *Service) requireAuthority(ctx context.Context, reader store.Reader, authorityRef string, actorDid string, controllerOnly bool) (runmodel.SessionAuthority, error) {
-		_, authorityModel, err := decodeRunStable[runmodel.SessionAuthority](ctx, reader, authorityRef)
-		if err != nil {
-			return runmodel.SessionAuthority{}, err
-		}
-		state := modelToAuthority(authorityModel)
-		if controllerOnly {
-			if !sameActor(actorDid, state.ControllerDids...) {
-				return runmodel.SessionAuthority{}, ErrForbidden
-			}
-			return authorityModel, nil
-		}
-		if !sameActor(actorDid, state.ControllerDids...) && state.LeaseHolderDid != actorDid {
+	_, authorityModel, err := decodeRunStable[runmodel.SessionAuthority](ctx, reader, authorityRef)
+	if err != nil {
+		return runmodel.SessionAuthority{}, err
+	}
+	state := modelToAuthority(authorityModel)
+	if controllerOnly {
+		if !sameActor(actorDid, state.ControllerDids...) {
 			return runmodel.SessionAuthority{}, ErrForbidden
 		}
 		return authorityModel, nil
+	}
+	if !sameActor(actorDid, state.ControllerDids...) && state.LeaseHolderDid != actorDid {
+		return runmodel.SessionAuthority{}, ErrForbidden
+	}
+	return authorityModel, nil
 }
 
 func rnauthorityCreateInput(sessionRef string, authorityID string, actorDid string, input CreateSessionDraftInput, now time.Time) runauthority.CreateInput {
@@ -309,26 +309,26 @@ func sessionToModel(value runsession.Session) runmodel.Session {
 
 func modelToSession(value runmodel.Session) runsession.Session {
 	return runsession.Session{
-		SessionID:               value.SessionID,
-		CampaignRef:             value.CampaignRef,
-		Title:                   value.Title,
-		Visibility:              value.Visibility,
-		RulesetNSID:             value.RulesetNSID,
-		RulesetManifestRef:      value.RulesetManifestRef,
-		RuleProfileRefs:         append([]string(nil), value.RuleProfileRefs...),
-		AuthorityRef:            value.AuthorityRef,
-		State:                   value.State,
-		CreatedAt:               value.CreatedAt,
-		ScheduledAt:             value.ScheduledAt,
-		EndedAt:                 value.EndedAt,
-		ArchivedAt:              value.ArchivedAt,
-		RequestID:               value.RequestID,
-		StateChangedAt:          value.StateChangedAt,
-		StateChangedByDid:       value.StateChangedByDid,
-		StateReasonCode:         value.StateReasonCode,
-		VisibilityChangedAt:     value.VisibilityChangedAt,
-		VisibilityChangedByDid:  value.VisibilityChangedByDid,
-		VisibilityReasonCode:    value.VisibilityReasonCode,
+		SessionID:              value.SessionID,
+		CampaignRef:            value.CampaignRef,
+		Title:                  value.Title,
+		Visibility:             value.Visibility,
+		RulesetNSID:            value.RulesetNSID,
+		RulesetManifestRef:     value.RulesetManifestRef,
+		RuleProfileRefs:        append([]string(nil), value.RuleProfileRefs...),
+		AuthorityRef:           value.AuthorityRef,
+		State:                  value.State,
+		CreatedAt:              value.CreatedAt,
+		ScheduledAt:            value.ScheduledAt,
+		EndedAt:                value.EndedAt,
+		ArchivedAt:             value.ArchivedAt,
+		RequestID:              value.RequestID,
+		StateChangedAt:         value.StateChangedAt,
+		StateChangedByDid:      value.StateChangedByDid,
+		StateReasonCode:        value.StateReasonCode,
+		VisibilityChangedAt:    value.VisibilityChangedAt,
+		VisibilityChangedByDid: value.VisibilityChangedByDid,
+		VisibilityReasonCode:   value.VisibilityReasonCode,
 	}
 }
 
@@ -383,4 +383,3 @@ func stringPtrIfSet(value string) *string {
 	copy := value
 	return &copy
 }
-

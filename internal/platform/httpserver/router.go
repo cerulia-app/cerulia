@@ -10,16 +10,20 @@ import (
 	"cerulia/internal/core/projection"
 	"cerulia/internal/platform/config"
 	"cerulia/internal/platform/database"
+	runcommand "cerulia/internal/run/command"
+	runprojection "cerulia/internal/run/projection"
 	"cerulia/internal/store"
 )
 
 type handler struct {
-	logger      *slog.Logger
-	config      config.Config
-	db          *database.DB
-	auth        *authz.Gateway
-	commands    *command.Service
-	projections *projection.Service
+	logger         *slog.Logger
+	config         config.Config
+	db             *database.DB
+	auth           *authz.Gateway
+	commands       *command.Service
+	projections    *projection.Service
+	runCommands    *runcommand.Service
+	runProjections *runprojection.Service
 }
 
 type statusResponse struct {
@@ -40,12 +44,14 @@ func NewHandler(logger *slog.Logger, cfg config.Config, db *database.DB) http.Ha
 	}
 
 	h := &handler{
-		logger:      logger,
-		config:      cfg,
-		db:          db,
-		auth:        authz.NewGateway(),
-		commands:    command.NewService(dataStore),
-		projections: projection.NewService(dataStore),
+		logger:         logger,
+		config:         cfg,
+		db:             db,
+		auth:           authz.NewGateway(),
+		commands:       command.NewService(dataStore),
+		projections:    projection.NewService(dataStore),
+		runCommands:    runcommand.NewService(dataStore),
+		runProjections: runprojection.NewService(dataStore),
 	}
 
 	mux := http.NewServeMux()
@@ -54,11 +60,28 @@ func NewHandler(logger *slog.Logger, cfg config.Config, db *database.DB) http.Ha
 	mux.HandleFunc("GET /readyz", h.handleReadyz)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCharacterHome", h.handleGetCharacterHome)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCampaignView", h.handleGetCampaignView)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getSessionAccessPreflight", h.handleGetSessionAccessPreflight)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getSessionView", h.handleGetSessionView)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getGovernanceView", h.handleGetGovernanceView)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listCharacterEpisodes", h.handleListCharacterEpisodes)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listReuseGrants", h.handleListReuseGrants)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listPublications", h.handleListPublications)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.exportServiceLog", h.handleExportServiceLog)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createCampaign", h.handleCreateCampaign)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createSessionDraft", h.handleCreateSessionDraft)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.openSession", h.handleOpenSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.startSession", h.handleStartSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.pauseSession", h.handlePauseSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.resumeSession", h.handleResumeSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.closeSession", h.handleCloseSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.archiveSession", h.handleArchiveSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.reopenSession", h.handleReopenSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.transferAuthority", h.handleTransferAuthority)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.inviteSession", h.handleInviteSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.cancelInvitation", h.handleCancelInvitation)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.joinSession", h.handleJoinSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.leaveSession", h.handleLeaveSession)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.moderateMembership", h.handleModerateMembership)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.attachRuleProfile", h.handleAttachRuleProfile)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.retireRuleProfile", h.handleRetireRuleProfile)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.importCharacterSheet", h.handleImportCharacterSheet)

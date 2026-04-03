@@ -13,26 +13,26 @@ var (
 )
 
 type Session struct {
-	SessionID             string
-	CampaignRef           string
-	Title                 string
-	Visibility            string
-	RulesetNSID           string
-	RulesetManifestRef    string
-	RuleProfileRefs       []string
-	AuthorityRef          string
-	State                 string
-	CreatedAt             time.Time
-	ScheduledAt           *time.Time
-	EndedAt               *time.Time
-	ArchivedAt            *time.Time
-	RequestID             string
-	StateChangedAt        time.Time
-	StateChangedByDid     string
-	StateReasonCode       string
-	VisibilityChangedAt   time.Time
+	SessionID              string
+	CampaignRef            string
+	Title                  string
+	Visibility             string
+	RulesetNSID            string
+	RulesetManifestRef     string
+	RuleProfileRefs        []string
+	AuthorityRef           string
+	State                  string
+	CreatedAt              time.Time
+	ScheduledAt            *time.Time
+	EndedAt                *time.Time
+	ArchivedAt             *time.Time
+	RequestID              string
+	StateChangedAt         time.Time
+	StateChangedByDid      string
+	StateReasonCode        string
+	VisibilityChangedAt    time.Time
 	VisibilityChangedByDid string
-	VisibilityReasonCode  string
+	VisibilityReasonCode   string
 }
 
 type CreateDraftInput struct {
@@ -58,22 +58,22 @@ func CreateDraft(input CreateDraftInput) (Session, error) {
 
 	now := input.Now.UTC()
 	return Session{
-		SessionID:               input.SessionID,
-		CampaignRef:             input.CampaignRef,
-		Title:                   input.Title,
-		Visibility:              input.Visibility,
-		RulesetNSID:             input.RulesetNSID,
-		RulesetManifestRef:      input.RulesetManifestRef,
-		RuleProfileRefs:         append([]string(nil), input.RuleProfileRefs...),
-		AuthorityRef:            input.AuthorityRef,
-		State:                   "planning",
-		CreatedAt:               now,
-		ScheduledAt:             copyTimePtr(input.ScheduledAt),
-		RequestID:               input.RequestID,
-		StateChangedAt:          now,
-		StateChangedByDid:       input.ActorDid,
-		VisibilityChangedAt:     now,
-		VisibilityChangedByDid:  input.ActorDid,
+		SessionID:              input.SessionID,
+		CampaignRef:            input.CampaignRef,
+		Title:                  input.Title,
+		Visibility:             input.Visibility,
+		RulesetNSID:            input.RulesetNSID,
+		RulesetManifestRef:     input.RulesetManifestRef,
+		RuleProfileRefs:        append([]string(nil), input.RuleProfileRefs...),
+		AuthorityRef:           input.AuthorityRef,
+		State:                  "planning",
+		CreatedAt:              now,
+		ScheduledAt:            copyTimePtr(input.ScheduledAt),
+		RequestID:              input.RequestID,
+		StateChangedAt:         now,
+		StateChangedByDid:      input.ActorDid,
+		VisibilityChangedAt:    now,
+		VisibilityChangedByDid: input.ActorDid,
 	}, nil
 }
 

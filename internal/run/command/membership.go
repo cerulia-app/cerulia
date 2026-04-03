@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"cerulia/internal/ledger"
 	runmembership "cerulia/internal/run/membership"
 	runmodel "cerulia/internal/run/model"
-	"cerulia/internal/ledger"
 	"cerulia/internal/store"
 )
 
@@ -76,15 +76,15 @@ func (service *Service) InviteSession(ctx context.Context, actorDid string, inpu
 			current = &currentValue
 		}
 		next, err := runmembership.Invite(current, runmembership.InviteInput{
-			SessionRef:      input.SessionRef,
-			ActorDid:        input.ActorDid,
-			Role:            input.Role,
-			InvitedByDid:    actorDid,
-			RequestID:       input.RequestID,
-			Note:            input.Note,
-			ExpectedStatus:  input.ExpectedStatus,
-			Now:             now,
-			CurrentRef:      currentRef,
+			SessionRef:     input.SessionRef,
+			ActorDid:       input.ActorDid,
+			Role:           input.Role,
+			InvitedByDid:   actorDid,
+			RequestID:      input.RequestID,
+			Note:           input.Note,
+			ExpectedStatus: input.ExpectedStatus,
+			Now:            now,
+			CurrentRef:     currentRef,
 		})
 		if err != nil {
 			return rejectedAck(input.RequestID, err.Error()), nil
@@ -301,51 +301,51 @@ func (service *Service) ModerateMembership(ctx context.Context, actorDid string,
 }
 
 func (service *Service) requireSession(ctx context.Context, reader store.Reader, sessionRef string) (runmodel.Session, error) {
-		_, sessionModel, err := decodeRunStable[runmodel.Session](ctx, reader, sessionRef)
-		if err != nil {
-			return runmodel.Session{}, err
-		}
-		return sessionModel, nil
+	_, sessionModel, err := decodeRunStable[runmodel.Session](ctx, reader, sessionRef)
+	if err != nil {
+		return runmodel.Session{}, err
+	}
+	return sessionModel, nil
 }
 
 func (service *Service) requireSessionGovernance(ctx context.Context, reader store.Reader, sessionRef string, actorDid string) (runmodel.Session, error) {
-		sessionModel, err := service.requireSession(ctx, reader, sessionRef)
-		if err != nil {
-			return runmodel.Session{}, err
-		}
-		if _, err := service.requireAuthority(ctx, reader, sessionModel.AuthorityRef, actorDid, true); err != nil {
-			return runmodel.Session{}, err
-		}
-		return sessionModel, nil
+	sessionModel, err := service.requireSession(ctx, reader, sessionRef)
+	if err != nil {
+		return runmodel.Session{}, err
+	}
+	if _, err := service.requireAuthority(ctx, reader, sessionModel.AuthorityRef, actorDid, true); err != nil {
+		return runmodel.Session{}, err
+	}
+	return sessionModel, nil
 }
 
 func (service *Service) currentMembership(ctx context.Context, reader store.Reader, sessionRef string, actorDid string) (string, runmodel.Membership, bool, error) {
-		records, err := reader.ListStableByCollection(ctx, runmodel.CollectionMembership)
+	records, err := reader.ListStableByCollection(ctx, runmodel.CollectionMembership)
+	if err != nil {
+		return "", runmodel.Membership{}, false, err
+	}
+	superseded := map[string]struct{}{}
+	candidates := map[string]runmodel.Membership{}
+	for _, record := range records {
+		value, err := runmodel.UnmarshalStable[runmodel.Membership](record)
 		if err != nil {
 			return "", runmodel.Membership{}, false, err
 		}
-		superseded := map[string]struct{}{}
-		candidates := map[string]runmodel.Membership{}
-		for _, record := range records {
-			value, err := runmodel.UnmarshalStable[runmodel.Membership](record)
-			if err != nil {
-				return "", runmodel.Membership{}, false, err
-			}
-			if value.SessionRef != sessionRef || value.ActorDid != actorDid {
-				continue
-			}
-			candidates[record.Ref] = value
-			if value.SupersedesRef != "" {
-				superseded[value.SupersedesRef] = struct{}{}
-			}
+		if value.SessionRef != sessionRef || value.ActorDid != actorDid {
+			continue
 		}
-		for ref, value := range candidates {
-			if _, ok := superseded[ref]; ok {
-				continue
-			}
-			return ref, value, true, nil
+		candidates[record.Ref] = value
+		if value.SupersedesRef != "" {
+			superseded[value.SupersedesRef] = struct{}{}
 		}
-		return "", runmodel.Membership{}, false, nil
+	}
+	for ref, value := range candidates {
+		if _, ok := superseded[ref]; ok {
+			continue
+		}
+		return ref, value, true, nil
+	}
+	return "", runmodel.Membership{}, false, nil
 }
 
 func newMembershipRef(sessionRef string, requestID string) (string, error) {

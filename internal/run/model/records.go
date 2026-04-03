@@ -3,26 +3,26 @@ package model
 import "time"
 
 type Session struct {
-	SessionID               string     `json:"sessionId"`
-	CampaignRef             string     `json:"campaignRef,omitempty"`
-	Title                   string     `json:"title"`
-	Visibility              string     `json:"visibility"`
-	RulesetNSID             string     `json:"rulesetNsid"`
-	RulesetManifestRef      string     `json:"rulesetManifestRef"`
-	RuleProfileRefs         []string   `json:"ruleProfileRefs"`
-	AuthorityRef            string     `json:"authorityRef"`
-	State                   string     `json:"state"`
-	CreatedAt               time.Time  `json:"createdAt"`
-	ScheduledAt             *time.Time `json:"scheduledAt,omitempty"`
-	EndedAt                 *time.Time `json:"endedAt,omitempty"`
-	ArchivedAt              *time.Time `json:"archivedAt,omitempty"`
-	RequestID               string     `json:"requestId"`
-	StateChangedAt          time.Time  `json:"stateChangedAt"`
-	StateChangedByDid       string     `json:"stateChangedByDid"`
-	StateReasonCode         string     `json:"stateReasonCode,omitempty"`
-	VisibilityChangedAt     time.Time  `json:"visibilityChangedAt"`
-	VisibilityChangedByDid  string     `json:"visibilityChangedByDid"`
-	VisibilityReasonCode    string     `json:"visibilityReasonCode,omitempty"`
+	SessionID              string     `json:"sessionId"`
+	CampaignRef            string     `json:"campaignRef,omitempty"`
+	Title                  string     `json:"title"`
+	Visibility             string     `json:"visibility"`
+	RulesetNSID            string     `json:"rulesetNsid"`
+	RulesetManifestRef     string     `json:"rulesetManifestRef"`
+	RuleProfileRefs        []string   `json:"ruleProfileRefs"`
+	AuthorityRef           string     `json:"authorityRef"`
+	State                  string     `json:"state"`
+	CreatedAt              time.Time  `json:"createdAt"`
+	ScheduledAt            *time.Time `json:"scheduledAt,omitempty"`
+	EndedAt                *time.Time `json:"endedAt,omitempty"`
+	ArchivedAt             *time.Time `json:"archivedAt,omitempty"`
+	RequestID              string     `json:"requestId"`
+	StateChangedAt         time.Time  `json:"stateChangedAt"`
+	StateChangedByDid      string     `json:"stateChangedByDid"`
+	StateReasonCode        string     `json:"stateReasonCode,omitempty"`
+	VisibilityChangedAt    time.Time  `json:"visibilityChangedAt"`
+	VisibilityChangedByDid string     `json:"visibilityChangedByDid"`
+	VisibilityReasonCode   string     `json:"visibilityReasonCode,omitempty"`
 }
 
 type SessionAuthority struct {

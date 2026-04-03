@@ -27,15 +27,15 @@ type Membership struct {
 }
 
 type InviteInput struct {
-	SessionRef    string
-	ActorDid      string
-	Role          string
-	InvitedByDid  string
-	RequestID     string
-	Note          string
+	SessionRef     string
+	ActorDid       string
+	Role           string
+	InvitedByDid   string
+	RequestID      string
+	Note           string
 	ExpectedStatus string
-	Now           time.Time
-	CurrentRef    string
+	Now            time.Time
+	CurrentRef     string
 }
 
 type TransitionInput struct {

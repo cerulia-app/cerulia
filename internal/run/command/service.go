@@ -9,8 +9,8 @@ import (
 	"time"
 
 	coremodel "cerulia/internal/core/model"
-	runmodel "cerulia/internal/run/model"
 	"cerulia/internal/ledger"
+	runmodel "cerulia/internal/run/model"
 	"cerulia/internal/store"
 )
 
@@ -57,16 +57,16 @@ type ReopenSessionInput struct {
 }
 
 type TransferAuthorityInput struct {
-	SessionRef                string   `json:"sessionRef"`
-	AuthorityRef              string   `json:"authorityRef"`
-	ExpectedAuthorityRequestID string  `json:"expectedAuthorityRequestId"`
-	ExpectedTransferPhase     string   `json:"expectedTransferPhase"`
-	ExpectedControllerDids    []string `json:"expectedControllerDids"`
-	PendingControllerDids     []string `json:"pendingControllerDids"`
-	TransferPolicy            string   `json:"transferPolicy,omitempty"`
-	LeaseHolderDid            string   `json:"leaseHolderDid,omitempty"`
-	RequestID                 string   `json:"requestId"`
-	ReasonCode                string   `json:"reasonCode,omitempty"`
+	SessionRef                 string   `json:"sessionRef"`
+	AuthorityRef               string   `json:"authorityRef"`
+	ExpectedAuthorityRequestID string   `json:"expectedAuthorityRequestId"`
+	ExpectedTransferPhase      string   `json:"expectedTransferPhase"`
+	ExpectedControllerDids     []string `json:"expectedControllerDids"`
+	PendingControllerDids      []string `json:"pendingControllerDids"`
+	TransferPolicy             string   `json:"transferPolicy,omitempty"`
+	LeaseHolderDid             string   `json:"leaseHolderDid,omitempty"`
+	RequestID                  string   `json:"requestId"`
+	ReasonCode                 string   `json:"reasonCode,omitempty"`
 }
 
 func NewService(dataStore store.Store) *Service {

@@ -118,6 +118,80 @@ func TestListPublicationsRejectsIncludeRetiredInPublicMode(t *testing.T) {
 	assertXRPCError(t, rec, http.StatusBadRequest, "InvalidRequest")
 }
 
+func TestSessionAccessPreflightAllowsAnonymous(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	sessionRef := createSessionDraft(t, handler, "did:plc:gm1", "req-session-preflight")
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getSessionAccessPreflight?sessionRef="+sessionRef, nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		DecisionKind string `json:"decisionKind"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode preflight response: %v", err)
+	}
+	if response.DecisionKind != "sign-in" {
+		t.Fatalf("expected sign-in decision, got %q", response.DecisionKind)
+	}
+}
+
+func TestSessionViewRequiresJoinedMembership(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	sessionRef := createSessionDraft(t, handler, "did:plc:gm1", "req-session-view")
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getSessionView?sessionRef="+sessionRef, nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:player1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.SessionParticipant)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assertXRPCError(t, rec, http.StatusForbidden, "Forbidden")
+}
+
+func TestSessionViewReturnsJoinedMembership(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	sessionRef := createSessionDraft(t, handler, "did:plc:gm1", "req-session-joined")
+	inviteSession(t, handler, "did:plc:gm1", sessionRef, "did:plc:player1", "player", "", "req-invite-joined")
+	joinSession(t, handler, "did:plc:player1", sessionRef, "did:plc:player1", "invited", "req-join-joined")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getSessionView?sessionRef="+sessionRef, nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:player1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.SessionParticipant)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Session struct {
+			State string `json:"state"`
+		} `json:"session"`
+		Memberships []map[string]any `json:"memberships"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode session view: %v", err)
+	}
+	if response.Session.State != "planning" || len(response.Memberships) != 1 {
+		t.Fatalf("expected planning state and one membership, got state=%q memberships=%d", response.Session.State, len(response.Memberships))
+	}
+}
+
+func TestGovernanceViewRejectsWrongBundle(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	sessionRef := createSessionDraft(t, handler, "did:plc:gm1", "req-governance-view")
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getGovernanceView?sessionRef="+sessionRef, nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:gm1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.SessionParticipant)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assertXRPCError(t, rec, http.StatusForbidden, "Forbidden")
+}
+
 func testConfig() config.Config {
 	return config.Config{
 		AppEnv:          "test",
@@ -168,6 +242,49 @@ func createCampaign(t *testing.T, handler http.Handler, actorDid string, request
 		t.Fatalf("expected one emitted record ref, got %d", len(ack.EmittedRecordRefs))
 	}
 	return ack.EmittedRecordRefs[0]
+}
+
+func createSessionDraft(t *testing.T, handler http.Handler, actorDid string, requestID string) string {
+	t.Helper()
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.createSessionDraft", `{"sessionId":"session-`+requestID+`","title":"Session","visibility":"unlisted","rulesetNsid":"app.cerulia.rules.core","rulesetManifestRef":"at://did:plc:rules/app.cerulia.core.rulesetManifest/ruleset-1","controllerDids":["`+actorDid+`"],"recoveryControllerDids":["did:plc:recovery1"],"transferPolicy":"majority-controllers","expectedRulesetManifestRef":"at://did:plc:rules/app.cerulia.core.rulesetManifest/ruleset-1","requestId":"`+requestID+`"}`, map[string]string{
+		authz.HeaderActorDID:       actorDid,
+		authz.HeaderPermissionSets: authz.GovernanceOperator,
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create session failed: %d %s", rec.Code, rec.Body.String())
+	}
+	var ack struct {
+		EmittedRecordRefs []string `json:"emittedRecordRefs"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &ack); err != nil {
+		t.Fatalf("decode create session ack: %v", err)
+	}
+	if len(ack.EmittedRecordRefs) == 0 {
+		t.Fatal("expected emitted session ref")
+	}
+	return ack.EmittedRecordRefs[0]
+}
+
+func inviteSession(t *testing.T, handler http.Handler, actorDid string, sessionRef string, inviteeDid string, role string, expectedStatus string, requestID string) {
+	t.Helper()
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.inviteSession", `{"sessionRef":"`+sessionRef+`","actorDid":"`+inviteeDid+`","role":"`+role+`","expectedStatus":"`+expectedStatus+`","requestId":"`+requestID+`"}`, map[string]string{
+		authz.HeaderActorDID:       actorDid,
+		authz.HeaderPermissionSets: authz.GovernanceOperator,
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("invite session failed: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func joinSession(t *testing.T, handler http.Handler, actorDid string, sessionRef string, joinerDid string, expectedStatus string, requestID string) {
+	t.Helper()
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.joinSession", `{"sessionRef":"`+sessionRef+`","actorDid":"`+joinerDid+`","expectedStatus":"`+expectedStatus+`","requestId":"`+requestID+`"}`, map[string]string{
+		authz.HeaderActorDID:       actorDid,
+		authz.HeaderPermissionSets: authz.SessionParticipant,
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("join session failed: %d %s", rec.Code, rec.Body.String())
+	}
 }
 
 func publishCampaign(t *testing.T, handler http.Handler, actorDid string, campaignRef string, requestID string) {

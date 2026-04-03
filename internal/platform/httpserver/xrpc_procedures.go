@@ -4,7 +4,190 @@ import (
 	"net/http"
 
 	"cerulia/internal/core/command"
+	runcommand "cerulia/internal/run/command"
 )
+
+func (h *handler) handleCreateSessionDraft(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.CreateSessionDraftInput](h, w, r, "app.cerulia.rpc.createSessionDraft")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.CreateSessionDraft(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleOpenSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.openSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.OpenSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleStartSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.startSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.StartSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handlePauseSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.pauseSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.PauseSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleResumeSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.resumeSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.ResumeSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleCloseSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.closeSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.CloseSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleArchiveSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.archiveSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.ArchiveSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleReopenSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.ReopenSessionInput](h, w, r, "app.cerulia.rpc.reopenSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.ReopenSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleTransferAuthority(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.TransferAuthorityInput](h, w, r, "app.cerulia.rpc.transferAuthority")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.TransferAuthority(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleInviteSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.InviteSessionInput](h, w, r, "app.cerulia.rpc.inviteSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.InviteSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleCancelInvitation(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.CancelInvitationInput](h, w, r, "app.cerulia.rpc.cancelInvitation")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.CancelInvitation(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleJoinSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.JoinSessionInput](h, w, r, "app.cerulia.rpc.joinSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.JoinSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleLeaveSession(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.LeaveSessionInput](h, w, r, "app.cerulia.rpc.leaveSession")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.LeaveSession(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleModerateMembership(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.ModerateMembershipInput](h, w, r, "app.cerulia.rpc.moderateMembership")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.ModerateMembership(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
 
 func (h *handler) handleCreateCampaign(w http.ResponseWriter, r *http.Request) {
 	input, subject, ok := decodeProcedure[command.CreateCampaignInput](h, w, r, "app.cerulia.rpc.createCampaign")

@@ -9,8 +9,10 @@ import (
 	"strings"
 
 	"cerulia/internal/authz"
-	"cerulia/internal/core/command"
-	"cerulia/internal/core/projection"
+	corecommand "cerulia/internal/core/command"
+	coreprojection "cerulia/internal/core/projection"
+	runcommand "cerulia/internal/run/command"
+	runprojection "cerulia/internal/run/projection"
 	"cerulia/internal/store"
 )
 
@@ -63,13 +65,13 @@ func writeXRPCFailure(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, authz.ErrUnauthorized):
 		writeXRPCError(w, http.StatusUnauthorized, "Unauthorized", err.Error())
-	case errors.Is(err, authz.ErrForbidden), errors.Is(err, command.ErrForbidden), errors.Is(err, projection.ErrForbidden):
+	case errors.Is(err, authz.ErrForbidden), errors.Is(err, corecommand.ErrForbidden), errors.Is(err, coreprojection.ErrForbidden), errors.Is(err, runcommand.ErrForbidden), errors.Is(err, runprojection.ErrForbidden):
 		writeXRPCError(w, http.StatusForbidden, "Forbidden", err.Error())
 	case errors.Is(err, store.ErrNotFound):
 		writeXRPCError(w, http.StatusNotFound, "NotFound", err.Error())
-	case errors.Is(err, command.ErrUnsupportedRuleset):
+	case errors.Is(err, corecommand.ErrUnsupportedRuleset), errors.Is(err, runcommand.ErrUnsupportedRuleset):
 		writeXRPCError(w, http.StatusBadRequest, "UnsupportedRuleset", err.Error())
-	case errors.Is(err, command.ErrInvalidInput), errors.Is(err, projection.ErrInvalidInput):
+	case errors.Is(err, corecommand.ErrInvalidInput), errors.Is(err, coreprojection.ErrInvalidInput), errors.Is(err, runcommand.ErrInvalidInput), errors.Is(err, runprojection.ErrInvalidInput):
 		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", err.Error())
 	default:
 		writeXRPCError(w, http.StatusInternalServerError, "InternalError", err.Error())

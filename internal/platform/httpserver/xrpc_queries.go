@@ -4,6 +4,63 @@ import (
 	"net/http"
 )
 
+func (h *handler) handleGetSessionAccessPreflight(w http.ResponseWriter, r *http.Request) {
+	subject, err := h.authorize(r, "app.cerulia.rpc.getSessionAccessPreflight", true)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	sessionRef := r.URL.Query().Get("sessionRef")
+	if sessionRef == "" {
+		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", "missing sessionRef")
+		return
+	}
+	view, err := h.runProjections.GetSessionAccessPreflight(r.Context(), subject.ActorDID, sessionRef)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, view)
+}
+
+func (h *handler) handleGetSessionView(w http.ResponseWriter, r *http.Request) {
+	subject, err := h.authorize(r, "app.cerulia.rpc.getSessionView", false)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	sessionRef := r.URL.Query().Get("sessionRef")
+	if sessionRef == "" {
+		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", "missing sessionRef")
+		return
+	}
+	view, err := h.runProjections.GetSessionView(r.Context(), subject.ActorDID, sessionRef)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, view)
+}
+
+func (h *handler) handleGetGovernanceView(w http.ResponseWriter, r *http.Request) {
+	subject, err := h.authorize(r, "app.cerulia.rpc.getGovernanceView", false)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	sessionRef := r.URL.Query().Get("sessionRef")
+	if sessionRef == "" {
+		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", "missing sessionRef")
+		return
+	}
+	view, err := h.runProjections.GetGovernanceView(r.Context(), subject.ActorDID, sessionRef)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, view)
+}
+
 func (h *handler) handleGetCharacterHome(w http.ResponseWriter, r *http.Request) {
 	subject, err := h.authorize(r, "app.cerulia.rpc.getCharacterHome", false)
 	if err != nil {
