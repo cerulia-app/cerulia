@@ -19,11 +19,11 @@ permission-set 定義は dedicated な auth lexicon にまとめ、app.cerulia.a
 | app.cerulia.authCoreWriter | 個人repoの core lineage record を更新する | characterSheet 更新、characterBranch 作成、recordCharacterConversion、recordCharacterAdvancement、recordCharacterEpisode、importCharacterSheet |
 | app.cerulia.authCorePublicationOperator | core publication を更新する | publishSubject、retirePublication |
 | app.cerulia.authReuseOperator | core reuse ledger を更新する | grantReuse、revokeReuse |
-| app.cerulia.authSessionParticipant | 通常参加者向けの session 呼び出し | getSessionView、getReplayView(mode=participant)、joinSession、leaveSession、sendMessage、rollDice、submitAction、listHandouts |
+| app.cerulia.authSessionParticipant | 通常参加者向けの session 呼び出し | getSessionView、getReplayView(mode=participant)、joinSession、leaveSession、updateCharacterState、sendMessage、rollDice、listHandouts |
 | app.cerulia.authBoardReader | 盤面の participant-safe 読み取りを行う | getBoardView(mode=participant) |
 | app.cerulia.authBoardOperator | 盤面の operator 読み取りと確定操作を行う | getBoardView(mode=operator)、applyBoardOp |
-| app.cerulia.authSecretOperator | 公開切替と鍵ライフサイクルを扱う | revealSubject、redactRecord、rotateAudienceKey |
-| app.cerulia.authGovernanceOperator | session governance と operator read を扱う | getGovernanceView、listSessionPublications(mode=governance)、createSessionDraft、inviteSession、cancelInvitation、moderateMembership、openSession、startSession、pauseSession、resumeSession、setSessionVisibility、closeSession、archiveSession、reopenSession、transferAuthority |
+| app.cerulia.authSecretOperator | 公開切替と鍵ライフサイクルを扱う | createSecretEnvelope、revealSubject、redactRecord、rotateAudienceKey |
+| app.cerulia.authGovernanceOperator | session governance と operator read を扱う | getGovernanceView、listSessionPublications(mode=governance)、createSessionDraft、inviteSession、cancelInvitation、moderateMembership、openSession、startSession、pauseSession、resumeSession、setSessionVisibility、closeSession、archiveSession、reopenSession、transferAuthority、createCharacterInstance、submitAction |
 | app.cerulia.authAppealOriginator | 当事者の救済申立てだけを扱う | listAppealCases(view=participant)、submitAppeal、withdrawAppeal |
 | app.cerulia.authAppealResolver | appeal を審理・解決する | listAppealCases、submitAppeal、withdrawAppeal、reviewAppeal、escalateAppeal、resolveAppeal |
 | app.cerulia.authPublicationOperator | session-backed carrier を更新する | publishSessionLink、retireSessionLink |

@@ -28,6 +28,7 @@ const (
 	ReuseOperator         = "app.cerulia.authReuseOperator"
 	AuditReader           = "app.cerulia.authAuditReader"
 	SessionParticipant    = "app.cerulia.authSessionParticipant"
+	SecretOperator       = "app.cerulia.authSecretOperator"
 	GovernanceOperator    = "app.cerulia.authGovernanceOperator"
 	PublicationOperator   = "app.cerulia.authPublicationOperator"
 	AppealOriginator      = "app.cerulia.authAppealOriginator"
@@ -117,7 +118,7 @@ func NewGateway(configs ...Config) *Gateway {
 			"app.cerulia.rpc.retireSessionLink":          {PublicationOperator},
 			"app.cerulia.rpc.createCharacterInstance":    {GovernanceOperator},
 			"app.cerulia.rpc.updateCharacterState":       {SessionParticipant, GovernanceOperator},
-			"app.cerulia.rpc.createSecretEnvelope":       {SessionParticipant, GovernanceOperator},
+			"app.cerulia.rpc.createSecretEnvelope":       {SecretOperator},
 			"app.cerulia.rpc.sendMessage":                {SessionParticipant, GovernanceOperator},
 			"app.cerulia.rpc.rollDice":                   {SessionParticipant, GovernanceOperator},
 			"app.cerulia.rpc.submitAction":               {GovernanceOperator},
@@ -126,9 +127,9 @@ func NewGateway(configs ...Config) *Gateway {
 			"app.cerulia.rpc.reviewAppeal":               {AppealResolver},
 			"app.cerulia.rpc.escalateAppeal":             {AppealResolver},
 			"app.cerulia.rpc.resolveAppeal":              {AppealResolver},
-			"app.cerulia.rpc.revealSubject":              {GovernanceOperator},
-			"app.cerulia.rpc.redactRecord":               {GovernanceOperator},
-			"app.cerulia.rpc.rotateAudienceKey":          {GovernanceOperator},
+			"app.cerulia.rpc.revealSubject":              {SecretOperator},
+			"app.cerulia.rpc.redactRecord":               {SecretOperator},
+			"app.cerulia.rpc.rotateAudienceKey":          {SecretOperator},
 			"app.cerulia.rpc.attachRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.retireRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.importCharacterSheet":       {CoreWriter},

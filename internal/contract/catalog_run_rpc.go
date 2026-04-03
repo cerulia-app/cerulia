@@ -180,6 +180,76 @@ func runRPCCatalog() map[string]map[string]any {
 				"requestId":      refDef("app.cerulia.defs#requestId"),
 			}, mutationAck, commonErrors),
 		}),
+		"lexicon/app.cerulia.rpc.createCharacterInstance.json": document("app.cerulia.rpc.createCharacterInstance", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "instanceId", "instanceLabel", "sourceType", "controllerDids", "requestId"}, map[string]any{
+				"sessionRef":            refDef("app.cerulia.defs#sessionRef"),
+				"instanceId":            stringDef(""),
+				"baseSheetRef":          refDef("app.cerulia.defs#characterSheetRef"),
+				"characterBranchRef":    refDef("app.cerulia.defs#characterBranchRef"),
+				"instanceLabel":         stringDef(""),
+				"sourceType":            refDef("app.cerulia.defs#sourceType"),
+				"controllerDids":        arrayDefMin(refDef("app.cerulia.defs#did"), 1),
+				"controllerAudienceRef": refDef("app.cerulia.defs#controllerAudienceRef"),
+				"defaultTokenRef":       refDef("app.cerulia.defs#tokenRef"),
+				"requestId":             refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.updateCharacterState.json": document("app.cerulia.rpc.updateCharacterState", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "characterInstanceRef", "expectedRevision", "requestId"}, map[string]any{
+				"sessionRef":              refDef("app.cerulia.defs#sessionRef"),
+				"characterInstanceRef":    refDef("app.cerulia.defs#characterInstanceRef"),
+				"expectedRevision":        integerDef(),
+				"publicResources":         map[string]any{"type": "object"},
+				"publicStatuses":          arrayDef(stringDef("")),
+				"privateStateEnvelopeRef": refDef("app.cerulia.defs#privateStateEnvelopeRef"),
+				"sceneRef":                refDef("app.cerulia.defs#sceneRef"),
+				"initiative":              integerDef(),
+				"requestId":               refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.createSecretEnvelope.json": document("app.cerulia.rpc.createSecretEnvelope", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "audienceRef", "payloadType", "cipherSuite", "contentRef", "contentDigest", "requestId"}, map[string]any{
+				"sessionRef":    refDef("app.cerulia.defs#sessionRef"),
+				"audienceRef":   refDef("app.cerulia.defs#audienceRef"),
+				"payloadType":   stringDef(""),
+				"cipherSuite":   stringDef(""),
+				"contentRef":    stringDef("uri"),
+				"contentDigest": stringDef(""),
+				"requestId":     refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.sendMessage.json": document("app.cerulia.rpc.sendMessage", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "channelKind", "requestId"}, map[string]any{
+				"sessionRef":        refDef("app.cerulia.defs#sessionRef"),
+				"channelKind":       stringDef(""),
+				"audienceRef":       refDef("app.cerulia.defs#audienceRef"),
+				"bodyText":          stringDef(""),
+				"secretEnvelopeRef": refDef("app.cerulia.defs#secretEnvelopeRef"),
+				"replyToRef":        refDef("app.cerulia.defs#messageRef"),
+				"requestId":         refDef("app.cerulia.defs#requestId"),
+				"clientNonce":       stringDef(""),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.rollDice.json": document("app.cerulia.rpc.rollDice", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "command", "requestId"}, map[string]any{
+				"sessionRef":        refDef("app.cerulia.defs#sessionRef"),
+				"command":           stringDef(""),
+				"normalizedCommand": stringDef(""),
+				"targetRef":         refDef("app.cerulia.defs#targetRef"),
+				"audienceRef":       refDef("app.cerulia.defs#audienceRef"),
+				"secretEnvelopeRef": refDef("app.cerulia.defs#secretEnvelopeRef"),
+				"requestId":         refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.submitAction.json": document("app.cerulia.rpc.submitAction", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "actionKind", "requestId"}, map[string]any{
+				"sessionRef":          refDef("app.cerulia.defs#sessionRef"),
+				"normalizedActionRef": refDef("app.cerulia.defs#targetRef"),
+				"actionKind":          stringDef(""),
+				"audienceRef":         refDef("app.cerulia.defs#audienceRef"),
+				"requestId":           refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
 		"lexicon/app.cerulia.rpc.publishSessionLink.json": document("app.cerulia.rpc.publishSessionLink", map[string]any{
 			"main": procedureMain([]string{"sessionRef", "publicationRef", "expectedPublicationHeadRef", "entryUrl", "preferredSurfaceKind", "surfaces", "requestId"}, map[string]any{
 				"sessionRef":                        refDef("app.cerulia.defs#sessionRef"),
@@ -251,6 +321,36 @@ func runRPCCatalog() map[string]map[string]any {
 				"decisionKind":           enumDef("accepted", "denied"),
 				"resultSummary":          stringDef(""),
 				"requestId":              refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.revealSubject.json": document("app.cerulia.rpc.revealSubject", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "subjectRef", "toAudienceRef", "revealMode", "requestId"}, map[string]any{
+				"sessionRef":      refDef("app.cerulia.defs#sessionRef"),
+				"subjectRef":      refDef("app.cerulia.defs#subjectRef"),
+				"fromAudienceRef": refDef("app.cerulia.defs#audienceRef"),
+				"toAudienceRef":   refDef("app.cerulia.defs#audienceRef"),
+				"revealMode":      refDef("app.cerulia.defs#revealMode"),
+				"requestId":       refDef("app.cerulia.defs#requestId"),
+				"note":            stringDef(""),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.redactRecord.json": document("app.cerulia.rpc.redactRecord", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "subjectRef", "redactionMode", "reasonCode", "requestId"}, map[string]any{
+				"sessionRef":     refDef("app.cerulia.defs#sessionRef"),
+				"subjectRef":     refDef("app.cerulia.defs#subjectRef"),
+				"redactionMode":  refDef("app.cerulia.defs#redactionMode"),
+				"replacementRef": refDef("app.cerulia.defs#targetRef"),
+				"reasonCode":     stringDef(""),
+				"requestId":      refDef("app.cerulia.defs#requestId"),
+			}, mutationAck, commonErrors),
+		}),
+		"lexicon/app.cerulia.rpc.rotateAudienceKey.json": document("app.cerulia.rpc.rotateAudienceKey", map[string]any{
+			"main": procedureMain([]string{"sessionRef", "audienceRef", "expectedKeyVersion", "requestId"}, map[string]any{
+				"sessionRef":         refDef("app.cerulia.defs#sessionRef"),
+				"audienceRef":        refDef("app.cerulia.defs#audienceRef"),
+				"expectedKeyVersion": integerDef(),
+				"requestId":          refDef("app.cerulia.defs#requestId"),
+				"note":               stringDef(""),
 			}, mutationAck, commonErrors),
 		}),
 	}

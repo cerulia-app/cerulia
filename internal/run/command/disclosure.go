@@ -52,7 +52,10 @@ func (service *Service) CreateSecretEnvelope(ctx context.Context, actorDid strin
 		return ledger.MutationAck{}, err
 	}
 	return service.executeMutation(ctx, input.SessionRef, "app.cerulia.rpc.createSecretEnvelope", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
-		if _, err := service.requireRuntimeMutationAccess(ctx, tx, input.SessionRef, actorDid, now); err != nil {
+		if _, err := service.requireSessionGovernance(ctx, tx, input.SessionRef, actorDid); err != nil {
+			return ledger.MutationAck{}, err
+		}
+		if _, err := service.requireRuntimeMutationAccess(ctx, tx, input.SessionRef, actorDid, now, "open", "active", "paused"); err != nil {
 			if runtimeBlockedReason(err) != "" {
 				return rejectedAck(input.RequestID, runtimeBlockedReason(err)), nil
 			}

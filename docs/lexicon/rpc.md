@@ -393,6 +393,7 @@ Lexicon `errors` で列挙する short name は次を共通語彙にする。
 | app.cerulia.rpc.leaveSession | sessionRef, actorDid, expectedStatus = joined, requestId, reasonCode? | emittedRecordRefs = [membershipRef] | current membership status |
 | app.cerulia.rpc.moderateMembership | sessionRef, actorDid, expectedStatus, nextStatus, role?, requestId, reasonCode, note? | emittedRecordRefs = [membershipRef] | current membership status + authority snapshot |
 | app.cerulia.rpc.applyBoardOp | sessionRef, sceneRef, expectedRevision, operation, requestId | emittedRecordRefs = [boardOpRef], currentRevision = opSeq, snapshotRef? | board revision CAS |
+| app.cerulia.rpc.createCharacterInstance | sessionRef, instanceId, baseSheetRef?, characterBranchRef?, instanceLabel, sourceType, controllerDids[], controllerAudienceRef?, defaultTokenRef?, requestId | emittedRecordRefs = [characterInstanceRef], controllerAudienceRef?, currentRevision | authority snapshot + source boundary validation |
 | app.cerulia.rpc.updateCharacterState | sessionRef, characterInstanceRef, expectedRevision, publicResources, publicStatuses, privateStateEnvelopeRef?, sceneRef?, initiative?, requestId | emittedRecordRefs = [characterStateRef], currentRevision | character-state revision CAS |
 
 ### message / roll / action / carrier
@@ -416,6 +417,7 @@ Lexicon `errors` で列挙する short name は次を共通語彙にする。
 | app.cerulia.rpc.reviewAppeal | appealCaseRef, reviewPhaseKind, reviewDecisionKind, expectedCaseRevision, expectedReviewRevision, supersedesRef?, note?, detailEnvelopeRef?, requestId | emittedRecordRefs = [appealReviewEntryRef], caseRevision, reviewRevision | current caseRevision + current reviewRevision |
 | app.cerulia.rpc.escalateAppeal | appealCaseRef, expectedCaseRevision, expectedReviewRevision, requestId, handoffSummary? | caseRevision, reviewRevision, transferPhase? | current caseRevision + current reviewRevision |
 | app.cerulia.rpc.resolveAppeal | appealCaseRef, expectedCaseRevision, expectedReviewRevision, decisionKind(accepted / denied), resultSummary, requestId | caseRevision, reviewRevision, emittedRecordRefs, message | current caseRevision + current reviewRevision |
+| app.cerulia.rpc.createSecretEnvelope | sessionRef, audienceRef, payloadType, cipherSuite, contentRef, contentDigest, requestId | emittedRecordRefs = [secretEnvelopeRef] | authority snapshot + audience active |
 | app.cerulia.rpc.revealSubject | sessionRef, subjectRef, fromAudienceRef, toAudienceRef, revealMode, requestId, note? | emittedRecordRefs = [revealEventRef] | current disclosure state |
 | app.cerulia.rpc.redactRecord | sessionRef, subjectRef, redactionMode, replacementRef?, reasonCode, requestId | emittedRecordRefs = [redactionEventRef] | current subject head |
 | app.cerulia.rpc.rotateAudienceKey | sessionRef, audienceRef, expectedKeyVersion, requestId, note? | keyVersion, updatedGrantRefs | current audience keyVersion + grant snapshot |

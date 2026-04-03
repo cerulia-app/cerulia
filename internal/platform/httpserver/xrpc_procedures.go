@@ -215,6 +215,84 @@ func (h *handler) handleRetireSessionLink(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, ack)
 }
 
+func (h *handler) handleCreateCharacterInstance(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.CreateCharacterInstanceInput](h, w, r, "app.cerulia.rpc.createCharacterInstance")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.CreateCharacterInstance(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleUpdateCharacterState(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.UpdateCharacterStateInput](h, w, r, "app.cerulia.rpc.updateCharacterState")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.UpdateCharacterState(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleCreateSecretEnvelope(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.CreateSecretEnvelopeInput](h, w, r, "app.cerulia.rpc.createSecretEnvelope")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.CreateSecretEnvelope(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleSendMessage(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SendMessageInput](h, w, r, "app.cerulia.rpc.sendMessage")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.SendMessage(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleRollDice(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.RollDiceInput](h, w, r, "app.cerulia.rpc.rollDice")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.RollDice(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleSubmitAction(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.SubmitActionInput](h, w, r, "app.cerulia.rpc.submitAction")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.SubmitAction(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
 func (h *handler) handleSubmitAppeal(w http.ResponseWriter, r *http.Request) {
 	input, subject, ok := decodeProcedure[runcommand.SubmitAppealInput](h, w, r, "app.cerulia.rpc.submitAppeal")
 	if !ok {
@@ -273,6 +351,45 @@ func (h *handler) handleResolveAppeal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ack, err := h.runCommands.ResolveAppeal(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleRevealSubject(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.RevealSubjectInput](h, w, r, "app.cerulia.rpc.revealSubject")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.RevealSubject(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleRedactRecord(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.RedactRecordInput](h, w, r, "app.cerulia.rpc.redactRecord")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.RedactRecord(r.Context(), subject.ActorDID, input)
+	if err != nil {
+		writeXRPCFailure(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ack)
+}
+
+func (h *handler) handleRotateAudienceKey(w http.ResponseWriter, r *http.Request) {
+	input, subject, ok := decodeProcedure[runcommand.RotateAudienceKeyInput](h, w, r, "app.cerulia.rpc.rotateAudienceKey")
+	if !ok {
+		return
+	}
+	ack, err := h.runCommands.RotateAudienceKey(r.Context(), subject.ActorDID, input)
 	if err != nil {
 		writeXRPCFailure(w, err)
 		return

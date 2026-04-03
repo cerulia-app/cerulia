@@ -184,5 +184,29 @@ func ExampleDocuments() map[string]any {
 		"examples/rpc/listAppealCases.response.json": map[string]any{
 			"items": []map[string]any{},
 		},
+		"examples/rpc/createCharacterInstance.request.json": map[string]any{
+			"sessionRef":     "at://did:plc:gm1/app.cerulia.run.session/session-starfield-001",
+			"instanceId":     "hero-main",
+			"baseSheetRef":   "at://did:plc:player1/app.cerulia.core.characterSheet/hero",
+			"instanceLabel":  "主人公",
+			"sourceType":     "player-character",
+			"controllerDids": []string{"did:plc:player1"},
+			"requestId":      "req-create-instance-001",
+		},
+		"examples/rpc/createSecretEnvelope.request.json": map[string]any{
+			"sessionRef":    "at://did:plc:gm1/app.cerulia.run.session/session-starfield-001",
+			"audienceRef":   "at://did:plc:gm1/app.cerulia.secret.audience/session-starfield-001-gm-req-create-session-001",
+			"payloadType":   "private-state",
+			"cipherSuite":   "xchacha20poly1305",
+			"contentRef":    "https://blob.example/secret/state-001",
+			"contentDigest": "sha256:example",
+			"requestId":     "req-create-secret-envelope-001",
+		},
+		"examples/rpc/sendMessage.request.json": map[string]any{
+			"sessionRef":  "at://did:plc:gm1/app.cerulia.run.session/session-starfield-001",
+			"channelKind": "table",
+			"bodyText":    "探索を続行する。",
+			"requestId":   "req-send-message-001",
+		},
 	}
 }
