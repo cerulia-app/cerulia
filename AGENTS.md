@@ -16,6 +16,13 @@ When a task requires design judgment, implementation judgment, tradeoff analysis
 2. Re-evaluate those options from first principles against Cerulia's philosophy, architecture, and boundaries, not generic product or framework defaults.
 3. Choose the single option that best fits Cerulia and proceed with that decision unless the user explicitly asks to keep multiple options open.
 
+## Commit Rule
+
+- When the smallest meaningful implementation unit is complete, make a git commit.
+- Never use whole-worktree staging or commit shortcuts such as `git add .`, `git add -A`, or `git commit -a`.
+- Always specify the exact target files when staging for a commit, and keep each commit limited to those files.
+- Use Conventional Commits with an English prefix and a Japanese subject, for example: `feat: ルータ初期化を追加`
+
 ## Cerulia Invariants
 
 - Treat Cerulia core as a continuity ledger for character, campaign, rules provenance, publication, and reuse.
