@@ -8,6 +8,13 @@ Keep this file minimal. Use it only for repository-specific judgment rules.
 - `docs/architecture/layers.md`
 - `docs/architecture/overview.md`
 
+## Implementation Mindset
+
+- Before implementing, read the primary context and any adjacent architecture docs needed to understand Cerulia's philosophy, architecture, and boundaries well enough to justify the design.
+- As a rule, if one file is growing past about 100 lines, reconsider the design and whether that file is still only one cohesive concern.
+- A file may exceed that size only when the whole file still cleanly represents one concern.
+- Do not extract trivial inline logic into extra functions just to satisfy style or file-length pressure.
+
 ## Decision Rule
 
 When a task requires design judgment, implementation judgment, tradeoff analysis, or idea generation:
