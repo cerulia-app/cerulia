@@ -1,21 +1,19 @@
-# MVPの実装順
+# MVP の実装順
 
-MVP は continuity core を先に完成させ、run/gov/live-play は optional extension に回す。
+MVP は continuity core を先に完成させ、その時点で製品ロードマップを閉じる。session、governance、disclosure、board、replay は product roadmap に含めない。
 
-## フェーズ0: core invariants
+## フェーズ 0: core invariants
 
-- continuity core と extension の境界を固定する
+- continuity scope と provenance の境界を固定する
 - world / house / campaign の役割を固定する
-- ruleset-manifest と continuity rule-profile chain の優先順を固定する
+- ruleset-manifest と rule-profile chain の優先順を固定する
 - character-advancement を growth fact、character-episode を continuity summary とする
 - publication の append-only モデルと retire の規則を決める
 - reuse-grant の default / explicit / revoke の規則を決める
 - character home、campaign view、publication summary の projection contract を transport schema より先に固定する
-- core query が読む canonical input と reader bundle を固定する
+- archive を product source set から除外する
 
-この段階で core の用語、invariant、projection の intent contract を固める。
-
-## フェーズ1: continuity core
+## フェーズ 1: continuity core
 
 - character-sheet
 - character-branch
@@ -28,7 +26,7 @@ MVP は continuity core を先に完成させ、run/gov/live-play は optional e
 
 ここでは lineage、scope、rules provenance の正本を作る。
 
-## フェーズ2: sharing と公開
+## フェーズ 2: sharing と公開
 
 - character-conversion
 - character-episode
@@ -40,51 +38,21 @@ MVP は continuity core を先に完成させ、run/gov/live-play は optional e
 
 ここでは「何を持ち運び、何を共有し、何を公開するか」の正本を作る。
 
-## フェーズ3: audit と correction
+## フェーズ 3: auditability と correction
 
-- supersedes / retire の projection 規則
+- supersedes / retire / revoke の folding 規則
 - publication summary view
 - reuse revoke summary view
 - continuity artifact の監査用 projection
 
 ここでは「あとからどう説明できるか」を固める。
 
-## Optional Extension A: Structured Run
-
-- session
-- character-instance
-- character-state
-- thin run shell
-
-## Optional Extension B: Run Governance
-
-- session-authority
-- membership
-- review / dispute workflow
-- session-publication adapter
-
-## Optional Extension C: Disclosure / Secrets
-
-- audience
-- audience-grant
-- secret-envelope
-- reveal-event
-- redaction-event
-
-## Optional Extension D: Live Play
-
-- message
-- roll
-- ruling-event
-- scene と token
-- board-op と board-snapshot
-- realtime 配信
-
 ## 初期にやらないこと
 
-- core に session authority を入れること
-- core に broad な appeal machine を入れること
-- core に board / realtime を入れること
-- core を session-centric に戻すこと
+- product に session authority を入れること
+- product に broad な appeal machine を入れること
+- product に disclosure、board、realtime、replay を入れること
+- product を session-centric に戻すこと
+- archive を将来フェーズとして読み替えること
 
-MVP で重要なのは、continuity ledger が extension なしで成立することです。
+MVP で重要なのは、continuity ledger がそれ単体で product として成立することである。

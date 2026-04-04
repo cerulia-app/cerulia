@@ -1,39 +1,48 @@
 # 設計概要
 
-## 現在の整理
+Cerulia は、AT Protocol 上の character continuity service である。製品として扱うのは、character lineage、campaign continuity、rules provenance、publication、reuse boundary、append-only correction と履歴説明可能性だけである。
 
-Cerulia は、AT Protocol 上の continuity ledger を core にし、その上へ必要な extension を積む。
+## 製品スコープ
 
-- core: character lineage、cross-ruleset conversion provenance、campaign continuity、rules provenance、publication、reuse、auditability
-- projection: character home、campaign view、publication summary
-- optional extension: session、session authority、live play、board、secret disclosure、dispute workflow
+Cerulia の product-core は次を扱う。
 
-optional extension が session-backed carrier を持つ場合でも、carrier read plane は core projection family に混ぜない。session-publication は publication current head を mirror する adapter として扱い、public top や replay への導線を補助する dedicated carrier plane に留める。
+- character-sheet、character-branch、character-conversion、character-advancement、character-episode による character lineage
+- world、house、campaign による continuity scope
+- ruleset-manifest と rule-profile chain による rules provenance
+- publication による公開入口の ledger
+- reuse-grant による越境利用の明示
+- supersedes、retire、revoke による append-only correction
 
-## 何を先に固定するか
+Cerulia の product-core は次を扱わない。
 
-具体的な schema や API payload を深く固める前に、次を先に固定する。
+- session lifecycle
+- membership と run authority
+- message、roll、ruling-event のような卓中イベント
+- disclosure、secret、handout
+- board、realtime、replay
+- appeal、governance、audit console
 
-1. canonical record と lifecycle semantics
-2. projection contract
-3. read/write bundle と surface boundary
+これらは [archive/out-of-product-scope/README.md](../archive/out-of-product-scope/README.md) に隔離された検討履歴であり、現行 product の責務ではない。
 
-この順にしておくと、最初の実装が incidental な DTO shape を正本化してしまうのを防げる。
+## hard boundary
 
-## projection contract の位置づけ
+この再編で固定する境界は次のとおりである。
 
-projection intent contract の正本は [projections.md](projections.md) に置き、concrete な query / procedure schema は [../lexicon/rpc.md](../lexicon/rpc.md) に置く。
+- product-core record は run stack record を必須参照にしない
+- product-core lexicon は archive 側 namespace や shared defs を import しない
+- publication は carrier 同期や session mirror の整合を責務にしない
+- projection contract は product-core canonical input だけで閉じる
+- contract 生成、validation、テスト gate は archive tree を走査しない
 
-- [character home](projections.md#character-home): owner / steward 向けの continuity home
-- [campaign view](projections.md#campaign-view): continuity scope の shared view
-- [publication summary](projections.md#publication-summary): publication current head の summary primitive
+## 固定する順序
 
-## concretization の順序
+1. canonical record と lifecycle semantics を固定する
+2. projection contract を固定する
+3. transport schema を固定する
+4. 実装計画と test gate を固定する
 
-1. core invariant を fix する
-2. projection contract を fix する
-3. query schema と reader auth を concretize する
-4. mutation schema を concretize する
-5. optional extension を具体化する
+この順序により、run/session 系の都合で core の意味論が後から汚染されるのを防ぐ。
 
-この repo の現在フェーズは 3 と 4 の固定を終え、optional extension の残差や implementation detail を詰める段階である。
+## 現在の焦点
+
+現行 repo の整理対象は、文書と実装の双方で product-core を core-only に閉じることである。特に、publication、lexicon、public HTTP surface、authz、mutationAck から run/session 固有概念を外し、clean-slate で最初からこのスコープを採った実装と同じ形へ寄せる。

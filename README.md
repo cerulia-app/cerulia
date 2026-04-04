@@ -1,6 +1,6 @@
 # Cerulia Backend
 
-Cerulia の Go バックエンド実装です。現時点では phase 0 foundation に加えて、continuity core の最小 write path、core read surface、trusted-header ベースの auth gateway までを用意しています。
+Cerulia の Go バックエンド実装です。現在の製品スコープは character continuity service に固定しており、character lineage、campaign continuity、rules provenance、publication、reuse boundary、append-only correction を扱います。session lifecycle、membership と run authority、disclosure、board、replay、appeal、audit surface は製品スコープ外であり、[docs/archive/out-of-product-scope/README.md](docs/archive/out-of-product-scope/README.md) に研究履歴として隔離しています。
 
 ## 現在入っているもの
 
@@ -15,7 +15,7 @@ Cerulia の Go バックエンド実装です。現時点では phase 0 foundati
 - continuity core の write path
 - character home / campaign view / publication list などの core projection query
 - trusted header で permission-set を検証する auth gateway と anonymous public mode
-- `/healthz`、`/readyz`、`/xrpc/app.cerulia.rpc.*` エンドポイント
+- /healthz、/readyz、/xrpc/app.cerulia.rpc.* core エンドポイント
 - optional local-db 用の Docker Compose
 
 ## ディレクトリ構成
@@ -81,6 +81,6 @@ Invoke-RestMethod \
 
 ## 次の実装対象
 
-- proper OAuth / ATProto token validation
-- session / authority / membership の control plane
-- blob abstraction の実装
+- production-grade OAuth / ATProto token validation
+- contract、router、authz の core-only 化の完了
+- persistence、projection、テストの hardening
