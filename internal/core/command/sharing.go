@@ -14,6 +14,21 @@ func (service *Service) PublishSubject(ctx context.Context, actorDid string, inp
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.SubjectRef, "subjectRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.SubjectKind, "subjectKind"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.EntryURL, "entryUrl"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.PreferredSurfaceKind, "preferredSurfaceKind"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptySlice(input.Surfaces, "surfaces"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 
 	return service.executeMutation(ctx, input.SubjectRef, "app.cerulia.rpc.publishSubject", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
 		if err := authorizePublicationActor(ctx, tx, actorDid, input.SubjectRef, input.SubjectKind); err != nil {
@@ -119,6 +134,9 @@ func (service *Service) RetirePublication(ctx context.Context, actorDid string, 
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.PublicationRef, "publicationRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 
 	return service.executeMutation(ctx, input.PublicationRef, "app.cerulia.rpc.retirePublication", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
 		publicationRecord, publicationModel, err := decodeAppend[model.Publication](ctx, tx, input.PublicationRef)
@@ -188,17 +206,28 @@ func (service *Service) GrantReuse(ctx context.Context, actorDid string, input G
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.CharacterBranchRef, "characterBranchRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.SourceCampaignRef, "sourceCampaignRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.TargetKind, "targetKind"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ReuseMode, "reuseMode"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 
 	return service.executeMutation(ctx, input.CharacterBranchRef, "app.cerulia.rpc.grantReuse", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
 		_, branchModel, err := decodeStable[model.CharacterBranch](ctx, tx, input.CharacterBranchRef)
 		if err != nil {
 			return ledger.MutationAck{}, err
 		}
-		_, campaignModel, err := decodeStable[model.Campaign](ctx, tx, input.SourceCampaignRef)
-		if err != nil {
+		if _, _, err := decodeStable[model.Campaign](ctx, tx, input.SourceCampaignRef); err != nil {
 			return ledger.MutationAck{}, err
 		}
-		if !sameActor(actorDid, branchModel.OwnerDid) && !sameActor(actorDid, campaignModel.StewardDids...) {
+		if !sameActor(actorDid, branchModel.OwnerDid) {
 			return ledger.MutationAck{}, ErrForbidden
 		}
 
@@ -250,6 +279,12 @@ func (service *Service) RevokeReuse(ctx context.Context, actorDid string, input 
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.ReuseGrantRef, "reuseGrantRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RevokeReasonCode, "revokeReasonCode"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 
 	return service.executeMutation(ctx, input.ReuseGrantRef, "app.cerulia.rpc.revokeReuse", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
 		grantRecord, grantModel, err := decodeAppend[model.ReuseGrant](ctx, tx, input.ReuseGrantRef)
@@ -260,11 +295,7 @@ func (service *Service) RevokeReuse(ctx context.Context, actorDid string, input 
 		if err != nil {
 			return ledger.MutationAck{}, err
 		}
-		_, campaignModel, err := decodeStable[model.Campaign](ctx, tx, grantModel.SourceCampaignRef)
-		if err != nil {
-			return ledger.MutationAck{}, err
-		}
-		if !sameActor(actorDid, branchModel.OwnerDid, grantModel.GrantedByDid) && !sameActor(actorDid, campaignModel.StewardDids...) {
+		if !sameActor(actorDid, branchModel.OwnerDid) {
 			return ledger.MutationAck{}, ErrForbidden
 		}
 		if grantModel.RevokedAt != nil || reuseGrantHasSuccessor(ctx, tx, input.ReuseGrantRef) {

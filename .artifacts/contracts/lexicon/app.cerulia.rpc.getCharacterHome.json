@@ -3,13 +3,13 @@
     "main": {
       "errors": [
         {
+          "name": "InvalidRequest"
+        },
+        {
           "name": "Unauthorized"
         },
         {
           "name": "Forbidden"
-        },
-        {
-          "name": "NotFound"
         }
       ],
       "output": {
@@ -88,8 +88,8 @@
       "parameters": {
         "properties": {
           "ownerDid": {
-            "format": "did",
-            "type": "string"
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
           }
         },
         "type": "params"

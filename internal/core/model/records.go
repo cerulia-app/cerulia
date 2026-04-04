@@ -108,7 +108,6 @@ type CharacterBranch struct {
 
 type CharacterAdvancement struct {
 	CharacterBranchRef string    `json:"characterBranchRef"`
-	SourceRunRef       string    `json:"sourceRunRef,omitempty"`
 	AdvancementKind    string    `json:"advancementKind"`
 	DeltaPayloadRef    string    `json:"deltaPayloadRef"`
 	ApprovedByDid      string    `json:"approvedByDid"`
@@ -122,7 +121,6 @@ type CharacterAdvancement struct {
 type CharacterEpisode struct {
 	CharacterBranchRef       string    `json:"characterBranchRef"`
 	CampaignRef              string    `json:"campaignRef,omitempty"`
-	SourceRunRef             string    `json:"sourceRunRef,omitempty"`
 	ScenarioLabel            string    `json:"scenarioLabel,omitempty"`
 	RulesetManifestRef       string    `json:"rulesetManifestRef"`
 	EffectiveRuleProfileRefs []string  `json:"effectiveRuleProfileRefs"`

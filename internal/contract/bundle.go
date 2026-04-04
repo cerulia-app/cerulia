@@ -98,6 +98,9 @@ func (bundle Bundle) WriteTo(directory string) error {
 	}
 
 	parentDirectory := filepath.Dir(directory)
+	if err := os.MkdirAll(parentDirectory, 0o755); err != nil {
+		return fmt.Errorf("create artifact parent directory: %w", err)
+	}
 	temporaryDirectory, err := os.MkdirTemp(parentDirectory, ".contracts-*")
 	if err != nil {
 		return fmt.Errorf("create temporary artifact directory: %w", err)
@@ -128,11 +131,10 @@ func (bundle Bundle) WriteTo(directory string) error {
 	if err := os.RemoveAll(directory); err != nil {
 		return fmt.Errorf("clean artifact directory: %w", err)
 	}
-	if err := os.MkdirAll(parentDirectory, 0o755); err != nil {
-		return fmt.Errorf("create artifact parent directory: %w", err)
-	}
 	if err := os.Rename(temporaryDirectory, directory); err != nil {
-		return fmt.Errorf("replace artifact directory: %w", err)
+		if copyErr := copyArtifactDirectory(temporaryDirectory, directory); copyErr != nil {
+			return fmt.Errorf("replace artifact directory: %w", err)
+		}
 	}
 
 	return nil
@@ -221,6 +223,34 @@ func writeArtifactFile(path string, content []byte) error {
 	}
 
 	return nil
+}
+
+func copyArtifactDirectory(source string, destination string) error {
+	if err := os.MkdirAll(destination, 0o755); err != nil {
+		return fmt.Errorf("create %s: %w", destination, err)
+	}
+
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		relativePath, err := filepath.Rel(source, path)
+		if err != nil {
+			return err
+		}
+		if relativePath == "." {
+			return nil
+		}
+		targetPath := filepath.Join(destination, relativePath)
+		if info.IsDir() {
+			return os.MkdirAll(targetPath, 0o755)
+		}
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(targetPath, content, info.Mode().Perm())
+	})
 }
 
 func sortedKeys[V any](source map[string]V) []string {

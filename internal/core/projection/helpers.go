@@ -17,6 +17,10 @@ var (
 )
 
 func decodeStable[T any](ctx context.Context, reader store.Reader, ref string) (store.StableRecord, T, error) {
+	if _, err := store.ParseRef(ref); err != nil {
+		var zero T
+		return store.StableRecord{}, zero, ErrInvalidInput
+	}
 	record, err := reader.GetStable(ctx, ref)
 	if err != nil {
 		var zero T
@@ -31,6 +35,10 @@ func decodeStable[T any](ctx context.Context, reader store.Reader, ref string) (
 }
 
 func decodeAppend[T any](ctx context.Context, reader store.Reader, ref string) (store.AppendRecord, T, error) {
+	if _, err := store.ParseRef(ref); err != nil {
+		var zero T
+		return store.AppendRecord{}, zero, ErrInvalidInput
+	}
 	record, err := reader.GetAppend(ctx, ref)
 	if err != nil {
 		var zero T
@@ -112,9 +120,9 @@ func (service *Service) currentConversions(ctx context.Context) ([]ConversionSum
 	current := currentSupersededRecords[model.CharacterConversion](records, func(value model.CharacterConversion) string { return value.SupersedesRef })
 	items := make([]ConversionSummary, 0, len(current))
 	for _, item := range current {
-		authorityKind := "same-owner"
-		if item.Value.ReuseGrantRef != "" {
-			authorityKind = "grant-backed"
+		authorityKind, err := service.conversionAuthorityKind(ctx, item.Value)
+		if err != nil {
+			return nil, err
 		}
 		items = append(items, ConversionSummary{
 			CharacterConversionRef:   item.Ref,
@@ -166,6 +174,11 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 	}
 	if resolvedMode == "public" && includeRetired {
 		return nil, ErrInvalidInput
+	}
+	if resolvedMode != "public" && actorDid != "" && subjectRef != "" {
+		if err := service.authorizePublicationFilter(ctx, actorDid, subjectRef, subjectKind); err != nil && !errors.Is(err, store.ErrNotFound) {
+			return nil, err
+		}
 	}
 
 	heads, err := service.reader.ListCurrentHeads(ctx)
@@ -227,65 +240,187 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 		}
 		return items[left].PublishedAt.After(items[right].PublishedAt)
 	})
-	if len(items) == 0 && (subjectRef != "" || resolvedMode == "public") {
+	return items, nil
+}
+
+func (service *Service) conversionAuthorityKind(ctx context.Context, conversion model.CharacterConversion) (string, error) {
+	if conversion.ReuseGrantRef != "" {
+		return "grant-backed", nil
+	}
+	_, targetBranch, err := decodeStable[model.CharacterBranch](ctx, service.reader, conversion.TargetBranchRef)
+	if err != nil {
+		return "", err
+	}
+	if sameActor(conversion.ConvertedByDid, targetBranch.OwnerDid) {
+		return "same-owner", nil
+	}
+	return "campaign-steward", nil
+}
+
+func (service *Service) authorizePublicationFilter(ctx context.Context, actorDid string, subjectRef string, subjectKind string) error {
+	resolvedKind, err := publicationSubjectKind(subjectRef)
+	if err != nil {
+		return err
+	}
+	if subjectKind != "" && subjectKind != resolvedKind {
+		return ErrInvalidInput
+	}
+	return authorizePublicationRead(ctx, service.reader, actorDid, subjectRef, resolvedKind)
+}
+
+func publicationSubjectKind(subjectRef string) (string, error) {
+	parts, err := store.ParseRef(subjectRef)
+	if err != nil {
+		return "", ErrInvalidInput
+	}
+	switch parts.Collection {
+	case model.CollectionCampaign:
+		return "campaign", nil
+	case model.CollectionCharacterBranch:
+		return "character-branch", nil
+	case model.CollectionCharacterEpisode:
+		return "character-episode", nil
+	default:
+		return "", ErrInvalidInput
+	}
+}
+
+type campaignContinuity struct {
+	Episodes             []EpisodeSummary
+	EpisodeRefs          map[string]struct{}
+	BranchRefs           map[string]struct{}
+	ArchivedEpisodeCount int
+}
+
+func (service *Service) campaignContinuity(ctx context.Context, campaignRef string) (campaignContinuity, error) {
+	episodeRecords, err := service.reader.ListAppendByCollection(ctx, model.CollectionCharacterEpisode)
+	if err != nil {
+		return campaignContinuity{}, err
+	}
+	decodedEpisodes := make([]currentRecord[model.CharacterEpisode], 0, len(episodeRecords))
+	superseded := map[string]struct{}{}
+	for _, record := range episodeRecords {
+		value, err := model.UnmarshalAppend[model.CharacterEpisode](record)
+		if err != nil {
+			continue
+		}
+		decodedEpisodes = append(decodedEpisodes, currentRecord[model.CharacterEpisode]{Ref: record.Ref, Value: value})
+		if parent := value.SupersedesRef; parent != "" {
+			superseded[parent] = struct{}{}
+		}
+	}
+
+	continuity := campaignContinuity{
+		Episodes:    make([]EpisodeSummary, 0),
+		EpisodeRefs: map[string]struct{}{},
+		BranchRefs:  map[string]struct{}{},
+	}
+	for _, item := range decodedEpisodes {
+		if item.Value.CampaignRef != campaignRef {
+			continue
+		}
+		if _, archived := superseded[item.Ref]; archived {
+			continuity.ArchivedEpisodeCount++
+			continue
+		}
+		continuity.Episodes = append(continuity.Episodes, EpisodeSummary{
+			CharacterEpisodeRef: item.Ref,
+			CharacterBranchRef:  item.Value.CharacterBranchRef,
+			CampaignRef:         item.Value.CampaignRef,
+			ScenarioLabel:       item.Value.ScenarioLabel,
+			OutcomeSummary:      item.Value.OutcomeSummary,
+			CreatedAt:           item.Value.CreatedAt,
+		})
+		continuity.EpisodeRefs[item.Ref] = struct{}{}
+		continuity.BranchRefs[item.Value.CharacterBranchRef] = struct{}{}
+	}
+	sort.Slice(continuity.Episodes, func(left int, right int) bool {
+		return continuity.Episodes[left].CreatedAt.After(continuity.Episodes[right].CreatedAt)
+	})
+
+	return continuity, nil
+}
+
+func (service *Service) campaignPublicationSummaries(ctx context.Context, campaignRef string, mode string, includeRetired bool) ([]PublicationSummary, error) {
+	continuity, err := service.campaignContinuity(ctx, campaignRef)
+	if err != nil {
+		return nil, err
+	}
+	heads, err := service.reader.ListCurrentHeads(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conversions, err := service.currentConversions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PublicationSummary, 0)
+	hasCampaignPublicHead := false
+	for _, head := range heads {
+		if head.SubjectRef != campaignRef {
+			if _, ok := continuity.EpisodeRefs[head.SubjectRef]; !ok {
+				continue
+			}
+		}
+		if head.SubjectKind != "campaign" && head.SubjectKind != "character-episode" {
+			continue
+		}
+		_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, head.CurrentHeadRef)
+		if err != nil {
+			return nil, err
+		}
+		if mode == "public" {
+			if publicationModel.Status != "active" {
+				continue
+			}
+			if head.SubjectRef == campaignRef {
+				hasCampaignPublicHead = true
+			}
+		} else if publicationModel.Status == "retired" && !includeRetired {
+			continue
+		}
+		item := PublicationSummary{
+			PublicationRef:       head.CurrentHeadRef,
+			SubjectRef:           publicationModel.SubjectRef,
+			SubjectKind:          publicationModel.SubjectKind,
+			EntryURL:             publicationModel.EntryURL,
+			PreferredSurfaceKind: publicationModel.PreferredSurfaceKind,
+			Surfaces:             toProjectionSurfaces(publicationModel.Surfaces),
+			Status:               publicationModel.Status,
+			PublishedAt:          publicationModel.PublishedAt,
+			RetiredAt:            publicationModel.RetiredAt,
+		}
+		if conversion := findConversionForSubject(conversions, publicationModel.SubjectRef, publicationModel.SubjectKind); conversion != nil {
+			item.SourceRulesetManifestRef = conversion.SourceRulesetManifestRef
+			item.TargetRulesetManifestRef = conversion.TargetRulesetManifestRef
+			item.GrantBacked = conversion.ReuseGrantRef != ""
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(left int, right int) bool {
+		if items[left].PublishedAt.Equal(items[right].PublishedAt) {
+			return items[left].PublicationRef < items[right].PublicationRef
+		}
+		return items[left].PublishedAt.After(items[right].PublishedAt)
+	})
+	if mode == "public" && !hasCampaignPublicHead {
 		return nil, store.ErrNotFound
 	}
 	return items, nil
 }
 
-func (service *Service) campaignPublishedArtifacts(ctx context.Context, campaignRef string, mode string, actorDid string) ([]PublicationSummary, error) {
-	publications, err := service.publicationSummaries(ctx, "", "", mode, false, actorDid)
-	if err != nil && !errors.Is(err, store.ErrNotFound) {
-		return nil, err
-	}
-	episodes, err := service.currentEpisodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	episodeRefs := map[string]struct{}{}
-	for _, episode := range episodes {
-		if episode.CampaignRef == campaignRef {
-			episodeRefs[episode.CharacterEpisodeRef] = struct{}{}
-		}
-	}
-	items := make([]PublicationSummary, 0)
-	for _, publication := range publications {
-		if publication.SubjectRef == campaignRef {
-			items = append(items, publication)
-			continue
-		}
-		if _, ok := episodeRefs[publication.SubjectRef]; ok {
-			items = append(items, publication)
-		}
-	}
-	return items, nil
+func (service *Service) campaignPublishedArtifacts(ctx context.Context, campaignRef string, mode string) ([]PublicationSummary, error) {
+	return service.campaignPublicationSummaries(ctx, campaignRef, mode, false)
 }
 
-func (service *Service) campaignRetiredPublicationCount(ctx context.Context, campaignRef string, actorDid string) (int, error) {
-	publications, err := service.publicationSummaries(ctx, "", "", "owner-steward", true, actorDid)
-	if err != nil && !errors.Is(err, store.ErrNotFound) {
-		return 0, err
-	}
-	episodes, err := service.currentEpisodes(ctx)
+func (service *Service) campaignRetiredPublicationCount(ctx context.Context, campaignRef string) (int, error) {
+	publications, err := service.campaignPublicationSummaries(ctx, campaignRef, "owner-steward", true)
 	if err != nil {
 		return 0, err
-	}
-	episodeRefs := map[string]struct{}{}
-	for _, episode := range episodes {
-		if episode.CampaignRef == campaignRef {
-			episodeRefs[episode.CharacterEpisodeRef] = struct{}{}
-		}
 	}
 	count := 0
 	for _, publication := range publications {
-		if publication.Status != "retired" {
-			continue
-		}
-		if publication.SubjectRef == campaignRef {
-			count++
-			continue
-		}
-		if _, ok := episodeRefs[publication.SubjectRef]; ok {
+		if publication.Status == "retired" {
 			count++
 		}
 	}

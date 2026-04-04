@@ -6,6 +6,12 @@
           "name": "InvalidRequest"
         },
         {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
           "name": "NotFound"
         }
       ],
@@ -34,7 +40,8 @@
       "parameters": {
         "properties": {
           "cursor": {
-            "type": "string"
+            "ref": "app.cerulia.defs#cursor",
+            "type": "ref"
           },
           "includeRetired": {
             "type": "boolean"
@@ -50,16 +57,12 @@
             "type": "string"
           },
           "subjectKind": {
-            "enum": [
-              "campaign",
-              "character-branch",
-              "character-episode"
-            ],
-            "type": "string"
+            "ref": "app.cerulia.defs#publicationSubjectKind",
+            "type": "ref"
           },
           "subjectRef": {
-            "format": "at-uri",
-            "type": "string"
+            "ref": "app.cerulia.defs#subjectRef",
+            "type": "ref"
           }
         },
         "type": "params"

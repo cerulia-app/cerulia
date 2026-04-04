@@ -3,402 +3,11 @@ package httpserver
 import (
 	"net/http"
 
-	"cerulia/internal/core/command"
-	runcommand "cerulia/internal/run/command"
+	corecommand "cerulia/internal/core/command"
 )
 
-func (h *handler) handleCreateSessionDraft(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.CreateSessionDraftInput](h, w, r, "app.cerulia.rpc.createSessionDraft")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.CreateSessionDraft(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleOpenSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.openSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.OpenSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleStartSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.startSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.StartSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handlePauseSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.pauseSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.PauseSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleResumeSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.resumeSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.ResumeSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleCloseSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.closeSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.CloseSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleArchiveSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SessionStateInput](h, w, r, "app.cerulia.rpc.archiveSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.ArchiveSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleReopenSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.ReopenSessionInput](h, w, r, "app.cerulia.rpc.reopenSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.ReopenSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleTransferAuthority(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.TransferAuthorityInput](h, w, r, "app.cerulia.rpc.transferAuthority")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.TransferAuthority(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleInviteSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.InviteSessionInput](h, w, r, "app.cerulia.rpc.inviteSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.InviteSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleCancelInvitation(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.CancelInvitationInput](h, w, r, "app.cerulia.rpc.cancelInvitation")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.CancelInvitation(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleJoinSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.JoinSessionInput](h, w, r, "app.cerulia.rpc.joinSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.JoinSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleLeaveSession(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.LeaveSessionInput](h, w, r, "app.cerulia.rpc.leaveSession")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.LeaveSession(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleModerateMembership(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.ModerateMembershipInput](h, w, r, "app.cerulia.rpc.moderateMembership")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.ModerateMembership(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handlePublishSessionLink(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.PublishSessionLinkInput](h, w, r, "app.cerulia.rpc.publishSessionLink")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.PublishSessionLink(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleRetireSessionLink(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.RetireSessionLinkInput](h, w, r, "app.cerulia.rpc.retireSessionLink")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.RetireSessionLink(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleCreateCharacterInstance(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.CreateCharacterInstanceInput](h, w, r, "app.cerulia.rpc.createCharacterInstance")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.CreateCharacterInstance(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleUpdateCharacterState(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.UpdateCharacterStateInput](h, w, r, "app.cerulia.rpc.updateCharacterState")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.UpdateCharacterState(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleCreateSecretEnvelope(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.CreateSecretEnvelopeInput](h, w, r, "app.cerulia.rpc.createSecretEnvelope")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.CreateSecretEnvelope(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleSendMessage(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SendMessageInput](h, w, r, "app.cerulia.rpc.sendMessage")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.SendMessage(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleRollDice(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.RollDiceInput](h, w, r, "app.cerulia.rpc.rollDice")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.RollDice(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleSubmitAction(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SubmitActionInput](h, w, r, "app.cerulia.rpc.submitAction")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.SubmitAction(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleSubmitAppeal(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.SubmitAppealInput](h, w, r, "app.cerulia.rpc.submitAppeal")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.SubmitAppeal(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleWithdrawAppeal(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.WithdrawAppealInput](h, w, r, "app.cerulia.rpc.withdrawAppeal")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.WithdrawAppeal(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleReviewAppeal(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.ReviewAppealInput](h, w, r, "app.cerulia.rpc.reviewAppeal")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.ReviewAppeal(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleEscalateAppeal(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.EscalateAppealInput](h, w, r, "app.cerulia.rpc.escalateAppeal")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.EscalateAppeal(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleResolveAppeal(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.ResolveAppealInput](h, w, r, "app.cerulia.rpc.resolveAppeal")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.ResolveAppeal(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleRevealSubject(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.RevealSubjectInput](h, w, r, "app.cerulia.rpc.revealSubject")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.RevealSubject(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleRedactRecord(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.RedactRecordInput](h, w, r, "app.cerulia.rpc.redactRecord")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.RedactRecord(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
-func (h *handler) handleRotateAudienceKey(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[runcommand.RotateAudienceKeyInput](h, w, r, "app.cerulia.rpc.rotateAudienceKey")
-	if !ok {
-		return
-	}
-	ack, err := h.runCommands.RotateAudienceKey(r.Context(), subject.ActorDID, input)
-	if err != nil {
-		writeXRPCFailure(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, ack)
-}
-
 func (h *handler) handleCreateCampaign(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.CreateCampaignInput](h, w, r, "app.cerulia.rpc.createCampaign")
+	input, subject, ok := decodeProcedure[corecommand.CreateCampaignInput](h, w, r, "app.cerulia.rpc.createCampaign")
 	if !ok {
 		return
 	}
@@ -411,7 +20,7 @@ func (h *handler) handleCreateCampaign(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleAttachRuleProfile(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.AttachRuleProfileInput](h, w, r, "app.cerulia.rpc.attachRuleProfile")
+	input, subject, ok := decodeProcedure[corecommand.AttachRuleProfileInput](h, w, r, "app.cerulia.rpc.attachRuleProfile")
 	if !ok {
 		return
 	}
@@ -424,7 +33,7 @@ func (h *handler) handleAttachRuleProfile(w http.ResponseWriter, r *http.Request
 }
 
 func (h *handler) handleRetireRuleProfile(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.RetireRuleProfileInput](h, w, r, "app.cerulia.rpc.retireRuleProfile")
+	input, subject, ok := decodeProcedure[corecommand.RetireRuleProfileInput](h, w, r, "app.cerulia.rpc.retireRuleProfile")
 	if !ok {
 		return
 	}
@@ -437,7 +46,7 @@ func (h *handler) handleRetireRuleProfile(w http.ResponseWriter, r *http.Request
 }
 
 func (h *handler) handleImportCharacterSheet(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.ImportCharacterSheetInput](h, w, r, "app.cerulia.rpc.importCharacterSheet")
+	input, subject, ok := decodeProcedure[corecommand.ImportCharacterSheetInput](h, w, r, "app.cerulia.rpc.importCharacterSheet")
 	if !ok {
 		return
 	}
@@ -450,7 +59,7 @@ func (h *handler) handleImportCharacterSheet(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *handler) handleCreateCharacterBranch(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.CreateCharacterBranchInput](h, w, r, "app.cerulia.rpc.createCharacterBranch")
+	input, subject, ok := decodeProcedure[corecommand.CreateCharacterBranchInput](h, w, r, "app.cerulia.rpc.createCharacterBranch")
 	if !ok {
 		return
 	}
@@ -463,7 +72,7 @@ func (h *handler) handleCreateCharacterBranch(w http.ResponseWriter, r *http.Req
 }
 
 func (h *handler) handleUpdateCharacterBranch(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.UpdateCharacterBranchInput](h, w, r, "app.cerulia.rpc.updateCharacterBranch")
+	input, subject, ok := decodeProcedure[corecommand.UpdateCharacterBranchInput](h, w, r, "app.cerulia.rpc.updateCharacterBranch")
 	if !ok {
 		return
 	}
@@ -476,7 +85,7 @@ func (h *handler) handleUpdateCharacterBranch(w http.ResponseWriter, r *http.Req
 }
 
 func (h *handler) handleRetireCharacterBranch(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.RetireCharacterBranchInput](h, w, r, "app.cerulia.rpc.retireCharacterBranch")
+	input, subject, ok := decodeProcedure[corecommand.RetireCharacterBranchInput](h, w, r, "app.cerulia.rpc.retireCharacterBranch")
 	if !ok {
 		return
 	}
@@ -489,7 +98,7 @@ func (h *handler) handleRetireCharacterBranch(w http.ResponseWriter, r *http.Req
 }
 
 func (h *handler) handleRecordCharacterAdvancement(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.RecordCharacterAdvancementInput](h, w, r, "app.cerulia.rpc.recordCharacterAdvancement")
+	input, subject, ok := decodeProcedure[corecommand.RecordCharacterAdvancementInput](h, w, r, "app.cerulia.rpc.recordCharacterAdvancement")
 	if !ok {
 		return
 	}
@@ -502,7 +111,7 @@ func (h *handler) handleRecordCharacterAdvancement(w http.ResponseWriter, r *htt
 }
 
 func (h *handler) handleRecordCharacterEpisode(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.RecordCharacterEpisodeInput](h, w, r, "app.cerulia.rpc.recordCharacterEpisode")
+	input, subject, ok := decodeProcedure[corecommand.RecordCharacterEpisodeInput](h, w, r, "app.cerulia.rpc.recordCharacterEpisode")
 	if !ok {
 		return
 	}
@@ -515,7 +124,7 @@ func (h *handler) handleRecordCharacterEpisode(w http.ResponseWriter, r *http.Re
 }
 
 func (h *handler) handleRecordCharacterConversion(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.RecordCharacterConversionInput](h, w, r, "app.cerulia.rpc.recordCharacterConversion")
+	input, subject, ok := decodeProcedure[corecommand.RecordCharacterConversionInput](h, w, r, "app.cerulia.rpc.recordCharacterConversion")
 	if !ok {
 		return
 	}
@@ -528,7 +137,7 @@ func (h *handler) handleRecordCharacterConversion(w http.ResponseWriter, r *http
 }
 
 func (h *handler) handlePublishSubject(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.PublishSubjectInput](h, w, r, "app.cerulia.rpc.publishSubject")
+	input, subject, ok := decodeProcedure[corecommand.PublishSubjectInput](h, w, r, "app.cerulia.rpc.publishSubject")
 	if !ok {
 		return
 	}
@@ -541,7 +150,7 @@ func (h *handler) handlePublishSubject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleRetirePublication(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.RetirePublicationInput](h, w, r, "app.cerulia.rpc.retirePublication")
+	input, subject, ok := decodeProcedure[corecommand.RetirePublicationInput](h, w, r, "app.cerulia.rpc.retirePublication")
 	if !ok {
 		return
 	}
@@ -554,7 +163,7 @@ func (h *handler) handleRetirePublication(w http.ResponseWriter, r *http.Request
 }
 
 func (h *handler) handleGrantReuse(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.GrantReuseInput](h, w, r, "app.cerulia.rpc.grantReuse")
+	input, subject, ok := decodeProcedure[corecommand.GrantReuseInput](h, w, r, "app.cerulia.rpc.grantReuse")
 	if !ok {
 		return
 	}
@@ -567,7 +176,7 @@ func (h *handler) handleGrantReuse(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) handleRevokeReuse(w http.ResponseWriter, r *http.Request) {
-	input, subject, ok := decodeProcedure[command.RevokeReuseInput](h, w, r, "app.cerulia.rpc.revokeReuse")
+	input, subject, ok := decodeProcedure[corecommand.RevokeReuseInput](h, w, r, "app.cerulia.rpc.revokeReuse")
 	if !ok {
 		return
 	}

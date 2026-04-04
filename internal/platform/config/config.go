@@ -40,15 +40,14 @@ type BlobConfig struct {
 	LocalDir          string
 	R2AccountID       string
 	R2AssetBucket     string
-	R2SecretBucket    string
-	R2AuditBucket     string
 	R2AccessKeyID     string
 	R2SecretAccessKey string
 }
 
 func Load() (Config, error) {
+	appEnv := normalizeAppEnv(envOrDefault("APP_ENV", defaultAppEnv()))
 	cfg := Config{
-		AppEnv:          envOrDefault("APP_ENV", defaultAppEnv()),
+		AppEnv:          appEnv,
 		HTTPAddr:        envOrDefault("HTTP_ADDR", ":8080"),
 		PublicBaseURL:   envOrDefault("PUBLIC_BASE_URL", "http://localhost:8080"),
 		ShutdownTimeout: 10 * time.Second,
@@ -58,8 +57,8 @@ func Load() (Config, error) {
 			TrustedProxyMaxSkew:    5 * time.Minute,
 		},
 		Database: DatabaseConfig{
-			URL:         firstNonEmptyEnv("DATABASE_URL_POOLED", "DATABASE_URL"),
-			DirectURL:   firstNonEmptyEnv("DATABASE_URL_DIRECT", "DATABASE_URL"),
+			URL:         runtimeDatabaseURL(appEnv),
+			DirectURL:   migrationDatabaseURL(appEnv),
 			MaxConns:    10,
 			MinConns:    0,
 			PingTimeout: 3 * time.Second,
@@ -69,8 +68,6 @@ func Load() (Config, error) {
 			LocalDir:          envOrDefault("BLOB_LOCAL_DIR", ".local/blob"),
 			R2AccountID:       strings.TrimSpace(os.Getenv("R2_ACCOUNT_ID")),
 			R2AssetBucket:     strings.TrimSpace(os.Getenv("R2_ASSET_BUCKET")),
-			R2SecretBucket:    strings.TrimSpace(os.Getenv("R2_SECRET_BUCKET")),
-			R2AuditBucket:     strings.TrimSpace(os.Getenv("R2_AUDIT_BUCKET")),
 			R2AccessKeyID:     strings.TrimSpace(os.Getenv("R2_ACCESS_KEY_ID")),
 			R2SecretAccessKey: strings.TrimSpace(os.Getenv("R2_SECRET_ACCESS_KEY")),
 		},
@@ -109,12 +106,16 @@ func defaultAppEnv() string {
 }
 
 func validateAppEnv(value string) error {
-	switch strings.ToLower(strings.TrimSpace(value)) {
+	switch normalizeAppEnv(value) {
 	case "development", "test", "staging", "production":
 		return nil
 	default:
 		return fmt.Errorf("unsupported app env %q", value)
 	}
+}
+
+func normalizeAppEnv(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
 }
 
 func envOrDefault(key string, fallback string) string {
@@ -135,6 +136,22 @@ func firstNonEmptyEnv(keys ...string) string {
 	}
 
 	return ""
+}
+
+func runtimeDatabaseURL(appEnv string) string {
+	appEnv = normalizeAppEnv(appEnv)
+	if appEnv == "development" || appEnv == "test" {
+		return firstNonEmptyEnv("DATABASE_URL_POOLED", "DATABASE_URL")
+	}
+	return strings.TrimSpace(os.Getenv("DATABASE_URL_POOLED"))
+}
+
+func migrationDatabaseURL(appEnv string) string {
+	appEnv = normalizeAppEnv(appEnv)
+	if appEnv == "development" || appEnv == "test" {
+		return firstNonEmptyEnv("DATABASE_URL_DIRECT", "DATABASE_URL")
+	}
+	return strings.TrimSpace(os.Getenv("DATABASE_URL_DIRECT"))
 }
 
 func parseLogLevel(value string) (slog.Level, error) {

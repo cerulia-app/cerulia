@@ -33,9 +33,5 @@ func authCatalog() map[string]map[string]any {
 			"app.cerulia.rpc.grantReuse",
 			"app.cerulia.rpc.revokeReuse",
 		),
-		"lexicon/app.cerulia.authAuditReader.json": permissionSetDoc(
-			"app.cerulia.authAuditReader",
-			"app.cerulia.rpc.exportServiceLog",
-		),
 	}
 }

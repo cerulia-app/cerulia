@@ -3,6 +3,15 @@
     "main": {
       "errors": [
         {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
           "name": "NotFound"
         }
       ],
@@ -92,8 +101,8 @@
       "parameters": {
         "properties": {
           "campaignRef": {
-            "format": "at-uri",
-            "type": "string"
+            "ref": "app.cerulia.defs#campaignRef",
+            "type": "ref"
           },
           "mode": {
             "enum": [

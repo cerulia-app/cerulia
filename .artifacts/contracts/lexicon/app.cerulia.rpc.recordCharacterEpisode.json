@@ -65,10 +65,6 @@
             "scenarioLabel": {
               "type": "string"
             },
-            "sourceRunRef": {
-              "ref": "app.cerulia.defs#sourceRunRef",
-              "type": "ref"
-            },
             "supersedesRef": {
               "ref": "app.cerulia.defs#characterEpisodeRef",
               "type": "ref"

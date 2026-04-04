@@ -50,10 +50,10 @@ service bundle は次の形を正本にする。
 
 ## 設計上の注意
 
-- authCoreReader は owner / steward 向けの core continuity read に使う
+- authCoreReader は owner 向けの core continuity read に使う。campaign shared view は steward mode を持つが、character home と branch-scoped list は owner-only とする
 - public mode は anonymous でも返してよいが、返す内容は active な public publication current head に裏づけられた block だけに限る
 - publishSubject と retirePublication は core publication の canonical path なので authCorePublicationOperator に切る
-- grantReuse と revokeReuse は branch owner または steward の同意系操作なので authReuseOperator に切る
+- grantReuse と revokeReuse は branch owner の同意系操作として authReuseOperator に切る
 - auth bundle 名は role 名に寄せず、technical responsibility を名前に出す
 
 ## 避けるべき切り方

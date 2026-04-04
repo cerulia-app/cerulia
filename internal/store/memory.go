@@ -128,9 +128,6 @@ func (tx *memoryTx) GetIdempotency(_ context.Context, key ledger.IdempotencyKey)
 	}
 	clone := ack
 	clone.EmittedRecordRefs = append([]string(nil), ack.EmittedRecordRefs...)
-	clone.UpdatedGrantRefs = append([]string(nil), ack.UpdatedGrantRefs...)
-	clone.ControllerDids = append([]string(nil), ack.ControllerDids...)
-	clone.PendingControllerDids = append([]string(nil), ack.PendingControllerDids...)
 	return &clone, nil
 }
 
@@ -272,9 +269,6 @@ func cloneAppendRecord(record AppendRecord) AppendRecord {
 func cloneAck(ack ledger.MutationAck) ledger.MutationAck {
 	clone := ack
 	clone.EmittedRecordRefs = append([]string(nil), ack.EmittedRecordRefs...)
-	clone.UpdatedGrantRefs = append([]string(nil), ack.UpdatedGrantRefs...)
-	clone.ControllerDids = append([]string(nil), ack.ControllerDids...)
-	clone.PendingControllerDids = append([]string(nil), ack.PendingControllerDids...)
 	return clone
 }
 

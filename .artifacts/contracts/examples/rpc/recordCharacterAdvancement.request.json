@@ -1,8 +1,8 @@
 {
   "advancementKind": "milestone",
   "approvedByDid": "did:plc:steward1",
-  "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/starfield",
-  "deltaPayloadRef": "at://did:plc:owner1/app.cerulia.blob.delta/milestone-1",
+  "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/branch-req-create-branch-001",
+  "deltaPayloadRef": "https://cerulia.example/payloads/milestone-1.json",
   "effectiveAt": "2026-04-03T00:00:00Z",
   "requestId": "req-advancement-001"
 }

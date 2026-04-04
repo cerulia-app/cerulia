@@ -11,119 +11,8 @@
       ],
       "type": "string"
     },
-    "appealBlockedReason": {
-      "enum": [
-        "quorum-impossible",
-        "deadline-expired"
-      ],
-      "type": "string"
-    },
-    "appealCaseRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "appealNextResolverKind": {
-      "enum": [
-        "controller-review",
-        "blocked",
-        "recovery-review",
-        "none"
-      ],
-      "type": "string"
-    },
-    "appealRequestedOutcomeKind": {
-      "enum": [
-        "supersede-ruling",
-        "restore-membership",
-        "reconsider-membership"
-      ],
-      "type": "string"
-    },
-    "appealResolutionKind": {
-      "enum": [
-        "accepted",
-        "denied",
-        "withdrawn"
-      ],
-      "type": "string"
-    },
-    "appealReviewDecisionKind": {
-      "enum": [
-        "approve",
-        "deny",
-        "abstain",
-        "withdraw"
-      ],
-      "type": "string"
-    },
-    "appealReviewEntryRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "appealReviewPhaseKind": {
-      "enum": [
-        "controller-review",
-        "recovery-review"
-      ],
-      "type": "string"
-    },
-    "appealStatus": {
-      "enum": [
-        "controller-review",
-        "recovery-review",
-        "accepted",
-        "denied",
-        "withdrawn"
-      ],
-      "type": "string"
-    },
-    "appealTargetKind": {
-      "enum": [
-        "ruling-event",
-        "membership"
-      ],
-      "type": "string"
-    },
     "assetRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "audienceGrantRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "audienceKind": {
-      "enum": [
-        "role-based",
-        "explicit",
-        "derived"
-      ],
-      "type": "string"
-    },
-    "audienceRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "authorityHealthKind": {
-      "enum": [
-        "healthy",
-        "lease-expired",
-        "controller-missing",
-        "transfer-in-progress",
-        "blocked-appeal"
-      ],
-      "type": "string"
-    },
-    "authorityRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "boardOpRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "boardSnapshotRef": {
-      "format": "at-uri",
+      "format": "uri",
       "type": "string"
     },
     "branchKind": {
@@ -230,15 +119,7 @@
       "format": "at-uri",
       "type": "string"
     },
-    "characterInstanceRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
     "characterSheetRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "characterStateRef": {
       "format": "at-uri",
       "type": "string"
     },
@@ -248,10 +129,6 @@
         "house",
         "campaign"
       ],
-      "type": "string"
-    },
-    "controllerAudienceRef": {
-      "format": "at-uri",
       "type": "string"
     },
     "conversionAuthorityKind": {
@@ -337,10 +214,6 @@
       "format": "datetime",
       "type": "string"
     },
-    "detailEnvelopeRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
     "did": {
       "format": "did",
       "type": "string"
@@ -378,79 +251,14 @@
       ],
       "type": "object"
     },
-    "gmAudienceRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "governingRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "grantStatus": {
-      "enum": [
-        "pending",
-        "active",
-        "revoked"
-      ],
-      "type": "string"
-    },
-    "handoutRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
     "houseRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "membershipRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "membershipRole": {
-      "enum": [
-        "gm",
-        "player",
-        "viewer",
-        "spectator"
-      ],
-      "type": "string"
-    },
-    "membershipStatus": {
-      "enum": [
-        "invited",
-        "joined",
-        "left",
-        "removed",
-        "banned"
-      ],
-      "type": "string"
-    },
-    "messageRef": {
       "format": "at-uri",
       "type": "string"
     },
     "mutationAck": {
       "properties": {
-        "caseRevision": {
-          "type": "integer"
-        },
-        "controllerDids": {
-          "items": {
-            "ref": "app.cerulia.defs#did",
-            "type": "ref"
-          },
-          "type": "array"
-        },
         "currentRevision": {
           "type": "integer"
-        },
-        "currentState": {
-          "ref": "app.cerulia.defs#sessionState",
-          "type": "ref"
-        },
-        "currentVisibility": {
-          "ref": "app.cerulia.defs#visibility",
-          "type": "ref"
         },
         "emittedRecordRefs": {
           "items": {
@@ -459,22 +267,8 @@
           },
           "type": "array"
         },
-        "keyVersion": {
-          "type": "integer"
-        },
-        "leaseHolderDid": {
-          "ref": "app.cerulia.defs#did",
-          "type": "ref"
-        },
         "message": {
           "type": "string"
-        },
-        "pendingControllerDids": {
-          "items": {
-            "ref": "app.cerulia.defs#did",
-            "type": "ref"
-          },
-          "type": "array"
         },
         "publicationRef": {
           "ref": "app.cerulia.defs#publicationRef",
@@ -487,32 +281,6 @@
         "resultKind": {
           "ref": "app.cerulia.defs#mutationResultKind",
           "type": "ref"
-        },
-        "reviewRevision": {
-          "type": "integer"
-        },
-        "sessionPublicationRef": {
-          "ref": "app.cerulia.defs#sessionPublicationRef",
-          "type": "ref"
-        },
-        "snapshotRef": {
-          "ref": "app.cerulia.defs#boardSnapshotRef",
-          "type": "ref"
-        },
-        "transferCompletedAt": {
-          "ref": "app.cerulia.defs#datetime",
-          "type": "ref"
-        },
-        "transferPhase": {
-          "ref": "app.cerulia.defs#transferPhase",
-          "type": "ref"
-        },
-        "updatedGrantRefs": {
-          "items": {
-            "ref": "app.cerulia.defs#audienceGrantRef",
-            "type": "ref"
-          },
-          "type": "array"
         }
       },
       "required": [
@@ -525,20 +293,7 @@
       "enum": [
         "accepted",
         "rejected",
-        "rebase-needed",
-        "manual-review"
-      ],
-      "type": "string"
-    },
-    "privateStateEnvelopeRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "projectionSurfaceKind": {
-      "enum": [
-        "character-home",
-        "campaign-view",
-        "publication-summary"
+        "rebase-needed"
       ],
       "type": "string"
     },
@@ -546,7 +301,7 @@
       "enum": [
         "discovery",
         "stable-entry",
-        "archive-link"
+        "history-link"
       ],
       "type": "string"
     },
@@ -643,18 +398,6 @@
       ],
       "type": "string"
     },
-    "redactionEventRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "redactionMode": {
-      "enum": [
-        "hide",
-        "retract",
-        "replace"
-      ],
-      "type": "string"
-    },
     "requestId": {
       "type": "string"
     },
@@ -738,21 +481,6 @@
       ],
       "type": "string"
     },
-    "revealEventRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "revealMode": {
-      "enum": [
-        "broaden-audience",
-        "publish-publicly"
-      ],
-      "type": "string"
-    },
-    "rollRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
     "ruleProfileRef": {
       "format": "at-uri",
       "type": "string"
@@ -781,204 +509,12 @@
       "format": "nsid",
       "type": "string"
     },
-    "rulingEventRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "sceneRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
     "scopeRef": {
       "format": "at-uri",
       "type": "string"
     },
-    "secretEnvelopeRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "selectorPolicyDerivedMembership": {
-      "properties": {
-        "kind": {
-          "const": "derived-membership",
-          "type": "string"
-        },
-        "membershipStatuses": {
-          "items": {
-            "ref": "app.cerulia.defs#membershipStatus",
-            "type": "ref"
-          },
-          "minLength": 1,
-          "type": "array"
-        },
-        "roles": {
-          "items": {
-            "ref": "app.cerulia.defs#membershipRole",
-            "type": "ref"
-          },
-          "minLength": 1,
-          "type": "array"
-        },
-        "sessionStates": {
-          "items": {
-            "ref": "app.cerulia.defs#sessionState",
-            "type": "ref"
-          },
-          "minLength": 1,
-          "type": "array"
-        }
-      },
-      "required": [
-        "kind",
-        "roles",
-        "sessionStates"
-      ],
-      "type": "object"
-    },
-    "selectorPolicyExplicitMembers": {
-      "properties": {
-        "actorDids": {
-          "items": {
-            "ref": "app.cerulia.defs#did",
-            "type": "ref"
-          },
-          "minLength": 1,
-          "type": "array"
-        },
-        "kind": {
-          "const": "explicit-members",
-          "type": "string"
-        }
-      },
-      "required": [
-        "kind",
-        "actorDids"
-      ],
-      "type": "object"
-    },
-    "selectorPolicyKind": {
-      "enum": [
-        "role-members",
-        "explicit-members",
-        "derived-membership"
-      ],
-      "type": "string"
-    },
-    "selectorPolicyRoleMembers": {
-      "properties": {
-        "kind": {
-          "const": "role-members",
-          "type": "string"
-        },
-        "membershipStatuses": {
-          "items": {
-            "ref": "app.cerulia.defs#membershipStatus",
-            "type": "ref"
-          },
-          "type": "array"
-        },
-        "roles": {
-          "items": {
-            "ref": "app.cerulia.defs#membershipRole",
-            "type": "ref"
-          },
-          "minLength": 1,
-          "type": "array"
-        }
-      },
-      "required": [
-        "kind",
-        "roles"
-      ],
-      "type": "object"
-    },
-    "serviceLogRow": {
-      "properties": {
-        "actorDid": {
-          "ref": "app.cerulia.defs#did",
-          "type": "ref"
-        },
-        "createdAt": {
-          "ref": "app.cerulia.defs#datetime",
-          "type": "ref"
-        },
-        "emittedRecordRefs": {
-          "items": {
-            "ref": "app.cerulia.defs#subjectRef",
-            "type": "ref"
-          },
-          "type": "array"
-        },
-        "governingRef": {
-          "ref": "app.cerulia.defs#governingRef",
-          "type": "ref"
-        },
-        "message": {
-          "type": "string"
-        },
-        "operationNsid": {
-          "format": "nsid",
-          "type": "string"
-        },
-        "rawPayload": {
-          "type": "unknown"
-        },
-        "reasonCode": {
-          "type": "string"
-        },
-        "requestId": {
-          "ref": "app.cerulia.defs#requestId",
-          "type": "ref"
-        },
-        "resultKind": {
-          "ref": "app.cerulia.defs#mutationResultKind",
-          "type": "ref"
-        }
-      },
-      "required": [
-        "requestId",
-        "operationNsid",
-        "resultKind",
-        "governingRef",
-        "createdAt",
-        "emittedRecordRefs"
-      ],
-      "type": "object"
-    },
-    "sessionPublicationRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "sessionRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "sessionState": {
-      "enum": [
-        "planning",
-        "open",
-        "active",
-        "paused",
-        "ended",
-        "archived"
-      ],
-      "type": "string"
-    },
     "sourceCampaignRef": {
       "format": "at-uri",
-      "type": "string"
-    },
-    "sourceRunRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "sourceType": {
-      "enum": [
-        "player-character",
-        "npc",
-        "preset",
-        "proxy"
-      ],
       "type": "string"
     },
     "subjectRef": {
@@ -1037,36 +573,6 @@
     },
     "targetRef": {
       "format": "at-uri",
-      "type": "string"
-    },
-    "tokenFacetKind": {
-      "enum": [
-        "public-facet",
-        "secret-facet-envelope",
-        "controller-dids",
-        "visibility-mode"
-      ],
-      "type": "string"
-    },
-    "tokenRef": {
-      "format": "at-uri",
-      "type": "string"
-    },
-    "transferPhase": {
-      "enum": [
-        "stable",
-        "preparing",
-        "rotating-grants",
-        "finalizing"
-      ],
-      "type": "string"
-    },
-    "transferPolicyKind": {
-      "enum": [
-        "majority-controllers",
-        "unanimous-controllers",
-        "recovery-fallback-majority"
-      ],
       "type": "string"
     },
     "visibility": {

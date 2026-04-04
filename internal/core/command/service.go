@@ -98,7 +98,6 @@ type RetireCharacterBranchInput struct {
 
 type RecordCharacterAdvancementInput struct {
 	CharacterBranchRef string    `json:"characterBranchRef"`
-	SourceRunRef       string    `json:"sourceRunRef,omitempty"`
 	AdvancementKind    string    `json:"advancementKind"`
 	DeltaPayloadRef    string    `json:"deltaPayloadRef"`
 	ApprovedByDid      string    `json:"approvedByDid"`
@@ -111,7 +110,6 @@ type RecordCharacterAdvancementInput struct {
 type RecordCharacterEpisodeInput struct {
 	CharacterBranchRef       string   `json:"characterBranchRef"`
 	CampaignRef              string   `json:"campaignRef,omitempty"`
-	SourceRunRef             string   `json:"sourceRunRef,omitempty"`
 	ScenarioLabel            string   `json:"scenarioLabel,omitempty"`
 	RulesetManifestRef       string   `json:"rulesetManifestRef"`
 	EffectiveRuleProfileRefs []string `json:"effectiveRuleProfileRefs"`
@@ -294,6 +292,54 @@ func requireActor(actorDid string) error {
 	return nil
 }
 
+func invalidInputf(format string, args ...any) error {
+	return fmt.Errorf("%w: %s", ErrInvalidInput, fmt.Sprintf(format, args...))
+}
+
+func requireNonEmptyField(value string, field string) error {
+	if strings.TrimSpace(value) == "" {
+		return invalidInputf("%s is required", field)
+	}
+	return nil
+}
+
+func requireNonEmptyStringSlice(values []string, field string) error {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return nil
+		}
+	}
+	return invalidInputf("%s is required", field)
+}
+
+func requirePresentSlice[T any](values []T, field string) error {
+	if values == nil {
+		return invalidInputf("%s is required", field)
+	}
+	return nil
+}
+
+func requireNonEmptySlice[T any](values []T, field string) error {
+	if len(values) == 0 {
+		return invalidInputf("%s is required", field)
+	}
+	return nil
+}
+
+func requirePositiveInt64Field(value int64, field string) error {
+	if value <= 0 {
+		return invalidInputf("%s must be positive", field)
+	}
+	return nil
+}
+
+func requireTimeField(value time.Time, field string) error {
+	if value.IsZero() {
+		return invalidInputf("%s is required", field)
+	}
+	return nil
+}
+
 func sameActor(actorDid string, allowed ...string) bool {
 	trimmedActor := strings.TrimSpace(actorDid)
 	if trimmedActor == "" {
@@ -308,6 +354,10 @@ func sameActor(actorDid string, allowed ...string) bool {
 }
 
 func decodeStable[T any](ctx context.Context, reader store.Reader, ref string) (store.StableRecord, T, error) {
+	if _, err := store.ParseRef(ref); err != nil {
+		var zero T
+		return store.StableRecord{}, zero, ErrInvalidInput
+	}
 	record, err := reader.GetStable(ctx, ref)
 	if err != nil {
 		var zero T
@@ -322,6 +372,10 @@ func decodeStable[T any](ctx context.Context, reader store.Reader, ref string) (
 }
 
 func decodeAppend[T any](ctx context.Context, reader store.Reader, ref string) (store.AppendRecord, T, error) {
+	if _, err := store.ParseRef(ref); err != nil {
+		var zero T
+		return store.AppendRecord{}, zero, ErrInvalidInput
+	}
 	record, err := reader.GetAppend(ctx, ref)
 	if err != nil {
 		var zero T

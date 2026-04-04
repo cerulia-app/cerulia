@@ -121,15 +121,3 @@ type ArchivedCounts struct {
 	Episodes     int `json:"episodes"`
 	Publications int `json:"publications"`
 }
-
-type ServiceLogRow struct {
-	RequestID         string    `json:"requestId"`
-	OperationNSID     string    `json:"operationNsid"`
-	ResultKind        string    `json:"resultKind"`
-	GoverningRef      string    `json:"governingRef"`
-	ActorDid          string    `json:"actorDid,omitempty"`
-	CreatedAt         time.Time `json:"createdAt"`
-	EmittedRecordRefs []string  `json:"emittedRecordRefs,omitempty"`
-	ReasonCode        string    `json:"reasonCode,omitempty"`
-	Message           string    `json:"message,omitempty"`
-}

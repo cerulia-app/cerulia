@@ -7,91 +7,74 @@ func rpcCatalog() map[string]map[string]any {
 	return map[string]map[string]any{
 		"lexicon/app.cerulia.rpc.getCharacterHome.json": document("app.cerulia.rpc.getCharacterHome", map[string]any{
 			"main": queryMain(nil, map[string]any{
-				"ownerDid": stringDef("did"),
-			}, objectDef(
-				[]string{"ownerDid", "primaryBranch", "branches", "recentEpisodes", "reuseGrants", "publications"},
-				map[string]any{
-					"ownerDid":              refDef("app.cerulia.defs#did"),
-					"primaryBranch":         refDef("app.cerulia.defs#branchSummary"),
-					"branches":              arrayDef(refDef("app.cerulia.defs#branchSummary")),
-					"recentEpisodes":        arrayDef(refDef("app.cerulia.defs#episodeSummary")),
-					"recentConversions":     arrayDef(refDef("app.cerulia.defs#conversionSummary")),
-					"reuseGrants":           arrayDef(refDef("app.cerulia.defs#reuseGrantSummary")),
-					"publications":          arrayDef(refDef("app.cerulia.defs#publicationSummaryRow")),
-					"linkedCampaigns":       arrayDef(refDef("app.cerulia.defs#campaignSummary")),
-					"recentAdvancementRefs": arrayDef(refDef("app.cerulia.defs#characterAdvancementRef")),
-				},
-			), []string{"Unauthorized", "Forbidden", "NotFound"}),
+				"ownerDid": refDef("app.cerulia.defs#did"),
+			}, objectDef([]string{"ownerDid", "primaryBranch", "branches", "recentEpisodes", "reuseGrants", "publications"}, map[string]any{
+				"ownerDid":              refDef("app.cerulia.defs#did"),
+				"primaryBranch":         refDef("app.cerulia.defs#branchSummary"),
+				"branches":              arrayDef(refDef("app.cerulia.defs#branchSummary")),
+				"recentEpisodes":        arrayDef(refDef("app.cerulia.defs#episodeSummary")),
+				"recentConversions":     arrayDef(refDef("app.cerulia.defs#conversionSummary")),
+				"reuseGrants":           arrayDef(refDef("app.cerulia.defs#reuseGrantSummary")),
+				"publications":          arrayDef(refDef("app.cerulia.defs#publicationSummaryRow")),
+				"linkedCampaigns":       arrayDef(refDef("app.cerulia.defs#campaignSummary")),
+				"recentAdvancementRefs": arrayDef(refDef("app.cerulia.defs#characterAdvancementRef")),
+			}), []string{"InvalidRequest", "Unauthorized", "Forbidden"}),
 		}),
 		"lexicon/app.cerulia.rpc.getCampaignView.json": document("app.cerulia.rpc.getCampaignView", map[string]any{
 			"main": queryMain([]string{"campaignRef"}, map[string]any{
-				"campaignRef": stringDef("at-uri"),
+				"campaignRef": refDef("app.cerulia.defs#campaignRef"),
 				"mode":        enumDef("owner-steward", "public"),
-			}, objectDef(
-				[]string{"mode", "campaign", "publishedArtifacts"},
-				map[string]any{
-					"mode":     enumDef("owner-steward", "public"),
-					"campaign": refDef("app.cerulia.defs#campaignSummary"),
-					"ruleProvenance": objectDef(nil, map[string]any{
-						"sharedRuleProfileRefs": arrayDef(refDef("app.cerulia.defs#ruleProfileRef")),
-						"rulesetManifestRef":    refDef("app.cerulia.defs#rulesetManifestRef"),
-					}),
-					"defaultReusePolicy": refDef("app.cerulia.defs#reusePolicyKind"),
-					"publishedArtifacts": arrayDef(refDef("app.cerulia.defs#publicationSummaryRow")),
-					"recentContinuity":   arrayDef(refDef("app.cerulia.defs#episodeSummary")),
-					"activeBranches":     arrayDef(refDef("app.cerulia.defs#branchSummary")),
-					"stewardDids":        arrayDef(refDef("app.cerulia.defs#did")),
-					"archivedCounts": objectDef(nil, map[string]any{
-						"episodes":     integerDef(),
-						"publications": integerDef(),
-					}),
-				},
-			), []string{"NotFound"}),
+			}, objectDef([]string{"mode", "campaign", "publishedArtifacts"}, map[string]any{
+				"mode":     enumDef("owner-steward", "public"),
+				"campaign": refDef("app.cerulia.defs#campaignSummary"),
+				"ruleProvenance": objectDef(nil, map[string]any{
+					"sharedRuleProfileRefs": arrayDef(refDef("app.cerulia.defs#ruleProfileRef")),
+					"rulesetManifestRef":    refDef("app.cerulia.defs#rulesetManifestRef"),
+				}),
+				"defaultReusePolicy": refDef("app.cerulia.defs#reusePolicyKind"),
+				"publishedArtifacts": arrayDef(refDef("app.cerulia.defs#publicationSummaryRow")),
+				"recentContinuity":   arrayDef(refDef("app.cerulia.defs#episodeSummary")),
+				"activeBranches":     arrayDef(refDef("app.cerulia.defs#branchSummary")),
+				"stewardDids":        arrayDef(refDef("app.cerulia.defs#did")),
+				"archivedCounts": objectDef(nil, map[string]any{
+					"episodes":     integerDef(),
+					"publications": integerDef(),
+				}),
+			}), []string{"InvalidRequest", "Unauthorized", "Forbidden", "NotFound"}),
 		}),
 		"lexicon/app.cerulia.rpc.listCharacterEpisodes.json": document("app.cerulia.rpc.listCharacterEpisodes", map[string]any{
 			"main": queryMain([]string{"characterBranchRef"}, map[string]any{
-				"characterBranchRef": stringDef("at-uri"),
+				"characterBranchRef": refDef("app.cerulia.defs#characterBranchRef"),
 				"limit":              integerDef(),
-				"cursor":             stringDef(""),
+				"cursor":             refDef("app.cerulia.defs#cursor"),
 			}, objectDef([]string{"items"}, map[string]any{
 				"items":  arrayDef(refDef("app.cerulia.defs#episodeSummary")),
 				"cursor": refDef("app.cerulia.defs#cursor"),
-			}), []string{"NotFound"}),
+			}), []string{"InvalidRequest", "Unauthorized", "Forbidden", "NotFound"}),
 		}),
 		"lexicon/app.cerulia.rpc.listReuseGrants.json": document("app.cerulia.rpc.listReuseGrants", map[string]any{
 			"main": queryMain([]string{"characterBranchRef"}, map[string]any{
-				"characterBranchRef": stringDef("at-uri"),
+				"characterBranchRef": refDef("app.cerulia.defs#characterBranchRef"),
 				"state":              enumDef("active", "revoked", "expired", "all"),
 				"limit":              integerDef(),
-				"cursor":             stringDef(""),
+				"cursor":             refDef("app.cerulia.defs#cursor"),
 			}, objectDef([]string{"items"}, map[string]any{
 				"items":  arrayDef(refDef("app.cerulia.defs#reuseGrantSummary")),
 				"cursor": refDef("app.cerulia.defs#cursor"),
-			}), []string{"NotFound"}),
+			}), []string{"InvalidRequest", "Unauthorized", "Forbidden", "NotFound"}),
 		}),
 		"lexicon/app.cerulia.rpc.listPublications.json": document("app.cerulia.rpc.listPublications", map[string]any{
 			"main": queryMain(nil, map[string]any{
-				"subjectRef":     stringDef("at-uri"),
-				"subjectKind":    enumDef("campaign", "character-branch", "character-episode"),
+				"subjectRef":     refDef("app.cerulia.defs#subjectRef"),
+				"subjectKind":    refDef("app.cerulia.defs#publicationSubjectKind"),
 				"mode":           enumDef("owner-steward", "public"),
 				"includeRetired": booleanDef(),
 				"limit":          integerDef(),
-				"cursor":         stringDef(""),
+				"cursor":         refDef("app.cerulia.defs#cursor"),
 			}, objectDef([]string{"items"}, map[string]any{
 				"items":  arrayDef(refDef("app.cerulia.defs#publicationSummaryRow")),
 				"cursor": refDef("app.cerulia.defs#cursor"),
-			}), []string{"InvalidRequest", "NotFound"}),
-		}),
-		"lexicon/app.cerulia.rpc.exportServiceLog.json": document("app.cerulia.rpc.exportServiceLog", map[string]any{
-			"main": queryMain([]string{"governingRef"}, map[string]any{
-				"governingRef": stringDef("at-uri"),
-				"requestId":    stringDef(""),
-				"limit":        integerDef(),
-				"cursor":       stringDef(""),
-			}, objectDef([]string{"items"}, map[string]any{
-				"items":  arrayDef(refDef("app.cerulia.defs#serviceLogRow")),
-				"cursor": refDef("app.cerulia.defs#cursor"),
-			}), []string{"NotFound"}),
+			}), []string{"InvalidRequest", "Unauthorized", "Forbidden", "NotFound"}),
 		}),
 		"lexicon/app.cerulia.rpc.createCampaign.json": document("app.cerulia.rpc.createCampaign", map[string]any{
 			"main": procedureMain([]string{"title", "visibility", "rulesetNsid", "rulesetManifestRef", "defaultReusePolicyKind", "stewardDids", "requestId"}, map[string]any{
@@ -125,7 +108,7 @@ func rpcCatalog() map[string]map[string]any {
 				"baseSheetRef":       refDef("app.cerulia.defs#characterSheetRef"),
 				"branchKind":         refDef("app.cerulia.defs#branchKind"),
 				"branchLabel":        stringDef(""),
-				"overridePayloadRef": stringDef("at-uri"),
+				"overridePayloadRef": stringDef("uri"),
 				"importedFrom":       stringDef("uri"),
 				"sourceRevision":     integerDef(),
 				"syncMode":           refDef("app.cerulia.defs#syncMode"),
@@ -137,7 +120,7 @@ func rpcCatalog() map[string]map[string]any {
 				"characterBranchRef": refDef("app.cerulia.defs#characterBranchRef"),
 				"expectedRevision":   integerDef(),
 				"branchLabel":        stringDef(""),
-				"overridePayloadRef": stringDef("at-uri"),
+				"overridePayloadRef": stringDef("uri"),
 				"importedFrom":       stringDef("uri"),
 				"sourceRevision":     integerDef(),
 				"syncMode":           refDef("app.cerulia.defs#syncMode"),
@@ -148,16 +131,15 @@ func rpcCatalog() map[string]map[string]any {
 			"main": procedureMain([]string{"characterBranchRef", "expectedRevision", "requestId"}, map[string]any{
 				"characterBranchRef": refDef("app.cerulia.defs#characterBranchRef"),
 				"expectedRevision":   integerDef(),
-				"requestId":          refDef("app.cerulia.defs#requestId"),
 				"reasonCode":         stringDef(""),
+				"requestId":          refDef("app.cerulia.defs#requestId"),
 			}, mutationAck, commonErrors),
 		}),
 		"lexicon/app.cerulia.rpc.recordCharacterAdvancement.json": document("app.cerulia.rpc.recordCharacterAdvancement", map[string]any{
 			"main": procedureMain([]string{"characterBranchRef", "advancementKind", "deltaPayloadRef", "approvedByDid", "effectiveAt", "requestId"}, map[string]any{
 				"characterBranchRef": refDef("app.cerulia.defs#characterBranchRef"),
-				"sourceRunRef":       refDef("app.cerulia.defs#sourceRunRef"),
 				"advancementKind":    refDef("app.cerulia.defs#advancementKind"),
-				"deltaPayloadRef":    stringDef("at-uri"),
+				"deltaPayloadRef":    stringDef("uri"),
 				"approvedByDid":      refDef("app.cerulia.defs#did"),
 				"effectiveAt":        refDef("app.cerulia.defs#datetime"),
 				"supersedesRef":      refDef("app.cerulia.defs#characterAdvancementRef"),
@@ -169,7 +151,6 @@ func rpcCatalog() map[string]map[string]any {
 			"main": procedureMain([]string{"characterBranchRef", "rulesetManifestRef", "effectiveRuleProfileRefs", "outcomeSummary", "advancementRefs", "recordedByDid", "requestId"}, map[string]any{
 				"characterBranchRef":       refDef("app.cerulia.defs#characterBranchRef"),
 				"campaignRef":              refDef("app.cerulia.defs#campaignRef"),
-				"sourceRunRef":             refDef("app.cerulia.defs#sourceRunRef"),
 				"scenarioLabel":            stringDef(""),
 				"rulesetManifestRef":       refDef("app.cerulia.defs#rulesetManifestRef"),
 				"effectiveRuleProfileRefs": arrayDef(refDef("app.cerulia.defs#ruleProfileRef")),
@@ -219,9 +200,9 @@ func rpcCatalog() map[string]map[string]any {
 				"scopeKind":                  refDef("app.cerulia.defs#ruleProfileScopeKind"),
 				"scopeRef":                   refDef("app.cerulia.defs#scopeRef"),
 				"expectedRulesetManifestRef": refDef("app.cerulia.defs#rulesetManifestRef"),
-				"requestId":                  refDef("app.cerulia.defs#requestId"),
 				"campaignRef":                refDef("app.cerulia.defs#campaignRef"),
 				"expectedCampaignRevision":   integerDef(),
+				"requestId":                  refDef("app.cerulia.defs#requestId"),
 			}, mutationAck, commonErrors),
 		}),
 		"lexicon/app.cerulia.rpc.publishSubject.json": document("app.cerulia.rpc.publishSubject", map[string]any{

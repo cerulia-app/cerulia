@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,8 +12,6 @@ import (
 	"cerulia/internal/authz"
 	corecommand "cerulia/internal/core/command"
 	coreprojection "cerulia/internal/core/projection"
-	runcommand "cerulia/internal/run/command"
-	runprojection "cerulia/internal/run/projection"
 	"cerulia/internal/store"
 )
 
@@ -31,9 +30,16 @@ func decodeJSONBody[T any](r *http.Request) (T, error) {
 		return payload, nil
 	}
 	defer r.Body.Close()
+	// Lexicon evolution requires unknown fields to be ignored for forward compatibility.
 	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&payload); err != nil {
+		return payload, fmt.Errorf("decode json body: %w", err)
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			return payload, fmt.Errorf("decode json body: trailing content")
+		}
 		return payload, fmt.Errorf("decode json body: %w", err)
 	}
 	return payload, nil
@@ -66,13 +72,13 @@ func writeXRPCFailure(w http.ResponseWriter, err error) {
 	case errors.Is(err, authz.ErrUnauthorized):
 		w.Header().Set("WWW-Authenticate", `Bearer realm="cerulia", error="invalid_token"`)
 		writeXRPCError(w, http.StatusUnauthorized, "Unauthorized", err.Error())
-	case errors.Is(err, authz.ErrForbidden), errors.Is(err, corecommand.ErrForbidden), errors.Is(err, coreprojection.ErrForbidden), errors.Is(err, runcommand.ErrForbidden), errors.Is(err, runprojection.ErrForbidden):
+	case errors.Is(err, authz.ErrForbidden), errors.Is(err, corecommand.ErrForbidden), errors.Is(err, coreprojection.ErrForbidden):
 		writeXRPCError(w, http.StatusForbidden, "Forbidden", err.Error())
 	case errors.Is(err, store.ErrNotFound):
 		writeXRPCError(w, http.StatusNotFound, "NotFound", err.Error())
-	case errors.Is(err, corecommand.ErrUnsupportedRuleset), errors.Is(err, runcommand.ErrUnsupportedRuleset):
+	case errors.Is(err, corecommand.ErrUnsupportedRuleset):
 		writeXRPCError(w, http.StatusBadRequest, "UnsupportedRuleset", err.Error())
-	case errors.Is(err, corecommand.ErrInvalidInput), errors.Is(err, coreprojection.ErrInvalidInput), errors.Is(err, runcommand.ErrInvalidInput), errors.Is(err, runprojection.ErrInvalidInput):
+	case errors.Is(err, corecommand.ErrInvalidInput), errors.Is(err, coreprojection.ErrInvalidInput):
 		writeXRPCError(w, http.StatusBadRequest, "InvalidRequest", err.Error())
 	default:
 		writeXRPCError(w, http.StatusInternalServerError, "InternalError", err.Error())

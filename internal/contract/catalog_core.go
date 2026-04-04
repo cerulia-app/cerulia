@@ -112,7 +112,7 @@ func coreCatalog() map[string]map[string]any {
 				"baseSheetRef":       refDef("app.cerulia.defs#characterSheetRef"),
 				"branchKind":         refDef("app.cerulia.defs#branchKind"),
 				"branchLabel":        stringDef(""),
-				"overridePayloadRef": stringDef("at-uri"),
+				"overridePayloadRef": stringDef("uri"),
 				"importedFrom":       stringDef("uri"),
 				"sourceRevision":     integerDef(),
 				"syncMode":           refDef("app.cerulia.defs#syncMode"),
@@ -155,9 +155,8 @@ func coreCatalog() map[string]map[string]any {
 			[]string{"characterBranchRef", "advancementKind", "deltaPayloadRef", "approvedByDid", "effectiveAt", "requestId", "createdAt"},
 			map[string]any{
 				"characterBranchRef": refDef("app.cerulia.defs#characterBranchRef"),
-				"sourceRunRef":       refDef("app.cerulia.defs#sourceRunRef"),
 				"advancementKind":    refDef("app.cerulia.defs#advancementKind"),
-				"deltaPayloadRef":    stringDef("at-uri"),
+				"deltaPayloadRef":    stringDef("uri"),
 				"approvedByDid":      refDef("app.cerulia.defs#did"),
 				"effectiveAt":        refDef("app.cerulia.defs#datetime"),
 				"supersedesRef":      refDef("app.cerulia.defs#characterAdvancementRef"),
@@ -172,7 +171,6 @@ func coreCatalog() map[string]map[string]any {
 			map[string]any{
 				"characterBranchRef":       refDef("app.cerulia.defs#characterBranchRef"),
 				"campaignRef":              refDef("app.cerulia.defs#campaignRef"),
-				"sourceRunRef":             refDef("app.cerulia.defs#sourceRunRef"),
 				"scenarioLabel":            stringDef(""),
 				"rulesetManifestRef":       refDef("app.cerulia.defs#rulesetManifestRef"),
 				"effectiveRuleProfileRefs": arrayDef(refDef("app.cerulia.defs#ruleProfileRef")),

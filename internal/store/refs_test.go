@@ -23,3 +23,15 @@ func TestParseRefRejectsControlCharacters(t *testing.T) {
 		t.Fatal("expected ParseRef to reject control characters")
 	}
 }
+
+func TestParseRefRejectsMalformedDIDAuthority(t *testing.T) {
+	tests := []string{
+		"at://did:plc:alice:extra/app.cerulia.core.campaign/main",
+		"at://did:plc:alice%ZZ/app.cerulia.core.campaign/main",
+	}
+	for _, ref := range tests {
+		if _, err := ParseRef(ref); err == nil {
+			t.Fatalf("expected ParseRef to reject malformed DID authority %q", ref)
+		}
+	}
+}

@@ -33,6 +33,15 @@ func ParseRef(ref string) (RefParts, error) {
 	if parsed.RepoDID == "" || parsed.Collection == "" || parsed.RecordKey == "" {
 		return RefParts{}, fmt.Errorf("invalid ref %q", ref)
 	}
+	if !strings.HasPrefix(parsed.RepoDID, "did:") {
+		return RefParts{}, fmt.Errorf("invalid ref %q", ref)
+	}
+	if err := ValidateDIDAuthority(parsed.RepoDID); err != nil {
+		return RefParts{}, fmt.Errorf("invalid ref %q", ref)
+	}
+	if err := ValidateCollectionNSID(parsed.Collection); err != nil {
+		return RefParts{}, fmt.Errorf("invalid ref %q", ref)
+	}
 	if err := ValidateRecordKey(parsed.RecordKey); err != nil {
 		return RefParts{}, fmt.Errorf("invalid ref %q", ref)
 	}
@@ -60,6 +69,76 @@ func ValidateRecordKey(raw string) error {
 	for _, r := range trimmed {
 		if !validRecordKeyRune(r) {
 			return fmt.Errorf("invalid record key")
+		}
+	}
+	return nil
+}
+
+func ValidateDIDAuthority(raw string) error {
+	trimmed := strings.TrimSpace(raw)
+	parts := strings.Split(trimmed, ":")
+	if len(parts) < 3 || parts[0] != "did" || parts[1] == "" || parts[2] == "" {
+		return fmt.Errorf("invalid did")
+	}
+	if parts[1] == "plc" && len(parts) != 3 {
+		return fmt.Errorf("invalid did")
+	}
+	for _, r := range parts[1] {
+		if !(r >= 'a' && r <= 'z') && !(r >= '0' && r <= '9') {
+			return fmt.Errorf("invalid did")
+		}
+	}
+	for _, part := range parts[2:] {
+		if strings.TrimSpace(part) == "" || !validDIDSegment(part) {
+			return fmt.Errorf("invalid did")
+		}
+	}
+	return nil
+}
+
+func validDIDSegment(raw string) bool {
+	for index := 0; index < len(raw); index++ {
+		value := raw[index]
+		switch {
+		case value >= 'a' && value <= 'z':
+		case value >= 'A' && value <= 'Z':
+		case value >= '0' && value <= '9':
+		case value == '.', value == '-', value == '_':
+		case value == '%':
+			if index+2 >= len(raw) || !isHexByte(raw[index+1]) || !isHexByte(raw[index+2]) {
+				return false
+			}
+			index += 2
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func isHexByte(value byte) bool {
+	return (value >= '0' && value <= '9') || (value >= 'a' && value <= 'f') || (value >= 'A' && value <= 'F')
+}
+
+func ValidateCollectionNSID(raw string) error {
+	trimmed := strings.TrimSpace(raw)
+	parts := strings.Split(trimmed, ".")
+	if len(parts) < 3 {
+		return fmt.Errorf("invalid nsid")
+	}
+	for _, part := range parts {
+		if len(part) == 0 || part[0] == '-' || part[len(part)-1] == '-' {
+			return fmt.Errorf("invalid nsid")
+		}
+		for _, r := range part {
+			switch {
+			case r >= 'a' && r <= 'z':
+			case r >= 'A' && r <= 'Z':
+			case r >= '0' && r <= '9':
+			case r == '-':
+			default:
+				return fmt.Errorf("invalid nsid")
+			}
 		}
 	}
 	return nil

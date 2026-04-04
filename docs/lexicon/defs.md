@@ -6,6 +6,7 @@
 
 - app.cerulia.defs は `*.defs` lexicon として扱い、main definition は置かない
 - ref 型は Lexicon 上は at-uri string として定義し、どの collection を指すかは semantic invariant で固定する
+- core の `*Ref` は canonical DID authority の normalized at-uri だけを受け入れる。handle authority の at-uri は user-facing display には使えても、record reference としては受け入れない
 - record 内の `*Id` field は record-local stable identifier として使ってよく、cross-record reference、AppView route、XRPC、projection では対応する `*Ref` at-uri を使う
 - 新規 field の追加は optional のみとし、既存 field の rename や type change は行わない
 

@@ -14,6 +14,24 @@ func (service *Service) CreateCampaign(ctx context.Context, actorDid string, inp
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.Title, "title"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.Visibility, "visibility"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RulesetNSID, "rulesetNsid"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RulesetManifestRef, "rulesetManifestRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyStringSlice(input.StewardDids, "stewardDids"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.DefaultReusePolicyKind, "defaultReusePolicyKind"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 	if !sameActor(actorDid, input.StewardDids...) {
 		return ledger.MutationAck{}, ErrForbidden
 	}
@@ -90,6 +108,15 @@ func (service *Service) AttachRuleProfile(ctx context.Context, actorDid string, 
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.CampaignRef, "campaignRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RuleProfileRef, "ruleProfileRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ExpectedRulesetManifestRef, "expectedRulesetManifestRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 
 	return service.executeMutation(ctx, input.CampaignRef, "app.cerulia.rpc.attachRuleProfile", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
 		campaignRecord, campaign, err := decodeStable[model.Campaign](ctx, tx, input.CampaignRef)
@@ -135,6 +162,18 @@ func (service *Service) AttachRuleProfile(ctx context.Context, actorDid string, 
 
 func (service *Service) RetireRuleProfile(ctx context.Context, actorDid string, input RetireRuleProfileInput) (ledger.MutationAck, error) {
 	if err := requireActor(actorDid); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RuleProfileRef, "ruleProfileRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ScopeKind, "scopeKind"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ScopeRef, "scopeRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ExpectedRulesetManifestRef, "expectedRulesetManifestRef"); err != nil {
 		return ledger.MutationAck{}, err
 	}
 

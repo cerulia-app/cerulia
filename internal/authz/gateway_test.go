@@ -25,23 +25,14 @@ func TestAuthorizeRequest(t *testing.T) {
 		wantAnonymous  bool
 	}{
 		{name: "anonymous public query", operationNSID: "app.cerulia.rpc.getCampaignView", allowAnonymous: true, wantAnonymous: true},
-		{name: "anonymous session preflight", operationNSID: "app.cerulia.rpc.getSessionAccessPreflight", allowAnonymous: true, wantAnonymous: true},
-		{name: "authenticated session preflight without bundle", operationNSID: "app.cerulia.rpc.getSessionAccessPreflight", actorDid: "did:plc:alice"},
 		{name: "authenticated public query without bundle passes", operationNSID: "app.cerulia.rpc.getCampaignView", allowAnonymous: true, actorDid: "did:plc:alice"},
 		{name: "missing actor rejects private query", operationNSID: "app.cerulia.rpc.getCharacterHome", wantErr: ErrUnauthorized},
+		{name: "list episodes wrong bundle rejects", operationNSID: "app.cerulia.rpc.listCharacterEpisodes", actorDid: "did:plc:alice", bundles: CorePublicationWriter, wantErr: ErrForbidden},
+		{name: "list reuse wrong bundle rejects", operationNSID: "app.cerulia.rpc.listReuseGrants", actorDid: "did:plc:alice", bundles: CorePublicationWriter, wantErr: ErrForbidden},
 		{name: "wrong bundle rejects", operationNSID: "app.cerulia.rpc.createCampaign", actorDid: "did:plc:alice", bundles: CoreReader, wantErr: ErrForbidden},
-		{name: "governance operator passes", operationNSID: "app.cerulia.rpc.createSessionDraft", actorDid: "did:plc:alice", bundles: GovernanceOperator},
-		{name: "participant passes", operationNSID: "app.cerulia.rpc.getSessionView", actorDid: "did:plc:alice", bundles: SessionParticipant},
-		{name: "appeal originator passes", operationNSID: "app.cerulia.rpc.submitAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator},
-		{name: "appeal resolver passes", operationNSID: "app.cerulia.rpc.submitAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
-		{name: "review appeal resolver passes", operationNSID: "app.cerulia.rpc.reviewAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
-		{name: "review appeal wrong bundle rejects", operationNSID: "app.cerulia.rpc.reviewAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator, wantErr: ErrForbidden},
-		{name: "escalate appeal resolver passes", operationNSID: "app.cerulia.rpc.escalateAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
-		{name: "escalate appeal wrong bundle rejects", operationNSID: "app.cerulia.rpc.escalateAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator, wantErr: ErrForbidden},
-		{name: "resolve appeal resolver passes", operationNSID: "app.cerulia.rpc.resolveAppeal", actorDid: "did:plc:alice", bundles: AppealResolver},
-		{name: "resolve appeal wrong bundle rejects", operationNSID: "app.cerulia.rpc.resolveAppeal", actorDid: "did:plc:alice", bundles: AppealOriginator, wantErr: ErrForbidden},
-		{name: "publication operator passes", operationNSID: "app.cerulia.rpc.publishSessionLink", actorDid: "did:plc:alice", bundles: PublicationOperator},
-		{name: "exact bundle passes", operationNSID: "app.cerulia.rpc.createCampaign", actorDid: "did:plc:alice", bundles: CoreWriter},
+		{name: "core writer passes", operationNSID: "app.cerulia.rpc.createCampaign", actorDid: "did:plc:alice", bundles: CoreWriter},
+		{name: "publication operator passes", operationNSID: "app.cerulia.rpc.publishSubject", actorDid: "did:plc:alice", bundles: CorePublicationWriter},
+		{name: "reuse operator passes", operationNSID: "app.cerulia.rpc.revokeReuse", actorDid: "did:plc:alice", bundles: ReuseOperator},
 	}
 
 	for _, test := range tests {
@@ -74,7 +65,6 @@ func TestAuthorizeRequestRequiresVerifiedHeadersWhenConfigured(t *testing.T) {
 	}
 
 	signRequest(t, req, "test-secret", "app.cerulia.rpc.createCampaign", time.Now().UTC(), "nonce-1")
-
 	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createCampaign", false); err != nil {
 		t.Fatalf("expected signed request to pass, got %v", err)
 	}
@@ -100,10 +90,10 @@ func TestAuthorizeRequestRejectsMismatchedOperation(t *testing.T) {
 	gateway := NewGateway(Config{TrustedProxyHMACSecret: "test-secret"})
 	req := httptest.NewRequest(http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", strings.NewReader(`{"requestId":"req-1"}`))
 	req.Header.Set(HeaderActorDID, "did:plc:alice")
-	req.Header.Set(HeaderPermissionSets, GovernanceOperator)
+	req.Header.Set(HeaderPermissionSets, CoreWriter)
 	signRequest(t, req, "test-secret", "app.cerulia.rpc.createCampaign", time.Now().UTC(), "nonce-op")
 
-	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.createSessionDraft", false); err != ErrUnauthorized {
+	if _, err := gateway.AuthorizeRequest(req, "app.cerulia.rpc.publishSubject", false); err != ErrUnauthorized {
 		t.Fatalf("expected mismatched operation to be unauthorized, got %v", err)
 	}
 }
@@ -135,7 +125,7 @@ func TestAuthorizeRequestRejectsBodyTampering(t *testing.T) {
 
 func signRequest(t *testing.T, req *http.Request, secret string, operationNSID string, timestamp time.Time, nonce string) {
 	t.Helper()
-	stamp := strconvFormatInt(timestamp.Unix())
+	stamp := strconv.FormatInt(timestamp.Unix(), 10)
 	req.Header.Set(HeaderAuthTimestamp, stamp)
 	req.Header.Set(HeaderAuthNonce, nonce)
 	subject := Subject{
@@ -151,8 +141,4 @@ func signRequest(t *testing.T, req *http.Request, secret string, operationNSID s
 		t.Fatalf("sign request: %v", err)
 	}
 	req.Header.Set(HeaderAuthSignature, hex.EncodeToString(mac.Sum(nil)))
-}
-
-func strconvFormatInt(value int64) string {
-	return strconv.FormatInt(value, 10)
 }

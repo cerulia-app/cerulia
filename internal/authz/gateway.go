@@ -17,22 +17,16 @@ import (
 )
 
 const (
-	HeaderActorDID        = "X-Cerulia-Actor-Did"
-	HeaderPermissionSets  = "X-Cerulia-Permission-Sets"
-	HeaderAuthTimestamp   = "X-Cerulia-Auth-Timestamp"
-	HeaderAuthNonce       = "X-Cerulia-Auth-Nonce"
-	HeaderAuthSignature   = "X-Cerulia-Auth-Signature"
+	HeaderActorDID       = "X-Cerulia-Actor-Did"
+	HeaderPermissionSets = "X-Cerulia-Permission-Sets"
+	HeaderAuthTimestamp  = "X-Cerulia-Auth-Timestamp"
+	HeaderAuthNonce      = "X-Cerulia-Auth-Nonce"
+	HeaderAuthSignature  = "X-Cerulia-Auth-Signature"
+
 	CoreReader            = "app.cerulia.authCoreReader"
 	CoreWriter            = "app.cerulia.authCoreWriter"
 	CorePublicationWriter = "app.cerulia.authCorePublicationOperator"
 	ReuseOperator         = "app.cerulia.authReuseOperator"
-	AuditReader           = "app.cerulia.authAuditReader"
-	SessionParticipant    = "app.cerulia.authSessionParticipant"
-	SecretOperator        = "app.cerulia.authSecretOperator"
-	GovernanceOperator    = "app.cerulia.authGovernanceOperator"
-	PublicationOperator   = "app.cerulia.authPublicationOperator"
-	AppealOriginator      = "app.cerulia.authAppealOriginator"
-	AppealResolver        = "app.cerulia.authAppealResolver"
 )
 
 var (
@@ -52,15 +46,6 @@ func (subject Subject) HasPermissionSet(permissionSet string) bool {
 	return ok
 }
 
-func (subject Subject) HasAnyPermissionSet(permissionSets ...string) bool {
-	for _, permissionSet := range permissionSets {
-		if subject.HasPermissionSet(permissionSet) {
-			return true
-		}
-	}
-	return false
-}
-
 type Gateway struct {
 	requiredBundlesByOperation map[string][]string
 	trustedProxyHMACSecret     string
@@ -77,59 +62,22 @@ type Config struct {
 }
 
 func NewGateway(configs ...Config) *Gateway {
-	config := Config{
-		TrustedProxyMaxSkew: 5 * time.Minute,
-	}
+	config := Config{TrustedProxyMaxSkew: 5 * time.Minute}
 	if len(configs) > 0 {
 		config = configs[0]
 		if config.TrustedProxyMaxSkew <= 0 {
 			config.TrustedProxyMaxSkew = 5 * time.Minute
 		}
 	}
+
 	return &Gateway{
 		requiredBundlesByOperation: map[string][]string{
 			"app.cerulia.rpc.getCharacterHome":           {CoreReader},
 			"app.cerulia.rpc.getCampaignView":            {CoreReader},
-			"app.cerulia.rpc.getSessionAccessPreflight":  nil,
-			"app.cerulia.rpc.getSessionView":             {SessionParticipant},
-			"app.cerulia.rpc.getGovernanceView":          {GovernanceOperator},
 			"app.cerulia.rpc.listCharacterEpisodes":      {CoreReader},
 			"app.cerulia.rpc.listReuseGrants":            {CoreReader},
 			"app.cerulia.rpc.listPublications":           {CoreReader},
-			"app.cerulia.rpc.listSessionPublications":    {GovernanceOperator},
-			"app.cerulia.rpc.listAppealCases":            {AppealOriginator, AppealResolver},
-			"app.cerulia.rpc.exportServiceLog":           {AuditReader},
 			"app.cerulia.rpc.createCampaign":             {CoreWriter},
-			"app.cerulia.rpc.createSessionDraft":         {GovernanceOperator},
-			"app.cerulia.rpc.openSession":                {GovernanceOperator},
-			"app.cerulia.rpc.startSession":               {GovernanceOperator},
-			"app.cerulia.rpc.pauseSession":               {GovernanceOperator},
-			"app.cerulia.rpc.resumeSession":              {GovernanceOperator},
-			"app.cerulia.rpc.closeSession":               {GovernanceOperator},
-			"app.cerulia.rpc.archiveSession":             {GovernanceOperator},
-			"app.cerulia.rpc.reopenSession":              {GovernanceOperator},
-			"app.cerulia.rpc.transferAuthority":          {GovernanceOperator},
-			"app.cerulia.rpc.inviteSession":              {GovernanceOperator},
-			"app.cerulia.rpc.cancelInvitation":           {GovernanceOperator},
-			"app.cerulia.rpc.joinSession":                {SessionParticipant},
-			"app.cerulia.rpc.leaveSession":               {SessionParticipant},
-			"app.cerulia.rpc.moderateMembership":         {GovernanceOperator},
-			"app.cerulia.rpc.publishSessionLink":         {PublicationOperator},
-			"app.cerulia.rpc.retireSessionLink":          {PublicationOperator},
-			"app.cerulia.rpc.createCharacterInstance":    {GovernanceOperator},
-			"app.cerulia.rpc.updateCharacterState":       {SessionParticipant, GovernanceOperator},
-			"app.cerulia.rpc.createSecretEnvelope":       {SecretOperator},
-			"app.cerulia.rpc.sendMessage":                {SessionParticipant, GovernanceOperator},
-			"app.cerulia.rpc.rollDice":                   {SessionParticipant, GovernanceOperator},
-			"app.cerulia.rpc.submitAction":               {GovernanceOperator},
-			"app.cerulia.rpc.submitAppeal":               {AppealOriginator, AppealResolver},
-			"app.cerulia.rpc.withdrawAppeal":             {AppealOriginator, AppealResolver},
-			"app.cerulia.rpc.reviewAppeal":               {AppealResolver},
-			"app.cerulia.rpc.escalateAppeal":             {AppealResolver},
-			"app.cerulia.rpc.resolveAppeal":              {AppealResolver},
-			"app.cerulia.rpc.revealSubject":              {SecretOperator},
-			"app.cerulia.rpc.redactRecord":               {SecretOperator},
-			"app.cerulia.rpc.rotateAudienceKey":          {SecretOperator},
 			"app.cerulia.rpc.attachRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.retireRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.importCharacterSheet":       {CoreWriter},
@@ -178,7 +126,7 @@ func (gateway *Gateway) AuthorizeRequest(request *http.Request, operationNSID st
 		return subject, nil
 	}
 	for _, requiredBundle := range requiredBundles {
-		if _, ok := subject.PermissionSets[requiredBundle]; ok {
+		if subject.HasPermissionSet(requiredBundle) {
 			return subject, nil
 		}
 	}
@@ -195,12 +143,14 @@ func (gateway *Gateway) verifyRequest(request *http.Request, subject Subject, op
 	if gateway.trustedProxyHMACSecret == "" {
 		return false
 	}
+
 	timestampRaw := strings.TrimSpace(request.Header.Get(HeaderAuthTimestamp))
 	nonce := strings.TrimSpace(request.Header.Get(HeaderAuthNonce))
 	signatureRaw := strings.TrimSpace(request.Header.Get(HeaderAuthSignature))
 	if timestampRaw == "" || nonce == "" || signatureRaw == "" {
 		return false
 	}
+
 	timestampUnix, err := strconv.ParseInt(timestampRaw, 10, 64)
 	if err != nil {
 		return false
@@ -216,6 +166,7 @@ func (gateway *Gateway) verifyRequest(request *http.Request, subject Subject, op
 			return false
 		}
 	}
+
 	canonical, err := canonicalSignaturePayload(request, subject, operationNSID, timestampRaw, nonce)
 	if err != nil {
 		return false
@@ -274,15 +225,16 @@ func (gateway *Gateway) consumeNonce(actorDID string, nonce string, now time.Tim
 	if ttl <= 0 {
 		ttl = 5 * time.Minute
 	}
+	key := actorDID + "\n" + nonce
+
 	gateway.mu.Lock()
 	defer gateway.mu.Unlock()
-	for key, expiresAt := range gateway.usedNonces {
+	for existingKey, expiresAt := range gateway.usedNonces {
 		if !expiresAt.After(now) {
-			delete(gateway.usedNonces, key)
+			delete(gateway.usedNonces, existingKey)
 		}
 	}
-	key := actorDID + "\n" + nonce
-	if expiresAt, ok := gateway.usedNonces[key]; ok && expiresAt.After(now) {
+	if _, exists := gateway.usedNonces[key]; exists {
 		return false
 	}
 	gateway.usedNonces[key] = now.Add(ttl)
@@ -290,21 +242,21 @@ func (gateway *Gateway) consumeNonce(actorDID string, nonce string, now time.Tim
 }
 
 func parsePermissionSets(raw string) map[string]struct{} {
-	items := map[string]struct{}{}
-	for _, part := range strings.Split(raw, ",") {
-		value := strings.TrimSpace(part)
-		if value == "" {
+	permissionSets := map[string]struct{}{}
+	for _, token := range strings.Split(raw, ",") {
+		permissionSet := strings.TrimSpace(token)
+		if permissionSet == "" {
 			continue
 		}
-		items[value] = struct{}{}
+		permissionSets[permissionSet] = struct{}{}
 	}
-	return items
+	return permissionSets
 }
 
-func canonicalPermissionSetList(values map[string]struct{}) []string {
-	items := make([]string, 0, len(values))
-	for value := range values {
-		items = append(items, value)
+func canonicalPermissionSetList(permissionSets map[string]struct{}) []string {
+	items := make([]string, 0, len(permissionSets))
+	for permissionSet := range permissionSets {
+		items = append(items, permissionSet)
 	}
 	sort.Strings(items)
 	return items

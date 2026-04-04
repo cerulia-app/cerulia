@@ -60,9 +60,6 @@ func (key IdempotencyKey) String() string {
 func cloneAck(ack MutationAck) MutationAck {
 	clone := ack
 	clone.EmittedRecordRefs = append([]string(nil), ack.EmittedRecordRefs...)
-	clone.UpdatedGrantRefs = append([]string(nil), ack.UpdatedGrantRefs...)
-	clone.ControllerDids = append([]string(nil), ack.ControllerDids...)
-	clone.PendingControllerDids = append([]string(nil), ack.PendingControllerDids...)
 
 	return clone
 }

@@ -3,7 +3,7 @@
   "preferredSurfaceKind": "app-card",
   "requestId": "req-publish-001",
   "subjectKind": "character-episode",
-  "subjectRef": "at://did:plc:owner1/app.cerulia.core.characterEpisode/3k4i5j",
+  "subjectRef": "at://did:plc:owner1/app.cerulia.core.characterEpisode/episode-req-episode-001",
   "surfaces": [
     {
       "purposeKind": "stable-entry",

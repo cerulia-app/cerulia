@@ -1,9 +1,9 @@
 {
   "advancementRefs": [
-    "at://did:plc:owner1/app.cerulia.core.characterAdvancement/3k4i5j"
+    "at://did:plc:owner1/app.cerulia.core.characterAdvancement/advancement-req-advancement-001"
   ],
-  "campaignRef": "at://did:plc:steward1/app.cerulia.core.campaign/main",
-  "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/starfield",
+  "campaignRef": "at://did:plc:steward1/app.cerulia.core.campaign/campaign-req-create-campaign-001",
+  "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/branch-req-create-branch-001",
   "effectiveRuleProfileRefs": [
     "at://did:plc:house/app.cerulia.core.ruleProfile/house-profile-1"
   ],

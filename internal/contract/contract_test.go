@@ -1,11 +1,18 @@
 package contract
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	corecommand "cerulia/internal/core/command"
 )
 
 func TestValidateCatalog(t *testing.T) {
@@ -18,7 +25,7 @@ func TestBuildBundle(t *testing.T) {
 	bundle, err := BuildBundle(Options{
 		Version: "0.0.0-test",
 		Channel: "next",
-		BuiltAt: time.Date(2026, 4, 3, 0, 0, 0, 0, time.UTC),
+		BuiltAt: time.Date(2026, 4, 4, 0, 0, 0, 0, time.UTC),
 	})
 	if err != nil {
 		fatalIfError(t, err)
@@ -33,18 +40,12 @@ func TestBuildBundle(t *testing.T) {
 		"manifest.json",
 		"checksums.txt",
 		"CHANGELOG-contract.md",
-		filepath.FromSlash("lexicon/app.cerulia.defs.json"),
-		filepath.FromSlash("lexicon/app.cerulia.core.campaign.json"),
-		filepath.FromSlash("lexicon/app.cerulia.run.session.json"),
-		filepath.FromSlash("lexicon/app.cerulia.rpc.createCampaign.json"),
-		filepath.FromSlash("lexicon/app.cerulia.rpc.createSessionDraft.json"),
-		filepath.FromSlash("lexicon/app.cerulia.rpc.createCharacterInstance.json"),
-		filepath.FromSlash("lexicon/app.cerulia.rpc.createSecretEnvelope.json"),
-		filepath.FromSlash("examples/rpc/createCampaign.request.json"),
-		filepath.FromSlash("examples/rpc/createSessionDraft.request.json"),
-		filepath.FromSlash("examples/rpc/createCharacterInstance.request.json"),
-		filepath.FromSlash("examples/rpc/createSecretEnvelope.request.json"),
-		filepath.FromSlash("examples/rpc/sendMessage.request.json"),
+	}
+	for path := range Catalog() {
+		requiredPaths = append(requiredPaths, filepath.FromSlash(path))
+	}
+	for path := range ExampleDocuments() {
+		requiredPaths = append(requiredPaths, filepath.FromSlash(path))
 	}
 
 	for _, relativePath := range requiredPaths {
@@ -59,6 +60,74 @@ func TestBuildBundle(t *testing.T) {
 	}
 	if len(checksums) == 0 {
 		t.Fatal("checksums.txt must not be empty")
+	}
+	manifestBytes, err := os.ReadFile(filepath.Join(directory, "manifest.json"))
+	if err != nil {
+		fatalIfError(t, err)
+	}
+	var manifest Manifest
+	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
+		fatalIfError(t, err)
+	}
+	if manifest.ArtifactVersion != "0.0.0-test" || manifest.CompatibilityChannel != "next" {
+		t.Fatalf("unexpected manifest: %+v", manifest)
+	}
+	manifestChecksum := sha256.Sum256(manifestBytes)
+	checksumLine := hex.EncodeToString(manifestChecksum[:]) + "  manifest.json"
+	if !strings.Contains(string(checksums), checksumLine) {
+		t.Fatalf("expected checksums.txt to contain %q, got %s", checksumLine, string(checksums))
+	}
+}
+
+func TestBuildBundleCreatesMissingParentDirectory(t *testing.T) {
+	bundle, err := BuildBundle(Options{
+		Version: "0.0.0-test",
+		Channel: "next",
+		BuiltAt: time.Date(2026, 4, 4, 0, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		fatalIfError(t, err)
+	}
+
+	directory := filepath.Join(t.TempDir(), "missing", "contracts")
+	if err := bundle.WriteTo(directory); err != nil {
+		fatalIfError(t, err)
+	}
+	if _, err := os.Stat(filepath.Join(directory, "manifest.json")); err != nil {
+		fatalIfError(t, err)
+	}
+}
+
+func TestExampleRequestsDecodeIntoCommandInputs(t *testing.T) {
+	tests := []struct {
+		path   string
+		target any
+	}{
+		{path: "examples/rpc/createCampaign.request.json", target: &corecommand.CreateCampaignInput{}},
+		{path: "examples/rpc/recordCharacterEpisode.request.json", target: &corecommand.RecordCharacterEpisodeInput{}},
+		{path: "examples/rpc/grantReuse.request.json", target: &corecommand.GrantReuseInput{}},
+		{path: "examples/rpc/revokeReuse.request.json", target: &corecommand.RevokeReuseInput{}},
+	}
+	examples := ExampleDocuments()
+	for _, test := range tests {
+		raw, ok := examples[test.path]
+		if !ok {
+			t.Fatalf("missing example %s", test.path)
+		}
+		rawBytes, err := json.Marshal(raw)
+		if err != nil {
+			fatalIfError(t, err)
+		}
+		decoder := json.NewDecoder(bytes.NewReader(rawBytes))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(test.target); err != nil {
+			fatalIfError(t, err)
+		}
+		if err := decoder.Decode(new(any)); err == nil {
+			t.Fatalf("expected %s to contain a single JSON document", test.path)
+		} else if err != io.EOF {
+			fatalIfError(t, err)
+		}
 	}
 }
 

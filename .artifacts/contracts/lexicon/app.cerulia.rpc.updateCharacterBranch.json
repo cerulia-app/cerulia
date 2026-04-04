@@ -40,7 +40,7 @@
               "type": "string"
             },
             "overridePayloadRef": {
-              "format": "at-uri",
+              "format": "uri",
               "type": "string"
             },
             "requestId": {

@@ -15,6 +15,15 @@ func (service *Service) ImportCharacterSheet(ctx context.Context, actorDid strin
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.OwnerDid, "ownerDid"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RulesetNSID, "rulesetNsid"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.DisplayName, "displayName"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 	if !sameActor(actorDid, input.OwnerDid) {
 		return ledger.MutationAck{}, ErrForbidden
 	}
@@ -45,6 +54,18 @@ func (service *Service) ImportCharacterSheet(ctx context.Context, actorDid strin
 
 func (service *Service) CreateCharacterBranch(ctx context.Context, actorDid string, input CreateCharacterBranchInput) (ledger.MutationAck, error) {
 	if err := requireActor(actorDid); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.OwnerDid, "ownerDid"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.BaseSheetRef, "baseSheetRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.BranchKind, "branchKind"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.BranchLabel, "branchLabel"); err != nil {
 		return ledger.MutationAck{}, err
 	}
 	if !sameActor(actorDid, input.OwnerDid) {
@@ -86,6 +107,9 @@ func (service *Service) CreateCharacterBranch(ctx context.Context, actorDid stri
 
 func (service *Service) UpdateCharacterBranch(ctx context.Context, actorDid string, input UpdateCharacterBranchInput) (ledger.MutationAck, error) {
 	if err := requireActor(actorDid); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.CharacterBranchRef, "characterBranchRef"); err != nil {
 		return ledger.MutationAck{}, err
 	}
 
@@ -136,6 +160,9 @@ func (service *Service) RetireCharacterBranch(ctx context.Context, actorDid stri
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.CharacterBranchRef, "characterBranchRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 
 	return service.executeMutation(ctx, input.CharacterBranchRef, "app.cerulia.rpc.retireCharacterBranch", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
 		branchRecord, branchModel, err := decodeStable[model.CharacterBranch](ctx, tx, input.CharacterBranchRef)
@@ -175,6 +202,21 @@ func (service *Service) RecordCharacterAdvancement(ctx context.Context, actorDid
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.CharacterBranchRef, "characterBranchRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.AdvancementKind, "advancementKind"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.DeltaPayloadRef, "deltaPayloadRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ApprovedByDid, "approvedByDid"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireTimeField(input.EffectiveAt, "effectiveAt"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 	if !sameActor(actorDid, input.ApprovedByDid) {
 		return ledger.MutationAck{}, ErrForbidden
 	}
@@ -204,7 +246,6 @@ func (service *Service) RecordCharacterAdvancement(ctx context.Context, actorDid
 		advancementRef := appendRef(repoDID, model.CollectionCharacterAdvancement, "advancement", input.RequestID)
 		record := model.CharacterAdvancement{
 			CharacterBranchRef: input.CharacterBranchRef,
-			SourceRunRef:       input.SourceRunRef,
 			AdvancementKind:    input.AdvancementKind,
 			DeltaPayloadRef:    input.DeltaPayloadRef,
 			ApprovedByDid:      input.ApprovedByDid,
@@ -227,6 +268,24 @@ func (service *Service) RecordCharacterAdvancement(ctx context.Context, actorDid
 
 func (service *Service) RecordCharacterEpisode(ctx context.Context, actorDid string, input RecordCharacterEpisodeInput) (ledger.MutationAck, error) {
 	if err := requireActor(actorDid); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.CharacterBranchRef, "characterBranchRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RulesetManifestRef, "rulesetManifestRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requirePresentSlice(input.EffectiveRuleProfileRefs, "effectiveRuleProfileRefs"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.OutcomeSummary, "outcomeSummary"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requirePresentSlice(input.AdvancementRefs, "advancementRefs"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.RecordedByDid, "recordedByDid"); err != nil {
 		return ledger.MutationAck{}, err
 	}
 	if !sameActor(actorDid, input.RecordedByDid) {
@@ -275,7 +334,6 @@ func (service *Service) RecordCharacterEpisode(ctx context.Context, actorDid str
 		record := model.CharacterEpisode{
 			CharacterBranchRef:       input.CharacterBranchRef,
 			CampaignRef:              input.CampaignRef,
-			SourceRunRef:             input.SourceRunRef,
 			ScenarioLabel:            input.ScenarioLabel,
 			RulesetManifestRef:       input.RulesetManifestRef,
 			EffectiveRuleProfileRefs: append([]string(nil), input.EffectiveRuleProfileRefs...),
@@ -301,11 +359,80 @@ func (service *Service) RecordCharacterConversion(ctx context.Context, actorDid 
 	if err := requireActor(actorDid); err != nil {
 		return ledger.MutationAck{}, err
 	}
+	if err := requireNonEmptyField(input.SourceSheetRef, "sourceSheetRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requirePositiveInt64Field(input.SourceSheetVersion, "sourceSheetVersion"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.SourceRulesetManifestRef, "sourceRulesetManifestRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requirePresentSlice(input.SourceEffectiveRuleProfileRefs, "sourceEffectiveRuleProfileRefs"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.TargetSheetRef, "targetSheetRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requirePositiveInt64Field(input.TargetSheetVersion, "targetSheetVersion"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.TargetBranchRef, "targetBranchRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.TargetRulesetManifestRef, "targetRulesetManifestRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requirePresentSlice(input.TargetEffectiveRuleProfileRefs, "targetEffectiveRuleProfileRefs"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ConversionContractRef, "conversionContractRef"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requirePositiveInt64Field(input.ConversionContractVersion, "conversionContractVersion"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireNonEmptyField(input.ConvertedByDid, "convertedByDid"); err != nil {
+		return ledger.MutationAck{}, err
+	}
+	if err := requireTimeField(input.ConvertedAt, "convertedAt"); err != nil {
+		return ledger.MutationAck{}, err
+	}
 	if !sameActor(actorDid, input.ConvertedByDid) {
 		return ledger.MutationAck{}, ErrForbidden
 	}
 
 	return service.executeMutation(ctx, input.TargetBranchRef, "app.cerulia.rpc.recordCharacterConversion", input.RequestID, actorDid, input, func(tx store.Tx, now time.Time) (ledger.MutationAck, error) {
+		_, sourceSheet, err := decodeStable[model.CharacterSheet](ctx, tx, input.SourceSheetRef)
+		if err != nil {
+			return ledger.MutationAck{}, err
+		}
+		if sourceSheet.Version != input.SourceSheetVersion {
+			return rejectedAck(input.RequestID, "source sheet version mismatch"), nil
+		}
+		_, sourceManifest, err := decodeStable[model.RulesetManifest](ctx, tx, input.SourceRulesetManifestRef)
+		if err != nil {
+			return ledger.MutationAck{}, err
+		}
+		if sourceManifest.RulesetNSID != sourceSheet.RulesetNSID {
+			return rejectedAck(input.RequestID, "source ruleset manifest mismatch"), nil
+		}
+
+		_, targetSheet, err := decodeStable[model.CharacterSheet](ctx, tx, input.TargetSheetRef)
+		if err != nil {
+			return ledger.MutationAck{}, err
+		}
+		if targetSheet.Version != input.TargetSheetVersion {
+			return rejectedAck(input.RequestID, "target sheet version mismatch"), nil
+		}
+		_, targetManifest, err := decodeStable[model.RulesetManifest](ctx, tx, input.TargetRulesetManifestRef)
+		if err != nil {
+			return ledger.MutationAck{}, err
+		}
+		if targetManifest.RulesetNSID != targetSheet.RulesetNSID {
+			return rejectedAck(input.RequestID, "target ruleset manifest mismatch"), nil
+		}
+
 		_, targetBranch, err := decodeStable[model.CharacterBranch](ctx, tx, input.TargetBranchRef)
 		if err != nil {
 			return ledger.MutationAck{}, err
@@ -313,19 +440,23 @@ func (service *Service) RecordCharacterConversion(ctx context.Context, actorDid 
 		if targetBranch.BaseSheetRef != input.TargetSheetRef {
 			return rejectedAck(input.RequestID, "target branch base sheet mismatch"), nil
 		}
-		if !sameActor(actorDid, targetBranch.OwnerDid) {
-			if input.TargetCampaignRef == "" {
-				return ledger.MutationAck{}, ErrForbidden
-			}
+		var targetCampaign model.Campaign
+		if input.TargetCampaignRef != "" {
 			_, campaignModel, err := decodeStable[model.Campaign](ctx, tx, input.TargetCampaignRef)
 			if err != nil {
 				return ledger.MutationAck{}, err
 			}
-			if !sameActor(actorDid, campaignModel.StewardDids...) {
-				return ledger.MutationAck{}, ErrForbidden
-			}
+			targetCampaign = campaignModel
 			if campaignModel.RulesetManifestRef != input.TargetRulesetManifestRef {
 				return ledger.MutationAck{}, ErrUnsupportedRuleset
+			}
+		}
+		if !sameActor(actorDid, targetBranch.OwnerDid) {
+			if input.TargetCampaignRef == "" {
+				return ledger.MutationAck{}, ErrForbidden
+			}
+			if !sameActor(actorDid, targetCampaign.StewardDids...) {
+				return ledger.MutationAck{}, ErrForbidden
 			}
 		}
 		if input.SourceBranchRef != "" {
@@ -344,6 +475,40 @@ func (service *Service) RecordCharacterConversion(ctx context.Context, actorDid 
 			}
 			if reuseGrant.RevokedAt != nil {
 				return rejectedAck(input.RequestID, "reuse grant is revoked"), nil
+			}
+			if input.SourceBranchRef == "" {
+				return ledger.MutationAck{}, invalidInputf("sourceBranchRef is required when reuseGrantRef is set")
+			}
+			if reuseGrant.CharacterBranchRef != input.SourceBranchRef {
+				return rejectedAck(input.RequestID, "reuse grant source branch mismatch"), nil
+			}
+			switch reuseGrant.TargetKind {
+			case "campaign":
+				if input.TargetCampaignRef == "" || reuseGrant.TargetRef != input.TargetCampaignRef {
+					return rejectedAck(input.RequestID, "reuse grant target mismatch"), nil
+				}
+			case "house":
+				if input.TargetCampaignRef == "" || targetCampaign.HouseRef == "" || reuseGrant.TargetRef != targetCampaign.HouseRef {
+					return rejectedAck(input.RequestID, "reuse grant target mismatch"), nil
+				}
+			case "world":
+				targetWorldRef := targetCampaign.WorldRef
+				if targetWorldRef == "" && targetCampaign.HouseRef != "" {
+					_, targetHouse, err := decodeStable[model.House](ctx, tx, targetCampaign.HouseRef)
+					if err != nil {
+						return ledger.MutationAck{}, err
+					}
+					targetWorldRef = targetHouse.WorldRef
+				}
+				if input.TargetCampaignRef == "" || targetWorldRef == "" || reuseGrant.TargetRef != targetWorldRef {
+					return rejectedAck(input.RequestID, "reuse grant target mismatch"), nil
+				}
+			case "actor":
+				if reuseGrant.TargetDid == "" || reuseGrant.TargetDid != targetBranch.OwnerDid {
+					return rejectedAck(input.RequestID, "reuse grant target mismatch"), nil
+				}
+			case "public":
+				return rejectedAck(input.RequestID, "public reuse grant does not authorize character conversion"), nil
 			}
 		}
 

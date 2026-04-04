@@ -1,11 +1,20 @@
 {
-  "branches": [],
+  "branches": [
+    {
+      "baseSheetRef": "at://did:plc:owner1/app.cerulia.core.characterSheet/sheet-req-import-sheet-001",
+      "branchKind": "campaign-fork",
+      "branchLabel": "星見ヶ原本編",
+      "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/branch-req-create-branch-001",
+      "ownerDid": "did:plc:owner1",
+      "revision": 1
+    }
+  ],
   "ownerDid": "did:plc:owner1",
   "primaryBranch": {
-    "baseSheetRef": "at://did:plc:owner1/app.cerulia.core.characterSheet/hero",
+    "baseSheetRef": "at://did:plc:owner1/app.cerulia.core.characterSheet/sheet-req-import-sheet-001",
     "branchKind": "campaign-fork",
     "branchLabel": "星見ヶ原本編",
-    "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/starfield",
+    "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/branch-req-create-branch-001",
     "ownerDid": "did:plc:owner1",
     "revision": 1
   },

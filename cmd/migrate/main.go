@@ -4,17 +4,24 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"cerulia/internal/platform/config"
 	"cerulia/internal/platform/database"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	cfg, err := config.Load()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "load config: %v\n", err)
+		os.Exit(1)
+	}
+	if cfg.AppEnv != "development" && cfg.AppEnv != "test" && cfg.Database.DirectURL == "" {
+		fmt.Fprintln(os.Stderr, "DATABASE_URL_DIRECT is required for migrations outside local development")
 		os.Exit(1)
 	}
 

@@ -4,26 +4,23 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"cerulia/internal/authz"
 	"cerulia/internal/core/command"
 	"cerulia/internal/core/projection"
 	"cerulia/internal/platform/config"
 	"cerulia/internal/platform/database"
-	runcommand "cerulia/internal/run/command"
-	runprojection "cerulia/internal/run/projection"
 	"cerulia/internal/store"
 )
 
 type handler struct {
-	logger         *slog.Logger
-	config         config.Config
-	db             *database.DB
-	auth           *authz.Gateway
-	commands       *command.Service
-	projections    *projection.Service
-	runCommands    *runcommand.Service
-	runProjections *runprojection.Service
+	logger      *slog.Logger
+	config      config.Config
+	db          *database.DB
+	auth        *authz.Gateway
+	commands    *command.Service
+	projections *projection.Service
 }
 
 type statusResponse struct {
@@ -50,12 +47,10 @@ func NewHandler(logger *slog.Logger, cfg config.Config, db *database.DB) http.Ha
 		auth: authz.NewGateway(authz.Config{
 			TrustedProxyHMACSecret: cfg.Auth.TrustedProxyHMACSecret,
 			TrustedProxyMaxSkew:    cfg.Auth.TrustedProxyMaxSkew,
-			AllowInsecureDirect:    cfg.AppEnv == "development" || cfg.AppEnv == "test",
+			AllowInsecureDirect:    strings.EqualFold(cfg.AppEnv, "development") || strings.EqualFold(cfg.AppEnv, "test"),
 		}),
-		commands:       command.NewService(dataStore),
-		projections:    projection.NewService(dataStore),
-		runCommands:    runcommand.NewService(dataStore),
-		runProjections: runprojection.NewService(dataStore),
+		commands:    command.NewService(dataStore),
+		projections: projection.NewService(dataStore),
 	}
 
 	mux := http.NewServeMux()
@@ -64,46 +59,10 @@ func NewHandler(logger *slog.Logger, cfg config.Config, db *database.DB) http.Ha
 	mux.HandleFunc("GET /readyz", h.handleReadyz)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCharacterHome", h.handleGetCharacterHome)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCampaignView", h.handleGetCampaignView)
-	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getSessionAccessPreflight", h.handleGetSessionAccessPreflight)
-	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getSessionView", h.handleGetSessionView)
-	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getGovernanceView", h.handleGetGovernanceView)
-	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listSessionPublications", h.handleListSessionPublications)
-	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listAppealCases", h.handleListAppealCases)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listCharacterEpisodes", h.handleListCharacterEpisodes)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listReuseGrants", h.handleListReuseGrants)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listPublications", h.handleListPublications)
-	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.exportServiceLog", h.handleExportServiceLog)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createCampaign", h.handleCreateCampaign)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createSessionDraft", h.handleCreateSessionDraft)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.openSession", h.handleOpenSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.startSession", h.handleStartSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.pauseSession", h.handlePauseSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.resumeSession", h.handleResumeSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.closeSession", h.handleCloseSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.archiveSession", h.handleArchiveSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.reopenSession", h.handleReopenSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.transferAuthority", h.handleTransferAuthority)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.inviteSession", h.handleInviteSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.cancelInvitation", h.handleCancelInvitation)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.joinSession", h.handleJoinSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.leaveSession", h.handleLeaveSession)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.moderateMembership", h.handleModerateMembership)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.publishSessionLink", h.handlePublishSessionLink)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.retireSessionLink", h.handleRetireSessionLink)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createCharacterInstance", h.handleCreateCharacterInstance)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.updateCharacterState", h.handleUpdateCharacterState)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createSecretEnvelope", h.handleCreateSecretEnvelope)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.sendMessage", h.handleSendMessage)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.rollDice", h.handleRollDice)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.submitAction", h.handleSubmitAction)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.submitAppeal", h.handleSubmitAppeal)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.withdrawAppeal", h.handleWithdrawAppeal)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.reviewAppeal", h.handleReviewAppeal)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.escalateAppeal", h.handleEscalateAppeal)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.resolveAppeal", h.handleResolveAppeal)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.revealSubject", h.handleRevealSubject)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.redactRecord", h.handleRedactRecord)
-	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.rotateAudienceKey", h.handleRotateAudienceKey)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.attachRuleProfile", h.handleAttachRuleProfile)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.retireRuleProfile", h.handleRetireRuleProfile)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.importCharacterSheet", h.handleImportCharacterSheet)
@@ -138,9 +97,7 @@ func (h *handler) handleHealthz(w http.ResponseWriter, r *http.Request) {
 func (h *handler) handleReadyz(w http.ResponseWriter, r *http.Request) {
 	response := statusResponse{
 		Status: "ready",
-		Checks: map[string]string{
-			"database": "disabled",
-		},
+		Checks: map[string]string{"database": "disabled"},
 	}
 
 	statusCode := http.StatusOK
@@ -174,6 +131,5 @@ func (h *handler) handleReadyz(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, statusCode int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-
 	_ = json.NewEncoder(w).Encode(payload)
 }

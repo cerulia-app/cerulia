@@ -38,7 +38,7 @@
               "type": "ref"
             },
             "deltaPayloadRef": {
-              "format": "at-uri",
+              "format": "uri",
               "type": "string"
             },
             "effectiveAt": {
@@ -50,10 +50,6 @@
             },
             "requestId": {
               "ref": "app.cerulia.defs#requestId",
-              "type": "ref"
-            },
-            "sourceRunRef": {
-              "ref": "app.cerulia.defs#sourceRunRef",
               "type": "ref"
             },
             "supersedesRef": {

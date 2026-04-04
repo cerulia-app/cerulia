@@ -50,7 +50,6 @@ func (service *Service) GetCharacterHome(ctx context.Context, actorDid string, o
 		return CharacterHomeView{}, store.ErrNotFound
 	}
 
-	primaryRef := branches[0].CharacterBranchRef
 	currentEpisodes, err := service.currentEpisodes(ctx)
 	if err != nil {
 		return CharacterHomeView{}, err
@@ -136,7 +135,7 @@ func (service *Service) GetCharacterHome(ctx context.Context, actorDid string, o
 
 	linkedCampaigns := make([]CampaignSummary, 0)
 	for ref := range linkedCampaignRefs {
-		campaign, err := service.campaignSummary(ctx, ref, true)
+		campaign, err := service.campaignSummary(ctx, ref, false)
 		if err != nil {
 			continue
 		}
@@ -146,19 +145,19 @@ func (service *Service) GetCharacterHome(ctx context.Context, actorDid string, o
 		return linkedCampaigns[left].Title < linkedCampaigns[right].Title
 	})
 
-	advancementRefs, err := service.activeAdvancementRefsForBranch(ctx, primaryRef)
-	if err != nil {
-		return CharacterHomeView{}, err
-	}
-
 	primary := branches[0]
-	if branchModel, ok := branchModels[primaryRef]; ok && branchModel.RetiredAt != nil {
+	if branchModel, ok := branchModels[primary.CharacterBranchRef]; ok && branchModel.RetiredAt != nil {
 		for _, branch := range branches {
 			if branchModels[branch.CharacterBranchRef].RetiredAt == nil {
 				primary = branch
 				break
 			}
 		}
+	}
+
+	advancementRefs, err := service.activeAdvancementRefsForBranch(ctx, primary.CharacterBranchRef)
+	if err != nil {
+		return CharacterHomeView{}, err
 	}
 
 	return CharacterHomeView{
@@ -190,7 +189,7 @@ func (service *Service) GetCampaignView(ctx context.Context, actorDid string, ca
 		}
 	}
 
-	publishedArtifacts, err := service.campaignPublishedArtifacts(ctx, campaignRef, resolvedMode, actorDid)
+	publishedArtifacts, err := service.campaignPublishedArtifacts(ctx, campaignRef, resolvedMode)
 	if err != nil {
 		return CampaignView{}, err
 	}
@@ -222,23 +221,11 @@ func (service *Service) GetCampaignView(ctx context.Context, actorDid string, ca
 		view.DefaultReusePolicy = campaignModel.DefaultReusePolicyKind
 		view.StewardDids = append([]string(nil), campaignModel.StewardDids...)
 
-		currentEpisodes, err := service.currentEpisodes(ctx)
+		continuity, err := service.campaignContinuity(ctx, campaignRef)
 		if err != nil {
 			return CampaignView{}, err
 		}
-		recentContinuity := make([]EpisodeSummary, 0)
-		branchRefs := map[string]struct{}{}
-		for _, episode := range currentEpisodes {
-			if episode.CampaignRef != campaignRef {
-				continue
-			}
-			recentContinuity = append(recentContinuity, episode)
-			branchRefs[episode.CharacterBranchRef] = struct{}{}
-		}
-		sort.Slice(recentContinuity, func(left int, right int) bool {
-			return recentContinuity[left].CreatedAt.After(recentContinuity[right].CreatedAt)
-		})
-		view.RecentContinuity = recentContinuity
+		view.RecentContinuity = continuity.Episodes
 
 		branches, branchModels, err := service.branchesByOwner(ctx, "")
 		if err != nil && !errors.Is(err, store.ErrNotFound) {
@@ -246,7 +233,7 @@ func (service *Service) GetCampaignView(ctx context.Context, actorDid string, ca
 		}
 		activeBranches := make([]BranchSummary, 0)
 		for _, branch := range branches {
-			if _, ok := branchRefs[branch.CharacterBranchRef]; !ok {
+			if _, ok := continuity.BranchRefs[branch.CharacterBranchRef]; !ok {
 				continue
 			}
 			if branchModels[branch.CharacterBranchRef].RetiredAt != nil {
@@ -255,11 +242,11 @@ func (service *Service) GetCampaignView(ctx context.Context, actorDid string, ca
 			activeBranches = append(activeBranches, branch)
 		}
 		view.ActiveBranches = activeBranches
-		archivedPublications, err := service.campaignRetiredPublicationCount(ctx, campaignRef, actorDid)
+		archivedPublications, err := service.campaignRetiredPublicationCount(ctx, campaignRef)
 		if err != nil {
 			return CampaignView{}, err
 		}
-		view.ArchivedCounts = &ArchivedCounts{Episodes: 0, Publications: archivedPublications}
+		view.ArchivedCounts = &ArchivedCounts{Episodes: continuity.ArchivedEpisodeCount, Publications: archivedPublications}
 	}
 
 	return view, nil
@@ -324,37 +311,6 @@ func (service *Service) ListPublications(ctx context.Context, actorDid string, s
 	items, err := service.publicationSummaries(ctx, subjectRef, subjectKind, mode, includeRetired, actorDid)
 	if err != nil {
 		return Page[PublicationSummary]{}, err
-	}
-	return paginate(items, limit, cursor)
-}
-
-func (service *Service) ExportServiceLog(ctx context.Context, governingRef string, requestID string, limit int, cursor string) (Page[ServiceLogRow], error) {
-	entries, err := service.reader.ListServiceLogs(ctx)
-	if err != nil {
-		return Page[ServiceLogRow]{}, err
-	}
-	items := make([]ServiceLogRow, 0)
-	for _, entry := range entries {
-		if entry.GoverningRef != governingRef {
-			continue
-		}
-		if requestID != "" && entry.RequestID != requestID {
-			continue
-		}
-		items = append(items, ServiceLogRow{
-			RequestID:         entry.RequestID,
-			OperationNSID:     entry.OperationNSID,
-			ResultKind:        string(entry.ResultKind),
-			GoverningRef:      entry.GoverningRef,
-			ActorDid:          entry.ActorDID,
-			CreatedAt:         entry.CreatedAt,
-			EmittedRecordRefs: append([]string(nil), entry.EmittedRecordRefs...),
-			ReasonCode:        entry.ReasonCode,
-			Message:           entry.Message,
-		})
-	}
-	if len(items) == 0 {
-		return Page[ServiceLogRow]{}, store.ErrNotFound
 	}
 	return paginate(items, limit, cursor)
 }
