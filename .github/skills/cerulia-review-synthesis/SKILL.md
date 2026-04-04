@@ -6,6 +6,8 @@ argument-hint: "レビュー対象、疑っている前提、重点シナリオ�
 
 # Cerulia Review Synthesis
 
+この skill は subagent の結果を受け取ってから考え始めるのではなく、先に自分で設計文書を読み、候補となる設計ギャップや判断 fork の仮説を立てたうえで、その検証と補完のために review agents を使う。
+
 ## When to Use
 
 - Cerulia の設計文書を 1 回で多面的にレビューしたいとき
@@ -45,39 +47,47 @@ Use affected records and lexicon files as supporting evidence when a finding tou
    - If the user gives only a broad request, default to README and all files under docs/architecture, docs/records, and docs/lexicon.
    - If the user emphasizes a scenario such as GM handoff, spectator replay, expulsion, or secret handling, repeat that emphasis in every subagent prompt.
 
-2. Launch all five review agents.
+2. Perform a first-pass review yourself.
+   - Read the scope and the core anchor docs first.
+   - Extract the core claims, invariants, likely tensions, and candidate design gaps.
+   - Write down provisional hypotheses about what is contradictory, underspecified, operationally risky, or likely to need redesign.
+
+3. Launch all five review agents.
    - Prefer parallel execution.
    - Give each subagent the same review scope plus any scenario emphasis.
+   - Pass your provisional hypotheses to every subagent and ask them to confirm, refute, refine, or replace them.
    - Treat the architecture and records agents as design-lens reviewers, but treat the GM, player, and community agents as end-user-lens reviewers who are not assumed to know AT Protocol internals.
    - Ask each subagent to keep findings first, include the minimal improvement for every finding, and cite the files or design claims it relied on.
 
-3. Normalize the raw outputs.
+4. Normalize the raw outputs.
    - Merge duplicate findings that describe the same underlying design gap.
+   - Fold your own first-pass hypotheses into the same normalization step instead of treating subagent output as the only source of truth.
    - Preserve which perspectives raised the issue.
    - Keep perspective-specific concerns separate when the risk differs for GM, player, moderator, or architecture even if the same files are involved.
 
-4. Re-check the merged findings against the core sources.
+5. Re-check the merged findings against the core sources.
    - Re-read the anchor documents yourself before choosing a recommendation.
    - Verify that the subagent evidence is actually supported by the docs.
+   - Verify that your first-pass hypotheses still hold after the subagent feedback.
    - If two subagents disagree, resolve the disagreement by returning to the docs instead of averaging their opinions.
 
-5. Expand each proposed fix into at least four alternatives.
+6. Expand each proposed fix into at least four alternatives.
    - Start with the strongest minimal improvement proposed by the subagents.
    - Add enough distinct alternatives to reach four or more options.
    - Prefer alternatives from different change shapes: wording clarification, policy/rule change, record or lexicon change, workflow safeguard, authority or AppView boundary adjustment.
    - Reject fake variety. Four options that all say the same thing with different phrasing do not count.
 
-6. Score the alternatives using the [selection rubric](./references/selection-rubric.md).
+7. Score the alternatives using the [selection rubric](./references/selection-rubric.md).
    - Apply the hard gates first.
    - Then compare the surviving options across architecture fit, AT Protocol fit, secrecy and authority fit, operational clarity, governance clarity, auditability, and migration blast radius.
    - Prefer the option that closes the design gap with the smallest durable change while preserving the architecture's stated invariants.
 
-7. Select the best recommendation.
+8. Select the best recommendation.
    - State which alternative you selected.
    - Explain why it is better than the other options, not just why it is good in isolation.
    - If no alternative survives the hard gates, report the issue as an unresolved design fork instead of forcing a choice.
 
-8. Produce an integrated review.
+9. Produce an integrated review.
    - Findings come first.
    - Keep the review focused on contradictions, missing invariants, trust gaps, operational fragility, schema gaps, or governance ambiguity.
    - Do not drift into prose polish, UI brainstorming, or unrelated implementation ideas.
@@ -91,7 +101,9 @@ Review this Cerulia design scope: {scope}.
 
 Priority scenarios: {scenarios or "none specified"}.
 
-Use your specialized review lens. If you are the GM, player, or community review agent, assume no AT Protocol expertise and judge from user-visible expectations, explanations, and operational legibility rather than protocol correctness. Findings first. For every finding, include the smallest plausible improvement that would reduce the risk without redesigning the whole system. Cite the files or design claims you relied on. Keep coverage explicit.
+Candidate hypotheses from first-pass review: {hypotheses or "none yet"}.
+
+Use your specialized review lens. If you are the GM, player, or community review agent, assume no AT Protocol expertise and judge from user-visible expectations, explanations, and operational legibility rather than protocol correctness. Findings first. For every finding, include the smallest plausible improvement that would reduce the risk without redesigning the whole system. Explicitly say whether each supplied hypothesis is confirmed, refuted, or needs reframing. Cite the files or design claims you relied on. Keep coverage explicit.
 ```
 
 ## Output Format
@@ -122,6 +134,7 @@ Use your specialized review lens. If you are the GM, player, or community review
 Before finishing, confirm all of the following.
 
 - All five review agents were run or any missing agent is explicitly explained as a blocker.
+- A first-pass self-review was performed before subagent execution, and its hypotheses were re-checked after synthesis.
 - Each final recommendation was chosen from at least four distinct alternatives.
 - The chosen option was checked against AT Protocol fit and Cerulia architecture fit, not just convenience.
 - No chosen option collapses session into an actor, merges OAuth permissions with session roles, reduces secrecy to label-only, or stores ephemeral board motion as durable history.
