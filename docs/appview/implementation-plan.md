@@ -28,18 +28,18 @@ frontend repo は backend repo と分離し、backend が publish する package
 
 ## 推奨技術スタック
 
-| 領域 | 採用 | 理由 |
-| --- | --- | --- |
-| runtime / package manager | Bun 1.x、bun | SvelteKit / Vite と相性がよい |
-| repository topology | frontend 単独 repo、Go backend は別 repo | contract artifact で同期点を明確にできる |
-| framework | SvelteKit 2 系、Svelte 5、TypeScript strict | server load / action、SSR と相性がよい |
-| adapter | `@sveltejs/adapter-node` | SSR と reverse proxy 配下運用に向く |
-| 認証 / BFF | `hooks.server.ts`、httpOnly session cookie、server-side fetch wrapper | reader lens と auth bundle を分離しやすい |
-| contract / validation | `@cerulia/contracts` artifact 由来の TypeScript client、Zod | XRPC schema drift を早く検知できる |
-| form | SvelteKit form actions、`sveltekit-superforms`、Zod | multi-step create flow を扱いやすい |
-| UI primitive | component-scoped CSS、feature-scoped CSS、global token CSS、small reset/base、Bits UI | 独自 visual language を保ちつつ a11y を担保できる |
-| unit / integration test | Vitest、`@testing-library/svelte`、MSW | route load / action を contract-first に検証できる |
-| browser journey / visual | Vitest Browser Mode、semantic visual diff | route contract と主要 surface の visual drift を早期に検出できる |
+| 領域                      | 採用                                                                                  | 理由                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| runtime / package manager | Bun 1.x、bun                                                                          | SvelteKit / Vite と相性がよい                                    |
+| repository topology       | frontend 単独 repo、Go backend は別 repo                                              | contract artifact で同期点を明確にできる                         |
+| framework                 | SvelteKit 2 系、Svelte 5、TypeScript strict                                           | server load / action、SSR と相性がよい                           |
+| adapter                   | `@sveltejs/adapter-node`                                                              | SSR と reverse proxy 配下運用に向く                              |
+| 認証 / BFF                | `hooks.server.ts`、httpOnly session cookie、server-side fetch wrapper                 | reader lens と auth bundle を分離しやすい                        |
+| contract / validation     | `@cerulia/contracts` artifact 由来の TypeScript client、Zod                           | XRPC schema drift を早く検知できる                               |
+| form                      | SvelteKit form actions、`sveltekit-superforms`、Zod                                   | multi-step create flow を扱いやすい                              |
+| UI primitive              | component-scoped CSS、feature-scoped CSS、global token CSS、small reset/base、Bits UI | 独自 visual language を保ちつつ a11y を担保できる                |
+| unit / integration test   | Vitest、`@testing-library/svelte`、MSW                                                | route load / action を contract-first に検証できる               |
+| browser journey / visual  | Vitest Browser Mode、semantic visual diff                                             | route contract と主要 surface の visual drift を早期に検出できる |
 
 ## styling decision
 
@@ -98,18 +98,18 @@ contracts/
 
 ## モジュール一覧
 
-| # | モジュール | 主責務 | 着手条件 | 並列可能 | 完了条件 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | frontend repo foundation | SvelteKit app、env schema、lint、format、Node adapter、CI 雛形を用意する | なし | 2, 3, 4 | local 起動、SSR build、lint / typecheck が通る |
-| 2 | contract / auth / BFF gateway | `hooks.server.ts`、session cookie、XRPC client、error mapping を作る | 1 | 3, 4 | server load / action から XRPC を認証付きで呼べる |
-| 3 | design system / shared shell | design token、global layout、primary nav、mode badge、banner、empty state を作る | 1 | 2, 4 | public / owner-steward を shell で見分けられる |
-| 4 | test harness / fixture kit | Vitest、MSW、Testing Library、Browser Mode を揃える | 1 | 2, 3 | route / auth / copy の基礎テストが CI で回る |
-| 5 | public entry / workbench promise | `/`、publication shelf、`/publications`、public publication detail の骨格を作る | 2, 3, 4 | 6, 8 | public value first と public lens が安定する |
-| 6 | character continuity workbench home | `/home`、continue zone、create zone、publish zone を作る | 2, 3, 4、`getCharacterHome` | 5, 7, 8 | canonical landing が `/home` で固定される |
-| 7 | character continuity studio | `/characters`、`/characters/new`、`/characters/import`、`/characters/:branchRef` を作る | 2, 3, 4、`getCharacterHome` | 6, 8 | draft / accepted、campaign intent、publication preview が docs どおりに見える |
-| 8 | campaign workspace | `/campaigns`、`/campaigns/:campaignRef` を owner-steward / public の 2 lens で作る | 2, 3, 4、`getCampaignView` | 5, 7 | public campaign shell と owner-steward provenance 表示が分離される |
-| 9 | publication management / tombstone | publish / retire UI、`/publications/:publicationRef` の active detail、tombstone を作る | 5, 7, 8 | 10 | publication / retire / archive が語彙でも導線でも混ざらない |
-| 10 | hardening / release ops | perf、a11y、copy regression、route manifest check を固める | 5-9 | 継続実施 | Core Shell Gate と Final Gate が green |
+| #   | モジュール                          | 主責務                                                                                  | 着手条件                    | 並列可能 | 完了条件                                                                      |
+| --- | ----------------------------------- | --------------------------------------------------------------------------------------- | --------------------------- | -------- | ----------------------------------------------------------------------------- |
+| 1   | frontend repo foundation            | SvelteKit app、env schema、lint、format、Node adapter、CI 雛形を用意する                | なし                        | 2, 3, 4  | local 起動、SSR build、lint / typecheck が通る                                |
+| 2   | contract / auth / BFF gateway       | `hooks.server.ts`、session cookie、XRPC client、error mapping を作る                    | 1                           | 3, 4     | server load / action から XRPC を認証付きで呼べる                             |
+| 3   | design system / shared shell        | design token、global layout、primary nav、banner、empty state を作る                    | 1                           | 2, 4     | public / owner-steward を primary nav と surface copy で見分けられる          |
+| 4   | test harness / fixture kit          | Vitest、MSW、Testing Library、Browser Mode を揃える                                     | 1                           | 2, 3     | route / auth / copy の基礎テストが CI で回る                                  |
+| 5   | public entry / workbench promise    | `/`、publication shelf、`/publications`、public publication detail の骨格を作る         | 2, 3, 4                     | 6, 8     | public value first と public lens が安定する                                  |
+| 6   | character continuity workbench home | `/home`、continue zone、create zone、publish zone を作る                                | 2, 3, 4、`getCharacterHome` | 5, 7, 8  | canonical landing が `/home` で固定される                                     |
+| 7   | character continuity studio         | `/characters`、`/characters/new`、`/characters/import`、`/characters/:branchRef` を作る | 2, 3, 4、`getCharacterHome` | 6, 8     | draft / accepted、campaign intent、publication preview が docs どおりに見える |
+| 8   | campaign workspace                  | `/campaigns`、`/campaigns/:campaignRef` を owner-steward / public の 2 lens で作る      | 2, 3, 4、`getCampaignView`  | 5, 7     | public campaign shell と owner-steward provenance 表示が分離される            |
+| 9   | publication management / tombstone  | publish / retire UI、`/publications/:publicationRef` の active detail、tombstone を作る | 5, 7, 8                     | 10       | publication / retire / archive が語彙でも導線でも混ざらない                   |
+| 10  | hardening / release ops             | perf、a11y、copy regression、route manifest check を固める                              | 5-9                         | 継続実施 | Core Shell Gate と Final Gate が green                                        |
 
 ## 実装順序
 

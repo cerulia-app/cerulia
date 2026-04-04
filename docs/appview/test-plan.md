@@ -26,7 +26,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 ### 2. Shared Shell
 
 - global navigation
-- mode badge
+- primary nav context
 - permission explanation
 - mutation status banner
 - archive split
@@ -46,7 +46,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 - seeded fixture。anonymous、owner、steward を固定 DID で再現できること
 - 固定時計
 - route-level assertion
-	実装段階の browser smoke では route page component を直接 render して surface contract を先に固定してよい。release gate の route-mounted assertion は、この repo の Browser Mode に限らず、preview build に対する workspace-level release smoke でも満たしてよい。
+  実装段階の browser smoke では route page component を直接 render して surface contract を先に固定してよい。release gate の route-mounted assertion は、この repo の Browser Mode に限らず、preview build に対する workspace-level release smoke でも満たしてよい。
 - network / transport fault injection
 - visual baseline
 - accessibility harness
@@ -56,53 +56,53 @@ AppView は system console ではなく Character Continuity Workbench なので
 
 ### A. Route and Navigation Contract Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| A-1 | integration | canonical landing | anonymous は `/`、認可直後の canonical landing は `/home`、明示的に `/` を開いた signed-in user は public lens を保つこと |
-| A-2 | integration | global nav order and hub routes | primary nav が Home、Characters、Campaigns、Publications を中心に構成されること |
-| A-3 | integration | deep-link resolution | publication deep-link が active detail、tombstone、neutral notice に正しく分岐すること |
-| A-4 | integration | return path | public reader と owner-steward が docs どおりの return path を持つこと |
-| A-5 | integration | transport error matrix | Unauthorized、Forbidden、NotFound、InvalidRequest が distinct な UI state に写像されること |
+| ID  | level       | 対象                            | 主要検証点                                                                                                                |
+| --- | ----------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| A-1 | integration | canonical landing               | anonymous は `/`、認可直後の canonical landing は `/home`、明示的に `/` を開いた signed-in user は public lens を保つこと |
+| A-2 | integration | global nav order and hub routes | primary nav が Home、Characters、Campaigns、Publications を中心に構成されること                                           |
+| A-3 | integration | deep-link resolution            | publication deep-link が active detail、tombstone、neutral notice に正しく分岐すること                                    |
+| A-4 | integration | return path                     | public reader と owner-steward が docs どおりの return path を持つこと                                                    |
+| A-5 | integration | transport error matrix          | Unauthorized、Forbidden、NotFound、InvalidRequest が distinct な UI state に写像されること                                |
 
 ### B. Lens and Boundary Integration Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| B-1 | integration | mode badge matrix | `/`、`/home`、`/characters/:branchRef`、`/campaigns/:campaignRef`、`/publications/:publicationRef` に current reader lens が text 付きで表示されること |
-| B-2 | integration | public campaign deny-list | public campaign shell に rule provenance detail や非公開 continuity summary が出ないこと |
-| B-3 | integration | public publication deny-list | public publication surface に retired chain、raw derivation detail、非公開 continuity detail が出ないこと |
-| B-4 | integration | current / archive split | current edition と archive が 1 面に混ざらないこと |
-| B-5 | integration | carrier / publication explanation | publication detail が「導線」と「正本」を混同させないこと |
+| ID  | level       | 対象                              | 主要検証点                                                                                                                                                                      |
+| --- | ----------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B-1 | integration | reader lens matrix                | `/`、`/home`、`/characters/:branchRef`、`/campaigns/:campaignRef`、`/publications/:publicationRef` で current reader lens が primary nav または surface copy から判別できること |
+| B-2 | integration | public campaign deny-list         | public campaign shell に rule provenance detail や非公開 continuity summary が出ないこと                                                                                        |
+| B-3 | integration | public publication deny-list      | public publication surface に retired chain、raw derivation detail、非公開 continuity detail が出ないこと                                                                       |
+| B-4 | integration | current / archive split           | current edition と archive が 1 面に混ざらないこと                                                                                                                              |
+| B-5 | integration | carrier / publication explanation | publication detail が「導線」と「正本」を混同させないこと                                                                                                                       |
 
 ### C. Interaction and Mutation UX Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| C-1 | integration | create lane matrix | new sheet、import、branch、convert の 4 lane が別 card と別 copy を持つこと |
-| C-2 | integration | draft vs accepted | create flow と publication preview が accepted 前は draft と明示されること |
-| C-3 | integration | campaign intent only | campaign selection が canonical linkage と誤認されないこと |
-| C-4 | integration | mutationAck mapping | accepted、rejected、rebase-needed が card、banner、navigation に docs どおり反映されること |
-| C-5 | integration | destructive action split | publish、retire、archive notice が別操作、別ラベル、別確認として表示されること |
+| ID  | level       | 対象                     | 主要検証点                                                                                 |
+| --- | ----------- | ------------------------ | ------------------------------------------------------------------------------------------ |
+| C-1 | integration | create lane matrix       | new sheet、import、branch、convert の 4 lane が別 card と別 copy を持つこと                |
+| C-2 | integration | draft vs accepted        | create flow と publication preview が accepted 前は draft と明示されること                 |
+| C-3 | integration | campaign intent only     | campaign selection が canonical linkage と誤認されないこと                                 |
+| C-4 | integration | mutationAck mapping      | accepted、rejected、rebase-needed が card、banner、navigation に docs どおり反映されること |
+| C-5 | integration | destructive action split | publish、retire、archive notice が別操作、別ラベル、別確認として表示されること             |
 
 ### D. Visual, Layout, and Accessibility Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| D-1 | visual/integration | public top composition | hero stage、value lane、publication shelf、final sign-in CTA が存在すること |
-| D-2 | visual/integration | signed-in home composition | continue zone、create zone、publish zone、campaign context が成立すること |
-| D-3 | responsive | viewport matrix | `/home`、`/characters`、`/campaigns`、publication detail が desktop と mobile の両方で意味を保つこと |
-| D-4 | a11y | keyboard path | hero CTA、create lane、current edition card、publication row に keyboard-only で到達できること |
-| D-5 | a11y | screen reader state | current edition、superseded、retired が text で判別できること |
+| ID  | level              | 対象                       | 主要検証点                                                                                           |
+| --- | ------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| D-1 | visual/integration | public top composition     | hero stage、value lane、publication shelf、final sign-in CTA が存在すること                          |
+| D-2 | visual/integration | signed-in home composition | continue zone、create zone、publish zone、campaign context が成立すること                            |
+| D-3 | responsive         | viewport matrix            | `/home`、`/characters`、`/campaigns`、publication detail が desktop と mobile の両方で意味を保つこと |
+| D-4 | a11y               | keyboard path              | hero CTA、create lane、current edition card、publication row に keyboard-only で到達できること       |
+| D-5 | a11y               | screen reader state        | current edition、superseded、retired が text で判別できること                                        |
 
 ### E. Full-Stack AppView Journey Test
 
-| ID | シナリオ | 主要ステップ | 合格条件 |
-| --- | --- | --- | --- |
-| E-1 | anonymous public reader | `/` -> `/publications/:publicationRef` -> `/campaigns/:campaignRef` | public top が価値説明と公開中の版だけを出し、campaign shell が read-only continuity summary に留まること |
-| E-2 | signed-in owner landing | sign-in -> `/home` -> create lane -> `/characters/:branchRef` | canonical landing が `/home` で、create / continue / publish の 3 導線が Character Continuity Workbench として成立すること |
-| E-3 | create flow journey | new / import / branch / convert を開始 -> review step -> detail | lane 分岐、draft / accepted distinction、campaign intent、publication / reuse review が docs どおりに出ること |
-| E-4 | publication and tombstone journey | active detail -> superseded / retired direct link -> tombstone | current edition detail、explanatory tombstone、CTA の出し分けが正しいこと |
-| E-5 | public campaign shell journey | public campaign shell -> sign-in bridge -> `/home` | public campaign が read-only shell であり、participation を暗示しないこと |
+| ID  | シナリオ                          | 主要ステップ                                                        | 合格条件                                                                                                                   |
+| --- | --------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| E-1 | anonymous public reader           | `/` -> `/publications/:publicationRef` -> `/campaigns/:campaignRef` | public top が価値説明と公開中の版だけを出し、campaign shell が read-only continuity summary に留まること                   |
+| E-2 | signed-in owner landing           | sign-in -> `/home` -> create lane -> `/characters/:branchRef`       | canonical landing が `/home` で、create / continue / publish の 3 導線が Character Continuity Workbench として成立すること |
+| E-3 | create flow journey               | new / import / branch / convert を開始 -> review step -> detail     | lane 分岐、draft / accepted distinction、campaign intent、publication / reuse review が docs どおりに出ること              |
+| E-4 | publication and tombstone journey | active detail -> superseded / retired direct link -> tombstone      | current edition detail、explanatory tombstone、CTA の出し分けが正しいこと                                                  |
+| E-5 | public campaign shell journey     | public campaign shell -> sign-in bridge -> `/home`                  | public campaign が read-only shell であり、participation を暗示しないこと                                                  |
 
 ## フェーズ別 gate
 

@@ -71,57 +71,57 @@
 
 ### A. Contract / Lexicon Unit Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| A-1 | unit | defs / refs validation | named ref、enum、Lexicon schema が相互参照可能であること |
-| A-2 | unit | auth bundle matrix | core endpoint が定義された permission-set か documented anonymous public mode でしか到達できないこと |
-| A-3 | unit | mutationAck schema | accepted / rejected / rebase-needed の field shape が core endpoint family で一貫すること |
-| A-4 | unit | transport contract | public mode で不正な includeRetired などが InvalidRequest になること |
-| A-5 | unit | archive exclusion | archive source set が contract catalog と validation に入らないこと |
+| ID  | level | 対象                   | 主要検証点                                                                                           |
+| --- | ----- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| A-1 | unit  | defs / refs validation | named ref、enum、Lexicon schema が相互参照可能であること                                             |
+| A-2 | unit  | auth bundle matrix     | core endpoint が定義された permission-set か documented anonymous public mode でしか到達できないこと |
+| A-3 | unit  | mutationAck schema     | accepted / rejected / rebase-needed の field shape が core endpoint family で一貫すること            |
+| A-4 | unit  | transport contract     | public mode で不正な includeRetired などが InvalidRequest になること                                 |
+| A-5 | unit  | archive exclusion      | archive source set が contract catalog と validation に入らないこと                                  |
 
 ### B. Ledger Kernel Unit Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| B-1 | unit | requestId idempotency | governingRef + operationNsid + requestId の重複が accepted / rejected を問わず再現可能であること |
-| B-2 | unit | current-head helper | supersedes chain の current head が一意に解決できること |
-| B-3 | unit | revision CAS helper | campaign / character-branch の expectedRevision が stale のとき rebase-needed になること |
-| B-4 | unit | service log split | raw service log と user-facing projection が別責務で維持されること |
+| ID  | level | 対象                  | 主要検証点                                                                                       |
+| --- | ----- | --------------------- | ------------------------------------------------------------------------------------------------ |
+| B-1 | unit  | requestId idempotency | governingRef + operationNsid + requestId の重複が accepted / rejected を問わず再現可能であること |
+| B-2 | unit  | current-head helper   | supersedes chain の current head が一意に解決できること                                          |
+| B-3 | unit  | revision CAS helper   | campaign / character-branch の expectedRevision が stale のとき rebase-needed になること         |
+| B-4 | unit  | service log split     | raw service log と user-facing projection が別責務で維持されること                               |
 
 ### C. Core Domain Unit Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| C-1 | unit | campaign seed merge | world defaults -> house defaults -> campaign additions の順で merge すること |
-| C-2 | unit | branch update / retire | metadata update は stable-object mutation であり、retired branch を通常 update で再活性化しないこと |
-| C-3 | unit | advancement chain | supersedes correction が append-only で、active sequence が決定的に畳み込まれること |
-| C-4 | unit | episode summary | advancementRefs が同一 branch のみを指し、episode が growth fact の正本にならないこと |
-| C-5 | unit | conversion fence | source / target manifest、sheet snapshot、target authority、reuseGrantRef 条件が守られること |
-| C-6 | unit | publication chain | subject ごとに current head が一意で、独立 root の並立を許さないこと |
-| C-7 | unit | retirePublication | retired current head が active surface を残さないこと |
-| C-8 | unit | reuse-grant invariants | targetKind ごとの targetRef / targetDid 制約、public target の summary-share 限定が守られること |
+| ID  | level | 対象                   | 主要検証点                                                                                          |
+| --- | ----- | ---------------------- | --------------------------------------------------------------------------------------------------- |
+| C-1 | unit  | campaign seed merge    | world defaults -> house defaults -> campaign additions の順で merge すること                        |
+| C-2 | unit  | branch update / retire | metadata update は stable-object mutation であり、retired branch を通常 update で再活性化しないこと |
+| C-3 | unit  | advancement chain      | supersedes correction が append-only で、active sequence が決定的に畳み込まれること                 |
+| C-4 | unit  | episode summary        | advancementRefs が同一 branch のみを指し、episode が growth fact の正本にならないこと               |
+| C-5 | unit  | conversion fence       | source / target manifest、sheet snapshot、target authority、reuseGrantRef 条件が守られること        |
+| C-6 | unit  | publication chain      | subject ごとに current head が一意で、独立 root の並立を許さないこと                                |
+| C-7 | unit  | retirePublication      | retired current head が active surface を残さないこと                                               |
+| C-8 | unit  | reuse-grant invariants | targetKind ごとの targetRef / targetDid 制約、public target の summary-share 限定が守られること     |
 
 ### D. Projection and Route Integration Test
 
-| ID | level | 対象 | 主要検証点 |
-| --- | --- | --- | --- |
-| D-1 | integration | getCharacterHome | core canonical input だけで再構築できること |
-| D-2 | integration | getCampaignView | owner-steward / public の block matrix が厳密に分かれ、public shell が active public publication current head に裏づくときだけ成立すること |
-| D-3 | integration | listPublications | public mode は active current head のみ、owner-steward mode では includeRetired で retired current head row を明示 opt-in で列挙できること |
-| D-4 | integration | projection exclusion | archive record を注入しても core projection family の canonical row が変わらないこと |
-| D-5 | integration | anonymous core read matrix | getCampaignView(public) と listPublications(public) が anonymous で documented field だけを返すこと |
-| D-6 | integration | publication tombstone | retired / superseded publication deep-link が explanatory tombstone を返すこと |
-| D-7 | integration | public explanation copy | public top、campaign shell、publication detail / tombstone が mode badge と公開境界の説明を表示すること |
+| ID  | level       | 対象                       | 主要検証点                                                                                                                                 |
+| --- | ----------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| D-1 | integration | getCharacterHome           | core canonical input だけで再構築できること                                                                                                |
+| D-2 | integration | getCampaignView            | owner-steward / public の block matrix が厳密に分かれ、public shell が active public publication current head に裏づくときだけ成立すること |
+| D-3 | integration | listPublications           | public mode は active current head のみ、owner-steward mode では includeRetired で retired current head row を明示 opt-in で列挙できること |
+| D-4 | integration | projection exclusion       | archive record を注入しても core projection family の canonical row が変わらないこと                                                       |
+| D-5 | integration | anonymous core read matrix | getCampaignView(public) と listPublications(public) が anonymous で documented field だけを返すこと                                        |
+| D-6 | integration | publication tombstone      | retired / superseded publication deep-link が explanatory tombstone を返すこと                                                             |
+| D-7 | integration | public explanation copy    | public top、campaign shell、publication detail / tombstone が primary nav / surface copy と公開境界の説明を表示すること                    |
 
 ### E. End-to-End Scenario Test
 
-| ID | シナリオ | 主要ステップ | 合格条件 |
-| --- | --- | --- | --- |
-| E-1 | core continuity lifecycle | importCharacterSheet -> createCharacterBranch -> recordCharacterAdvancement -> recordCharacterEpisode -> publishSubject -> getCharacterHome | branch lineage、advancement correction、episode summary、publication current head が一貫すること |
-| E-2 | cross-boundary reuse and conversion | branch 作成 -> grantReuse -> recordCharacterConversion -> recordCharacterEpisode -> listPublications | reuse 境界、conversion provenance、targetCampaignRef の canonical linkage、public derivation hint が一貫すること |
-| E-3 | publication supersede and retire | publishSubject -> superseding publishSubject -> retirePublication -> publication direct-link | current head 一意、retired chain、tombstone CTA、public mode の active-only が一貫すること |
-| E-4 | public reading journey | `/` -> `/publications/:publicationRef` -> `/campaigns/:campaignRef` | public top が価値説明と公開中の版だけを出し、campaign shell が continuity summary に留まること |
-| E-5 | signed-in owner journey | sign-in -> `/home` -> `/characters/new` or `/characters/import` -> `/characters/:branchRef` | canonical landing が `/home` で、create / continue / publish の導線が continuity workbench として成立すること |
+| ID  | シナリオ                            | 主要ステップ                                                                                                                                | 合格条件                                                                                                         |
+| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| E-1 | core continuity lifecycle           | importCharacterSheet -> createCharacterBranch -> recordCharacterAdvancement -> recordCharacterEpisode -> publishSubject -> getCharacterHome | branch lineage、advancement correction、episode summary、publication current head が一貫すること                 |
+| E-2 | cross-boundary reuse and conversion | branch 作成 -> grantReuse -> recordCharacterConversion -> recordCharacterEpisode -> listPublications                                        | reuse 境界、conversion provenance、targetCampaignRef の canonical linkage、public derivation hint が一貫すること |
+| E-3 | publication supersede and retire    | publishSubject -> superseding publishSubject -> retirePublication -> publication direct-link                                                | current head 一意、retired chain、tombstone CTA、public mode の active-only が一貫すること                       |
+| E-4 | public reading journey              | `/` -> `/publications/:publicationRef` -> `/campaigns/:campaignRef`                                                                         | public top が価値説明と公開中の版だけを出し、campaign shell が continuity summary に留まること                   |
+| E-5 | signed-in owner journey             | sign-in -> `/home` -> `/characters/new` or `/characters/import` -> `/characters/:branchRef`                                                 | canonical landing が `/home` で、create / continue / publish の導線が continuity workbench として成立すること    |
 
 ## release gate
 

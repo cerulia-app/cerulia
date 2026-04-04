@@ -10,7 +10,7 @@
 
 ## lens と境界
 
-- すべての surface に現在の reader lens を表示する。少なくとも public と owner-steward を区別する
+- primary nav と page copy の組み合わせで現在の reader lens を誤認させない。少なくとも public と owner-steward を区別する
 - ボタンや panel が無効なときは、理由を permission 不足、publication 未公開、stale revision、required input 不足のどれかに落として説明する
 - public surface では unpublished continuity、raw archived chain、private な provenance detail を漏らさない
 - owner-steward surface でも archive と current surface を同じ card grammar に混ぜない
@@ -42,7 +42,7 @@
 
 - keyboard-only で hero CTA、create lane、current edition card、publication row に到達できること
 - current edition、superseded、retired、pending change が text で判別できること
-- mode badge、status、visibility は色だけに依存せず text で区別できること
+- reader lens、status、visibility は色だけに依存せず text と copy で区別できること
 
 ## local state と保存
 
