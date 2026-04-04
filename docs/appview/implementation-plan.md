@@ -37,9 +37,26 @@ frontend repo は backend repo と分離し、backend が publish する package
 | 認証 / BFF | `hooks.server.ts`、httpOnly session cookie、server-side fetch wrapper | reader lens と auth bundle を分離しやすい |
 | contract / validation | `@cerulia/contracts` artifact 由来の TypeScript client、Zod | XRPC schema drift を早く検知できる |
 | form | SvelteKit form actions、`sveltekit-superforms`、Zod | multi-step create flow を扱いやすい |
-| UI primitive | component-scoped CSS、global token CSS、Bits UI | 独自 visual language を保ちつつ a11y を担保できる |
+| UI primitive | component-scoped CSS、feature-scoped CSS、global token CSS、small reset/base、Bits UI | 独自 visual language を保ちつつ a11y を担保できる |
 | unit / integration test | Vitest、`@testing-library/svelte`、MSW | route load / action を contract-first に検証できる |
 | browser journey / visual | Vitest Browser Mode、semantic visual diff | route contract と主要 surface の visual drift を早期に検出できる |
+
+## styling decision
+
+AppView の styling は native CSS を前提にし、次の 4 層で管理する。
+
+1. global token CSS
+2. small reset / base
+3. shared semantic primitives
+4. feature または component-scoped CSS
+
+この構成により、AI agent は style の責務を「token」「shared primitive」「feature local」へ切り分けて探索できる。`app.css` へ全 route の rule を積み続ける方針は採らない。
+
+Tailwind CSS は採用しない。utility-first は局所性を上げる一方で、Cerulia が重視する public / owner-steward、current / archive、draft / accepted の grammar を semantic に監査しづらくするためである。
+
+DaisyUI のような preset UI library も採用しない。初速は出るが、Character Continuity Workbench を generic dashboard の grammar に引き戻しやすく、override と debug の責務が増えるためである。
+
+reset CSS は small reset / base として採用してよいが、方針の中心ではない。baseline normalization と focus / form control の整備に限って用いる。
 
 ## 推奨ディレクトリ構成
 
@@ -49,8 +66,11 @@ src/
   hooks.server.ts
   lib/
     auth/
-    rpc/
     design/
+      tokens.css
+      base.css
+      primitives.css
+    rpc/
     shell/
     testkit/
     features/
