@@ -24,7 +24,7 @@ frontend repo は backend repo と分離し、backend が publish する package
 
 ### 5. release gate は core-only に固定する
 
-フェーズの完了判定は [AppView テスト計画](test-plan.md) の Core Shell Gate と Final Gate に合わせる。session context gate は持たない。
+フェーズの完了判定は [AppView テスト計画](test-plan.md) の Core Shell Gate と Final Gate に合わせる。route-mounted assertion は repo 内 Browser Mode か workspace-level release smoke のどちらで満たしてもよい。session context gate は持たない。
 
 ## 推奨技術スタック
 

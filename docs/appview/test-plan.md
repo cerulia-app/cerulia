@@ -46,6 +46,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 - seeded fixture。anonymous、owner、steward を固定 DID で再現できること
 - 固定時計
 - route-level assertion
+	実装段階の browser smoke では route page component を直接 render して surface contract を先に固定してよい。release gate の route-mounted assertion は、この repo の Browser Mode に限らず、preview build に対する workspace-level release smoke でも満たしてよい。
 - network / transport fault injection
 - visual baseline
 - accessibility harness
@@ -117,7 +118,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 
 この gate は「core continuity を読む AppView」が成立したことを示す。
 
-### Final AppView Gate
+### Final Gate
 
 最低限次が green であること。
 
