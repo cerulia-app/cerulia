@@ -2,12 +2,13 @@
 
 ## visual direction
 
-Cerulia の AppView は、監視盤のような dark dashboard ではなく、continuity artifact を静かに読み解く daylight workbench として設計する。情報密度は高くてよいが、tone は admin console ではなく、読み物と作業台の中間に置く。
+Cerulia の AppView の主概念は Character Continuity Workbench であり、その見た目は監視盤のような dark dashboard ではなく、continuity artifact を静かに読み解く daylight workbench として設計する。情報密度は高くてよいが、tone は admin console ではなく、読み物と作業台の中間に置く。
 
 ## product cues
 
 - public first: public top は promise、example、CTA の順で始める
 - characters first after sign-in: sign-in 後は character の現在地を先に見せる
+- value before atmosphere: 何ができる workbench かを先に伝え、daylight tone はその理解を支える
 - continuity over utility chrome: 操作部より current edition と provenance を先に読ませる
 - archive is secondary: 履歴は見せるが、既定の grammar を支配させない
 
@@ -34,7 +35,7 @@ Cerulia の AppView は、監視盤のような dark dashboard ではなく、co
 
 - hero stage
 - short value lane
-- featured publication row
+- publication shelf
 - dual CTA
 
 ### signed-in home

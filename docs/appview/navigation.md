@@ -2,7 +2,7 @@
 
 ## route 方針
 
-route は、public では service value first、sign-in 後は character continuity first を守るため、public-entry / home / characters / campaigns / publications の 5 層に分ける。product route tree に `/sessions/*` は持たない。
+route は、public では Character Continuity Workbench の約束を先に示し、sign-in 後は character continuity first を守るため、public-entry / home / characters / campaigns / publications の 5 層に分ける。product route tree に `/sessions/*` は持たない。
 
 ## Global Navigation
 
@@ -32,8 +32,8 @@ anonymous 状態では `/` を discovery dump として押し出さず、brand l
 
 | route | 役割 | 既定の reader lens |
 | --- | --- | --- |
-| `/` | public top。1 つの約束、1 つの具体例、2 つの CTA で始める public entry shell | public |
-| `/home` | signed-in top。continue / create / publish の workbench | owner-steward |
+| `/` | public top。Character Continuity Workbench の約束を 1 つの具体例と 2 つの CTA で始める public entry shell | public |
+| `/home` | signed-in top。Character Continuity Workbench の continue / create / publish を返す面 | owner-steward |
 | `/characters` | character hub。現在の continuity 一覧と create lane 入口 | owner-steward |
 | `/characters/new` | brand new sheet から始める flow | owner-steward |
 | `/characters/import` | import / branch / convert の起点 | owner-steward |
@@ -67,7 +67,7 @@ public reader は public top で Cerulia の約束を読み、公開中の版か
 
 ### public top を glossary や discovery dump にしない
 
-`/` は public entry shell であり、1 つの約束、1 つの具体例、2 つの CTA から始める。
+`/` は Character Continuity Workbench への public entry shell であり、1 つの約束、1 つの具体例、2 つの CTA から始める。
 
 ### signed-in では Characters を service root にする
 

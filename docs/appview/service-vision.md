@@ -1,10 +1,10 @@
 # サービスビジョン
 
-Cerulia は、TRPG のキャラクターを「作るところ」で終わらせず、「続ける」「持ち運ぶ」「見せる」まで一つの流れにする continuity service である。ユーザーは新しい character-sheet を始めるときも、既存 sheet を取り込むときも、別 campaign へ branch するときも、ruleset をまたいで変換するときも、いまの版、由来、公開状態を同じ場所で扱える。
+Cerulia は、TRPG のキャラクターを「作るところ」で終わらせず、「続ける」「持ち運ぶ」「見せる」まで一つの流れにする continuity service である。AppView はその価値を Character Continuity Workbench として見せる。ユーザーは新しい character-sheet を始めるときも、既存 sheet を取り込むときも、別 campaign へ branch するときも、ruleset をまたいで変換するときも、いまの版、由来、公開状態を同じ場所で扱える。
 
 ## 採用する product thesis
 
-AppView の訴求は 2 段で扱う。public top では「作る、続ける、持ち運ぶ、見せるを一つにつなぐ continuity service」を先に出し、sign-in 後の最初の具体価値は「キャラクターを便利に作成できる」に置く。ただし Cerulia が front に出す convenience は、単なる新規入力の速さではなく、continuity workflow 全体を指す。
+AppView の訴求は 2 段で扱う。public top では「作る、続ける、持ち運ぶ、見せるを一つにつなぐ Character Continuity Workbench」という約束を先に出し、sign-in 後の最初の具体価値は「キャラクターを便利に作成できる」に置く。ただし Cerulia が front に出す convenience は、単なる新規入力の速さではなく、continuity workflow 全体を指す。
 
 | verb | Cerulia での意味 | 含めない読み方 |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ AppView の public copy と IA は、次の動詞を中心に組み立てる。
 
 ## Messaging Guardrails
 
-- public top では continuity service の約束を front に出し、作成の便利さは sign-in 後の home で具体化する
+- public top では Character Continuity Workbench の約束を front に出し、作成の便利さは sign-in 後の home で具体化する
 - public は viewer lens を意味し、active な公開中の版を read-only で読む範囲に限る
 - character は主役にしてよいが、campaign と publication を従属物として消さない
 - publication、retire、archive を同じ「公開設定」にまとめない

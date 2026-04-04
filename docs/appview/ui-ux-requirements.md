@@ -35,7 +35,7 @@
 
 - `/home`、`/characters`、`/campaigns`、`/publications/:publicationRef` は desktop と mobile の両方で意味を保つ
 - create lane は new / import / branch / convert の順に card stack で見せる
-- public top は hero、value lane、featured publication、CTA の順で組み、巨大 index を first viewport に置かない
+- public top は hero、value lane、publication shelf、CTA の順で組み、巨大 index を first viewport に置かない
 - publication detail の archive notice は通常 detail より軽い密度で表現する
 
 ## accessibility

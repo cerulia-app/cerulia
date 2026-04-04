@@ -2,7 +2,7 @@
 
 ## 目的
 
-この文書は、[AppView 層 UI 設計](README.md) を SvelteKit ベースの実装へ落とすための core-only 実行計画である。対象は AppView の module 分割、実装順、並列作業の許容範囲、採用技術スタック、フェーズごとの release gate であり、character continuity service を `/`, `/home`, `/characters`, `/campaigns`, `/publications` だけで成立させることを前提にする。
+この文書は、[AppView 層 UI 設計](README.md) を SvelteKit ベースの実装へ落とすための core-only 実行計画である。対象は AppView の module 分割、実装順、並列作業の許容範囲、採用技術スタック、フェーズごとの release gate であり、Character Continuity Workbench を `/`, `/home`, `/characters`, `/campaigns`, `/publications` だけで成立させることを前提にする。
 
 ## 実装の基本方針
 
@@ -84,8 +84,8 @@ contracts/
 | 2 | contract / auth / BFF gateway | `hooks.server.ts`、session cookie、XRPC client、error mapping を作る | 1 | 3, 4 | server load / action から XRPC を認証付きで呼べる |
 | 3 | design system / shared shell | design token、global layout、primary nav、mode badge、banner、empty state を作る | 1 | 2, 4 | public / owner-steward を shell で見分けられる |
 | 4 | test harness / fixture kit | Vitest、MSW、Testing Library、Browser Mode を揃える | 1 | 2, 3 | route / auth / copy の基礎テストが CI で回る |
-| 5 | public entry / discovery | `/`、featured publications、`/publications`、public publication detail の骨格を作る | 2, 3, 4 | 6, 8 | public value first と public lens が安定する |
-| 6 | signed-in home workbench | `/home`、continue zone、create zone、publish zone を作る | 2, 3, 4、`getCharacterHome` | 5, 7, 8 | canonical landing が `/home` で固定される |
+| 5 | public entry / workbench promise | `/`、publication shelf、`/publications`、public publication detail の骨格を作る | 2, 3, 4 | 6, 8 | public value first と public lens が安定する |
+| 6 | character continuity workbench home | `/home`、continue zone、create zone、publish zone を作る | 2, 3, 4、`getCharacterHome` | 5, 7, 8 | canonical landing が `/home` で固定される |
 | 7 | character continuity studio | `/characters`、`/characters/new`、`/characters/import`、`/characters/:branchRef` を作る | 2, 3, 4、`getCharacterHome` | 6, 8 | draft / accepted、campaign intent、publication preview が docs どおりに見える |
 | 8 | campaign workspace | `/campaigns`、`/campaigns/:campaignRef` を owner-steward / public の 2 lens で作る | 2, 3, 4、`getCampaignView` | 5, 7 | public campaign shell と owner-steward provenance 表示が分離される |
 | 9 | publication management / tombstone | publish / retire UI、`/publications/:publicationRef` の active detail、tombstone を作る | 5, 7, 8 | 10 | publication / retire / archive が語彙でも導線でも混ざらない |
@@ -106,10 +106,10 @@ contracts/
 
 対象モジュール:
 
-- 5. public entry / discovery
-- 6. signed-in home workbench
+- 5. public entry / workbench promise
+- 6. character continuity workbench home
 
-### Phase 2: continuity workbench を閉じる
+### Phase 2: Character Continuity Workbench を閉じる
 
 対象モジュール:
 

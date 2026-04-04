@@ -6,7 +6,7 @@ AppView は Cerulia の projection を見やすく束ねる層であり、正本
 
 | 層 | 役割 | AppView での見え方 | してはならないこと |
 | --- | --- | --- | --- |
-| core continuity / projection | character home、campaign view、publication summary の current head と continuity write 結果 | character studio、signed-in home workbench、campaign summary、publication row | local state や archive を canonical input に混ぜること |
+| core continuity / projection | character home、campaign view、publication summary の current head と continuity write 結果 | character studio、Character Continuity Workbench、campaign summary、publication row | local state や archive を canonical input に混ぜること |
 | publication ledger | 公開入口の current head、retire 状態、surface summary | publication detail、public top、campaign shell | carrier を source of truth にすること |
 | archive / history | superseded、retired、revoke された履歴 | explanatory tombstone、archive split | current surface と同じ grammar で混ぜること |
 | local draft state | create flow の未確定入力、publication preview の一時状態 | draft badge、review step、local undo | accepted 前の draft を continuity fact と見せること |
