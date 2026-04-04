@@ -8,6 +8,7 @@ import (
 
 	"cerulia/internal/core/character"
 	"cerulia/internal/core/model"
+	shareddomain "cerulia/internal/core/sharing"
 	"cerulia/internal/store"
 )
 
@@ -202,10 +203,13 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 		}
 		_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, head.CurrentHeadRef)
 		if err != nil {
+			if resolvedMode == "public" {
+				continue
+			}
 			return nil, err
 		}
 		if resolvedMode == "public" {
-			if publicationModel.Status != "active" {
+			if !publicationIsPublic(head.CurrentHeadRef, publicationModel) {
 				continue
 			}
 		} else if actorDid != "" {
@@ -367,10 +371,13 @@ func (service *Service) campaignPublicationSummaries(ctx context.Context, campai
 		}
 		_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, head.CurrentHeadRef)
 		if err != nil {
+			if mode == "public" {
+				continue
+			}
 			return nil, err
 		}
 		if mode == "public" {
-			if publicationModel.Status != "active" {
+			if !publicationIsPublic(head.CurrentHeadRef, publicationModel) {
 				continue
 			}
 			if head.SubjectRef == campaignRef {
@@ -598,4 +605,38 @@ func countRetiredPublications(items []PublicationSummary) int {
 		}
 	}
 	return count
+}
+
+func publicationIsPublic(ref string, value model.Publication) bool {
+	return value.Status == "active" && publicationIsValid(ref, value)
+}
+
+func publicationIsValid(ref string, value model.Publication) bool {
+	return shareddomain.ValidatePublication(shareddomain.Publication{
+		Ref:                  ref,
+		SubjectRef:           value.SubjectRef,
+		SubjectKind:          value.SubjectKind,
+		ReuseGrantRef:        value.ReuseGrantRef,
+		EntryURL:             value.EntryURL,
+		PreferredSurfaceKind: value.PreferredSurfaceKind,
+		Surfaces:             toDomainPublicationSurfaces(value.Surfaces),
+		Status:               value.Status,
+		SupersedesRef:        value.SupersedesRef,
+		PublishedAt:          value.PublishedAt,
+		RetiredAt:            value.RetiredAt,
+	}) == nil
+}
+
+func toDomainPublicationSurfaces(values []model.SurfaceDescriptor) []shareddomain.SurfaceDescriptor {
+	items := make([]shareddomain.SurfaceDescriptor, 0, len(values))
+	for _, value := range values {
+		items = append(items, shareddomain.SurfaceDescriptor{
+			SurfaceKind: value.SurfaceKind,
+			PurposeKind: value.PurposeKind,
+			SurfaceURI:  value.SurfaceURI,
+			Status:      value.Status,
+			RetiredAt:   value.RetiredAt,
+		})
+	}
+	return items
 }

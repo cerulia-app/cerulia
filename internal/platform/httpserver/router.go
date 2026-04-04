@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"cerulia/internal/authz"
 	"cerulia/internal/core/command"
@@ -47,7 +46,7 @@ func NewHandler(logger *slog.Logger, cfg config.Config, db *database.DB) http.Ha
 		auth: authz.NewGateway(authz.Config{
 			TrustedProxyHMACSecret: cfg.Auth.TrustedProxyHMACSecret,
 			TrustedProxyMaxSkew:    cfg.Auth.TrustedProxyMaxSkew,
-			AllowInsecureDirect:    strings.EqualFold(cfg.AppEnv, "development") || strings.EqualFold(cfg.AppEnv, "test"),
+			AllowInsecureDirect:    cfg.Auth.AllowInsecureDirect,
 		}),
 		commands:    command.NewService(dataStore),
 		projections: projection.NewService(dataStore),

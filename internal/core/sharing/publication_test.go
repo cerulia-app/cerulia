@@ -7,27 +7,66 @@ import (
 )
 
 func TestValidatePublicationHeadRejectsIndependentRoot(t *testing.T) {
-	current := &Publication{Ref: "pub-1", SubjectRef: "subject-1", SubjectKind: "character-episode", PreferredSurfaceKind: "app-card", Status: "active", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", Status: "active"}}}
-	candidate := Publication{Ref: "pub-2", SubjectRef: "subject-1", SubjectKind: "character-episode", PreferredSurfaceKind: "app-card", Status: "active", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", Status: "active"}}}
+	current := &Publication{Ref: "pub-1", SubjectRef: "subject-1", SubjectKind: "character-episode", EntryURL: "https://example.com/publications/1", PreferredSurfaceKind: "app-card", Status: "active", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", PurposeKind: "stable-entry", Status: "active"}}}
+	candidate := Publication{Ref: "pub-2", SubjectRef: "subject-1", SubjectKind: "character-episode", EntryURL: "https://example.com/publications/2", PreferredSurfaceKind: "app-card", Status: "active", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", PurposeKind: "stable-entry", Status: "active"}}}
 
 	err := ValidatePublicationHead(current, candidate)
 	if !errors.Is(err, ErrInvalidPublication) {
 		t.Fatalf("expected invalid publication root, got %v", err)
 	}
 
-	err = ValidatePublicationHead(nil, Publication{Ref: "pub-1", SubjectRef: "subject-1", SubjectKind: "character-episode", PreferredSurfaceKind: "app-card", Status: "active", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", Status: "active"}}})
+	err = ValidatePublicationHead(nil, Publication{Ref: "pub-1", SubjectRef: "subject-1", SubjectKind: "character-episode", EntryURL: "https://example.com/publications/1", PreferredSurfaceKind: "app-card", Status: "active", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", PurposeKind: "stable-entry", Status: "active"}}})
 	if err != nil {
 		t.Fatalf("unexpected initial publication validation error: %v", err)
 	}
 
-	err = ValidatePublicationHead(current, Publication{Ref: "pub-2", SubjectRef: "subject-2", SubjectKind: "character-episode", PreferredSurfaceKind: "app-card", Status: "active", SupersedesRef: "pub-1", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", Status: "active"}}})
+	err = ValidatePublicationHead(current, Publication{Ref: "pub-2", SubjectRef: "subject-2", SubjectKind: "character-episode", EntryURL: "https://example.com/publications/2", PreferredSurfaceKind: "app-card", Status: "active", SupersedesRef: "pub-1", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", PurposeKind: "stable-entry", Status: "active"}}})
 	if !errors.Is(err, ErrInvalidPublication) {
 		t.Fatalf("expected subject mismatch to fail, got %v", err)
 	}
 
-	err = ValidatePublicationHead(current, Publication{Ref: "pub-2", SubjectRef: "subject-1", SubjectKind: "character-episode", PreferredSurfaceKind: "app-card", Status: "active", SupersedesRef: "pub-0", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", Status: "active"}}})
+	err = ValidatePublicationHead(current, Publication{Ref: "pub-2", SubjectRef: "subject-1", SubjectKind: "character-episode", EntryURL: "https://example.com/publications/2", PreferredSurfaceKind: "app-card", Status: "active", SupersedesRef: "pub-0", Surfaces: []SurfaceDescriptor{{SurfaceKind: "app-card", PurposeKind: "stable-entry", Status: "active"}}})
 	if !errors.Is(err, ErrInvalidPublication) {
 		t.Fatalf("expected supersedes mismatch to fail, got %v", err)
+	}
+}
+
+func TestValidatePublicationRequiresStableEntrySurface(t *testing.T) {
+	err := ValidatePublication(Publication{
+		Ref:                  "pub-1",
+		SubjectRef:           "subject-1",
+		SubjectKind:          "campaign",
+		EntryURL:             "https://example.com/publications/1",
+		PreferredSurfaceKind: "app-card",
+		Status:               "active",
+		Surfaces: []SurfaceDescriptor{{
+			SurfaceKind: "app-card",
+			PurposeKind: "discovery",
+			SurfaceURI:  "https://example.com/publications/1",
+			Status:      "active",
+		}},
+	})
+	if !errors.Is(err, ErrInvalidPublication) {
+		t.Fatalf("expected discovery-only publication to fail validation, got %v", err)
+	}
+}
+
+func TestValidatePublicationRequiresEntryURL(t *testing.T) {
+	err := ValidatePublication(Publication{
+		Ref:                  "pub-1",
+		SubjectRef:           "subject-1",
+		SubjectKind:          "campaign",
+		PreferredSurfaceKind: "app-card",
+		Status:               "active",
+		Surfaces: []SurfaceDescriptor{{
+			SurfaceKind: "app-card",
+			PurposeKind: "stable-entry",
+			SurfaceURI:  "https://example.com/publications/1",
+			Status:      "active",
+		}},
+	})
+	if !errors.Is(err, ErrInvalidPublication) {
+		t.Fatalf("expected publication without entryUrl to fail validation, got %v", err)
 	}
 }
 
@@ -37,6 +76,7 @@ func TestRetirePublicationRemovesActiveSurfaces(t *testing.T) {
 		Ref:                  "pub-1",
 		SubjectRef:           "subject-1",
 		SubjectKind:          "character-episode",
+		EntryURL:             "https://example.com/publications/1",
 		PreferredSurfaceKind: "app-card",
 		Status:               "active",
 		PublishedAt:          now,

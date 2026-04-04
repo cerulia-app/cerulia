@@ -25,6 +25,7 @@ type Config struct {
 type AuthConfig struct {
 	TrustedProxyHMACSecret string
 	TrustedProxyMaxSkew    time.Duration
+	AllowInsecureDirect    bool
 }
 
 type DatabaseConfig struct {
@@ -55,6 +56,7 @@ func Load() (Config, error) {
 		Auth: AuthConfig{
 			TrustedProxyHMACSecret: strings.TrimSpace(os.Getenv("AUTH_TRUSTED_PROXY_HMAC_SECRET")),
 			TrustedProxyMaxSkew:    5 * time.Minute,
+			AllowInsecureDirect:    false,
 		},
 		Database: DatabaseConfig{
 			URL:         runtimeDatabaseURL(appEnv),
@@ -87,9 +89,14 @@ func Load() (Config, error) {
 
 	cfg.ShutdownTimeout, errs = parseDurationEnv("SHUTDOWN_TIMEOUT", cfg.ShutdownTimeout, errs)
 	cfg.Auth.TrustedProxyMaxSkew, errs = parseDurationEnv("AUTH_TRUSTED_PROXY_MAX_SKEW", cfg.Auth.TrustedProxyMaxSkew, errs)
+	cfg.Auth.AllowInsecureDirect, errs = parseBoolEnv("AUTH_ALLOW_INSECURE_DIRECT", cfg.Auth.AllowInsecureDirect, errs)
 	cfg.Database.PingTimeout, errs = parseDurationEnv("DATABASE_PING_TIMEOUT", cfg.Database.PingTimeout, errs)
 	cfg.Database.MaxConns, errs = parseInt32Env("DATABASE_MAX_CONNS", cfg.Database.MaxConns, errs)
 	cfg.Database.MinConns, errs = parseInt32Env("DATABASE_MIN_CONNS", cfg.Database.MinConns, errs)
+
+	if cfg.Auth.AllowInsecureDirect && cfg.AppEnv != "development" && cfg.AppEnv != "test" {
+		errs = append(errs, fmt.Errorf("AUTH_ALLOW_INSECURE_DIRECT: allowed only in development or test"))
+	}
 
 	if len(errs) > 0 {
 		return Config{}, errors.Join(errs...)
@@ -197,4 +204,19 @@ func parseInt32Env(key string, fallback int32, errs []error) (int32, []error) {
 	}
 
 	return int32(value), errs
+}
+
+func parseBoolEnv(key string, fallback bool, errs []error) (bool, []error) {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback, errs
+	}
+
+	value, err := strconv.ParseBool(raw)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("%s: %w", key, err))
+		return fallback, errs
+	}
+
+	return value, errs
 }

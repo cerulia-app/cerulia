@@ -26,9 +26,14 @@
 - `docs/architecture/mvp.md`
 - `docs/architecture/implementation-plan.md`
 - `docs/architecture/test-plan.md`
-- `docs/appview/**`
 - `docs/records` の continuity core record
 - `docs/lexicon/auth.md`, `docs/lexicon/core.md`, `docs/lexicon/defs.md`, `docs/lexicon/rpc.md`
+
+### appview design source set
+
+- `docs/appview/**`
+
+AppView docs は M2 以降の `appview` frontend repo / submodule の規範入力として扱う。backend の contract 生成、validation、Go test gate は `docs/appview/**` を直接 source set にしない。
 
 ### archive source set
 

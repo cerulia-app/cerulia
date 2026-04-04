@@ -2,6 +2,7 @@ package sharing
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -58,6 +59,9 @@ func ValidatePublicationHead(current *Publication, candidate Publication) error 
 }
 
 func ValidatePublication(publication Publication) error {
+	if strings.TrimSpace(publication.EntryURL) == "" {
+		return ErrInvalidPublication
+	}
 	if publication.SubjectKind != "campaign" && publication.SubjectKind != "character-branch" && publication.SubjectKind != "character-episode" {
 		return ErrInvalidPublication
 	}
@@ -70,6 +74,7 @@ func ValidatePublication(publication Publication) error {
 
 	activeByKind := map[string]int{}
 	activeSurfaces := 0
+	hasStableEntry := false
 	preferredActive := false
 	for _, surface := range publication.Surfaces {
 		if surface.Status != "active" {
@@ -82,6 +87,9 @@ func ValidatePublication(publication Publication) error {
 		}
 		if surface.SurfaceKind == publication.PreferredSurfaceKind {
 			preferredActive = true
+		}
+		if surface.PurposeKind == "stable-entry" {
+			hasStableEntry = true
 		}
 	}
 
@@ -97,7 +105,7 @@ func ValidatePublication(publication Publication) error {
 		return nil
 	}
 
-	if activeSurfaces == 0 || !preferredActive {
+	if activeSurfaces == 0 || !preferredActive || !hasStableEntry {
 		return ErrInvalidPublication
 	}
 

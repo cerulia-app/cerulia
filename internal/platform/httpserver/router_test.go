@@ -14,6 +14,7 @@ import (
 	"cerulia/internal/core/command"
 	coremodel "cerulia/internal/core/model"
 	"cerulia/internal/core/projection"
+	"cerulia/internal/ledger"
 	"cerulia/internal/platform/config"
 	"cerulia/internal/platform/database"
 	"cerulia/internal/store"
@@ -77,6 +78,13 @@ func TestCreateCampaignRejectsWrongBundle(t *testing.T) {
 	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", `{"title":"Campaign","visibility":"public","rulesetNsid":"app.cerulia.rules.core","rulesetManifestRef":"at://did:plc:alice/app.cerulia.core.rulesetManifest/ruleset-1","defaultReusePolicyKind":"same-campaign-default","stewardDids":["did:plc:alice"],"requestId":"req-create-campaign"}`, authHeaders("did:plc:alice", authz.CoreReader))
 
 	assertXRPCError(t, rec, http.StatusForbidden, "Forbidden")
+}
+
+func TestCreateCampaignRejectsDirectHeadersWithoutExplicitOptIn(t *testing.T) {
+	handler := NewHandler(testLogger(), config.Config{AppEnv: "test"}, database.Disabled())
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.createCampaign", `{"title":"Campaign","visibility":"public","rulesetNsid":"app.cerulia.rules.core","rulesetManifestRef":"at://did:plc:alice/app.cerulia.core.rulesetManifest/ruleset-1","defaultReusePolicyKind":"same-campaign-default","stewardDids":["did:plc:alice"],"requestId":"req-create-campaign-no-opt-in"}`, authHeaders("did:plc:alice", authz.CoreWriter))
+
+	assertXRPCError(t, rec, http.StatusUnauthorized, "Unauthorized")
 }
 
 func TestCreateCampaignIgnoresUnknownInputFieldForLexiconCompatibility(t *testing.T) {
@@ -555,6 +563,132 @@ func TestListPublicationsReturnsEmptyPageWhenSubjectHasNoPublications(t *testing
 	}
 }
 
+func TestListPublicationsOwnerModeRequiresIncludeRetiredOptIn(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-publications-retired-branch")
+	publicationRef := publishSubject(t, handler, "did:plc:owner1", branchRef, "character-branch", "req-publications-retired")
+	retiredRef := retirePublication(t, handler, "did:plc:owner1", publicationRef, "req-publications-retired-final")
+
+	defaultReq := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listPublications?subjectRef="+branchRef+"&mode=owner-steward", nil)
+	defaultReq.Header.Set(authz.HeaderActorDID, "did:plc:owner1")
+	defaultReq.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	defaultRec := httptest.NewRecorder()
+	handler.ServeHTTP(defaultRec, defaultReq)
+	if defaultRec.Code != http.StatusOK {
+		t.Fatalf("expected default list status 200, got %d with %s", defaultRec.Code, defaultRec.Body.String())
+	}
+	var defaultResponse struct {
+		Items []any `json:"items"`
+	}
+	if err := json.Unmarshal(defaultRec.Body.Bytes(), &defaultResponse); err != nil {
+		t.Fatalf("decode default publications response: %v", err)
+	}
+	if len(defaultResponse.Items) != 0 {
+		t.Fatalf("expected retired current head to be hidden without includeRetired, got %+v", defaultResponse.Items)
+	}
+
+	includeReq := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listPublications?subjectRef="+branchRef+"&mode=owner-steward&includeRetired=true", nil)
+	includeReq.Header.Set(authz.HeaderActorDID, "did:plc:owner1")
+	includeReq.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	includeRec := httptest.NewRecorder()
+	handler.ServeHTTP(includeRec, includeReq)
+	if includeRec.Code != http.StatusOK {
+		t.Fatalf("expected includeRetired status 200, got %d with %s", includeRec.Code, includeRec.Body.String())
+	}
+	var includeResponse struct {
+		Items []struct {
+			PublicationRef string `json:"publicationRef"`
+			Status         string `json:"status"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(includeRec.Body.Bytes(), &includeResponse); err != nil {
+		t.Fatalf("decode includeRetired publications response: %v", err)
+	}
+	if len(includeResponse.Items) != 1 || includeResponse.Items[0].PublicationRef != retiredRef || includeResponse.Items[0].Status != "retired" {
+		t.Fatalf("expected retired current head only when includeRetired is set, got %+v", includeResponse.Items)
+	}
+}
+
+func TestListPublicationsPublicModeSkipsMalformedCurrentHead(t *testing.T) {
+	dataStore := store.NewMemoryStore()
+	handler := newQueryHandler(t, dataStore)
+	subjectRef := store.BuildRef("did:plc:steward1", coremodel.CollectionCampaign, "campaign-malformed-publication")
+	seedPublicationCurrentHead(t, dataStore, "did:plc:steward1", subjectRef, "campaign", "publication-malformed", coremodel.Publication{
+		SubjectRef:           subjectRef,
+		SubjectKind:          "campaign",
+		EntryURL:             "https://cerulia.example/publications/malformed",
+		PreferredSurfaceKind: "app-card",
+		Status:               "active",
+		PublishedByDid:       "did:plc:steward1",
+		PublishedAt:          time.Date(2026, time.April, 4, 0, 0, 0, 0, time.UTC),
+		RequestID:            "seed-malformed-publication",
+		Surfaces: []coremodel.SurfaceDescriptor{{
+			SurfaceKind: "app-card",
+			PurposeKind: "discovery",
+			SurfaceURI:  "https://cerulia.example/publications/malformed",
+			Status:      "active",
+		}},
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listPublications?subjectRef="+subjectRef+"&mode=public", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []any `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode malformed public publications response: %v", err)
+	}
+	if len(response.Items) != 0 {
+		t.Fatalf("expected malformed current head to be hidden from public mode, got %+v", response.Items)
+	}
+}
+
+func TestCampaignPublicViewFailsClosedForMalformedCampaignPublication(t *testing.T) {
+	dataStore := store.NewMemoryStore()
+	seedCampaignRecord(t, dataStore, "did:plc:steward1", "campaign-public-malformed", coremodel.Campaign{
+		CampaignID:             "campaign-public-malformed",
+		Title:                  "Malformed Campaign",
+		Visibility:             "public",
+		RulesetNSID:            "app.cerulia.rules.core",
+		RulesetManifestRef:     "at://did:plc:rules/app.cerulia.core.rulesetManifest/ruleset-1",
+		DefaultReusePolicyKind: "same-campaign-default",
+		StewardDids:            []string{"did:plc:steward1"},
+		Revision:               1,
+		RequestID:              "seed-campaign-public-malformed",
+		CreatedAt:              time.Date(2026, time.April, 4, 0, 0, 0, 0, time.UTC),
+		UpdatedAt:              time.Date(2026, time.April, 4, 0, 0, 0, 0, time.UTC),
+	})
+	campaignRef := store.BuildRef("did:plc:steward1", coremodel.CollectionCampaign, "campaign-public-malformed")
+	seedPublicationCurrentHead(t, dataStore, "did:plc:steward1", campaignRef, "campaign", "campaign-public-malformed-publication", coremodel.Publication{
+		SubjectRef:           campaignRef,
+		SubjectKind:          "campaign",
+		EntryURL:             "https://cerulia.example/publications/malformed-campaign",
+		PreferredSurfaceKind: "app-card",
+		Status:               "active",
+		PublishedByDid:       "did:plc:steward1",
+		PublishedAt:          time.Date(2026, time.April, 4, 0, 0, 0, 0, time.UTC),
+		RequestID:            "seed-campaign-public-malformed-publication",
+		Surfaces: []coremodel.SurfaceDescriptor{{
+			SurfaceKind: "app-card",
+			PurposeKind: "discovery",
+			SurfaceURI:  "https://cerulia.example/publications/malformed-campaign",
+			Status:      "active",
+		}},
+	})
+	handler := newQueryHandler(t, dataStore)
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getCampaignView?campaignRef="+campaignRef+"&mode=public", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assertXRPCError(t, rec, http.StatusNotFound, "NotFound")
+}
+
 func TestImportCharacterSheetRejectsMissingDisplayName(t *testing.T) {
 	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
 	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.importCharacterSheet", `{"ownerDid":"did:plc:owner1","rulesetNsid":"app.cerulia.rules.core","requestId":"req-missing-display-name"}`, authHeaders("did:plc:owner1", authz.CoreWriter))
@@ -836,8 +970,26 @@ func grantReuse(t *testing.T, handler http.Handler, actorDid string, branchRef s
 	return ack.EmittedRecordRefs[0]
 }
 
+func retirePublication(t *testing.T, handler http.Handler, actorDid string, publicationRef string, requestID string) string {
+	t.Helper()
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.retirePublication", `{"publicationRef":"`+publicationRef+`","requestId":"`+requestID+`"}`, authHeaders(actorDid, authz.CorePublicationWriter))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("retire publication failed: %d %s", rec.Code, rec.Body.String())
+	}
+	var ack struct {
+		PublicationRef string `json:"publicationRef"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &ack); err != nil {
+		t.Fatalf("decode retire publication ack: %v", err)
+	}
+	if ack.PublicationRef == "" {
+		t.Fatal("expected retired publicationRef in ack")
+	}
+	return ack.PublicationRef
+}
+
 func testConfig() config.Config {
-	return config.Config{AppEnv: "test"}
+	return config.Config{AppEnv: "test", Auth: config.AuthConfig{AllowInsecureDirect: true}}
 }
 
 func testLogger() *slog.Logger {
@@ -848,6 +1000,15 @@ func newSeededCoreHandler(t *testing.T) http.Handler {
 	t.Helper()
 	dataStore := store.NewMemoryStore()
 	seedRulesetManifest(t, dataStore, "did:plc:rules", "ruleset-1", "app.cerulia.rules.core")
+	return newHandlerWithStore(dataStore)
+}
+
+func newQueryHandler(t *testing.T, dataStore store.Store) http.Handler {
+	t.Helper()
+	return newHandlerWithStore(dataStore)
+}
+
+func newHandlerWithStore(dataStore store.Store) http.Handler {
 	cfg := testConfig()
 	h := &handler{
 		logger: testLogger(),
@@ -856,12 +1017,14 @@ func newSeededCoreHandler(t *testing.T) http.Handler {
 		auth: authz.NewGateway(authz.Config{
 			TrustedProxyHMACSecret: cfg.Auth.TrustedProxyHMACSecret,
 			TrustedProxyMaxSkew:    cfg.Auth.TrustedProxyMaxSkew,
-			AllowInsecureDirect:    true,
+			AllowInsecureDirect:    cfg.Auth.AllowInsecureDirect,
 		}),
 		commands:    command.NewService(dataStore),
 		projections: projection.NewService(dataStore),
 	}
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCampaignView", h.handleGetCampaignView)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listPublications", h.handleListPublications)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCharacterHome", h.handleGetCharacterHome)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createCampaign", h.handleCreateCampaign)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.importCharacterSheet", h.handleImportCharacterSheet)
@@ -870,7 +1033,69 @@ func newSeededCoreHandler(t *testing.T) http.Handler {
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.recordCharacterAdvancement", h.handleRecordCharacterAdvancement)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.recordCharacterConversion", h.handleRecordCharacterConversion)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.grantReuse", h.handleGrantReuse)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.publishSubject", h.handlePublishSubject)
+	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.retirePublication", h.handleRetirePublication)
 	return mux
+}
+
+func seedCampaignRecord(t *testing.T, dataStore store.Store, repoDID string, recordKey string, campaign coremodel.Campaign) string {
+	t.Helper()
+	ref := store.BuildRef(repoDID, coremodel.CollectionCampaign, recordKey)
+	body, err := coremodel.Marshal(campaign)
+	if err != nil {
+		t.Fatalf("marshal campaign: %v", err)
+	}
+	ctx := context.Background()
+	if err := dataStore.WithTx(ctx, func(tx store.Tx) error {
+		return tx.PutStable(ctx, store.StableRecord{
+			Ref:        ref,
+			Collection: coremodel.CollectionCampaign,
+			RepoDID:    repoDID,
+			RecordKey:  recordKey,
+			RequestID:  campaign.RequestID,
+			Revision:   campaign.Revision,
+			Body:       body,
+			CreatedAt:  campaign.CreatedAt,
+			UpdatedAt:  campaign.UpdatedAt,
+		})
+	}); err != nil {
+		t.Fatalf("seed campaign: %v", err)
+	}
+	return ref
+}
+
+func seedPublicationCurrentHead(t *testing.T, dataStore store.Store, repoDID string, subjectRef string, subjectKind string, recordKey string, publication coremodel.Publication) string {
+	t.Helper()
+	ref := store.BuildRef(repoDID, coremodel.CollectionPublication, recordKey)
+	body, err := coremodel.Marshal(publication)
+	if err != nil {
+		t.Fatalf("marshal publication: %v", err)
+	}
+	ctx := context.Background()
+	if err := dataStore.WithTx(ctx, func(tx store.Tx) error {
+		if err := tx.PutAppend(ctx, store.AppendRecord{
+			Ref:          ref,
+			Collection:   coremodel.CollectionPublication,
+			RepoDID:      repoDID,
+			RecordKey:    recordKey,
+			GoverningRef: subjectRef,
+			RequestID:    publication.RequestID,
+			Body:         body,
+			CreatedAt:    publication.PublishedAt,
+		}); err != nil {
+			return err
+		}
+		return tx.PutCurrentHead(ctx, ledger.HeadRecord{
+			SubjectRef:     subjectRef,
+			SubjectKind:    subjectKind,
+			CurrentHeadRef: ref,
+			ChainRootRef:   ref,
+			RequestID:      publication.RequestID,
+		})
+	}); err != nil {
+		t.Fatalf("seed publication head: %v", err)
+	}
+	return ref
 }
 
 func seedRulesetManifest(t *testing.T, dataStore store.Store, repoDID string, recordKey string, rulesetNSID string) {

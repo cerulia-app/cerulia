@@ -148,6 +148,19 @@ func TestValidateCatalogRejectsUnresolvedLXM(t *testing.T) {
 	}
 }
 
+func TestCatalogExcludesArchivePaths(t *testing.T) {
+	for path := range Catalog() {
+		if strings.Contains(filepath.ToSlash(path), "archive/") {
+			t.Fatalf("catalog must not include archive path %q", path)
+		}
+	}
+	for path := range ExampleDocuments() {
+		if strings.Contains(filepath.ToSlash(path), "archive/") {
+			t.Fatalf("examples must not include archive path %q", path)
+		}
+	}
+}
+
 func fatalIfError(t *testing.T, err error) {
 	t.Helper()
 	t.Fatalf("unexpected error: %v", err)

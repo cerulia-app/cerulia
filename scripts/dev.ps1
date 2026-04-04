@@ -21,6 +21,14 @@ if (Test-Path $envPath) {
     }
 }
 
+if ([string]::IsNullOrWhiteSpace($env:APP_ENV)) {
+    [Environment]::SetEnvironmentVariable("APP_ENV", "development", "Process")
+}
+
+if (($env:APP_ENV -eq "development" -or $env:APP_ENV -eq "test") -and [string]::IsNullOrWhiteSpace($env:AUTH_ALLOW_INSECURE_DIRECT)) {
+    [Environment]::SetEnvironmentVariable("AUTH_ALLOW_INSECURE_DIRECT", "true", "Process")
+}
+
 Push-Location $root
 try {
     go run ./cmd/api

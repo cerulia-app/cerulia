@@ -79,3 +79,34 @@ func TestLoadNormalizesAppEnvCase(t *testing.T) {
 		t.Fatalf("expected normalized test env to use local DB fallback, got %+v", cfg.Database)
 	}
 }
+
+func TestLoadParsesAllowInsecureDirectOptIn(t *testing.T) {
+	for _, appEnv := range []string{"development", "test"} {
+		t.Run(appEnv, func(t *testing.T) {
+			t.Setenv("APP_ENV", appEnv)
+			t.Setenv("AUTH_ALLOW_INSECURE_DIRECT", "true")
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("load config: %v", err)
+			}
+			if !cfg.Auth.AllowInsecureDirect {
+				t.Fatalf("expected %s to opt in local direct auth", appEnv)
+			}
+		})
+	}
+}
+
+func TestLoadRejectsAllowInsecureDirectOutsideLocalEnv(t *testing.T) {
+	tests := []string{"staging", "production"}
+	for _, appEnv := range tests {
+		t.Run(appEnv, func(t *testing.T) {
+			t.Setenv("APP_ENV", appEnv)
+			t.Setenv("AUTH_ALLOW_INSECURE_DIRECT", "true")
+
+			if _, err := Load(); err == nil {
+				t.Fatalf("expected %s to reject insecure direct auth opt-in", appEnv)
+			}
+		})
+	}
+}
