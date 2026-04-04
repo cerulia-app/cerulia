@@ -1,0 +1,3 @@
+[submodule "appview"]
+	path = appview
+	url = https://github.com/cerulia-app/appview.git
