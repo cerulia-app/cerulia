@@ -1,0 +1,79 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
+          "name": "NotFound"
+        },
+        {
+          "name": "UnsupportedRuleset"
+        },
+        {
+          "name": "InternalError"
+        }
+      ],
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "displayName": {
+              "type": "string"
+            },
+            "externalSheetUri": {
+              "format": "uri",
+              "type": "string"
+            },
+            "ownerDid": {
+              "ref": "app.cerulia.defs#did",
+              "type": "ref"
+            },
+            "portraitRef": {
+              "ref": "app.cerulia.defs#assetRef",
+              "type": "ref"
+            },
+            "publicProfile": {
+              "type": "unknown"
+            },
+            "requestId": {
+              "ref": "app.cerulia.defs#requestId",
+              "type": "ref"
+            },
+            "rulesetNsid": {
+              "ref": "app.cerulia.defs#rulesetNsid",
+              "type": "ref"
+            },
+            "stats": {
+              "type": "unknown"
+            }
+          },
+          "required": [
+            "ownerDid",
+            "rulesetNsid",
+            "displayName",
+            "requestId"
+          ],
+          "type": "object"
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "ref": "app.cerulia.defs#mutationAck",
+          "type": "ref"
+        }
+      },
+      "type": "procedure"
+    }
+  },
+  "id": "app.cerulia.rpc.importCharacterSheet",
+  "lexicon": 1
+}

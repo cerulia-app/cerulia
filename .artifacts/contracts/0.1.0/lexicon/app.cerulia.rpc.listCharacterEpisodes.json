@@ -1,0 +1,64 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
+          "name": "NotFound"
+        }
+      ],
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "cursor": {
+              "ref": "app.cerulia.defs#cursor",
+              "type": "ref"
+            },
+            "items": {
+              "items": {
+                "ref": "app.cerulia.defs#episodeSummary",
+                "type": "ref"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "parameters": {
+        "properties": {
+          "characterBranchRef": {
+            "ref": "app.cerulia.defs#characterBranchRef",
+            "type": "ref"
+          },
+          "cursor": {
+            "ref": "app.cerulia.defs#cursor",
+            "type": "ref"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "characterBranchRef"
+        ],
+        "type": "params"
+      },
+      "type": "query"
+    }
+  },
+  "id": "app.cerulia.rpc.listCharacterEpisodes",
+  "lexicon": 1
+}

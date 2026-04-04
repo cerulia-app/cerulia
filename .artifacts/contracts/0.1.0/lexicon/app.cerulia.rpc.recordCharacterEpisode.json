@@ -1,0 +1,97 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
+          "name": "NotFound"
+        },
+        {
+          "name": "UnsupportedRuleset"
+        },
+        {
+          "name": "InternalError"
+        }
+      ],
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "advancementRefs": {
+              "items": {
+                "ref": "app.cerulia.defs#characterAdvancementRef",
+                "type": "ref"
+              },
+              "type": "array"
+            },
+            "campaignRef": {
+              "ref": "app.cerulia.defs#campaignRef",
+              "type": "ref"
+            },
+            "characterBranchRef": {
+              "ref": "app.cerulia.defs#characterBranchRef",
+              "type": "ref"
+            },
+            "effectiveRuleProfileRefs": {
+              "items": {
+                "ref": "app.cerulia.defs#ruleProfileRef",
+                "type": "ref"
+              },
+              "type": "array"
+            },
+            "outcomeSummary": {
+              "type": "string"
+            },
+            "recordedByDid": {
+              "ref": "app.cerulia.defs#did",
+              "type": "ref"
+            },
+            "requestId": {
+              "ref": "app.cerulia.defs#requestId",
+              "type": "ref"
+            },
+            "rulesetManifestRef": {
+              "ref": "app.cerulia.defs#rulesetManifestRef",
+              "type": "ref"
+            },
+            "scenarioLabel": {
+              "type": "string"
+            },
+            "supersedesRef": {
+              "ref": "app.cerulia.defs#characterEpisodeRef",
+              "type": "ref"
+            }
+          },
+          "required": [
+            "characterBranchRef",
+            "rulesetManifestRef",
+            "effectiveRuleProfileRefs",
+            "outcomeSummary",
+            "advancementRefs",
+            "recordedByDid",
+            "requestId"
+          ],
+          "type": "object"
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "ref": "app.cerulia.defs#mutationAck",
+          "type": "ref"
+        }
+      },
+      "type": "procedure"
+    }
+  },
+  "id": "app.cerulia.rpc.recordCharacterEpisode",
+  "lexicon": 1
+}

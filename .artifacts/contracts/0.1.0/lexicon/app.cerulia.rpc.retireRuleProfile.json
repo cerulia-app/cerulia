@@ -1,0 +1,78 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
+          "name": "NotFound"
+        },
+        {
+          "name": "UnsupportedRuleset"
+        },
+        {
+          "name": "InternalError"
+        }
+      ],
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "campaignRef": {
+              "ref": "app.cerulia.defs#campaignRef",
+              "type": "ref"
+            },
+            "expectedCampaignRevision": {
+              "type": "integer"
+            },
+            "expectedRulesetManifestRef": {
+              "ref": "app.cerulia.defs#rulesetManifestRef",
+              "type": "ref"
+            },
+            "requestId": {
+              "ref": "app.cerulia.defs#requestId",
+              "type": "ref"
+            },
+            "ruleProfileRef": {
+              "ref": "app.cerulia.defs#ruleProfileRef",
+              "type": "ref"
+            },
+            "scopeKind": {
+              "ref": "app.cerulia.defs#ruleProfileScopeKind",
+              "type": "ref"
+            },
+            "scopeRef": {
+              "ref": "app.cerulia.defs#scopeRef",
+              "type": "ref"
+            }
+          },
+          "required": [
+            "ruleProfileRef",
+            "scopeKind",
+            "scopeRef",
+            "expectedRulesetManifestRef",
+            "requestId"
+          ],
+          "type": "object"
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "ref": "app.cerulia.defs#mutationAck",
+          "type": "ref"
+        }
+      },
+      "type": "procedure"
+    }
+  },
+  "id": "app.cerulia.rpc.retireRuleProfile",
+  "lexicon": 1
+}

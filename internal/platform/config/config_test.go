@@ -4,6 +4,7 @@ import "testing"
 
 func TestLoadUsesLegacyDatabaseURLOnlyInLocalEnv(t *testing.T) {
 	t.Setenv("APP_ENV", "development")
+	t.Setenv("AUTH_ALLOW_INSECURE_DIRECT", "")
 	t.Setenv("DATABASE_URL", "postgres://legacy")
 	t.Setenv("DATABASE_URL_POOLED", "")
 	t.Setenv("DATABASE_URL_DIRECT", "")
@@ -19,6 +20,7 @@ func TestLoadUsesLegacyDatabaseURLOnlyInLocalEnv(t *testing.T) {
 
 func TestLoadIgnoresLegacyDatabaseURLOutsideLocalEnv(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
+	t.Setenv("AUTH_ALLOW_INSECURE_DIRECT", "")
 	t.Setenv("DATABASE_URL", "postgres://legacy")
 	t.Setenv("DATABASE_URL_POOLED", "postgres://pooled")
 	t.Setenv("DATABASE_URL_DIRECT", "postgres://direct")
@@ -34,6 +36,7 @@ func TestLoadIgnoresLegacyDatabaseURLOutsideLocalEnv(t *testing.T) {
 
 func TestLoadUsesLegacyDatabaseURLInTestEnv(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
+	t.Setenv("AUTH_ALLOW_INSECURE_DIRECT", "")
 	t.Setenv("DATABASE_URL", "postgres://legacy-test")
 	t.Setenv("DATABASE_URL_POOLED", "")
 	t.Setenv("DATABASE_URL_DIRECT", "")
@@ -49,6 +52,7 @@ func TestLoadUsesLegacyDatabaseURLInTestEnv(t *testing.T) {
 
 func TestLoadIgnoresLegacyDatabaseURLInStaging(t *testing.T) {
 	t.Setenv("APP_ENV", "staging")
+	t.Setenv("AUTH_ALLOW_INSECURE_DIRECT", "")
 	t.Setenv("DATABASE_URL", "postgres://legacy")
 	t.Setenv("DATABASE_URL_POOLED", "postgres://pooled-staging")
 	t.Setenv("DATABASE_URL_DIRECT", "postgres://direct-staging")
@@ -64,6 +68,7 @@ func TestLoadIgnoresLegacyDatabaseURLInStaging(t *testing.T) {
 
 func TestLoadNormalizesAppEnvCase(t *testing.T) {
 	t.Setenv("APP_ENV", "Test")
+	t.Setenv("AUTH_ALLOW_INSECURE_DIRECT", "")
 	t.Setenv("DATABASE_URL", "postgres://legacy-mixed")
 	t.Setenv("DATABASE_URL_POOLED", "")
 	t.Setenv("DATABASE_URL_DIRECT", "")

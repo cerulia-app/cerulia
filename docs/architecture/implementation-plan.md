@@ -185,6 +185,7 @@ product-core へ戻さないものは、`internal/run` やそれに準ずる pub
 
 - scenario test
 - projection rebuild test
+- projection rebuild validator / job entrypoint
 - migration rehearsal
 - archive 除外の継続検証
 - clean-slate review と残骸除去
@@ -212,6 +213,7 @@ product-core へ戻さないものは、`internal/run` やそれに準ずる pub
 - Phase 1: core domain unit test
 - Phase 2: projection / auth / route integration test
 - Phase 3: end-to-end scenario test、projection rebuild test、migration rehearsal
+- Phase 3 の運用 proof は rebuild validator、DB rehearsal、smoke runbook、clean-slate review の組み合わせで固定する
 
 ## 非目標
 

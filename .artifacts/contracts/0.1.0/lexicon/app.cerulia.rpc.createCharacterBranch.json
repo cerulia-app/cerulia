@@ -1,0 +1,85 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        },
+        {
+          "name": "NotFound"
+        },
+        {
+          "name": "UnsupportedRuleset"
+        },
+        {
+          "name": "InternalError"
+        }
+      ],
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "baseSheetRef": {
+              "ref": "app.cerulia.defs#characterSheetRef",
+              "type": "ref"
+            },
+            "branchKind": {
+              "ref": "app.cerulia.defs#branchKind",
+              "type": "ref"
+            },
+            "branchLabel": {
+              "type": "string"
+            },
+            "importedFrom": {
+              "format": "uri",
+              "type": "string"
+            },
+            "overridePayloadRef": {
+              "format": "uri",
+              "type": "string"
+            },
+            "ownerDid": {
+              "ref": "app.cerulia.defs#did",
+              "type": "ref"
+            },
+            "requestId": {
+              "ref": "app.cerulia.defs#requestId",
+              "type": "ref"
+            },
+            "sourceRevision": {
+              "type": "integer"
+            },
+            "syncMode": {
+              "ref": "app.cerulia.defs#syncMode",
+              "type": "ref"
+            }
+          },
+          "required": [
+            "ownerDid",
+            "baseSheetRef",
+            "branchKind",
+            "branchLabel",
+            "requestId"
+          ],
+          "type": "object"
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "ref": "app.cerulia.defs#mutationAck",
+          "type": "ref"
+        }
+      },
+      "type": "procedure"
+    }
+  },
+  "id": "app.cerulia.rpc.createCharacterBranch",
+  "lexicon": 1
+}

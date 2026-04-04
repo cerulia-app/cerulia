@@ -1,0 +1,14 @@
+{
+  "defaultReusePolicyKind": "explicit-cross-campaign",
+  "requestId": "req-create-campaign-001",
+  "rulesetManifestRef": "at://did:plc:rules/app.cerulia.core.rulesetManifest/manifest-sw-1",
+  "rulesetNsid": "app.cerulia.rules.swords-world",
+  "sharedRuleProfileRefs": [
+    "at://did:plc:house/app.cerulia.core.ruleProfile/house-profile-1"
+  ],
+  "stewardDids": [
+    "did:plc:steward1"
+  ],
+  "title": "星見ヶ原キャンペーン",
+  "visibility": "unlisted"
+}

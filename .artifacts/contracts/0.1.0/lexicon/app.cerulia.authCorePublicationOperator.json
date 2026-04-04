@@ -1,0 +1,20 @@
+{
+  "defs": {
+    "main": {
+      "permissions": [
+        {
+          "inheritAud": true,
+          "lxm": [
+            "app.cerulia.rpc.publishSubject",
+            "app.cerulia.rpc.retirePublication"
+          ],
+          "resource": "rpc",
+          "type": "permission"
+        }
+      ],
+      "type": "permission-set"
+    }
+  },
+  "id": "app.cerulia.authCorePublicationOperator",
+  "lexicon": 1
+}

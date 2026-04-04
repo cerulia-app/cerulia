@@ -146,6 +146,13 @@
 - long-running correction / retire / revoke 監査
 - clean-slate review による残骸なし確認
 
+backend repo では次を Final Gate の既定証跡に使う。
+
+- projection rebuild: `cmd/rebuild` / `scripts/rebuild.ps1` と `TestValidateRebuildReplaysLongRunningAuditScenario`
+- migration rehearsal: `CERULIA_TEST_DATABASE_URL` を与えた `TestPostgresFinalGateRehearsal` と migrate + rebuild + smoke の実行証跡
+- long-running correction / retire / revoke 監査: `TestValidateRebuildReplaysLongRunningAuditScenario` と Postgres rehearsal
+- clean-slate review: Cerulia 実装レビュー agents の signoff と final gate report
+
 ## カバレッジ
 
 この計画が直接カバーするもの:

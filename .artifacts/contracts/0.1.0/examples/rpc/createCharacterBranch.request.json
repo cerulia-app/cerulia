@@ -1,0 +1,7 @@
+{
+  "baseSheetRef": "at://did:plc:owner1/app.cerulia.core.characterSheet/sheet-req-import-sheet-001",
+  "branchKind": "campaign-fork",
+  "branchLabel": "星見ヶ原本編",
+  "ownerDid": "did:plc:owner1",
+  "requestId": "req-create-branch-001"
+}

@@ -1,0 +1,79 @@
+{
+  "defs": {
+    "main": {
+      "key": "any",
+      "record": {
+        "properties": {
+          "baseSheetRef": {
+            "ref": "app.cerulia.defs#characterSheetRef",
+            "type": "ref"
+          },
+          "branchKind": {
+            "ref": "app.cerulia.defs#branchKind",
+            "type": "ref"
+          },
+          "branchLabel": {
+            "type": "string"
+          },
+          "createdAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "importedFrom": {
+            "format": "uri",
+            "type": "string"
+          },
+          "overridePayloadRef": {
+            "format": "uri",
+            "type": "string"
+          },
+          "ownerDid": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          },
+          "requestId": {
+            "ref": "app.cerulia.defs#requestId",
+            "type": "ref"
+          },
+          "retiredAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "sourceRevision": {
+            "type": "integer"
+          },
+          "syncMode": {
+            "ref": "app.cerulia.defs#syncMode",
+            "type": "ref"
+          },
+          "updatedAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "updatedByDid": {
+            "ref": "app.cerulia.defs#did",
+            "type": "ref"
+          }
+        },
+        "required": [
+          "ownerDid",
+          "baseSheetRef",
+          "branchKind",
+          "branchLabel",
+          "requestId",
+          "revision",
+          "createdAt",
+          "updatedAt",
+          "updatedByDid"
+        ],
+        "type": "object"
+      },
+      "type": "record"
+    }
+  },
+  "id": "app.cerulia.core.characterBranch",
+  "lexicon": 1
+}

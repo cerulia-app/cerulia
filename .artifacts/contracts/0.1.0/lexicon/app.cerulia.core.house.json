@@ -1,0 +1,73 @@
+{
+  "defs": {
+    "main": {
+      "key": "any",
+      "record": {
+        "properties": {
+          "createdAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "defaultReusePolicyKind": {
+            "ref": "app.cerulia.defs#reusePolicyKind",
+            "type": "ref"
+          },
+          "defaultRuleProfileRefs": {
+            "items": {
+              "ref": "app.cerulia.defs#ruleProfileRef",
+              "type": "ref"
+            },
+            "type": "array"
+          },
+          "houseId": {
+            "type": "string"
+          },
+          "policySummary": {
+            "type": "string"
+          },
+          "requestId": {
+            "ref": "app.cerulia.defs#requestId",
+            "type": "ref"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "stewardDids": {
+            "items": {
+              "ref": "app.cerulia.defs#did",
+              "type": "ref"
+            },
+            "minLength": 1,
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "ref": "app.cerulia.defs#datetime",
+            "type": "ref"
+          },
+          "worldRef": {
+            "ref": "app.cerulia.defs#worldRef",
+            "type": "ref"
+          }
+        },
+        "required": [
+          "houseId",
+          "title",
+          "defaultRuleProfileRefs",
+          "defaultReusePolicyKind",
+          "stewardDids",
+          "revision",
+          "requestId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "type": "record"
+    }
+  },
+  "id": "app.cerulia.core.house",
+  "lexicon": 1
+}

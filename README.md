@@ -15,6 +15,7 @@ Cerulia の Go バックエンド実装です。現在の製品スコープは c
 - requestId idempotency / current head / revision CAS の最小 helper
 - continuity core の write path
 - character home / campaign view / publication list などの core projection query
+- publication current head replay と projection rebuild validator
 - trusted proxy HMAC auth と explicit local direct opt-in を持つ auth gateway
 - /healthz、/readyz、/xrpc/app.cerulia.rpc.* core エンドポイント
 - optional local-db 用の Docker Compose
@@ -61,9 +62,11 @@ scripts/
 ```powershell
 go test ./...
 ./scripts/migrate.ps1
+./scripts/rebuild.ps1
 ./scripts/contracts.ps1 -Version 0.1.0
 ./scripts/smoke.ps1 -RulesetManifestRef at://did:plc:rules/app.cerulia.core.rulesetManifest/ruleset-1
 go run ./cmd/contracts -out .artifacts/contracts
+go run ./cmd/rebuild
 go run ./cmd/api
 docker compose --profile local-db up -d
 docker compose --profile local-db down
@@ -88,6 +91,16 @@ M1 の backend rehearsal は `readyz`、anonymous public read、authenticated co
 ```
 
 trusted proxy HMAC secret があるときは署名付きで叩き、無いときは local/test かつ `AUTH_ALLOW_INSECURE_DIRECT` が未設定または `true` の場合に insecure direct へ自動で落とします。mutation を含む full rehearsal では `-RulesetManifestRef` が必須です。read-only の確認だけに落とす場合は `-ReadOnly` を付けます。
+
+## Projection Rebuild
+
+Cerulia backend の projection は materialized table を再生成する方式ではなく、canonical record と publication current head を replay しながら query fold の drift を検証する。`cmd/rebuild` と `./scripts/rebuild.ps1` はその Final Gate 用 validator である。
+
+```powershell
+./scripts/rebuild.ps1
+```
+
+backend Final Gate の実行結果は [docs/architecture/final-gate-report-2026-04-04.md](docs/architecture/final-gate-report-2026-04-04.md) に固定する。
 
 ## XRPC 直叩き例
 
