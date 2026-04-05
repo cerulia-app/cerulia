@@ -1,7 +1,7 @@
 {
   "artifactVersion": "0.0.0-dev",
-  "builtAt": "2026-04-04T03:20:11Z",
-  "schemaHash": "01085be7fe052a2c9c6a08dc8a9df573a208c9857699dbb52048cbcfe2eefc5d",
-  "exampleHash": "7187b574398b94bcdc5f117ea28296bf738ca3174769781b7707a2c49707291c",
+  "builtAt": "2026-04-05T14:25:35Z",
+  "schemaHash": "61b6cfca363610f1d729923467e5510e9356100042dac78c34a9a4fee81732c4",
+  "exampleHash": "6414a50eefe7b71dd6571d9051561a658948357b6416e8ca19772e8dbbcfeea5",
   "compatibilityChannel": "next"
 }

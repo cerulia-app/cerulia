@@ -79,8 +79,10 @@
             "primaryBranch",
             "branches",
             "recentEpisodes",
+            "recentConversions",
             "reuseGrants",
-            "publications"
+            "publications",
+            "linkedCampaigns"
           ],
           "type": "object"
         }

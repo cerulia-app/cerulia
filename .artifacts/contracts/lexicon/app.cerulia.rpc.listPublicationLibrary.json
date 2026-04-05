@@ -1,0 +1,69 @@
+{
+  "defs": {
+    "main": {
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "Unauthorized"
+        },
+        {
+          "name": "Forbidden"
+        }
+      ],
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "properties": {
+            "cursor": {
+              "ref": "app.cerulia.defs#cursor",
+              "type": "ref"
+            },
+            "items": {
+              "items": {
+                "ref": "app.cerulia.defs#publicationSummaryRow",
+                "type": "ref"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "parameters": {
+        "properties": {
+          "cursor": {
+            "ref": "app.cerulia.defs#cursor",
+            "type": "ref"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "owner-steward",
+              "public"
+            ],
+            "type": "string"
+          },
+          "subjectKind": {
+            "ref": "app.cerulia.defs#publicationSubjectKind",
+            "type": "ref"
+          },
+          "subjectRef": {
+            "ref": "app.cerulia.defs#subjectRef",
+            "type": "ref"
+          }
+        },
+        "type": "params"
+      },
+      "type": "query"
+    }
+  },
+  "id": "app.cerulia.rpc.listPublicationLibrary",
+  "lexicon": 1
+}

@@ -9,6 +9,7 @@
       "revision": 1
     }
   ],
+  "linkedCampaigns": [],
   "ownerDid": "did:plc:owner1",
   "primaryBranch": {
     "baseSheetRef": "at://did:plc:owner1/app.cerulia.core.characterSheet/sheet-req-import-sheet-001",
@@ -19,6 +20,7 @@
     "revision": 1
   },
   "publications": [],
+  "recentConversions": [],
   "recentEpisodes": [],
   "reuseGrants": []
 }

@@ -40,12 +40,45 @@
           "ref": "app.cerulia.defs#characterBranchRef",
           "type": "ref"
         },
+        "currentPublicationRef": {
+          "ref": "app.cerulia.defs#publicationRef",
+          "type": "ref"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "externalSheetUri": {
+          "format": "uri",
+          "type": "string"
+        },
+        "importedFrom": {
+          "format": "uri",
+          "type": "string"
+        },
+        "latestCampaignRef": {
+          "ref": "app.cerulia.defs#campaignRef",
+          "type": "ref"
+        },
+        "latestCampaignTitle": {
+          "type": "string"
+        },
+        "latestEpisodeSummary": {
+          "type": "string"
+        },
         "ownerDid": {
           "ref": "app.cerulia.defs#did",
           "type": "ref"
         },
+        "retiredAt": {
+          "ref": "app.cerulia.defs#datetime",
+          "type": "ref"
+        },
         "revision": {
           "type": "integer"
+        },
+        "rulesetNsid": {
+          "ref": "app.cerulia.defs#rulesetNsid",
+          "type": "ref"
         }
       },
       "required": [
@@ -72,9 +105,16 @@
           "ref": "app.cerulia.defs#campaignRef",
           "type": "ref"
         },
+        "currentPublicationRef": {
+          "ref": "app.cerulia.defs#publicationRef",
+          "type": "ref"
+        },
         "houseRef": {
           "ref": "app.cerulia.defs#houseRef",
           "type": "ref"
+        },
+        "publishedArtifactCount": {
+          "type": "integer"
         },
         "rulesetManifestRef": {
           "ref": "app.cerulia.defs#rulesetManifestRef",
@@ -110,6 +150,54 @@
     "characterBranchRef": {
       "format": "at-uri",
       "type": "string"
+    },
+    "characterBranchView": {
+      "properties": {
+        "branch": {
+          "ref": "app.cerulia.defs#branchSummary",
+          "type": "ref"
+        },
+        "campaign": {
+          "ref": "app.cerulia.defs#campaignSummary",
+          "type": "ref"
+        },
+        "publications": {
+          "items": {
+            "ref": "app.cerulia.defs#publicationSummaryRow",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "recentConversions": {
+          "items": {
+            "ref": "app.cerulia.defs#conversionSummary",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "recentEpisodes": {
+          "items": {
+            "ref": "app.cerulia.defs#episodeSummary",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "reuseGrants": {
+          "items": {
+            "ref": "app.cerulia.defs#reuseGrantSummary",
+            "type": "ref"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "branch",
+        "recentEpisodes",
+        "recentConversions",
+        "reuseGrants",
+        "publications"
+      ],
+      "type": "object"
     },
     "characterConversionRef": {
       "format": "at-uri",
@@ -326,6 +414,17 @@
     },
     "publicationSummaryRow": {
       "properties": {
+        "campaignRef": {
+          "ref": "app.cerulia.defs#campaignRef",
+          "type": "ref"
+        },
+        "campaignTitle": {
+          "type": "string"
+        },
+        "currentPublicationRef": {
+          "ref": "app.cerulia.defs#publicationRef",
+          "type": "ref"
+        },
         "entryUrl": {
           "format": "uri",
           "type": "string"
@@ -349,6 +448,9 @@
           "ref": "app.cerulia.defs#datetime",
           "type": "ref"
         },
+        "retiredReason": {
+          "type": "string"
+        },
         "sourceRulesetManifestRef": {
           "ref": "app.cerulia.defs#rulesetManifestRef",
           "type": "ref"
@@ -363,6 +465,13 @@
         },
         "subjectRef": {
           "ref": "app.cerulia.defs#subjectRef",
+          "type": "ref"
+        },
+        "subjectTitle": {
+          "type": "string"
+        },
+        "supersedesRef": {
+          "ref": "app.cerulia.defs#publicationRef",
           "type": "ref"
         },
         "surfaces": {
@@ -397,6 +506,26 @@
         "app-card"
       ],
       "type": "string"
+    },
+    "publicationView": {
+      "properties": {
+        "campaign": {
+          "ref": "app.cerulia.defs#campaignSummary",
+          "type": "ref"
+        },
+        "publication": {
+          "ref": "app.cerulia.defs#publicationSummaryRow",
+          "type": "ref"
+        },
+        "subjectBranch": {
+          "ref": "app.cerulia.defs#branchSummary",
+          "type": "ref"
+        }
+      },
+      "required": [
+        "publication"
+      ],
+      "type": "object"
     },
     "requestId": {
       "type": "string"
