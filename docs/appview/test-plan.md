@@ -47,7 +47,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 - 固定時計
 - route-level assertion
   実装段階の browser smoke では route page component を直接 render して surface contract を先に固定してよい。release gate の route-mounted assertion は、この repo の Browser Mode に限らず、preview build に対する workspace-level release smoke でも満たしてよい。
-  現在は Playwright Test の `bun run test:e2e:campaign-detail` が preview build を起動し、`/campaigns/:campaignRef` の active public shell と NotFound fail-close を実ルートで確認する。
+  現在は Playwright Test の `bun run test:e2e` が preview build を起動し、`/campaigns/:campaignRef` の active public shell / NotFound fail-close と、`/publications/:publicationRef` の deep-link resolution を実ルートで確認する。
 - network / transport fault injection
 - visual baseline
 - accessibility harness
