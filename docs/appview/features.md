@@ -6,7 +6,7 @@ AppView の機能は、内部 surface の列挙ではなく、「ユーザーが
 
 | module                         | 約束する価値                                                  | 主な利用者                                 | 主画面                                       | 読み取り正本     | 書き込み正本                                                                          |
 | ------------------------------ | ------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------- |
-| character studio               | new sheet、import、branch、convert を迷わず始められる         | branch owner、steward                      | signed-in home、characters、character detail | getCharacterHome | importCharacterSheet、createCharacterBranch、recordCharacterConversion                |
+| character studio               | new sheet、import、branch、convert を迷わず始められる         | branch owner、steward                      | signed-in home、characters、character detail | getCharacterHome | importCharacterSheet、createCharacterBranch、recordCharacterConversion（convert accept は backend surface が揃うまで fail-closed） |
 | character continuity workbench | いまの版、recent episode、reuse、publication をひと目で読める | branch owner、steward                      | signed-in home、character detail             | getCharacterHome | recordCharacterAdvancement、recordCharacterEpisode、publishSubject、retirePublication |
 | campaign workspace             | shared rule chain と共有継続を理解しやすい                    | campaign steward、shared continuity reader | campaigns、campaign detail                   | getCampaignView  | createCampaign、attachRuleProfile、retireRuleProfile                                  |
 | publication library            | 公開中の版を読み、何を見せているかを管理できる                | owner、steward、public reader              | publications、publication detail             | listPublications | publishSubject、retirePublication                                                     |
@@ -22,7 +22,7 @@ character creation convenience を front に出すため、create flow は最初
 | new sheet | 新規利用者               | displayName、ruleset、基本 profile                  | owner の最初の character continuity      |
 | import    | 既存シート持ち込み利用者 | externalSheetUri、imported snapshot、sourceRevision | provenance 付き branch                   |
 | branch    | 継続キャラ利用者         | baseSheetRef、branch label、campaign / local 用途   | campaign / local durable branch          |
-| convert   | ruleset 越境利用者       | source branch、target ruleset、conversion note      | conversion provenance 付き target branch |
+| convert   | ruleset 越境利用者       | source branch、target ruleset、conversion note      | reviewable convert draft。manifest / contract 入力 surface が揃うまで accepted write は fail-closed |
 
 create flow の最後では、次の 3 点を review する。
 

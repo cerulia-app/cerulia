@@ -103,7 +103,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 | --- | --------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | E-1 | anonymous public reader           | `/` -> `/publications/:publicationRef` -> `/campaigns/:campaignRef` | public top が価値説明と公開中の版だけを出し、campaign shell が read-only continuity summary に留まること                   |
 | E-2 | signed-in owner landing           | sign-in -> `/home` -> create lane -> `/characters/:branchRef`       | canonical landing が `/home` で、create / continue / publish の 3 導線が Character Continuity Workbench として成立すること |
-| E-3 | create flow journey               | new / import / branch / convert を開始 -> review step -> detail     | lane 分岐、draft / accepted distinction、campaign intent、publication / reuse review が docs どおりに出ること              |
+| E-3 | create flow journey               | new / import / branch を開始 -> review step -> detail、convert は review step -> fail-closed banner | lane 分岐、draft / accepted distinction、campaign intent、publication / reuse review、および convert の fail-closed が docs どおりに出ること |
 | E-4 | publication and tombstone journey | active detail -> superseded / retired direct link -> tombstone      | current edition detail、explanatory tombstone、CTA の出し分けが正しいこと                                                  |
 | E-5 | public campaign shell journey     | public campaign shell -> sign-in bridge -> `/home`                  | public campaign が read-only shell であり、participation を暗示しないこと                                                  |
 
