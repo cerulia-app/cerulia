@@ -88,8 +88,9 @@ src/
     campaigns/
     publications/
 tests/
-  browser/
-  integration/
+  component/
+  contract/
+  mounted/
 contracts/
   manifest.lock.json
   lexicon/

@@ -47,9 +47,9 @@ AppView は system console ではなく Character Continuity Workbench なので
 - 固定時計
 - route-level assertion
   実装段階の browser smoke では route page component を直接 render して surface contract を先に固定してよい。release gate の route-mounted assertion は、この repo の Browser Mode に限らず、preview build に対する workspace-level release smoke でも満たしてよい。
-  現在は Playwright Test の `bun run test:e2e` が build を 1 回だけ生成し、public / owner-steward 用の preview server を別ポートで起動して、`/` の public top と signed-in でも public lens を壊さないこと、`/campaigns/:campaignRef` の public shell / owner branch / NotFound fail-close、`/home` の public gate / owner mounted route、`/publications/:publicationRef` の deep-link resolution を実ルートで確認する。
+  現在は Playwright Test の `bun run test:mounted` が build を 1 回だけ生成し、public / owner-steward 用の preview server を別ポートで起動して、`/` の public top と signed-in でも public lens を壊さないこと、`/characters` と `/characters/:branchRef` の public gate / owner mounted route、`/campaigns/:campaignRef` の public shell / owner branch / NotFound fail-close、`/home` の public gate / owner mounted route、`/publications/:publicationRef` の deep-link resolution を実ルートで確認する。
 - role split
-  `test:server` は load / resolver / auth gate を確認し、`test:browser` は owner 専用 branch と responsive を確認し、`test:e2e` は mounted route を確認する。
+  `test:contract` は `tests/contract` で load / resolver / auth gate を確認し、`test:component` は `tests/component` で owner 専用 branch と responsive を確認し、`test:mounted` は `tests/mounted/public` と `tests/mounted/owner-steward` で mounted route を確認する。
 - network / transport fault injection
 - visual baseline
 - accessibility harness
