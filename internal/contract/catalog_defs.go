@@ -72,12 +72,21 @@ func defsCatalog() map[string]map[string]any {
 	defs["branchSummary"] = objectDef(
 		[]string{"characterBranchRef", "baseSheetRef", "branchLabel", "branchKind", "ownerDid", "revision"},
 		map[string]any{
-			"characterBranchRef": refDef("app.cerulia.defs#characterBranchRef"),
-			"baseSheetRef":       refDef("app.cerulia.defs#characterSheetRef"),
-			"branchLabel":        stringDef(""),
-			"branchKind":         refDef("app.cerulia.defs#branchKind"),
-			"ownerDid":           refDef("app.cerulia.defs#did"),
-			"revision":           integerDef(),
+			"characterBranchRef":    refDef("app.cerulia.defs#characterBranchRef"),
+			"baseSheetRef":          refDef("app.cerulia.defs#characterSheetRef"),
+			"branchLabel":           stringDef(""),
+			"branchKind":            refDef("app.cerulia.defs#branchKind"),
+			"ownerDid":              refDef("app.cerulia.defs#did"),
+			"revision":              integerDef(),
+			"displayName":           stringDef(""),
+			"rulesetNsid":           refDef("app.cerulia.defs#rulesetNsid"),
+			"externalSheetUri":      stringDef("uri"),
+			"importedFrom":          stringDef("uri"),
+			"currentPublicationRef": refDef("app.cerulia.defs#publicationRef"),
+			"latestEpisodeSummary":  stringDef(""),
+			"latestCampaignRef":     refDef("app.cerulia.defs#campaignRef"),
+			"latestCampaignTitle":   stringDef(""),
+			"retiredAt":             refDef("app.cerulia.defs#datetime"),
 		},
 	)
 	defs["episodeSummary"] = objectDef(
@@ -138,19 +147,46 @@ func defsCatalog() map[string]map[string]any {
 			"sourceRulesetManifestRef": refDef("app.cerulia.defs#rulesetManifestRef"),
 			"targetRulesetManifestRef": refDef("app.cerulia.defs#rulesetManifestRef"),
 			"grantBacked":              booleanDef(),
+			"subjectTitle":             stringDef(""),
+			"campaignRef":              refDef("app.cerulia.defs#campaignRef"),
+			"campaignTitle":            stringDef(""),
+			"currentPublicationRef":    refDef("app.cerulia.defs#publicationRef"),
+			"supersedesRef":            refDef("app.cerulia.defs#publicationRef"),
+			"retiredReason":            stringDef(""),
 		},
 	)
 	defs["campaignSummary"] = objectDef(
 		[]string{"campaignRef", "title", "visibility"},
 		map[string]any{
-			"campaignRef":        refDef("app.cerulia.defs#campaignRef"),
-			"title":              stringDef(""),
-			"visibility":         refDef("app.cerulia.defs#visibility"),
-			"houseRef":           refDef("app.cerulia.defs#houseRef"),
-			"worldRef":           refDef("app.cerulia.defs#worldRef"),
-			"rulesetNsid":        refDef("app.cerulia.defs#rulesetNsid"),
-			"rulesetManifestRef": refDef("app.cerulia.defs#rulesetManifestRef"),
-			"archivedAt":         refDef("app.cerulia.defs#datetime"),
+			"campaignRef":            refDef("app.cerulia.defs#campaignRef"),
+			"title":                  stringDef(""),
+			"visibility":             refDef("app.cerulia.defs#visibility"),
+			"houseRef":               refDef("app.cerulia.defs#houseRef"),
+			"worldRef":               refDef("app.cerulia.defs#worldRef"),
+			"rulesetNsid":            refDef("app.cerulia.defs#rulesetNsid"),
+			"rulesetManifestRef":     refDef("app.cerulia.defs#rulesetManifestRef"),
+			"archivedAt":             refDef("app.cerulia.defs#datetime"),
+			"currentPublicationRef":  refDef("app.cerulia.defs#publicationRef"),
+			"publishedArtifactCount": integerDef(),
+		},
+	)
+	defs["characterBranchView"] = objectDef(
+		[]string{"branch", "recentEpisodes", "recentConversions", "reuseGrants", "publications"},
+		map[string]any{
+			"branch":            refDef("app.cerulia.defs#branchSummary"),
+			"recentEpisodes":    arrayDef(refDef("app.cerulia.defs#episodeSummary")),
+			"recentConversions": arrayDef(refDef("app.cerulia.defs#conversionSummary")),
+			"reuseGrants":       arrayDef(refDef("app.cerulia.defs#reuseGrantSummary")),
+			"publications":      arrayDef(refDef("app.cerulia.defs#publicationSummaryRow")),
+			"campaign":          refDef("app.cerulia.defs#campaignSummary"),
+		},
+	)
+	defs["publicationView"] = objectDef(
+		[]string{"publication"},
+		map[string]any{
+			"publication":   refDef("app.cerulia.defs#publicationSummaryRow"),
+			"subjectBranch": refDef("app.cerulia.defs#branchSummary"),
+			"campaign":      refDef("app.cerulia.defs#campaignSummary"),
 		},
 	)
 	defs["mutationAck"] = objectDef(

@@ -73,10 +73,15 @@ func NewGateway(configs ...Config) *Gateway {
 	return &Gateway{
 		requiredBundlesByOperation: map[string][]string{
 			"app.cerulia.rpc.getCharacterHome":           {CoreReader},
+			"app.cerulia.rpc.listCharacterBranches":      {CoreReader},
+			"app.cerulia.rpc.getCharacterBranchView":     {CoreReader},
 			"app.cerulia.rpc.getCampaignView":            {CoreReader},
+			"app.cerulia.rpc.listCampaigns":              {CoreReader},
 			"app.cerulia.rpc.listCharacterEpisodes":      {CoreReader},
 			"app.cerulia.rpc.listReuseGrants":            {CoreReader},
 			"app.cerulia.rpc.listPublications":           {CoreReader},
+			"app.cerulia.rpc.listPublicationLibrary":     {CoreReader},
+			"app.cerulia.rpc.getPublicationView":         {CoreReader},
 			"app.cerulia.rpc.createCampaign":             {CoreWriter},
 			"app.cerulia.rpc.attachRuleProfile":          {CoreWriter},
 			"app.cerulia.rpc.retireRuleProfile":          {CoreWriter},

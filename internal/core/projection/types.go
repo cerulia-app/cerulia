@@ -8,12 +8,21 @@ type Page[T any] struct {
 }
 
 type BranchSummary struct {
-	CharacterBranchRef string `json:"characterBranchRef"`
-	BaseSheetRef       string `json:"baseSheetRef"`
-	BranchLabel        string `json:"branchLabel"`
-	BranchKind         string `json:"branchKind"`
-	OwnerDid           string `json:"ownerDid"`
-	Revision           int64  `json:"revision"`
+	CharacterBranchRef    string     `json:"characterBranchRef"`
+	BaseSheetRef          string     `json:"baseSheetRef"`
+	BranchLabel           string     `json:"branchLabel"`
+	BranchKind            string     `json:"branchKind"`
+	OwnerDid              string     `json:"ownerDid"`
+	Revision              int64      `json:"revision"`
+	DisplayName           string     `json:"displayName,omitempty"`
+	RulesetNSID           string     `json:"rulesetNsid,omitempty"`
+	ExternalSheetURI      string     `json:"externalSheetUri,omitempty"`
+	ImportedFrom          string     `json:"importedFrom,omitempty"`
+	CurrentPublicationRef string     `json:"currentPublicationRef,omitempty"`
+	LatestEpisodeSummary  string     `json:"latestEpisodeSummary,omitempty"`
+	LatestCampaignRef     string     `json:"latestCampaignRef,omitempty"`
+	LatestCampaignTitle   string     `json:"latestCampaignTitle,omitempty"`
+	RetiredAt             *time.Time `json:"retiredAt,omitempty"`
 }
 
 type EpisodeSummary struct {
@@ -75,17 +84,25 @@ type PublicationSummary struct {
 	SourceRulesetManifestRef string              `json:"sourceRulesetManifestRef,omitempty"`
 	TargetRulesetManifestRef string              `json:"targetRulesetManifestRef,omitempty"`
 	GrantBacked              bool                `json:"grantBacked,omitempty"`
+	SubjectTitle             string              `json:"subjectTitle,omitempty"`
+	CampaignRef              string              `json:"campaignRef,omitempty"`
+	CampaignTitle            string              `json:"campaignTitle,omitempty"`
+	CurrentPublicationRef    string              `json:"currentPublicationRef,omitempty"`
+	SupersedesRef            string              `json:"supersedesRef,omitempty"`
+	RetiredReason            string              `json:"retiredReason,omitempty"`
 }
 
 type CampaignSummary struct {
-	CampaignRef        string     `json:"campaignRef"`
-	Title              string     `json:"title"`
-	Visibility         string     `json:"visibility"`
-	HouseRef           string     `json:"houseRef,omitempty"`
-	WorldRef           string     `json:"worldRef,omitempty"`
-	RulesetNSID        string     `json:"rulesetNsid,omitempty"`
-	RulesetManifestRef string     `json:"rulesetManifestRef,omitempty"`
-	ArchivedAt         *time.Time `json:"archivedAt,omitempty"`
+	CampaignRef            string     `json:"campaignRef"`
+	Title                  string     `json:"title"`
+	Visibility             string     `json:"visibility"`
+	HouseRef               string     `json:"houseRef,omitempty"`
+	WorldRef               string     `json:"worldRef,omitempty"`
+	RulesetNSID            string     `json:"rulesetNsid,omitempty"`
+	RulesetManifestRef     string     `json:"rulesetManifestRef,omitempty"`
+	ArchivedAt             *time.Time `json:"archivedAt,omitempty"`
+	CurrentPublicationRef  string     `json:"currentPublicationRef,omitempty"`
+	PublishedArtifactCount int        `json:"publishedArtifactCount,omitempty"`
 }
 
 type CharacterHomeView struct {
@@ -93,10 +110,10 @@ type CharacterHomeView struct {
 	PrimaryBranch         BranchSummary        `json:"primaryBranch"`
 	Branches              []BranchSummary      `json:"branches"`
 	RecentEpisodes        []EpisodeSummary     `json:"recentEpisodes"`
-	RecentConversions     []ConversionSummary  `json:"recentConversions,omitempty"`
+	RecentConversions     []ConversionSummary  `json:"recentConversions"`
 	ReuseGrants           []ReuseGrantSummary  `json:"reuseGrants"`
 	Publications          []PublicationSummary `json:"publications"`
-	LinkedCampaigns       []CampaignSummary    `json:"linkedCampaigns,omitempty"`
+	LinkedCampaigns       []CampaignSummary    `json:"linkedCampaigns"`
 	RecentAdvancementRefs []string             `json:"recentAdvancementRefs,omitempty"`
 }
 
@@ -110,6 +127,21 @@ type CampaignView struct {
 	ActiveBranches     []BranchSummary      `json:"activeBranches,omitempty"`
 	StewardDids        []string             `json:"stewardDids,omitempty"`
 	ArchivedCounts     *ArchivedCounts      `json:"archivedCounts,omitempty"`
+}
+
+type CharacterBranchView struct {
+	Branch            BranchSummary        `json:"branch"`
+	RecentEpisodes    []EpisodeSummary     `json:"recentEpisodes"`
+	RecentConversions []ConversionSummary  `json:"recentConversions"`
+	ReuseGrants       []ReuseGrantSummary  `json:"reuseGrants"`
+	Publications      []PublicationSummary `json:"publications"`
+	Campaign          *CampaignSummary     `json:"campaign,omitempty"`
+}
+
+type PublicationView struct {
+	Publication   PublicationSummary `json:"publication"`
+	SubjectBranch *BranchSummary     `json:"subjectBranch,omitempty"`
+	Campaign      *CampaignSummary   `json:"campaign,omitempty"`
 }
 
 type RuleProvenance struct {

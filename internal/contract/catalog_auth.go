@@ -5,10 +5,15 @@ func authCatalog() map[string]map[string]any {
 		"lexicon/app.cerulia.authCoreReader.json": permissionSetDoc(
 			"app.cerulia.authCoreReader",
 			"app.cerulia.rpc.getCharacterHome",
+			"app.cerulia.rpc.listCharacterBranches",
+			"app.cerulia.rpc.getCharacterBranchView",
 			"app.cerulia.rpc.getCampaignView",
+			"app.cerulia.rpc.listCampaigns",
 			"app.cerulia.rpc.listCharacterEpisodes",
 			"app.cerulia.rpc.listReuseGrants",
 			"app.cerulia.rpc.listPublications",
+			"app.cerulia.rpc.listPublicationLibrary",
+			"app.cerulia.rpc.getPublicationView",
 		),
 		"lexicon/app.cerulia.authCoreWriter.json": permissionSetDoc(
 			"app.cerulia.authCoreWriter",

@@ -239,6 +239,453 @@ func TestGetCharacterHomeUsesActorDidWhenOwnerMissing(t *testing.T) {
 	}
 }
 
+func TestListCharacterBranchesReturnsOwnerContext(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-list-branches")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listCharacterBranches", nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:owner1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []struct {
+			CharacterBranchRef string `json:"characterBranchRef"`
+			DisplayName        string `json:"displayName"`
+			RulesetNSID        string `json:"rulesetNsid"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode character branches: %v", err)
+	}
+	if len(response.Items) != 1 {
+		t.Fatalf("expected one branch, got %+v", response.Items)
+	}
+	if response.Items[0].CharacterBranchRef != branchRef || response.Items[0].DisplayName != "Hero" || response.Items[0].RulesetNSID != "app.cerulia.rules.core" {
+		t.Fatalf("unexpected branch item: %+v", response.Items[0])
+	}
+}
+
+func TestListCharacterBranchesRequiresAuth(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listCharacterBranches", nil))
+
+	assertXRPCError(t, rec, http.StatusUnauthorized, "Unauthorized")
+}
+
+func TestListCharacterBranchesPaginates(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	_ = createBranch(t, handler, "did:plc:owner1", "req-list-branches-page-1")
+	_ = createBranch(t, handler, "did:plc:owner1", "req-list-branches-page-2")
+
+	firstReq := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listCharacterBranches?limit=1", nil)
+	firstReq.Header.Set(authz.HeaderActorDID, "did:plc:owner1")
+	firstReq.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	firstRec := httptest.NewRecorder()
+	handler.ServeHTTP(firstRec, firstReq)
+
+	if firstRec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", firstRec.Code, firstRec.Body.String())
+	}
+	var firstResponse struct {
+		Items []struct {
+			CharacterBranchRef string `json:"characterBranchRef"`
+		} `json:"items"`
+		Cursor string `json:"cursor"`
+	}
+	if err := json.Unmarshal(firstRec.Body.Bytes(), &firstResponse); err != nil {
+		t.Fatalf("decode first page: %v", err)
+	}
+	if len(firstResponse.Items) != 1 || firstResponse.Cursor == "" {
+		t.Fatalf("expected one item and a cursor on the first page, got %+v", firstResponse)
+	}
+
+	secondReq := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listCharacterBranches?limit=1&cursor="+firstResponse.Cursor, nil)
+	secondReq.Header.Set(authz.HeaderActorDID, "did:plc:owner1")
+	secondReq.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	secondRec := httptest.NewRecorder()
+	handler.ServeHTTP(secondRec, secondReq)
+
+	if secondRec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", secondRec.Code, secondRec.Body.String())
+	}
+	var secondResponse struct {
+		Items []struct {
+			CharacterBranchRef string `json:"characterBranchRef"`
+		} `json:"items"`
+		Cursor string `json:"cursor"`
+	}
+	if err := json.Unmarshal(secondRec.Body.Bytes(), &secondResponse); err != nil {
+		t.Fatalf("decode second page: %v", err)
+	}
+	if len(secondResponse.Items) != 1 || secondResponse.Cursor != "" || secondResponse.Items[0].CharacterBranchRef == firstResponse.Items[0].CharacterBranchRef {
+		t.Fatalf("expected a distinct second page item with no further cursor, got %+v", secondResponse)
+	}
+}
+
+func TestGetCharacterBranchViewReturnsOwnerDetail(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	campaignRef := createCampaign(t, handler, "did:plc:owner1", "req-branch-view-campaign")
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-branch-view")
+	advancementRef := recordAdvancement(t, handler, "did:plc:owner1", branchRef, "req-branch-view-advancement")
+	_ = recordEpisode(t, handler, "did:plc:owner1", branchRef, campaignRef, advancementRef, "req-branch-view-episode")
+	publicationRef := publishSubject(t, handler, "did:plc:owner1", branchRef, "character-branch", "req-branch-view-publication")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getCharacterBranchView?characterBranchRef="+branchRef, nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:owner1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Branch struct {
+			CharacterBranchRef    string `json:"characterBranchRef"`
+			CurrentPublicationRef string `json:"currentPublicationRef"`
+		} `json:"branch"`
+		RecentEpisodes []any `json:"recentEpisodes"`
+		Publications   []struct {
+			PublicationRef string `json:"publicationRef"`
+		} `json:"publications"`
+		Campaign *struct {
+			CampaignRef string `json:"campaignRef"`
+		} `json:"campaign"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode branch view: %v", err)
+	}
+	if response.Branch.CharacterBranchRef != branchRef || response.Branch.CurrentPublicationRef != publicationRef {
+		t.Fatalf("unexpected branch payload: %+v", response.Branch)
+	}
+	if len(response.RecentEpisodes) != 1 || len(response.Publications) != 1 || response.Publications[0].PublicationRef != publicationRef {
+		t.Fatalf("unexpected branch detail collections: %+v", response)
+	}
+	if response.Campaign == nil || response.Campaign.CampaignRef != campaignRef {
+		t.Fatalf("expected linked campaign %q, got %+v", campaignRef, response.Campaign)
+	}
+}
+
+func TestGetCharacterBranchViewRejectsDifferentOwner(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-branch-view-forbidden")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getCharacterBranchView?characterBranchRef="+branchRef, nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:owner2")
+	req.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assertXRPCError(t, rec, http.StatusForbidden, "Forbidden")
+}
+
+func TestListCampaignsPublicReturnsOnlyCampaignsWithPublicShell(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	publicCampaignRef := createCampaign(t, handler, "did:plc:steward1", "req-public-campaign-list")
+	_ = publishCampaign(t, handler, "did:plc:steward1", publicCampaignRef, "req-public-campaign-list-publication")
+	_ = createCampaign(t, handler, "did:plc:steward1", "req-private-campaign-list")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listCampaigns?mode=public", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []struct {
+			CampaignRef            string `json:"campaignRef"`
+			CurrentPublicationRef  string `json:"currentPublicationRef"`
+			PublishedArtifactCount int    `json:"publishedArtifactCount"`
+			RulesetManifestRef     string `json:"rulesetManifestRef"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode campaign list: %v", err)
+	}
+	if len(response.Items) != 1 || response.Items[0].CampaignRef != publicCampaignRef || response.Items[0].CurrentPublicationRef == "" {
+		t.Fatalf("unexpected public campaigns response: %+v", response.Items)
+	}
+	if response.Items[0].PublishedArtifactCount != 1 || response.Items[0].RulesetManifestRef != "" {
+		t.Fatalf("expected public campaign redaction and count, got %+v", response.Items[0])
+	}
+}
+
+func TestListCampaignsOwnerModeRequiresAuth(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listCampaigns?mode=owner-steward", nil))
+
+	assertXRPCError(t, rec, http.StatusUnauthorized, "Unauthorized")
+}
+
+func TestListCampaignsOwnerModeReturnsStewardFields(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	campaignRef := createCampaign(t, handler, "did:plc:steward1", "req-owner-campaign-list")
+	_ = publishCampaign(t, handler, "did:plc:steward1", campaignRef, "req-owner-campaign-list-publication")
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-owner-campaign-list-branch")
+	advancementRef := recordAdvancement(t, handler, "did:plc:owner1", branchRef, "req-owner-campaign-list-advancement")
+	episodeRef := recordEpisode(t, handler, "did:plc:steward1", branchRef, campaignRef, advancementRef, "req-owner-campaign-list-episode")
+	_ = publishSubject(t, handler, "did:plc:steward1", episodeRef, "character-episode", "req-owner-campaign-list-episode-publication")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listCampaigns?mode=owner-steward", nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:steward1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []struct {
+			CampaignRef            string `json:"campaignRef"`
+			PublishedArtifactCount int    `json:"publishedArtifactCount"`
+			RulesetManifestRef     string `json:"rulesetManifestRef"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode owner campaign list: %v", err)
+	}
+	if len(response.Items) != 1 || response.Items[0].CampaignRef != campaignRef {
+		t.Fatalf("unexpected owner campaign list: %+v", response.Items)
+	}
+	if response.Items[0].PublishedArtifactCount != 2 || response.Items[0].RulesetManifestRef == "" {
+		t.Fatalf("expected steward fields and artifact count, got %+v", response.Items[0])
+	}
+}
+
+func TestGetPublicationViewReturnsPublicContext(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	campaignRef := createCampaign(t, handler, "did:plc:owner1", "req-publication-view-campaign")
+	_ = publishCampaign(t, handler, "did:plc:owner1", campaignRef, "req-publication-view-campaign-publication")
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-publication-view")
+	advancementRef := recordAdvancement(t, handler, "did:plc:owner1", branchRef, "req-publication-view-advancement")
+	_ = recordEpisode(t, handler, "did:plc:owner1", branchRef, campaignRef, advancementRef, "req-publication-view-episode")
+	publicationRef := publishSubject(t, handler, "did:plc:owner1", branchRef, "character-branch", "req-publication-view-publication")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getPublicationView?publicationRef="+publicationRef+"&mode=public", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Publication struct {
+			PublicationRef string `json:"publicationRef"`
+			SubjectTitle   string `json:"subjectTitle"`
+		} `json:"publication"`
+		SubjectBranch *struct {
+			CharacterBranchRef string `json:"characterBranchRef"`
+			ExternalSheetURI   string `json:"externalSheetUri"`
+			ImportedFrom       string `json:"importedFrom"`
+		} `json:"subjectBranch"`
+		Campaign *struct {
+			CampaignRef        string `json:"campaignRef"`
+			RulesetManifestRef string `json:"rulesetManifestRef"`
+		} `json:"campaign"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode publication view: %v", err)
+	}
+	if response.Publication.PublicationRef != publicationRef || response.Publication.SubjectTitle != "Hero" {
+		t.Fatalf("unexpected publication payload: %+v", response.Publication)
+	}
+	if response.SubjectBranch == nil || response.SubjectBranch.CharacterBranchRef != branchRef {
+		t.Fatalf("expected branch context %q, got %+v", branchRef, response.SubjectBranch)
+	}
+	if response.SubjectBranch.ExternalSheetURI != "" || response.SubjectBranch.ImportedFrom != "" {
+		t.Fatalf("expected public branch context to be redacted, got %+v", response.SubjectBranch)
+	}
+	if response.Campaign == nil || response.Campaign.CampaignRef != campaignRef {
+		t.Fatalf("expected campaign context %q, got %+v", campaignRef, response.Campaign)
+	}
+	if response.Campaign.RulesetManifestRef != "" {
+		t.Fatalf("expected public campaign context to hide private fields, got %+v", response.Campaign)
+	}
+}
+
+func TestGetPublicationViewOwnerModeRequiresAuth(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-publication-view-auth")
+	publicationRef := publishSubject(t, handler, "did:plc:owner1", branchRef, "character-branch", "req-publication-view-auth-publication")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getPublicationView?publicationRef="+publicationRef+"&mode=owner-steward", nil))
+
+	assertXRPCError(t, rec, http.StatusUnauthorized, "Unauthorized")
+}
+
+func TestGetPublicationViewReturnsPublicEpisodeContext(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	campaignRef := createCampaign(t, handler, "did:plc:steward1", "req-public-episode-view-campaign")
+	_ = publishCampaign(t, handler, "did:plc:steward1", campaignRef, "req-public-episode-view-campaign-publication")
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-public-episode-view-branch")
+	advancementRef := recordAdvancement(t, handler, "did:plc:owner1", branchRef, "req-public-episode-view-advancement")
+	episodeRef := recordEpisode(t, handler, "did:plc:owner1", branchRef, campaignRef, advancementRef, "req-public-episode-view-episode")
+	publicationRef := publishSubject(t, handler, "did:plc:owner1", episodeRef, "character-episode", "req-public-episode-view-publication")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getPublicationView?publicationRef="+publicationRef+"&mode=public", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Publication struct {
+			PublicationRef string `json:"publicationRef"`
+		} `json:"publication"`
+		SubjectBranch *struct {
+			CharacterBranchRef   string `json:"characterBranchRef"`
+			ExternalSheetURI     string `json:"externalSheetUri"`
+			ImportedFrom         string `json:"importedFrom"`
+			LatestEpisodeSummary string `json:"latestEpisodeSummary"`
+		} `json:"subjectBranch"`
+		Campaign *struct {
+			CampaignRef        string `json:"campaignRef"`
+			RulesetManifestRef string `json:"rulesetManifestRef"`
+		} `json:"campaign"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode public episode publication view: %v", err)
+	}
+	if response.Publication.PublicationRef != publicationRef {
+		t.Fatalf("unexpected publication payload: %+v", response.Publication)
+	}
+	if response.SubjectBranch == nil || response.SubjectBranch.CharacterBranchRef != branchRef || response.SubjectBranch.ExternalSheetURI != "" || response.SubjectBranch.ImportedFrom != "" || response.SubjectBranch.LatestEpisodeSummary != "" {
+		t.Fatalf("expected redacted subject branch context, got %+v", response.SubjectBranch)
+	}
+	if response.Campaign == nil || response.Campaign.CampaignRef != campaignRef || response.Campaign.RulesetManifestRef != "" {
+		t.Fatalf("expected redacted public campaign context, got %+v", response.Campaign)
+	}
+}
+
+func TestGetPublicationViewAllowsEpisodeRecorderAndRejectsThirdParty(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	campaignRef := createCampaign(t, handler, "did:plc:steward1", "req-episode-publication-campaign")
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-episode-publication-branch")
+	advancementRef := recordAdvancement(t, handler, "did:plc:owner1", branchRef, "req-episode-publication-advancement")
+	episodeRef := recordEpisode(t, handler, "did:plc:steward1", branchRef, campaignRef, advancementRef, "req-episode-publication-episode")
+	publicationRef := publishSubject(t, handler, "did:plc:steward1", episodeRef, "character-episode", "req-episode-publication-publication")
+
+	stewardReq := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getPublicationView?publicationRef="+publicationRef+"&mode=owner-steward", nil)
+	stewardReq.Header.Set(authz.HeaderActorDID, "did:plc:steward1")
+	stewardReq.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	stewardRec := httptest.NewRecorder()
+	handler.ServeHTTP(stewardRec, stewardReq)
+
+	if stewardRec.Code != http.StatusOK {
+		t.Fatalf("expected recorder status 200, got %d with %s", stewardRec.Code, stewardRec.Body.String())
+	}
+
+	thirdPartyReq := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.getPublicationView?publicationRef="+publicationRef+"&mode=owner-steward", nil)
+	thirdPartyReq.Header.Set(authz.HeaderActorDID, "did:plc:owner2")
+	thirdPartyReq.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	thirdPartyRec := httptest.NewRecorder()
+	handler.ServeHTTP(thirdPartyRec, thirdPartyReq)
+
+	assertXRPCError(t, thirdPartyRec, http.StatusForbidden, "Forbidden")
+}
+
+func TestListPublicationLibraryIncludesSupersededAndRetiredRows(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-publication-library")
+	firstPublicationRef := publishSubject(t, handler, "did:plc:owner1", branchRef, "character-branch", "req-publication-library-first")
+	secondPublicationRef := publishSubjectWithExpectedHead(t, handler, "did:plc:owner1", branchRef, "character-branch", firstPublicationRef, "req-publication-library-second")
+	retiredPublicationRef := retirePublication(t, handler, "did:plc:owner1", secondPublicationRef, "req-publication-library-retired")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listPublicationLibrary?mode=public", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []struct {
+			PublicationRef        string `json:"publicationRef"`
+			CurrentPublicationRef string `json:"currentPublicationRef"`
+			Status                string `json:"status"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode publication library: %v", err)
+	}
+	if len(response.Items) != 3 {
+		t.Fatalf("expected three publication rows, got %+v", response.Items)
+	}
+	rows := map[string]struct {
+		CurrentPublicationRef string
+		Status                string
+	}{}
+	for _, item := range response.Items {
+		rows[item.PublicationRef] = struct {
+			CurrentPublicationRef string
+			Status                string
+		}{CurrentPublicationRef: item.CurrentPublicationRef, Status: item.Status}
+	}
+	if rows[retiredPublicationRef].CurrentPublicationRef != "" || rows[retiredPublicationRef].Status != "retired" {
+		t.Fatalf("unexpected retired head row: %+v", rows[retiredPublicationRef])
+	}
+	if rows[secondPublicationRef].CurrentPublicationRef != "" || rows[secondPublicationRef].Status != "active" {
+		t.Fatalf("unexpected superseded current row: %+v", rows[secondPublicationRef])
+	}
+	if rows[firstPublicationRef].CurrentPublicationRef != "" || rows[firstPublicationRef].Status != "active" {
+		t.Fatalf("unexpected archived original row: %+v", rows[firstPublicationRef])
+	}
+}
+
+func TestListPublicationLibraryOwnerModeRequiresAuth(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listPublicationLibrary?mode=owner-steward", nil))
+
+	assertXRPCError(t, rec, http.StatusUnauthorized, "Unauthorized")
+}
+
+func TestListPublicationLibraryOwnerModeShowsCurrentHeadContext(t *testing.T) {
+	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
+	branchRef := createBranch(t, handler, "did:plc:owner1", "req-owner-publication-library")
+	firstPublicationRef := publishSubject(t, handler, "did:plc:owner1", branchRef, "character-branch", "req-owner-publication-library-first")
+	secondPublicationRef := publishSubjectWithExpectedHead(t, handler, "did:plc:owner1", branchRef, "character-branch", firstPublicationRef, "req-owner-publication-library-second")
+	retiredPublicationRef := retirePublication(t, handler, "did:plc:owner1", secondPublicationRef, "req-owner-publication-library-retired")
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listPublicationLibrary?mode=owner-steward&subjectRef="+branchRef+"&subjectKind=character-branch", nil)
+	req.Header.Set(authz.HeaderActorDID, "did:plc:owner1")
+	req.Header.Set(authz.HeaderPermissionSets, authz.CoreReader)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []struct {
+			PublicationRef        string `json:"publicationRef"`
+			CurrentPublicationRef string `json:"currentPublicationRef"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode owner publication library: %v", err)
+	}
+	if len(response.Items) != 3 {
+		t.Fatalf("expected three owner publication rows, got %+v", response.Items)
+	}
+	for _, item := range response.Items {
+		if item.CurrentPublicationRef != retiredPublicationRef {
+			t.Fatalf("expected owner current head context %q, got %+v", retiredPublicationRef, response.Items)
+		}
+	}
+}
+
 func TestGetCharacterHomeLinkedCampaignsHidePrivateCampaignFields(t *testing.T) {
 	handler := NewHandler(testLogger(), testConfig(), database.Disabled())
 	campaignRef := createCampaign(t, handler, "did:plc:steward1", "req-linked-campaign")
@@ -648,6 +1095,77 @@ func TestListPublicationsPublicModeSkipsMalformedCurrentHead(t *testing.T) {
 	}
 }
 
+func TestListPublicationLibraryPublicModeSkipsMalformedRows(t *testing.T) {
+	dataStore := store.NewMemoryStore()
+	handler := newQueryHandler(t, dataStore)
+	validSubjectRef := store.BuildRef("did:plc:steward1", coremodel.CollectionCampaign, "campaign-valid-library")
+	seedCampaignRecord(t, dataStore, "did:plc:steward1", "campaign-valid-library", coremodel.Campaign{
+		CampaignID:             "campaign-valid-library",
+		Title:                  "Valid Campaign",
+		Visibility:             "public",
+		RulesetNSID:            "app.cerulia.rules.core",
+		RulesetManifestRef:     "at://did:plc:rules/app.cerulia.core.rulesetManifest/ruleset-1",
+		DefaultReusePolicyKind: "same-campaign-default",
+		StewardDids:            []string{"did:plc:steward1"},
+		Revision:               1,
+		RequestID:              "seed-valid-library-campaign",
+		CreatedAt:              time.Date(2026, time.April, 4, 0, 0, 0, 0, time.UTC),
+		UpdatedAt:              time.Date(2026, time.April, 4, 0, 0, 0, 0, time.UTC),
+	})
+	validPublicationRef := seedPublicationCurrentHead(t, dataStore, "did:plc:steward1", validSubjectRef, "campaign", "publication-valid-library", coremodel.Publication{
+		SubjectRef:           validSubjectRef,
+		SubjectKind:          "campaign",
+		EntryURL:             "https://cerulia.example/publications/valid-library",
+		PreferredSurfaceKind: "app-card",
+		Status:               "active",
+		PublishedByDid:       "did:plc:steward1",
+		PublishedAt:          time.Date(2026, time.April, 4, 1, 0, 0, 0, time.UTC),
+		RequestID:            "seed-valid-library-publication",
+		Surfaces: []coremodel.SurfaceDescriptor{{
+			SurfaceKind: "app-card",
+			PurposeKind: "stable-entry",
+			SurfaceURI:  "https://cerulia.example/publications/valid-library",
+			Status:      "active",
+		}},
+	})
+	subjectRef := store.BuildRef("did:plc:steward1", coremodel.CollectionCampaign, "campaign-malformed-library")
+	seedPublicationCurrentHead(t, dataStore, "did:plc:steward1", subjectRef, "campaign", "publication-malformed-library", coremodel.Publication{
+		SubjectRef:           subjectRef,
+		SubjectKind:          "campaign",
+		EntryURL:             "https://cerulia.example/publications/malformed-library",
+		PreferredSurfaceKind: "app-card",
+		Status:               "active",
+		PublishedByDid:       "did:plc:steward1",
+		PublishedAt:          time.Date(2026, time.April, 4, 0, 0, 0, 0, time.UTC),
+		RequestID:            "seed-malformed-library-publication",
+		Surfaces: []coremodel.SurfaceDescriptor{{
+			SurfaceKind: "app-card",
+			PurposeKind: "discovery",
+			SurfaceURI:  "https://cerulia.example/publications/malformed-library",
+			Status:      "active",
+		}},
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/xrpc/app.cerulia.rpc.listPublicationLibrary?mode=public", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		Items []struct {
+			PublicationRef string `json:"publicationRef"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode malformed public publication library response: %v", err)
+	}
+	if len(response.Items) != 1 || response.Items[0].PublicationRef != validPublicationRef {
+		t.Fatalf("expected valid publication to remain while malformed rows are hidden, got %+v", response.Items)
+	}
+}
+
 func TestCampaignPublicViewFailsClosedForMalformedCampaignPublication(t *testing.T) {
 	dataStore := store.NewMemoryStore()
 	seedCampaignRecord(t, dataStore, "did:plc:steward1", "campaign-public-malformed", coremodel.Campaign{
@@ -876,6 +1394,24 @@ func publishSubject(t *testing.T, handler http.Handler, actorDid string, subject
 	return ack.PublicationRef
 }
 
+func publishSubjectWithExpectedHead(t *testing.T, handler http.Handler, actorDid string, subjectRef string, subjectKind string, expectedCurrentHeadRef string, requestID string) string {
+	t.Helper()
+	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.publishSubject", `{"subjectRef":"`+subjectRef+`","subjectKind":"`+subjectKind+`","entryUrl":"https://cerulia.example/publications/`+requestID+`","preferredSurfaceKind":"app-card","surfaces":[{"surfaceKind":"app-card","purposeKind":"stable-entry","surfaceUri":"https://cerulia.example/publications/`+requestID+`","status":"active"}],"expectedCurrentHeadRef":"`+expectedCurrentHeadRef+`","requestId":"`+requestID+`"}`, authHeaders(actorDid, authz.CorePublicationWriter))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("publish subject with expected head failed: %d %s", rec.Code, rec.Body.String())
+	}
+	var ack struct {
+		PublicationRef string `json:"publicationRef"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &ack); err != nil {
+		t.Fatalf("decode publish ack: %v", err)
+	}
+	if ack.PublicationRef == "" {
+		t.Fatal("expected publicationRef in ack")
+	}
+	return ack.PublicationRef
+}
+
 func recordAdvancement(t *testing.T, handler http.Handler, actorDid string, branchRef string, requestID string) string {
 	t.Helper()
 	rec := performJSONRequest(handler, http.MethodPost, "/xrpc/app.cerulia.rpc.recordCharacterAdvancement", `{"characterBranchRef":"`+branchRef+`","advancementKind":"milestone","deltaPayloadRef":"https://cerulia.example/payloads/`+requestID+`.json","approvedByDid":"`+actorDid+`","effectiveAt":"2026-04-03T00:00:00Z","requestId":"`+requestID+`"}`, authHeaders(actorDid, authz.CoreWriter))
@@ -1024,8 +1560,13 @@ func newHandlerWithStore(dataStore store.Store) http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCampaignView", h.handleGetCampaignView)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listCampaigns", h.handleListCampaigns)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listPublications", h.handleListPublications)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listPublicationLibrary", h.handleListPublicationLibrary)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getPublicationView", h.handleGetPublicationView)
 	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCharacterHome", h.handleGetCharacterHome)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.listCharacterBranches", h.handleListCharacterBranches)
+	mux.HandleFunc("GET /xrpc/app.cerulia.rpc.getCharacterBranchView", h.handleGetCharacterBranchView)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createCampaign", h.handleCreateCampaign)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.importCharacterSheet", h.handleImportCharacterSheet)
 	mux.HandleFunc("POST /xrpc/app.cerulia.rpc.createCharacterBranch", h.handleCreateCharacterBranch)

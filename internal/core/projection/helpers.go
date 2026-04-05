@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"time"
 
 	"cerulia/internal/core/character"
@@ -58,6 +59,14 @@ func (service *Service) branchesByOwner(ctx context.Context, ownerDid string) ([
 	if err != nil {
 		return nil, nil, err
 	}
+	latestEpisodes, err := service.latestEpisodeByBranch(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	currentBranchPublications, err := service.currentPublicationRefBySubject(ctx, "character-branch")
+	if err != nil {
+		return nil, nil, err
+	}
 	items := make([]branchRecord, 0)
 	models := map[string]model.CharacterBranch{}
 	for _, record := range records {
@@ -80,15 +89,21 @@ func (service *Service) branchesByOwner(ctx context.Context, ownerDid string) ([
 		return leftRecord.CreatedAt.After(rightRecord.CreatedAt)
 	})
 	summaries := make([]BranchSummary, 0, len(items))
+	campaignTitles := map[string]string{}
 	for _, item := range items {
-		summaries = append(summaries, BranchSummary{
-			CharacterBranchRef: item.Ref,
-			BaseSheetRef:       item.Record.BaseSheetRef,
-			BranchLabel:        item.Record.BranchLabel,
-			BranchKind:         item.Record.BranchKind,
-			OwnerDid:           item.Record.OwnerDid,
-			Revision:           item.Record.Revision,
-		})
+		summary, err := service.branchSummaryForModel(
+			ctx,
+			item.Ref,
+			item.Record,
+			latestEpisodes,
+			currentBranchPublications,
+			campaignTitles,
+			true,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		summaries = append(summaries, summary)
 	}
 	return summaries, models, nil
 }
@@ -182,7 +197,7 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 		}
 	}
 
-	heads, err := service.reader.ListCurrentHeads(ctx)
+	currentHeads, err := service.currentHeadMap(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -191,17 +206,23 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 		return nil, err
 	}
 	items := make([]PublicationSummary, 0)
-	for _, head := range heads {
-		if head.SubjectKind != "campaign" && head.SubjectKind != "character-branch" && head.SubjectKind != "character-episode" {
+	for headKey, currentHeadRef := range currentHeads {
+		parts := strings.SplitN(headKey, "\n", 2)
+		if len(parts) != 2 {
 			continue
 		}
-		if subjectRef != "" && head.SubjectRef != subjectRef {
+		currentSubjectKind := parts[0]
+		currentSubjectRef := parts[1]
+		if currentSubjectKind != "campaign" && currentSubjectKind != "character-branch" && currentSubjectKind != "character-episode" {
 			continue
 		}
-		if subjectKind != "" && head.SubjectKind != subjectKind {
+		if subjectRef != "" && currentSubjectRef != subjectRef {
 			continue
 		}
-		_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, head.CurrentHeadRef)
+		if subjectKind != "" && currentSubjectKind != subjectKind {
+			continue
+		}
+		record, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, currentHeadRef)
 		if err != nil {
 			if resolvedMode == "public" {
 				continue
@@ -209,7 +230,7 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 			return nil, err
 		}
 		if resolvedMode == "public" {
-			if !publicationIsPublic(head.CurrentHeadRef, publicationModel) {
+			if !publicationIsPublic(currentHeadRef, publicationModel) {
 				continue
 			}
 		} else if actorDid != "" {
@@ -220,21 +241,16 @@ func (service *Service) publicationSummaries(ctx context.Context, subjectRef str
 		if publicationModel.Status == "retired" && !includeRetired {
 			continue
 		}
-		item := PublicationSummary{
-			PublicationRef:       head.CurrentHeadRef,
-			SubjectRef:           publicationModel.SubjectRef,
-			SubjectKind:          publicationModel.SubjectKind,
-			EntryURL:             publicationModel.EntryURL,
-			PreferredSurfaceKind: publicationModel.PreferredSurfaceKind,
-			Surfaces:             toProjectionSurfaces(publicationModel.Surfaces),
-			Status:               publicationModel.Status,
-			PublishedAt:          publicationModel.PublishedAt,
-			RetiredAt:            publicationModel.RetiredAt,
-		}
-		if conversion := findConversionForSubject(conversions, publicationModel.SubjectRef, publicationModel.SubjectKind); conversion != nil {
-			item.SourceRulesetManifestRef = conversion.SourceRulesetManifestRef
-			item.TargetRulesetManifestRef = conversion.TargetRulesetManifestRef
-			item.GrantBacked = conversion.ReuseGrantRef != ""
+		item, err := service.publicationSummaryFromRecord(
+			ctx,
+			record,
+			publicationModel,
+			currentHeads,
+			conversions,
+			resolvedMode != "public",
+		)
+		if err != nil {
+			return nil, err
 		}
 		items = append(items, item)
 	}
@@ -350,7 +366,7 @@ func (service *Service) campaignPublicationSummaries(ctx context.Context, campai
 	if err != nil {
 		return nil, err
 	}
-	heads, err := service.reader.ListCurrentHeads(ctx)
+	currentHeads, err := service.currentHeadMap(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -360,16 +376,22 @@ func (service *Service) campaignPublicationSummaries(ctx context.Context, campai
 	}
 	items := make([]PublicationSummary, 0)
 	hasCampaignPublicHead := false
-	for _, head := range heads {
-		if head.SubjectRef != campaignRef {
-			if _, ok := continuity.EpisodeRefs[head.SubjectRef]; !ok {
+	for headKey, currentHeadRef := range currentHeads {
+		parts := strings.SplitN(headKey, "\n", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		currentSubjectKind := parts[0]
+		currentSubjectRef := parts[1]
+		if currentSubjectRef != campaignRef {
+			if _, ok := continuity.EpisodeRefs[currentSubjectRef]; !ok {
 				continue
 			}
 		}
-		if head.SubjectKind != "campaign" && head.SubjectKind != "character-episode" {
+		if currentSubjectKind != "campaign" && currentSubjectKind != "character-episode" {
 			continue
 		}
-		_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, head.CurrentHeadRef)
+		record, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, currentHeadRef)
 		if err != nil {
 			if mode == "public" {
 				continue
@@ -377,30 +399,25 @@ func (service *Service) campaignPublicationSummaries(ctx context.Context, campai
 			return nil, err
 		}
 		if mode == "public" {
-			if !publicationIsPublic(head.CurrentHeadRef, publicationModel) {
+			if !publicationIsPublic(currentHeadRef, publicationModel) {
 				continue
 			}
-			if head.SubjectRef == campaignRef {
+			if currentSubjectRef == campaignRef {
 				hasCampaignPublicHead = true
 			}
 		} else if publicationModel.Status == "retired" && !includeRetired {
 			continue
 		}
-		item := PublicationSummary{
-			PublicationRef:       head.CurrentHeadRef,
-			SubjectRef:           publicationModel.SubjectRef,
-			SubjectKind:          publicationModel.SubjectKind,
-			EntryURL:             publicationModel.EntryURL,
-			PreferredSurfaceKind: publicationModel.PreferredSurfaceKind,
-			Surfaces:             toProjectionSurfaces(publicationModel.Surfaces),
-			Status:               publicationModel.Status,
-			PublishedAt:          publicationModel.PublishedAt,
-			RetiredAt:            publicationModel.RetiredAt,
-		}
-		if conversion := findConversionForSubject(conversions, publicationModel.SubjectRef, publicationModel.SubjectKind); conversion != nil {
-			item.SourceRulesetManifestRef = conversion.SourceRulesetManifestRef
-			item.TargetRulesetManifestRef = conversion.TargetRulesetManifestRef
-			item.GrantBacked = conversion.ReuseGrantRef != ""
+		item, err := service.publicationSummaryFromRecord(
+			ctx,
+			record,
+			publicationModel,
+			currentHeads,
+			conversions,
+			mode != "public",
+		)
+		if err != nil {
+			return nil, err
 		}
 		items = append(items, item)
 	}
@@ -452,6 +469,394 @@ func (service *Service) campaignSummary(ctx context.Context, ref string, include
 		summary.RulesetManifestRef = campaignModel.RulesetManifestRef
 	}
 	return summary, nil
+}
+
+func (service *Service) branchSummaryForModel(
+	ctx context.Context,
+	ref string,
+	branch model.CharacterBranch,
+	latestEpisodes map[string]EpisodeSummary,
+	currentBranchPublications map[string]string,
+	campaignTitles map[string]string,
+	includePrivateCampaign bool,
+) (BranchSummary, error) {
+	_, sheetModel, err := decodeStable[model.CharacterSheet](ctx, service.reader, branch.BaseSheetRef)
+	if err != nil {
+		return BranchSummary{}, err
+	}
+	summary := BranchSummary{
+		CharacterBranchRef:    ref,
+		BaseSheetRef:          branch.BaseSheetRef,
+		BranchLabel:           branch.BranchLabel,
+		BranchKind:            branch.BranchKind,
+		OwnerDid:              branch.OwnerDid,
+		Revision:              branch.Revision,
+		DisplayName:           sheetModel.DisplayName,
+		RulesetNSID:           sheetModel.RulesetNSID,
+		CurrentPublicationRef: currentBranchPublications[ref],
+		RetiredAt:             branch.RetiredAt,
+	}
+	if includePrivateCampaign {
+		summary.ExternalSheetURI = sheetModel.ExternalSheetURI
+		summary.ImportedFrom = branch.ImportedFrom
+	}
+	if latestEpisode, ok := latestEpisodes[ref]; ok {
+		if includePrivateCampaign {
+			summary.LatestEpisodeSummary = latestEpisode.OutcomeSummary
+		}
+		summary.LatestCampaignRef = latestEpisode.CampaignRef
+		if latestEpisode.CampaignRef != "" {
+			if includePrivateCampaign {
+				if campaignTitles[latestEpisode.CampaignRef] == "" {
+					campaign, err := service.campaignSummary(ctx, latestEpisode.CampaignRef, true)
+					if err == nil {
+						campaignTitles[latestEpisode.CampaignRef] = campaign.Title
+					}
+				}
+				summary.LatestCampaignTitle = campaignTitles[latestEpisode.CampaignRef]
+			} else {
+				campaign, err := service.campaignPublicSummary(ctx, latestEpisode.CampaignRef)
+				if err == nil {
+					summary.LatestCampaignRef = campaign.CampaignRef
+					summary.LatestCampaignTitle = campaign.Title
+				} else {
+					summary.LatestCampaignRef = ""
+				}
+			}
+		}
+	}
+	return summary, nil
+}
+
+func (service *Service) branchSummaryByRef(
+	ctx context.Context,
+	branchRef string,
+	includePrivateCampaign bool,
+) (BranchSummary, error) {
+	_, branchModel, err := decodeStable[model.CharacterBranch](ctx, service.reader, branchRef)
+	if err != nil {
+		return BranchSummary{}, err
+	}
+	latestEpisodes, err := service.latestEpisodeByBranch(ctx)
+	if err != nil {
+		return BranchSummary{}, err
+	}
+	var currentBranchPublications map[string]string
+	if includePrivateCampaign {
+		currentBranchPublications, err = service.currentPublicationRefBySubject(ctx, "character-branch")
+	} else {
+		currentBranchPublications, err = service.publicCurrentPublicationRefBySubject(ctx, "character-branch")
+	}
+	if err != nil {
+		return BranchSummary{}, err
+	}
+	return service.branchSummaryForModel(
+		ctx,
+		branchRef,
+		branchModel,
+		latestEpisodes,
+		currentBranchPublications,
+		map[string]string{},
+		includePrivateCampaign,
+	)
+}
+
+func (service *Service) latestEpisodeByBranch(ctx context.Context) (map[string]EpisodeSummary, error) {
+	episodes, err := service.currentEpisodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	latestEpisodes := map[string]EpisodeSummary{}
+	for _, episode := range episodes {
+		current, exists := latestEpisodes[episode.CharacterBranchRef]
+		if !exists || episode.CreatedAt.After(current.CreatedAt) {
+			latestEpisodes[episode.CharacterBranchRef] = episode
+		}
+	}
+	return latestEpisodes, nil
+}
+
+func (service *Service) currentHeadMap(ctx context.Context) (map[string]string, error) {
+	heads, err := service.reader.ListCurrentHeads(ctx)
+	if err != nil {
+		return nil, err
+	}
+	currentHeads := map[string]string{}
+	for _, head := range heads {
+		currentHeads[publicationHeadKey(head.SubjectRef, head.SubjectKind)] = head.CurrentHeadRef
+	}
+	return currentHeads, nil
+}
+
+func (service *Service) currentPublicationRefBySubject(ctx context.Context, subjectKind string) (map[string]string, error) {
+	currentHeads, err := service.currentHeadMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := map[string]string{}
+	for headKey, currentHeadRef := range currentHeads {
+		parts := strings.SplitN(headKey, "\n", 2)
+		if len(parts) != 2 || parts[0] != subjectKind {
+			continue
+		}
+		items[parts[1]] = currentHeadRef
+	}
+	return items, nil
+}
+
+func (service *Service) publicCurrentPublicationRefBySubject(ctx context.Context, subjectKind string) (map[string]string, error) {
+	currentHeads, err := service.currentHeadMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := map[string]string{}
+	for headKey, currentHeadRef := range currentHeads {
+		parts := strings.SplitN(headKey, "\n", 2)
+		if len(parts) != 2 || parts[0] != subjectKind {
+			continue
+		}
+		_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, currentHeadRef)
+		if err != nil || !publicationIsPublic(currentHeadRef, publicationModel) {
+			continue
+		}
+		items[parts[1]] = currentHeadRef
+	}
+	return items, nil
+}
+
+func (service *Service) campaignPublicSummary(ctx context.Context, campaignRef string) (CampaignSummary, error) {
+	currentCampaignPublications, err := service.currentPublicationRefBySubject(ctx, "campaign")
+	if err != nil {
+		return CampaignSummary{}, err
+	}
+	currentPublicationRef := currentCampaignPublications[campaignRef]
+	if currentPublicationRef == "" {
+		return CampaignSummary{}, store.ErrNotFound
+	}
+	_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, currentPublicationRef)
+	if err != nil {
+		return CampaignSummary{}, err
+	}
+	if !publicationIsPublic(currentPublicationRef, publicationModel) {
+		return CampaignSummary{}, store.ErrNotFound
+	}
+	summary, err := service.campaignSummary(ctx, campaignRef, false)
+	if err != nil {
+		return CampaignSummary{}, err
+	}
+	publishedArtifactCount, err := service.campaignPublicArtifactCount(ctx, campaignRef)
+	if err != nil {
+		return CampaignSummary{}, err
+	}
+	summary.CurrentPublicationRef = currentPublicationRef
+	summary.PublishedArtifactCount = publishedArtifactCount
+	return summary, nil
+}
+
+func (service *Service) campaignPublicArtifactCount(ctx context.Context, campaignRef string) (int, error) {
+	continuity, err := service.campaignContinuity(ctx, campaignRef)
+	if err != nil {
+		return 0, err
+	}
+	currentHeads, err := service.currentHeadMap(ctx)
+	if err != nil {
+		return 0, err
+	}
+	hasCampaignPublicHead := false
+	count := 0
+	for headKey, currentHeadRef := range currentHeads {
+		parts := strings.SplitN(headKey, "\n", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		currentSubjectKind := parts[0]
+		currentSubjectRef := parts[1]
+		if currentSubjectKind != "campaign" && currentSubjectKind != "character-episode" {
+			continue
+		}
+		if currentSubjectRef != campaignRef {
+			if _, ok := continuity.EpisodeRefs[currentSubjectRef]; !ok {
+				continue
+			}
+		}
+		_, publicationModel, err := decodeAppend[model.Publication](ctx, service.reader, currentHeadRef)
+		if err != nil {
+			continue
+		}
+		if !publicationIsPublic(currentHeadRef, publicationModel) {
+			continue
+		}
+		count++
+		if currentSubjectRef == campaignRef {
+			hasCampaignPublicHead = true
+		}
+	}
+	if !hasCampaignPublicHead {
+		return 0, store.ErrNotFound
+	}
+	return count, nil
+}
+
+func (service *Service) publicationSummaryFromRecord(
+	ctx context.Context,
+	record store.AppendRecord,
+	publication model.Publication,
+	currentHeads map[string]string,
+	conversions []ConversionSummary,
+	includePrivateCampaign bool,
+) (PublicationSummary, error) {
+	item := PublicationSummary{
+		PublicationRef:       record.Ref,
+		SubjectRef:           publication.SubjectRef,
+		SubjectKind:          publication.SubjectKind,
+		EntryURL:             publication.EntryURL,
+		PreferredSurfaceKind: publication.PreferredSurfaceKind,
+		Surfaces:             toProjectionSurfaces(publication.Surfaces),
+		Status:               publication.Status,
+		PublishedAt:          publication.PublishedAt,
+		RetiredAt:            publication.RetiredAt,
+		SupersedesRef:        publication.SupersedesRef,
+	}
+	if publication.Status == "retired" {
+		item.RetiredReason = publication.Note
+	}
+	currentPublicationRef := currentHeads[publicationHeadKey(publication.SubjectRef, publication.SubjectKind)]
+	if includePrivateCampaign {
+		item.CurrentPublicationRef = currentPublicationRef
+	} else if currentPublicationRef != "" {
+		_, currentPublicationModel, err := decodeAppend[model.Publication](ctx, service.reader, currentPublicationRef)
+		if err == nil && publicationIsPublic(currentPublicationRef, currentPublicationModel) {
+			item.CurrentPublicationRef = currentPublicationRef
+		}
+	}
+	if conversion := findConversionForSubject(conversions, publication.SubjectRef, publication.SubjectKind); conversion != nil {
+		item.SourceRulesetManifestRef = conversion.SourceRulesetManifestRef
+		item.TargetRulesetManifestRef = conversion.TargetRulesetManifestRef
+		item.GrantBacked = conversion.ReuseGrantRef != ""
+	}
+
+	switch publication.SubjectKind {
+	case "campaign":
+		var campaign CampaignSummary
+		var err error
+		if includePrivateCampaign {
+			campaign, err = service.campaignSummary(ctx, publication.SubjectRef, true)
+		} else {
+			campaign, err = service.campaignPublicSummary(ctx, publication.SubjectRef)
+		}
+		if err == nil {
+			item.SubjectTitle = campaign.Title
+			item.CampaignRef = campaign.CampaignRef
+			item.CampaignTitle = campaign.Title
+		}
+	case "character-branch":
+		branch, err := service.branchSummaryByRef(ctx, publication.SubjectRef, includePrivateCampaign)
+		if err == nil {
+			item.SubjectTitle = branch.DisplayName
+			item.CampaignRef = branch.LatestCampaignRef
+			item.CampaignTitle = branch.LatestCampaignTitle
+		}
+	case "character-episode":
+		_, episodeModel, err := decodeAppend[model.CharacterEpisode](ctx, service.reader, publication.SubjectRef)
+		if err == nil {
+			branch, err := service.branchSummaryByRef(ctx, episodeModel.CharacterBranchRef, includePrivateCampaign)
+			if err == nil {
+				item.SubjectTitle = branch.DisplayName
+			}
+			if episodeModel.CampaignRef != "" {
+				if includePrivateCampaign {
+					campaign, err := service.campaignSummary(ctx, episodeModel.CampaignRef, true)
+					if err == nil {
+						item.CampaignRef = campaign.CampaignRef
+						item.CampaignTitle = campaign.Title
+					}
+				} else {
+					campaign, err := service.campaignPublicSummary(ctx, episodeModel.CampaignRef)
+					if err == nil {
+						item.CampaignRef = campaign.CampaignRef
+						item.CampaignTitle = campaign.Title
+					}
+				}
+			}
+		}
+	}
+
+	return item, nil
+}
+
+func (service *Service) publicationLibrarySummaries(
+	ctx context.Context,
+	actorDid string,
+	subjectRef string,
+	subjectKind string,
+	mode string,
+) ([]PublicationSummary, error) {
+	resolvedMode := mode
+	if resolvedMode == "" {
+		resolvedMode = "owner-steward"
+	}
+	if resolvedMode != "public" && actorDid != "" && subjectRef != "" {
+		if err := service.authorizePublicationFilter(ctx, actorDid, subjectRef, subjectKind); err != nil && !errors.Is(err, store.ErrNotFound) {
+			return nil, err
+		}
+	}
+	records, err := service.reader.ListAppendByCollection(ctx, model.CollectionPublication)
+	if err != nil {
+		return nil, err
+	}
+	currentHeads, err := service.currentHeadMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conversions, err := service.currentConversions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]PublicationSummary, 0)
+	for _, record := range records {
+		publicationModel, err := model.UnmarshalAppend[model.Publication](record)
+		if err != nil {
+			return nil, err
+		}
+		if subjectRef != "" && publicationModel.SubjectRef != subjectRef {
+			continue
+		}
+		if subjectKind != "" && publicationModel.SubjectKind != subjectKind {
+			continue
+		}
+		if resolvedMode == "public" {
+			if !publicationIsValid(record.Ref, publicationModel) {
+				continue
+			}
+		} else if actorDid != "" {
+			if err := authorizePublicationRead(ctx, service.reader, actorDid, publicationModel.SubjectRef, publicationModel.SubjectKind); err != nil {
+				continue
+			}
+		}
+		item, err := service.publicationSummaryFromRecord(
+			ctx,
+			record,
+			publicationModel,
+			currentHeads,
+			conversions,
+			resolvedMode != "public",
+		)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(left int, right int) bool {
+		if items[left].PublishedAt.Equal(items[right].PublishedAt) {
+			return items[left].PublicationRef < items[right].PublicationRef
+		}
+		return items[left].PublishedAt.After(items[right].PublishedAt)
+	})
+	return items, nil
+}
+
+func publicationHeadKey(subjectRef string, subjectKind string) string {
+	return subjectKind + "\n" + subjectRef
 }
 
 func (service *Service) activeAdvancementRefsForBranch(ctx context.Context, branchRef string) ([]string, error) {
