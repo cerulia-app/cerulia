@@ -94,8 +94,10 @@ func ExampleDocuments() map[string]any {
 				"revision":           1,
 			}},
 			"recentEpisodes": []map[string]any{},
+			"recentConversions": []map[string]any{},
 			"reuseGrants":    []map[string]any{},
 			"publications":   []map[string]any{},
+			"linkedCampaigns": []map[string]any{},
 		},
 		"examples/rpc/getCampaignView.response.json": map[string]any{
 			"mode": "owner-steward",
