@@ -128,4 +128,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 - visual baseline diff
 - copy regression check
 - route manifest check
-- [システムテスト計画](../architecture/test-plan.md) の必須 suite も同一 build で green
+
+AppView package repo の `bun run verify:final-gate` は、この AppView-local final gate を担う。
+
+[システムテスト計画](../architecture/test-plan.md) の必須 suite は、workspace / release candidate 全体に対する cross-repo prerequisite として別経路で green であることを要求する。これは backend / root repo 側の release gate で担保し、AppView package scripts には直接含めない。
