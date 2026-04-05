@@ -20,7 +20,7 @@ current edition、publication status、campaign shell の可視性のような a
 
 ### 4. contract-first で進める
 
-frontend repo は backend repo と分離し、backend が publish する package `@cerulia/contracts` から TypeScript 型、fixture、test harness を作る。archive 側 lexicon は取り込まない。
+frontend repo は backend repo と分離し、backend が出力する contract artifact を `contracts/` へ vendoring して同期点にする。AppView では `bun run contracts:sync` で lexicon / examples / generated bridge を更新し、将来的な `@cerulia/contracts` package 化は同じ surface の抽出として扱う。archive 側 lexicon は取り込まない。
 
 ### 5. release gate は core-only に固定する
 
@@ -35,7 +35,7 @@ frontend repo は backend repo と分離し、backend が publish する package
 | framework                 | SvelteKit 2 系、Svelte 5、TypeScript strict                                           | server load / action、SSR と相性がよい                           |
 | adapter                   | `@sveltejs/adapter-node`                                                              | SSR と reverse proxy 配下運用に向く                              |
 | 認証 / BFF                | `hooks.server.ts`、httpOnly session cookie、server-side fetch wrapper                 | reader lens と auth bundle を分離しやすい                        |
-| contract / validation     | `@cerulia/contracts` artifact 由来の TypeScript client、Zod                           | XRPC schema drift を早く検知できる                               |
+| contract / validation     | `contracts/` snapshot と generated bridge、Zod                                        | XRPC schema drift を早く検知でき、repo 分離の同期点を保てる      |
 | form                      | SvelteKit form actions、`sveltekit-superforms`、Zod                                   | multi-step create flow を扱いやすい                              |
 | UI primitive              | component-scoped CSS、feature-scoped CSS、global token CSS、small reset/base、Bits UI | 独自 visual language を保ちつつ a11y を担保できる                |
 | unit / integration test   | Vitest、`@testing-library/svelte`、MSW                                                | route load / action を contract-first に検証できる               |
@@ -93,8 +93,14 @@ tests/
   mounted/
 contracts/
   manifest.lock.json
+  examples/
   lexicon/
-  fixtures/
+src/
+  lib/
+    server/
+      contracts/
+        generated.ts
+        index.ts
 ```
 
 ## モジュール一覧
@@ -102,7 +108,7 @@ contracts/
 | #   | モジュール                          | 主責務                                                                                  | 着手条件                    | 並列可能 | 完了条件                                                                      |
 | --- | ----------------------------------- | --------------------------------------------------------------------------------------- | --------------------------- | -------- | ----------------------------------------------------------------------------- |
 | 1   | frontend repo foundation            | SvelteKit app、env schema、lint、format、Node adapter、CI 雛形を用意する                | なし                        | 2, 3, 4  | local 起動、SSR build、lint / typecheck が通る                                |
-| 2   | contract / auth / BFF gateway       | `hooks.server.ts`、session cookie、XRPC client、error mapping を作る                    | 1                           | 3, 4     | server load / action から XRPC を認証付きで呼べる                             |
+| 2   | contract / auth / BFF gateway       | `contracts:sync`、generated bridge、`hooks.server.ts`、session cookie、XRPC client、error mapping を作る | 1                           | 3, 4     | server load / action から XRPC を認証付きで呼べ、contract drift を runtime でも止められる |
 | 3   | design system / shared shell        | design token、global layout、primary nav、banner、empty state を作る                    | 1                           | 2, 4     | public / owner-steward を primary nav と surface copy で見分けられる          |
 | 4   | test harness / fixture kit          | Vitest、MSW、Testing Library、Browser Mode を揃える                                     | 1                           | 2, 3     | route / auth / copy の基礎テストが CI で回る                                  |
 | 5   | public entry / workbench promise    | `/`、publication shelf、`/publications`、public publication detail の骨格を作る         | 2, 3, 4                     | 6, 8     | public value first と public lens が安定する                                  |

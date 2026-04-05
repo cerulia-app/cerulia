@@ -857,6 +857,9 @@ func TestCampaignViewIncludesOwnerAuthoredEpisodeContinuity(t *testing.T) {
 		RecentContinuity []struct {
 			CharacterEpisodeRef string `json:"characterEpisodeRef"`
 		} `json:"recentContinuity"`
+		RuleProvenance struct {
+			SharedRuleProfileRefs []string `json:"sharedRuleProfileRefs"`
+		} `json:"ruleProvenance"`
 		ActiveBranches []struct {
 			CharacterBranchRef string `json:"characterBranchRef"`
 		} `json:"activeBranches"`
@@ -875,6 +878,9 @@ func TestCampaignViewIncludesOwnerAuthoredEpisodeContinuity(t *testing.T) {
 	}
 	if ownerStewardResponse.ArchivedCounts.Episodes != 1 {
 		t.Fatalf("expected one archived episode, got %+v", ownerStewardResponse.ArchivedCounts)
+	}
+	if ownerStewardResponse.RuleProvenance.SharedRuleProfileRefs == nil {
+		t.Fatalf("expected empty sharedRuleProfileRefs slice, got nil")
 	}
 }
 

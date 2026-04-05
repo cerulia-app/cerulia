@@ -215,7 +215,7 @@ func (service *Service) GetCampaignView(ctx context.Context, actorDid string, ca
 		view.Campaign.RulesetNSID = campaignModel.RulesetNSID
 		view.Campaign.RulesetManifestRef = campaignModel.RulesetManifestRef
 		view.RuleProvenance = &RuleProvenance{
-			SharedRuleProfileRefs: append([]string(nil), campaignModel.SharedRuleProfileRefs...),
+			SharedRuleProfileRefs: append([]string{}, campaignModel.SharedRuleProfileRefs...),
 			RulesetManifestRef:    campaignModel.RulesetManifestRef,
 		}
 		view.DefaultReusePolicy = campaignModel.DefaultReusePolicyKind
