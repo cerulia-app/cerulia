@@ -65,7 +65,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 | A-2 | integration | global nav order and hub routes | primary nav が Home、Characters、Campaigns、Publications を中心に構成されること                                           |
 | A-3 | integration | deep-link resolution            | publication deep-link が active detail、tombstone、neutral notice に正しく分岐すること                                    |
 | A-4 | integration | return path                     | public reader と owner-steward が docs どおりの return path を持つこと                                                    |
-| A-5 | integration | transport error matrix          | Unauthorized、Forbidden、NotFound、InvalidRequest が distinct な UI state に写像されること                                |
+| A-5 | integration | auth / transport feedback matrix | auth-required gate、Forbidden、NotFound、InvalidRequest、rebase-needed が distinct な UI state に写像されること             |
 
 ### B. Lens and Boundary Integration Test
 
