@@ -20,7 +20,7 @@ current edition、publication status、campaign shell の可視性のような a
 
 ### 4. contract-first で進める
 
-frontend repo は backend repo と分離し、backend が出力する contract artifact を `contracts/` へ vendoring して同期点にする。AppView では `bun run contracts:sync` で lexicon / examples / generated bridge を更新し、将来的な `@cerulia/contracts` package 化は同じ surface の抽出として扱う。archive 側 lexicon は取り込まない。
+frontend repo は backend repo と分離し、backend が出力する contract artifact を `contracts/` へ vendoring して同期点にする。AppView では `bun run contracts:sync` で lexicon / examples / generated bridge と `contracts/package/` の extractable package surface を更新する。`@cerulia/contracts` の publish surface は同じ directory であり、archive 側 lexicon は取り込まない。
 
 ### 5. release gate は core-only に固定する
 
@@ -93,6 +93,14 @@ tests/
   mounted/
 contracts/
   manifest.lock.json
+  package/
+    package.json
+    README.md
+    index.ts
+    generated.ts
+    manifest.lock.json
+    lexicon/
+    examples/
   examples/
   lexicon/
 src/
