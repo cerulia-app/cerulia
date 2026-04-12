@@ -34,13 +34,13 @@ When a task requires design judgment, implementation judgment, tradeoff analysis
 
 ## Review Rule
 
-- Unless the user explicitly says otherwise, use the `cerulia-implementation-review` skill for periodic reviews during substantial work and for the review step in the completion hook.
+- Unless the user explicitly says otherwise, use the `cerulia-review` skill for periodic reviews during substantial work and for the review step in the completion hook.
 - Review for architectural fit, boundary violations, regressions, and missing tests before considering a unit complete.
 
 ## Completion Hook
 
 - Treat review and commit as the required completion hook for each implementation task unless the user explicitly says otherwise.
-- Before declaring an implementation task complete, run the review for that unit with the `cerulia-implementation-review` skill, then make the commit for that same unit.
+- Before declaring an implementation task complete, run the review for that unit with the `cerulia-review` skill, then make the commit for that same unit.
 - Do not treat an implementation task as finished until both steps have been completed.
 - If multiple sprints are requested in one pass, finish the completion hook for sprint N before starting sprint N+1. If changes from multiple sprints accumulate in one worktree, split them back into sprint-sized units before review and commit.
 
