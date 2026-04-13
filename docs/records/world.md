@@ -14,13 +14,13 @@ world steward の repo、または library repo。
 - title
 - canonSummary
 - defaultRuleProfileRefs
-- stewardDids
+- maintainerDids
 - createdAt
 - updatedAt
 
 ## 更新主体
 
-world steward。
+world owner、または maintainerDids に含まれる actor。
 
 ## 参照関係
 
@@ -32,7 +32,7 @@ world steward。
 
 - world は canon scope であり、runtime finalizer ではない
 - 複数の house や campaign が同じ world を参照してよい
-- defaultRuleProfileRefs は ordered list とし、world 固有の rules default や lore package への参照として使ってよいが、それを seed として受け取る house / campaign の executable contract を黙って置き換えてはならない
+- defaultRuleProfileRefs は ordered list とし、world 固有の rules default への参照として使ってよい
 - defaultRuleProfileRefs は新規 house や campaign を作るときの seed-only default として扱い、既存 record に自動追随させない
-- world は current product-core RPC surface では mutable anchor として扱わず、library-managed な read-mostly record として参照する
-- world を参照しない campaign も許可してよい。MVP で mandatory root にしない方が運用しやすい
+- maintainerDids は scope record（world）のみを更新できる。character 系 record の write authority には影響しない
+- world を参照しない campaign も許可してよい

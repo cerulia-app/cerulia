@@ -11,6 +11,7 @@
 ## 主なフィールド
 
 - ownerDid
+- sheetSchemaRef
 - rulesetNsid
 - displayName
 - portraitRef
@@ -30,6 +31,7 @@
 
 ## 設計上の注意
 
+- sheetSchemaRef は character-sheet-schema の特定バージョンを pin する。schema が更新されても、sheet は自分で rebase するまで古い定義で valid のまま動く
 - 一時状態や外部 context の current overlay は入れない
 - ruleset 差分が大きい部分は ruleset namespace 側に逃がせる余地を残す
 - externalSheetUri は import 元の provenance を示す field とし、外部元を live canonical source とみなさない

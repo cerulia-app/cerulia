@@ -8,8 +8,8 @@ base ruleset の上に重ねる continuity overlay record。core では world、
 
 scope に応じて置き場所を分ける。
 
-- world / house shared の profile は library repo か steward repo
-- campaign shared の profile は campaign steward repo
+- world / house shared の profile は scope owner の repo
+- campaign shared の profile は campaign owner の repo
 
 ## 主なフィールド
 
@@ -29,7 +29,7 @@ scope に応じて置き場所を分ける。
 
 ## 更新主体
 
-その scope の steward。core では campaign shared は campaign steward、world / house shared は対応する steward が管理する。
+その scope の owner、または maintainerDids に含まれる actor。
 
 ## 参照関係
 

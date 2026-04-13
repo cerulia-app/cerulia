@@ -13,7 +13,7 @@ character-branch に対する成長、XP 消費、retrain、respec、訂正を a
 - characterBranchRef
 - advancementKind
 - deltaPayloadRef
-- approvedByDid
+- sessionRef
 - effectiveAt
 - supersedesRef
 - requestId
@@ -22,16 +22,17 @@ character-branch に対する成長、XP 消費、retrain、respec、訂正を a
 
 ## 更新主体
 
-branch owner、または成長処理を確定できる continuity steward。
+branch owner のみ。
 
 ## 参照関係
 
 - character-branch
-- character-episode
+- session（sessionRef で任意に参照）
 
 ## 設計上の注意
 
 - advancement は append-only にし、XP spend、milestone、retrain、respec、correction を同じ ledger で扱う
+- sessionRef は任意。どのセッションで得た成長かをリンクできるが、リンクしなくても有効
 - advancementKind が import-sync のときは、imported base の sourceRevision を明示的に進める同期イベントとして扱う
 - correction は既存 entry を消さず、supersedesRef か補正 entry で扱う
 - supersedesRef を使う場合、参照先は同じ characterBranchRef を指す advancement に限る
