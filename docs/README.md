@@ -1,28 +1,29 @@
 # Cerulia 設計文書
 
-この docs tree の正本は、Cerulia を character continuity service として定義する。扱うのは character lineage、campaign continuity、rules provenance、publication、reuse boundary、append-only correction だけである。session lifecycle、membership、run authority、disclosure、board、replay、appeal、audit surface は製品スコープ外であり、正本には含めない。
+この docs tree の正本は、Cerulia を owner-centric な character history service として定義する。扱うのは character lineage、session history、scenario catalog、campaign / house scope、rules provenance、character-sheet-schema、publication、append-only correction である。session の run authority、membership、disclosure、board、replay は製品スコープ外である。
 
 ## 読み順
 
 1. [設計概要](architecture/overview.md)
 2. [設計哲学](architecture/philosophy.md)
-3. [スコープ再編の採用記録](architecture/scope-realignment.md)
-4. [主要判断と代替案](architecture/decisions.md)
-5. [レイヤー構成](architecture/layers.md)
-6. [projection contract](architecture/projections.md)
-7. [MVP の実装順](architecture/mvp.md)
-8. [Go サーバー実装計画](architecture/implementation-plan.md)
-9. [システムテスト計画](architecture/test-plan.md)
-10. [AppView 層 UI 設計](appview/README.md)
-11. [GCP Cloud Run + Neon + R2 ホスティング / 運用方針](architecture/hosting-gcp-neon-r2.md)
+3. [主要判断と代替案](architecture/decisions.md)
+4. [レイヤー構成](architecture/layers.md)
+5. [projection contract](architecture/projections.md)
+6. [MVP の実装順](architecture/mvp.md)
+7. [Go サーバー実装計画](architecture/implementation-plan.md)
+8. [システムテスト計画](architecture/test-plan.md)
+9. [AppView 層 UI 設計](appview/README.md)
+10. [GCP Cloud Run + Neon + R2 ホスティング / 運用方針](architecture/hosting-gcp-neon-r2.md)
 
-## Continuity Core Records
+## Core Records
 
 - scope: [campaign](records/campaign.md), [house](records/house.md), [world](records/world.md)
-- lineage: [character-sheet](records/character-sheet.md), [character-branch](records/character-branch.md), [character-conversion](records/character-conversion.md), [character-advancement](records/character-advancement.md), [character-episode](records/character-episode.md)
-- provenance and sharing: [ruleset-manifest](records/ruleset-manifest.md), [rule-profile](records/rule-profile.md), [publication](records/publication.md), [reuse-grant](records/reuse-grant.md)
+- lineage: [character-sheet](records/character-sheet.md), [character-branch](records/character-branch.md), [character-conversion](records/character-conversion.md), [character-advancement](records/character-advancement.md)
+- session: [session](records/session.md), [session-participation](records/session-participation.md), [scenario](records/scenario.md)
+- rules: [ruleset-manifest](records/ruleset-manifest.md), [rule-profile](records/rule-profile.md), [character-sheet-schema](records/character-sheet-schema.md)
+- publication: [publication](records/publication.md)
 
-## Continuity Core Lexicon
+## Core Lexicon
 
 - [共通定義](lexicon/defs.md)
 - [コア namespace](lexicon/core.md)
@@ -35,8 +36,9 @@
 
 ## 現時点の結論
 
-- Cerulia の製品スコープは character continuity service に固定する。
-- campaign は continuity scope であり、session lobby や参加管理面ではない。
-- publication の正本は publication ledger にあり、carrier や mirror の整合は製品責務に含めない。
-- product-core record と lexicon は run stack への規範的依存を持たない。
-- contract 生成、validation、テスト gate は product-core source set だけを対象にし、archive を走査しない。
+- Cerulia の製品スコープは owner-centric な character history service に固定する。
+- キャラクター状態の変更は owner のみ。GM も他のプレイヤーも他人のキャラ record を書き換えない。
+- session は post-run の記録であり、run control を持たない。
+- 越境利用はシステムで管理しない。コミュニケーションによる。
+- publication の正本は publication ledger にあり、carrier の整合は製品責務に含めない。
+- scenario の spoiler は AT Protocol レベルでは公開。隠蔽は AppView で対応する。
