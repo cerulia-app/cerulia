@@ -50,7 +50,7 @@ subject の owner。
 - current head が retired のときは retiredAt を埋め、`surfaces` に active な要素を残してはならない
 - retire は公開入口を将来向けに止めることである
 - retired または superseded な publicationRef の direct link は、AppView 上では current head への CTA と状態説明を持つ explanatory tombstone に解決する
-- owner-steward 向けの既定 list は active current head だけを返し、retired current head は includeRetired 相当の明示 opt-in で archived summary として列挙する
+- owner 向けの既定 list は active current head だけを返し、retired current head は includeRetired 相当の明示 opt-in で archived summary として列挙する
 - canonical source of truth は publication ledger であり、外向け post / thread / profile / app card は差し替え可能な carrier として扱う
 - character-conversion 自体は publication subject にせず、変換後の branch または episode を公開対象にする
 - 変換済み branch または episode を公開するとき、publication summary は raw conversion ledger を露出せずに必要最小限の derivation hint を返してよい

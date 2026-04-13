@@ -27,9 +27,9 @@ AppView は Cerulia の projection を見やすく束ねる層であり、正本
 
 current edition の解決は backend の current head folding に従う。UI はその結果を current edition として表示する。
 
-### 2. public と owner-steward の lens を混ぜない
+### 2. public と owner の lens を混ぜない
 
-public surface では公開中の版だけを返し、owner-steward surface では continuity の内部詳細を返してよい。両者を同じ row で曖昧にしない。
+public surface では公開中の版だけを返し、owner surface では continuity の内部詳細を返してよい。両者を同じ row で曖昧にしない。
 
 ### 3. archive は current surface の外に置く
 

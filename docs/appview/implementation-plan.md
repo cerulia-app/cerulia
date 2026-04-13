@@ -52,7 +52,7 @@ AppView の styling は native CSS を前提にし、次の 4 層で管理する
 
 この構成により、AI agent は style の責務を「token」「shared primitive」「feature local」へ切り分けて探索できる。`app.css` へ全 route の rule を積み続ける方針は採らない。
 
-Tailwind CSS は採用しない。utility-first は局所性を上げる一方で、Cerulia が重視する public / owner-steward、current / archive、draft / accepted の grammar を semantic に監査しづらくするためである。
+Tailwind CSS は採用しない。utility-first は局所性を上げる一方で、Cerulia が重視する public / owner、current / archive、draft / accepted の grammar を semantic に監査しづらくするためである。
 
 DaisyUI のような preset UI library も採用しない。初速は出るが、Character Continuity Workbench を generic dashboard の grammar に引き戻しやすく、override と debug の責務が増えるためである。
 
@@ -117,12 +117,12 @@ src/
 | --- | ----------------------------------- | --------------------------------------------------------------------------------------- | --------------------------- | -------- | ----------------------------------------------------------------------------- |
 | 1   | frontend repo foundation            | SvelteKit app、env schema、lint、format、Node adapter、CI 雛形を用意する                | なし                        | 2, 3, 4  | local 起動、SSR build、lint / typecheck が通る                                |
 | 2   | contract / auth / BFF gateway       | `contracts:sync`、generated bridge、`hooks.server.ts`、session cookie、XRPC client、error mapping を作る | 1                           | 3, 4     | server load / action から XRPC を認証付きで呼べ、contract drift を runtime でも止められる |
-| 3   | design system / shared shell        | design token、global layout、primary nav、banner、empty state を作る                    | 1                           | 2, 4     | public / owner-steward を primary nav と surface copy で見分けられる          |
+| 3   | design system / shared shell        | design token、global layout、primary nav、banner、empty state を作る                    | 1                           | 2, 4     | public / owner を primary nav と surface copy で見分けられる          |
 | 4   | test harness / fixture kit          | Vitest、MSW、Testing Library、Browser Mode を揃える                                     | 1                           | 2, 3     | route / auth / copy の基礎テストが CI で回る                                  |
 | 5   | public entry / workbench promise    | `/`、publication shelf、`/publications`、public publication detail の骨格を作る         | 2, 3, 4                     | 6, 8     | public value first と public lens が安定する                                  |
 | 6   | character continuity workbench home | `/home`、continue zone、create zone、publish zone を作る                                | 2, 3, 4、`getCharacterHome` | 5, 7, 8  | canonical landing が `/home` で固定される                                     |
 | 7   | character continuity studio         | `/characters`、`/characters/new`、`/characters/import`、`/characters/:branchRef` を作る | 2, 3, 4、`getCharacterHome` | 6, 8     | draft / accepted、campaign intent、publication preview が docs どおりに見える。convert accept は backend conversion surface が揃うまで fail-closed でもよい |
-| 8   | campaign workspace                  | `/campaigns`、`/campaigns/:campaignRef` を owner-steward / public の 2 lens で作る      | 2, 3, 4、`getCampaignView`  | 5, 7     | public campaign shell と owner-steward provenance 表示が分離される            |
+| 8   | campaign workspace                  | `/campaigns`、`/campaigns/:campaignRef` を owner / public の 2 lens で作る      | 2, 3, 4、`getCampaignView`  | 5, 7     | public campaign shell と owner provenance 表示が分離される            |
 | 9   | publication management / tombstone  | publish / retire UI、`/publications/:publicationRef` の active detail、tombstone を作る | 5, 7, 8                     | 10       | publication / retire / archive が語彙でも導線でも混ざらない                   |
 | 10  | hardening / release ops             | perf、a11y、copy regression、route manifest check を固める                              | 5-9                         | 継続実施 | Core Shell Gate と Final Gate が green                                        |
 

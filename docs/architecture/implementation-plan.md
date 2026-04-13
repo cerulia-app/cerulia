@@ -2,7 +2,7 @@
 
 ## 目的
 
-この文書は、Cerulia の設計文書を Go サーバー実装へ落とすための core-only 実行計画である。対象は server-side の実装順、module boundary、並列作業の許容範囲、着手条件、完了条件であり、character continuity service を session/run なしで閉じることを前提にする。
+この文書は、Cerulia の設計文書を Go サーバー実装へ落とすための core-only 実行計画である。対象は server-side の実装順、module boundary、並列作業の許容範囲、着手条件、完了条件であり、character history service を session/run なしで閉じることを前提にする。
 
 前提となる設計判断は次の文書に従う。
 
@@ -103,8 +103,9 @@ product-core へ戻さないものは、`internal/run` やそれに準ずる pub
 | 3 | auth gateway | DID 解決、OAuth permission-set 検証、anonymous public mode を作る | auth bundle、repo access | 1, 2 | 4 |
 | 4 | ledger kernel | requestId idempotency、service log、current-head helper、revision CAS helper を作る | mutationAck、service log、head chain | 1, 2 | 3 |
 | 5 | continuity scope / rules | world、house、campaign、ruleset-manifest、rule-profile と rule chain resolver を作る | core scope records | 3, 4 | 6 |
-| 6 | character lineage | character-sheet、character-branch、character-conversion、character-advancement、character-episode を作る | sheet / branch / conversion / advancement / episode | 3, 4, 5 | 7 |
-| 7 | sharing ledger | publication、reuse-grant、retire / revoke を作る | publication / reuse | 5, 6 | 8 |
+| 6 | character lineage | character-sheet、character-branch、character-conversion、character-advancement を作る | sheet / branch / conversion / advancement | 3, 4, 5 | 7 |
+| 7 | session history | session、session-participation、scenario、character-sheet-schema を作る | session / scenario / schema | 3, 4, 5 | 8 |
+| 8 | publication ledger | publication、retire を作る | publication | 5, 6, 7 | 9 |
 | 8 | core projection | character home、campaign view、publication summary を作る | core read model | 5, 6, 7 | 9 |
 | 9 | core XRPC | core query / procedure、error surface、auth mapping を作る | app.cerulia.rpc core endpoints | 3, 4, 5, 6, 7, 8 | 8 の一部 |
 | 10 | hardening | scenario test、performance、migration rehearsal、運用 runbook を固める | 全体 | 1-9 | 各フェーズ末 |
@@ -144,8 +145,8 @@ product-core へ戻さないものは、`internal/run` やそれに準ずる pub
 
 1. campaign と rule-profile chain
 2. character-sheet と character-branch
-3. publication と reuse-grant
-4. character-advancement と character-episode
+3. publication
+4. session と session-participation
 5. character-conversion
 
 この段階を終える条件:
@@ -166,13 +167,13 @@ product-core へ戻さないものは、`internal/run` やそれに準ずる pub
 - character home
 - campaign view
 - publication summary
-- getCharacterHome、getCampaignView、listCharacterEpisodes、listReuseGrants、listPublications
-- createCampaign、createCharacterBranch、updateCharacterBranch、retireCharacterBranch、recordCharacterAdvancement、recordCharacterEpisode、recordCharacterConversion、importCharacterSheet、attachRuleProfile、retireRuleProfile、publishSubject、retirePublication、grantReuse、revokeReuse
+- getCharacterHome、getCampaignView、listPublications
+- createCampaign、createCharacterBranch、updateCharacterBranch、retireCharacterBranch、recordCharacterAdvancement、recordCharacterConversion、importCharacterSheet、attachRuleProfile、retireRuleProfile、createSession、createSessionParticipation、publishSubject、retirePublication
 
 この段階を終える条件:
 
 - core projection が core canonical input のみで再構築できる
-- public mode と owner / steward mode の差分が auth と data folding の両方で再現できる
+- public mode と owner mode の差分が auth と data folding の両方で再現できる
 - public HTTP surface、authz、contract catalog に run/session/gov/disclosure endpoint が残っていない
 
 ### Phase 3: hardening と cleanup を完了する

@@ -6,21 +6,23 @@
 
 ## 採用した結論
 
-Cerulia の製品スコープを character continuity service に固定する。
+Cerulia の製品スコープを character history service に固定する。
 
-ここでいう character continuity service は次だけを扱う。
+ここでいう character history service は次だけを扱う。
 
 - character lineage
-- campaign continuity
+- session history
+- campaign / house scope
+- scenario catalog
 - rules provenance
+- character-sheet-schema
 - publication
-- reuse boundary
 - append-only correction と履歴説明可能性
 
 次は製品スコープに含めない。
 
-- session lifecycle
-- membership と run authority
+- session の run authority
+- membership と参加承認
 - message / roll / ruling-event のような卓中イベント
 - disclosure / secrets / handout
 - board / realtime
@@ -43,7 +45,7 @@ Cerulia の製品スコープを character continuity service に固定する。
 
 ## なぜ campaign は残すのか
 
-campaign は session の言い換えではない。campaign は continuity scope であり、複数の character lineage と continuity artifact を共有文脈で束ねる anchor である。
+campaign は session の言い換えではない。campaign はセッションのシリーズであり、複数の character lineage と session history を共有文脈で束ねる anchor である。
 
 campaign が担うのは次である。
 
@@ -88,19 +90,19 @@ campaign が担わないのは次である。
 
 この再編は、少なくとも次を満たすときに完了とみなす。
 
-- README を読んだだけで Cerulia が character continuity service だと分かる
+- README を読んだだけで Cerulia が character history service だと分かる
 - AppView の route tree に `/sessions/*` が存在しない
 - 製品 roadmap に session / governance / replay / board の phase が存在しない
 - records / lexicon の正本 tree に session stack が混ざらない
-- campaign が continuity scope であり、session の代用品ではないことが全体で一貫する
+- campaign が scope であり、session の代用品ではないことが全体で一貫する
 - product-core record と lexicon が run stack への規範的依存を持たない
 
 ## 付属ルール
 
 ### campaign の説明ルール
 
-- campaign は continuity shell であり、session 管理面ではない
-- campaign steward は continuity metadata と publication policy の管理者であり、GM authority や moderation operator ではない
+- campaign はセッションのシリーズであり、session 管理面ではない
+- campaign の maintainerDids は campaign record のみを更新でき、character 系 record の write authority には影響しない
 
 ### publication の説明ルール
 

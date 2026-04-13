@@ -29,7 +29,7 @@ ruleset maintainer、または ruleset library の管理主体。
 - campaign
 - rule-profile
 - character-conversion
-- character-episode
+- session（session.scenarioRef → scenario.rulesetManifestRef で間接参照）
 
 ## 設計上の注意
 

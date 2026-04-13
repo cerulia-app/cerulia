@@ -51,7 +51,7 @@ target sheet owner のみ。
 - conversionContractRef と conversionContractVersion は中立な contract metadata とし、ruleset 固有 spec、library record、service release、manual mapping doc を指してよい。core に universal DSL を押し込まない。
 - sourceBranchRef がある場合、sourceSheetRef はその branch の baseSheetRef と一致しなければならない。targetBranchRef は必須とし、その branch の baseSheetRef は targetSheetRef と一致しなければならない。
 - targetCampaignRef は、変換 path がどの campaign shared chain に正規化されたかを示す canonical provenance field とする。campaign-less な local conversion では省略してよい。
-- 同じ conversion outcome を後続の character-episode で要約するとき、episode.campaignRef は targetCampaignRef と同値を mirror してよいが、より広い campaign linkage を新設してはならない。
+- 同じ conversion outcome を後続の session で要約するとき、session.campaignRef は targetCampaignRef と同値を mirror してよいが、より広い campaign linkage を新設してはならない。
 - same-owner conversion は制限なく行える。cross-boundary の変換はコミュニケーションによる
 - convertedByDid は変換 write を確定した actor を表す。target sheet owner と異なる場合は不正とする（owner のみが変換を確定できる）
 - character home の conversion summary で返す authorityKind は導出値として扱ってよい。convertedByDid が target sheet owner と一致する場合は same-owner とする

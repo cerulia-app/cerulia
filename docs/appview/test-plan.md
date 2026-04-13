@@ -7,7 +7,7 @@
 AppView は system console ではなく Character Continuity Workbench なので、この計画は次を証明することを目的にする。
 
 - canonical landing、route tree、return path が docs の情報設計に一致すること
-- public と owner-steward の lens が UI 上で混線しないこと
+- public と owner の lens が UI 上で混線しないこと
 - AppView が backend の現行版解決や publication truth を勝手に再定義しないこと
 - mutation の accepted / rejected / rebase-needed を UI が誤魔化さずに表示すること
 - tombstone、disabled reason、warning copy が docs の意味論に一致すること
@@ -43,13 +43,13 @@ AppView は system console ではなく Character Continuity Workbench なので
 
 - Vitest Browser Mode
 - published contract artifact snapshot
-- seeded fixture。anonymous、owner、steward を固定 DID で再現できること
+- seeded fixture。anonymous、owner を固定 DID で再現できること
 - 固定時計
 - route-level assertion
   実装段階の browser smoke では route page component を直接 render して surface contract を先に固定してよい。release gate の route-mounted assertion は、この repo の Browser Mode に限らず、preview build に対する workspace-level release smoke でも満たしてよい。
-  現在は Playwright Test の `bun run test:mounted` が build を 1 回だけ生成し、public / owner-steward 用の preview server を別ポートで起動して、`/` の public top と signed-in でも public lens を壊さないこと、`/characters` と `/characters/:branchRef` の public gate / owner mounted route、`/campaigns/:campaignRef` の public shell / owner branch / NotFound fail-close、`/home` の public gate / owner mounted route、`/publications/:publicationRef` の deep-link resolution を実ルートで確認する。
+  現在は Playwright Test の `bun run test:mounted` が build を 1 回だけ生成し、public / owner 用の preview server を別ポートで起動して、`/` の public top と signed-in でも public lens を壊さないこと、`/characters` と `/characters/:branchRef` の public gate / owner mounted route、`/campaigns/:campaignRef` の public shell / owner branch / NotFound fail-close、`/home` の public gate / owner mounted route、`/publications/:publicationRef` の deep-link resolution を実ルートで確認する。
 - role split
-  `test:contract` は `tests/contract` で load / resolver / auth gate を確認し、`test:component` は `tests/component` で owner 専用 branch と responsive を確認し、`test:mounted` は `tests/mounted/public` と `tests/mounted/owner-steward` で mounted route を確認する。
+  `test:contract` は `tests/contract` で load / resolver / auth gate を確認し、`test:component` は `tests/component` で owner 専用 branch と responsive を確認し、`test:mounted` は `tests/mounted/public` と `tests/mounted/owner` で mounted route を確認する。
 - network / transport fault injection
 - visual baseline
 - accessibility harness
@@ -64,7 +64,7 @@ AppView は system console ではなく Character Continuity Workbench なので
 | A-1 | integration | canonical landing               | anonymous は `/`、認可直後の canonical landing は `/home`、明示的に `/` を開いた signed-in user は public lens を保つこと |
 | A-2 | integration | global nav order and hub routes | primary nav が Home、Characters、Campaigns、Publications を中心に構成されること                                           |
 | A-3 | integration | deep-link resolution            | publication deep-link が active detail、tombstone、neutral notice に正しく分岐すること                                    |
-| A-4 | integration | return path                     | public reader と owner-steward が docs どおりの return path を持つこと                                                    |
+| A-4 | integration | return path                     | public reader と owner が docs どおりの return path を持つこと                                                    |
 | A-5 | integration | auth / transport feedback matrix | auth-required gate、Forbidden、NotFound、InvalidRequest、rebase-needed が distinct な UI state に写像されること             |
 
 ### B. Lens and Boundary Integration Test

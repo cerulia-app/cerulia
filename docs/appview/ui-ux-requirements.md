@@ -10,10 +10,10 @@
 
 ## lens と境界
 
-- primary nav と page copy の組み合わせで現在の reader lens を誤認させない。少なくとも public と owner-steward を区別する
+- primary nav と page copy の組み合わせで現在の reader lens を誤認させない。少なくとも public と owner を区別する
 - ボタンや panel が無効なときは、理由を permission 不足、publication 未公開、stale revision、required input 不足のどれかに落として説明する
 - public surface では unpublished continuity、raw archived chain、private な provenance detail を漏らさない
-- owner-steward surface でも archive と current surface を同じ card grammar に混ぜない
+- owner surface でも archive と current surface を同じ card grammar に混ぜない
 - campaign shell では rule provenance と public summary を mode ごとに切り分ける
 
 ## mutation feedback
