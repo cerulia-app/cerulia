@@ -13,10 +13,9 @@ permission-set 定義は dedicated な auth lexicon にまとめ、app.cerulia.a
 
 | bundle | 役割 | 代表 capability |
 | --- | --- | --- |
-| app.cerulia.authCoreReader | core projection を読む | getCharacterHome、getCampaignView、listCharacterEpisodes、listReuseGrants、listPublications |
-| app.cerulia.authCoreWriter | continuity core record を更新する | createCampaign、attachRuleProfile、retireRuleProfile、importCharacterSheet、createCharacterBranch、updateCharacterBranch、retireCharacterBranch、recordCharacterAdvancement、recordCharacterEpisode、recordCharacterConversion |
+| app.cerulia.authCoreReader | core projection を読む | getCharacterHome、getCampaignView、listPublications |
+| app.cerulia.authCoreWriter | core record を更新する | createCampaign、attachRuleProfile、retireRuleProfile、importCharacterSheet、createCharacterBranch、updateCharacterBranch、retireCharacterBranch、recordCharacterAdvancement、recordCharacterConversion、createSession、createSessionParticipation |
 | app.cerulia.authCorePublicationOperator | core publication を更新する | publishSubject、retirePublication |
-| app.cerulia.authReuseOperator | core reuse ledger を更新する | grantReuse、revokeReuse |
 
 ## Lexicon-ready permission-set skeleton
 
@@ -37,8 +36,6 @@ service bundle は次の形を正本にする。
           "lxm": [
             "app.cerulia.rpc.getCharacterHome",
             "app.cerulia.rpc.getCampaignView",
-            "app.cerulia.rpc.listCharacterEpisodes",
-            "app.cerulia.rpc.listReuseGrants",
             "app.cerulia.rpc.listPublications"
           ]
         }
@@ -50,10 +47,9 @@ service bundle は次の形を正本にする。
 
 ## 設計上の注意
 
-- authCoreReader は owner 向けの core continuity read に使う。campaign shared view は steward mode を持つが、character home と branch-scoped list は owner-only とする
+- authCoreReader は owner 向けの core read に使う。campaign view は public mode を持つが、character home と branch-scoped list は owner-only とする
 - public mode は anonymous でも返してよいが、返す内容は active な public publication current head に裏づけられた block だけに限る
 - publishSubject と retirePublication は core publication の canonical path なので authCorePublicationOperator に切る
-- grantReuse と revokeReuse は branch owner の同意系操作として authReuseOperator に切る
 - auth bundle 名は role 名に寄せず、technical responsibility を名前に出す
 
 ## 避けるべき切り方

@@ -15,7 +15,6 @@
 | def | format | semantic invariant |
 | --- | --- | --- |
 | campaignRef | at-uri | app.cerulia.core.campaign record を指す |
-| sourceCampaignRef | at-uri | reuse-grant の source boundary に使う campaign を指す |
 | houseRef | at-uri | app.cerulia.core.house record を指す |
 | worldRef | at-uri | app.cerulia.core.world record を指す |
 | rulesetManifestRef | at-uri | app.cerulia.core.rulesetManifest record を指す |
@@ -23,14 +22,14 @@
 | characterSheetRef | at-uri | app.cerulia.core.characterSheet record を指す |
 | characterBranchRef | at-uri | app.cerulia.core.characterBranch record を指す |
 | characterAdvancementRef | at-uri | app.cerulia.core.characterAdvancement record を指す |
-| characterEpisodeRef | at-uri | app.cerulia.core.characterEpisode record を指す |
 | characterConversionRef | at-uri | app.cerulia.core.characterConversion record を指す |
+| sessionRef | at-uri | app.cerulia.core.session record を指す |
+| sessionParticipationRef | at-uri | app.cerulia.core.sessionParticipation record を指す |
+| scenarioRef | at-uri | app.cerulia.core.scenario record を指す |
+| characterSheetSchemaRef | at-uri | app.cerulia.core.characterSheetSchema record を指す |
 | publicationRef | at-uri | app.cerulia.core.publication record を指す |
-| reuseGrantRef | at-uri | app.cerulia.core.reuseGrant record を指す |
 | subjectRef | at-uri | publication の対象 record を指す |
-| scopeRef | at-uri | world / house / campaign の continuity scope record を指す |
-| targetRef | at-uri | reuse-grant の record-backed target を指す |
-| targetDid | did | actor target の reuse-grant に使う DID |
+| scopeRef | at-uri | world / house / campaign の scope record を指す |
 | did | did | actor 識別子 |
 | rulesetNsid | nsid | ruleset namespace の根 NSID |
 | datetime | datetime | すべて UTC 前提 |
@@ -46,18 +45,15 @@
 | ruleProfileScopeKind | world-shared / house-shared / campaign-shared |
 | ruleProfileStatus | provisional / active / retired |
 | branchKind | campaign-fork / imported-fork / local-override |
-| conversionAuthorityKind | same-owner / campaign-steward / grant-backed |
+| conversionAuthorityKind | same-owner |
 | syncMode | snapshot / manual-rebase / pinned-upstream |
 | advancementKind | milestone / xp-spend / retrain / respec / correction / import-sync |
-| publicationSubjectKind | campaign / character-branch / character-episode |
+| publicationSubjectKind | campaign / character-branch / session |
 | publicationSurfaceKind | post / thread / profile / app-card |
 | publicationPurposeKind | discovery / stable-entry / history-link |
 | publicationStatus | active / retired |
 | surfaceStatus | active / retired |
-| projectionSurfaceKind | character-home / campaign-view / publication-summary |
-| reusePolicyKind | same-campaign-default / explicit-cross-campaign / explicit-cross-scope / public-library |
-| reuseTargetKind | campaign / house / world / actor / public |
-| reuseMode | fork-only / fork-and-advance / summary-share / full-share |
+| projectionSurfaceKind | character-home / campaign-view / publication-summary / scenario-catalog / house-activity |
 | mutationResultKind | accepted / rejected / rebase-needed |
 
 ## shared object defs
@@ -88,7 +84,7 @@ surface descriptor は publication で再利用する shared object に固定す
 
 ## record-key の基本方針
 
-- campaign、house、world、character-sheet、character-branch のような安定オブジェクトは stable key を使う
-- publication、character-advancement、character-episode、character-conversion、reuse-grant のような append-only ledger は tid を使う
+- campaign、house、world、character-sheet、character-branch、scenario、character-sheet-schema のような安定オブジェクトは stable key を使う
+- publication、character-advancement、character-conversion、session、session-participation のような append-only ledger は tid を使う
 
 core は抽象化しすぎず、しかし archive 固有の都合を押し込まないことが重要である。
