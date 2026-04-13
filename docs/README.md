@@ -35,7 +35,3 @@ Cerulia は TRPG プレイヤー向けのキャラクター管理・セッショ
 - 全 record は原則公開。visibility: draft / public で AppView が表示を制御する
 - キャラクター状態の変更は owner のみ。他人の record は書き換えない
 - 他人の DID を自分の record に書かない
-- session は post-run の記録であり、run control を持たない。
-- 越境利用はシステムで管理しない。コミュニケーションによる。
-- publication の正本は publication ledger にあり、carrier の整合は製品責務に含めない。
-- scenario の spoiler は AT Protocol レベルでは公開。隠蔽は AppView で対応する。
