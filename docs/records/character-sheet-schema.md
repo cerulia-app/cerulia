@@ -14,21 +14,28 @@ schema 作者または maintainer の repo。
 - schemaVersion
 - title
 - fieldDefs
-- supersedesRef
 - ownerDid
 - maintainerDids
 - createdAt
 
 ### fieldDefs
 
-フィールド定義のリスト。各 entry は次を持つ。
+フィールド定義のリスト。再帰的な構造（グループ、配列）を許す。
+
+各 entry は次を持つ。
 
 - fieldId（一意な識別子）
 - label（表示名）
-- fieldType（integer, string, boolean, enum, etc.）
+- fieldType（integer, string, boolean, enum, group, array）
+- children（任意: group / array の場合の子フィールド定義）
+- itemDef（任意: array の場合の要素定義）
 - valueRange（任意: { min?, max? } や enum の選択肢）
 - required（必須かどうか）
 - description（任意: フィールドの説明）
+
+### 再帰構造の方針
+
+fieldDefs はグループ（section）と配列（list of objects）を許す。これにより「能力値」セクション内に STR, DEX... を置いたり、技能リストを配列で表現できる。ただし core schema に universal DSL を押し込まない。deep nesting の上限や具体的な型名は将来の実装で詰める。
 
 ## 更新主体
 
@@ -36,14 +43,14 @@ schema の ownerDid、または maintainerDids に含まれる actor。
 
 ## 参照関係
 
-- ruleset-manifest（baseRulesetNsid で間接的に関連）
 - character-sheet（sheetSchemaRef から参照される）
+- ruleset-manifest（sheetSchemaRefs で逆参照される）
 
 ## 設計上の注意
 
-- character-sheet-schema は immutable pin として扱う。更新するときは新しい record を作り supersedesRef で繋ぐ。既存 record を上書きしない
+- character-sheet-schema は immutable pin として扱う。更新するときは新しい record を作る。既存 record を上書きしない
 - character-sheet は特定バージョンの schema を sheetSchemaRef で pin する。schema が更新されても、sheet は自分で rebase するまで古い定義で valid のまま動く
-- fieldDefs は schema 作者の意図する完全な定義を含む。ただし core schema に universal DSL を押し込まない
+- character-sheet.stats は sheetSchemaRef がある場合 fieldDefs に準拠する構造化 payload として扱う。schema validation は AppView に任せる
 - rules provenance 層に属する record であり、character data を混ぜない
 - maintainerDids は schema record のみを更新できる。character 系 record の write authority には影響しない
 - baseRulesetNsid で、どのシステム向けの schema かを識別する。ハウスルール版は同じ baseRulesetNsid で別の schema record を作ってよい

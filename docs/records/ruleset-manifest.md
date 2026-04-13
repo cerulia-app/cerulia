@@ -2,41 +2,32 @@
 
 ## 役割
 
-ある rulesetNsid に対して、どの continuity artifact をどの executable contract で解釈するかを pin する record。campaign、episode、conversion が参照する immutable contract になる。
+ルールシステムの定義。どのシステムで、どのキャラクターシート型が使えるかを記録する。PL が直接操作することは少なく、schema との chain を提供する将来の拡張ポイント。
 
 ## 置き場所
 
-ruleset maintainer の repo、または library repo。
+ruleset maintainer の repo。
 
 ## 主なフィールド
 
 - rulesetNsid
-- manifestVersion
-- actionSchemaRefs
-- outputSchemaRefs
-- resolverRef
-- resolverVersion
-- capabilityKinds
+- title
+- sheetSchemaRefs（この ruleset で使える character-sheet-schema への参照リスト）
 - publishedAt
-- retiredAt
 
 ## 更新主体
 
-ruleset maintainer、または ruleset library の管理主体。
+ruleset maintainer。
 
 ## 参照関係
 
-- campaign
-- rule-profile
-- character-conversion
-- session（session.scenarioRef → scenario.rulesetManifestRef で間接参照）
+- character-sheet-schema（sheetSchemaRefs で参照）
+- campaign（campaign.rulesetNsid で間接参照）
+- scenario（scenario.rulesetNsid で間接参照）
 
 ## 設計上の注意
 
-- rulesetManifestRef は mutable current-head alias ではなく、公開後は意味が変わらない immutable contract pin として扱う
-- contract や continuity の意味を変える変更は、既存 record を上書きせず必ず新しい ruleset-manifest record と新しい ref を発行する
-- ordered ruleProfileRefs はこの manifest の上に重ねる overlay として扱い、manifest の contract を互換なしに壊してはならない
-- actionSchemaRefs と outputSchemaRefs は ruleset 固有 namespace への参照でよく、core schema に universal DSL を押し込まない
-- character-conversion は source / target の解釈 pin として rulesetManifestRef を参照してよいが、cross-ruleset の mapping contract 自体はこの record に押し込まない
-- resolverRef は実行系の場所や識別子を指すための中立 field とし、特定の配布形態に固定しない
-- retiredAt は future selection を止めるために使ってよいが、既に pin 済みの campaign / conversion / episode の意味を後から再解釈してはならない
+- MVP では PL は rulesetNsid（文字列識別子）を選ぶだけで十分。manifest は相互運用が必要になった段階で本格活用する
+- sheetSchemaRefs は scenario → manifest → schema の chain を実現する。PL が scenario からキャラクター作成画面に遷移するとき、適切な schema を提示できる
+- rulesetNsid は文字列の安定識別子（例: "coc-7th", "dnd-5e"）
+- manifest は immutable pin として扱う。contract を変える変更は新しい record で行う
