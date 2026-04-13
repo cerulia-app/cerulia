@@ -1,6 +1,6 @@
 # Cerulia 設計文書
 
-この docs tree の正本は、Cerulia を owner-centric な character history service として定義する。扱うのは character lineage、session history、scenario catalog、campaign / house scope、rules provenance、character-sheet-schema、publication、append-only correction である。session の run authority、membership、disclosure、board、replay は製品スコープ外である。
+Cerulia は TRPG プレイヤー向けのキャラクター管理・セッション記録・共有サービスである。PL がキャラクターを作り、遊んだ記録を残し、他の人に見せることができる。
 
 ## 読み順
 
@@ -17,11 +17,10 @@
 
 ## Core Records
 
-- scope: [campaign](records/campaign.md), [house](records/house.md), [world](records/world.md)
+- scope: [campaign](records/campaign.md), [house](records/house.md)
 - lineage: [character-sheet](records/character-sheet.md), [character-branch](records/character-branch.md), [character-conversion](records/character-conversion.md), [character-advancement](records/character-advancement.md)
-- session: [session](records/session.md), [session-participation](records/session-participation.md), [scenario](records/scenario.md)
+- session: [session](records/session.md), [scenario](records/scenario.md)
 - rules: [ruleset-manifest](records/ruleset-manifest.md), [rule-profile](records/rule-profile.md), [character-sheet-schema](records/character-sheet-schema.md)
-- publication: [publication](records/publication.md)
 
 ## Core Lexicon
 
@@ -30,14 +29,12 @@
 - [auth namespace](lexicon/auth.md)
 - [XRPC と transport schema](lexicon/rpc.md)
 
-## Out-of-Product-Scope Archive
-
-製品スコープ外の検討履歴は [archive/out-of-product-scope/README.md](archive/out-of-product-scope/README.md) に隔離する。archive は backlog でも将来ロードマップでもなく、現在の product-core contract や implementation plan の入力にしてはならない。
-
 ## 現時点の結論
 
-- Cerulia の製品スコープは owner-centric な character history service に固定する。
-- キャラクター状態の変更は owner のみ。GM も他のプレイヤーも他人のキャラ record を書き換えない。
+- Cerulia は PL の個人アプリとして設計する。GM 専用の機能は作らない
+- 全 record は原則公開。visibility: draft / public で AppView が表示を制御する
+- キャラクター状態の変更は owner のみ。他人の record は書き換えない
+- 他人の DID を自分の record に書かない
 - session は post-run の記録であり、run control を持たない。
 - 越境利用はシステムで管理しない。コミュニケーションによる。
 - publication の正本は publication ledger にあり、carrier の整合は製品責務に含めない。

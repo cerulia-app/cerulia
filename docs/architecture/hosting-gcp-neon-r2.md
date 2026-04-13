@@ -44,7 +44,7 @@
 
 ### Neon PostgreSQL
 
-- ledger kernel、canonical record、publication current head、service log の正本
+- ledger kernel、canonical record、service log の正本
 - application path は pooled connection string を使う
 - migration、rebuild、logical backup は direct connection string を使う
 - branch は staging / restore drill / incident recovery のために使う
@@ -60,7 +60,7 @@
 current repo が直接提供する job entrypoint は次である。
 
 - `db-migrate`: schema migration 実行
-- `projection-rebuild`: Cloud Run job label。実体は `go run ./cmd/rebuild` で、publication current head replay と主要 projection query replay の drift を検証する
+- `projection-rebuild`: Cloud Run job label。実体は `go run ./cmd/rebuild` で、主要 projection query replay の drift を検証する
 
 ## 環境分離
 
@@ -94,7 +94,7 @@ M1 backend の `api` が直接読む値は `APP_ENV`, `HTTP_ADDR`, `PUBLIC_BASE_
 
 - versioned contract artifact を `./scripts/contracts.ps1 -Version <version>` で出す
 - `db-migrate` か `./scripts/migrate.ps1` で schema を揃える
-- `projection-rebuild` か `./scripts/rebuild.ps1` を実行し、publication current head と主要 projection query replay が green であることを確認する
+- `projection-rebuild` か `./scripts/rebuild.ps1` を実行し、主要 projection query replay が green であることを確認する
 - `api` を起動し、`/readyz` が green になることを確認する
 - `./scripts/smoke.ps1 -RulesetManifestRef <known-manifest-ref>` を実行し、anonymous public read と authenticated core mutation を通す。restore rehearsal では `-ReadOnly` を使わない
 - restore rehearsal では staging 用の Neon branch か snapshot restore 後に、migration と smoke を同じ順で再実行する

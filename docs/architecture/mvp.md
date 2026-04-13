@@ -1,59 +1,53 @@
 # MVP の実装順
 
-MVP は character history service を先に完成させ、その時点で製品ロードマップを閉じる。session の run authority、governance、disclosure、board、replay は product roadmap に含めない。
+MVP は PL がキャラクターを作り、セッション経験を記録し、共有できる状態を先に完成させる。
 
-## フェーズ 0: core invariants
+## 優先度
 
-- scope と provenance の境界を固定する
-- house / campaign の役割を固定する
-- ruleset-manifest と rule-profile chain の優先順を固定する
-- character-advancement を growth fact とし、session を遊んだ記録とする
-- publication の append-only モデルと retire の規則を決める
-- character home、campaign view、publication summary の projection contract を transport schema より先に固定する
-- archive を product source set から除外する
+**キャラクター作成 > セッション記録 > 共有**
 
-## フェーズ 1: continuity core
+## フェーズ 1: キャラクター作成
 
-- character-sheet
-- character-branch
-- character-advancement
-- campaign
-- house
-- world
-- ruleset-manifest
-- rule-profile
+- character-sheet + character-branch のペア作成
+- character-sheet-schema（CoC 7版の schema を最初のサンプルとする）
+- ruleset-manifest（rulesetNsid + sheetSchemaRefs の最小構成）
+- scenario → manifest → schema の chain で作成画面にナビゲート
+- ダイスロール（AppView クライアント側）
+- CCFolia clipboard 形式でのエクスポート
+- visibility: draft / public の切り替え
 
-ここでは lineage、scope、rules provenance の正本を作る。
+ここでは「キャラクターを作れる」体験を完成させる。
 
-## フェーズ 2: session history と公開
+## フェーズ 2: セッション記録
 
-- session
-- session-participation
-- scenario
-- character-sheet-schema
-- character-conversion
-- publication
-- import / export の最小 contract
-- character home
-- campaign view
+- session（PL が自分で書く post-run record）
+- scenario（シナリオ台帳への登録）
+- character-advancement（セッション後の成長記録）
+- campaign（長期卓のオプション）
+- house（コミュニティ anchor のオプション）
+- rule-profile（ハウスルール overlay のオプション）
 
-ここでは「いつ誰とどのシナリオを遊んだか」と「何を公開するか」の正本を作る。
+ここでは「遊んだ記録を残せる」体験を完成させる。
 
-## フェーズ 3: auditability と correction
+## フェーズ 3: 共有と閲覧
 
-- supersedes / retire の folding 規則
-- publication summary view
-- scenario catalog
-- 監査用 projection
+- character home projection
+- campaign view projection
+- scenario catalog projection
+- house activity projection
+- 共有リンクの生成と表示
+- public mode での閲覧
 
-ここでは「あとからどう説明できるか」を固める。
+ここでは「他の人に見せる」体験を完成させる。
 
 ## 初期にやらないこと
 
-- product に session authority を入れること
-- product に broad な appeal machine を入れること
-- product に disclosure、board、realtime、replay を入れること
-- product を session-centric に戻すこと
-- archive を将来フェーズとして読み替えること
+- session authority（開始、一時停止、権限移譲）
+- membership や参加承認
+- 卓中イベント（message、roll、ruling-event）
+- disclosure、board、realtime、replay
+- appeal、governance
+- アクセス制限
+- character-conversion（ruleset 跨ぎ変換は後回し）
 
-MVP で重要なのは、character history service がそれ単体で product として成立することである。
+MVP で重要なのは、PL がキャラクターを作り、遊んだ記録を残し、他の人に見せられることである。
