@@ -1,6 +1,6 @@
 ---
 name: atproto-spec-reference
-description: "Use when: AT Protocol の公式仕様を参照して設計判断、records/lexicon、XRPC、OAuth、permission、repo、sync、identity まわりを確認したいとき。atproto.com/specs の正本を topic ごとに取得し、必要な場合だけ docs.bsky.app の guide を補助参照して、規格上の must/should/may と実装ガイドや Bluesky 固有事情を分けて答える。仕様確認、設計照合、実装前の根拠確認に使う。"
+description: "Use when: AT Protocol の公式仕様を参照して設計判断、records/lexicon、XRPC、OAuth、permission、repo、sync、identity、account、blob、event stream、NSID、record key、TID まわりを確認したいとき。atproto.com/specs の正本を topic ごとに取得し、必要な場合だけ atproto.com/guides や docs.bsky.app を補助参照して、規格上の must/should/may と実装ガイドや Bluesky 固有事情を分けて答える。仕様確認、設計照合、実装前の根拠確認に使う。"
 argument-hint: "確認したい論点、用語、ファイル、設計案を書く。未指定なら関連 spec を特定して横断参照する。"
 ---
 
@@ -23,10 +23,12 @@ Use sources in this order and keep the distinction explicit in the answer.
 
 If a spec page itself says a linked proposal or guide is non-authoritative, treat it as background only.
 
+The current `atproto-website` repo covers `atproto.com/specs/*` and `atproto.com/guides/*`. `docs.bsky.app` は別 repo なので、この repo を読んでも docs.bsky.app 全体は網羅されない。
+
 ## Procedure
 
 1. Define the question in protocol terms.
-   - Translate the user's wording into spec topics such as identity, handle, DID, at-uri, data model, lexicon, repository, sync, XRPC, OAuth, permission, labels, or cryptography.
+   - Translate the user's wording into spec topics such as identity, handle, DID, account, at-uri, NSID, record-key, TID, data model, blob, lexicon, repository, event-stream, sync, XRPC, OAuth, permission, labels, or cryptography.
    - If the user gave a repo file or design proposal, identify which protocol layer it touches.
 
 2. Map the question to the smallest authoritative source set.
@@ -37,6 +39,7 @@ If a spec page itself says a linked proposal or guide is non-authoritative, trea
 3. Fetch the official specs.
    - Prefer atproto.com/specs/<topic> pages.
    - Re-fetch the exact page even if you think you know the rule already.
+   - If older official material points to `/specs/auth`, use `/specs/oauth` as the current canonical spec.
    - If the question is about Bluesky-operated hostnames, proxy routing, or API entry points rather than protocol guarantees, fetch the relevant docs.bsky.app guide as secondary context and label it non-normative.
 
 4. Extract the actual normative claims.
@@ -47,6 +50,7 @@ If a spec page itself says a linked proposal or guide is non-authoritative, trea
 5. Separate protocol guarantees from deployment-specific behavior.
    - Say clearly whether a statement comes from the base protocol, from Bluesky's hosted deployment guidance, or from implementation convention.
    - Do not present Bluesky app routing details as if they were universal protocol requirements.
+   - If a spec page is explicitly marked WIP, mention that stability caveat instead of presenting it as fully settled.
 
 6. Apply the result to Cerulia when relevant.
    - Compare the spec result against README and docs/architecture if the user is asking about this repo's design.
@@ -96,6 +100,7 @@ Before finishing, confirm all of the following.
 - Every normative claim in the answer is tied to an authoritative source.
 - Any guide, proposal, SDK, or implementation reference is explicitly labeled non-normative.
 - The answer distinguishes protocol rules from Bluesky-operated deployment details.
+- Older official links such as `/specs/auth` were normalized to the current canonical page before answering.
 - If the question was about Cerulia, the answer states whether the current design is aligned, misaligned, or still ambiguous.
 
 ## Example Prompts
