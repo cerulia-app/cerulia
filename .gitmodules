@@ -1,3 +1,12 @@
 [submodule "appview"]
 	path = appview
 	url = https://github.com/cerulia-app/appview.git
+[submodule "protocol"]
+	path = protocol
+	url = ../cerulia-protocol
+[submodule "api"]
+	path = api
+	url = ../cerulia-api
+[submodule "projection"]
+	path = projection
+	url = ../cerulia-projection

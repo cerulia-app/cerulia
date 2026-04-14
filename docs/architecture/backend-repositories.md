@@ -268,7 +268,22 @@ Cerulia backend の storage は SQLite-first とする。
 - `projection`
 - `appview`
 
-リモート repo 名も同名を第一候補とする。
+実リポジトリ名は Cerulia prefix を付けて次を採用する。
+
+- `cerulia-protocol`
+- `cerulia-api`
+- `cerulia-projection`
+
+親 repo では local 開発と将来の remote 差し替えをしやすくするため、submodule path は短い責務名、実 repo 名は prefix 付きの固有名に分ける。
+
+URL 未発行の段階では、親 repo から見て sibling の local repository を相対 URL として登録する。
+
+remote 発行後は次の順で切り替える。
+
+1. sibling の local repository をそのまま remote へ push する
+2. 親 repo の `.gitmodules` を remote URL に更新する
+3. 各 submodule の `origin` を同じ remote URL に合わせる
+4. 親 repo で submodule pointer の解決が変わっていないことを確認する
 
 ## 現在不足している文書
 
