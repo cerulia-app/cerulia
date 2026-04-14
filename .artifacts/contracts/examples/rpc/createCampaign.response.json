@@ -1,8 +1,0 @@
-{
-  "currentRevision": 1,
-  "emittedRecordRefs": [
-    "at://did:plc:steward1/app.cerulia.core.campaign/campaign-req-create-campaign-001"
-  ],
-  "requestId": "req-create-campaign-001",
-  "resultKind": "accepted"
-}

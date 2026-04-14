@@ -1,8 +1,0 @@
-{
-  "characterBranchRef": "at://did:plc:owner1/app.cerulia.core.characterBranch/branch-req-create-branch-001",
-  "requestId": "req-grant-reuse-001",
-  "reuseMode": "fork-and-advance",
-  "sourceCampaignRef": "at://did:plc:steward1/app.cerulia.core.campaign/campaign-req-create-campaign-001",
-  "targetKind": "campaign",
-  "targetRef": "at://did:plc:steward2/app.cerulia.core.campaign/campaign-target-001"
-}

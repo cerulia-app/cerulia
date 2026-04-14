@@ -1,5 +1,0 @@
-{
-  "requestId": "req-revoke-reuse-001",
-  "reuseGrantRef": "at://did:plc:owner1/app.cerulia.core.reuseGrant/reuse-req-grant-reuse-001",
-  "revokeReasonCode": "scope-closed"
-}
