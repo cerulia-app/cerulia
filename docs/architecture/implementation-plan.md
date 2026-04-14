@@ -58,8 +58,8 @@ internal/
 - auth gateway（DID 解決、OAuth）
 - character-sheet + character-branch ペア作成
 - character-sheet-schema
-- ruleset-manifest（rulesetNsid + sheetSchemaRefs の最小構成）
-- visibility: draft / public
+- rebaseCharacterSheet（sheetSchemaRef の明示更新）
+- default branch seed visibility
 
 ### Phase 2: セッション記録
 
@@ -69,6 +69,8 @@ internal/
 - campaign（長期卓オプション）
 - house（コミュニティ anchor オプション）
 - rule-profile（ハウスルール overlay）
+
+scenario から create flow に deterministic に遷移したい場合は、scenario.recommendedSheetSchemaRef を必須にする。rulesetNsid のみの scenario は browse 用に許可し、scenario 起点の create CTA は出さない。
 
 ### Phase 3: 共有と閲覧
 
@@ -91,3 +93,4 @@ internal/
 - 他人の DID を record に書く API を作らない
 - アクセス制限を AT Protocol レベルで実装しない
 - 既存サービスのスコープ（セッション進行等）をカバーしない
+- draft record を AppView public mode に混ぜない

@@ -50,7 +50,7 @@ campaign はセッションのシリーズであり、run authority や参加承
 
 ### 1. PL の個人アプリである
 
-Cerulia は PL（プレイヤー）の個人アプリである。GM 用アプリではない。PL が自分のキャラクターの経験を自分で記録するのが中心であり、GM が Cerulia を使っていなくても PL 単独で成り立つ。GM がセッションを定義すれば参加者がリンクされてさらに便利になるが、それはオプショナルな強化である。
+Cerulia は PL（プレイヤー）の個人アプリである。GM 用アプリではない。PL が自分のキャラクターの経験を自分で記録するのが中心であり、GM が Cerulia を使っていなくても PL 単独で成り立つ。role: gm は記録上の属性であり、GM 専用モードを意味しない。GM がセッションを定義すれば参加者がリンクされてさらに便利になるが、それはオプショナルな強化である。
 
 ### 2. キャラクター状態の変更は owner のみ
 
@@ -66,7 +66,7 @@ GM だけでセッション経験を記録でき、参加者が後から Cerulia
 
 ### 5. 全ての record は原則公開
 
-AT Protocol 上に書かれた record は原則公開である。「書かれたら公開されている」が既定であり、アクセス制限はシステムの責務ではない。作成途中のキャラクターを一覧から隠したい場合は visibility: draft で AppView が制御する。ネタバレの秘匿も AT Protocol レベルでは行わず、AppView の UI で対応する。
+AT Protocol 上に書かれた record は原則公開である。「書かれたら公開されている」が既定であり、アクセス制限はシステムの責務ではない。作成途中のキャラクターを一覧から隠したい場合は visibility: draft で AppView が制御する。Cerulia AppView では draft は一覧や発見導線からは隠すが、direct link では draft 状態を明示して表示する。ネタバレの秘匿も AT Protocol レベルでは行わず、AppView の UI で対応する。
 
 ### 6. 他人について書かない
 
@@ -74,7 +74,7 @@ AT Protocol 上に書かれた record は原則公開である。「書かれた
 
 ### 7. rules lineage と character lineage を混ぜない
 
-rules は ruleset-manifest や rule-profile chain の問題であり、character は sheet、branch、advancement、session の問題である。
+rules は character-sheet-schema と rule-profile chain の問題であり、character は sheet、branch、advancement、session の問題である。
 
 ### 8. 越境利用はシステムで管理しない
 

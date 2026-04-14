@@ -33,6 +33,8 @@ Cerulia の AppView は、キャラクターを作り、遊んだ記録を残し
 - reset は小さい base layer として扱う
 - shared primitive は surface card、button、status chip に限る
 
+SvelteKit 実装では component-scoped CSS と small shared stylesheet を基本にする。utility-first framework は導入しない。
+
 ## layout grammar
 
 ### public top
@@ -49,7 +51,7 @@ Cerulia の AppView は、キャラクターを作り、遊んだ記録を残し
 
 ### character detail
 
-- stats 表示
+- stats 表示（schema-less の public/shared surface では structured stats を省略）
 - 立ち絵
 - セッション履歴
 - 成長履歴
@@ -57,8 +59,7 @@ Cerulia の AppView は、キャラクターを作り、遊んだ記録を残し
 ### character create
 
 - ルールシステム選択
-- schema-driven フォーム
-- ダイスロール
+- schema-driven フォーム + ダイスロール
 - 確認 / 作成
 
 ## core components

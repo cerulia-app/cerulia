@@ -18,18 +18,23 @@ projection は次の core record だけを canonical input とする。
 - scenario
 - campaign
 - house
-- ruleset-manifest
 - rule-profile
 - character-sheet-schema
 
 ### 2. projection は全 record から自動生成する
 
-PL による手動の curate は不要。visibility: public の record を自動的に一覧に含める。visibility: draft の record は一覧から除外するが、直接リンクではアクセスできる。
+PL による手動の curate は不要。visibility: public の record を自動的に一覧に含める。visibility: draft の record は一覧や発見導線からは除外し、direct link では draft 状態を明示して表示する。
 
 ### 3. reader mode
 
 - owner mode: 自分の全 record（draft 含む）を見る
 - public mode: visibility: public な record だけを見る
+
+### 4. draft の表示契約
+
+- draft は AppView 上の non-indexed state とする
+- anonymous / public mode でも direct ref が与えられた detail route は draft record を draft 状態つきで解決してよい
+- draft record を参照する public record があっても、projection は draft 側の内容を public block に畳み込まない
 
 ## Character Home
 
@@ -54,8 +59,38 @@ PL が自分のキャラクター一覧・詳細を確認する既定 home。
 
 ### reader mode
 
-- owner mode: 全 record（draft 含む）
-- public mode: visibility: public な branch と session のみ
+- owner mode のみ。character home は private workbench であり、public / anonymous に公開しない
+
+## Character Shared Detail
+
+### 目的
+
+共有リンクで開く canonical shared surface。public / anonymous reader に branch 単位の公開情報だけを見せる。
+
+### canonical inputs
+
+- character-branch
+- character-sheet
+- branch に紐づく session
+- branch に紐づく character-advancement
+- character-conversion
+
+### blocks
+
+- branch identity（displayName、branchLabel、rulesetNsid）
+- 立ち絵、stats、profileSummary
+- public-safe なセッション履歴（scenarioLabel / scenario summary、playedAt、outcomeSummary、hoLabel、hoSummary のみ）
+- public-safe な advancement summary（advancementKind、effectiveAt、紐づく session summary）
+- public-safe な conversion summary（sourceRulesetNsid、targetRulesetNsid、convertedAt）
+
+sheetSchemaRef が無い branch では、public / anonymous 向けの structured stats block を省略する。raw JSON fallback は owner-only に留める。
+
+### reader mode
+
+- owner mode: 全 block を見る
+- public / anonymous mode: public-safe subset を見る。draft の場合も detail route は解決するが、surface 先頭で draft state を明示する。note、deltaPayloadRef、previousValues、characterBranchRef、externalArchiveUris、owner-only annotation は返さない
+
+`getCharacterBranchView` を canonical shared-surface contract とする。
 
 ## Campaign View
 
@@ -66,20 +101,24 @@ PL が自分のキャラクター一覧・詳細を確認する既定 home。
 ### canonical inputs
 
 - campaign
-- house（houseRef があれば）
+- house（houseRef があれば。identity 表示用）
 - campaign の rulesetNsid で絞った session
 - campaign.sharedRuleProfileRefs
+
+house.defaultRuleProfileRefs は campaign 作成時の seed-only default。閲覧時の effective overlay の唯一の正本は campaign.sharedRuleProfileRefs とする。
 
 ### blocks
 
 - campaign identity（title、ルールシステム名）
-- セッション一覧
+- セッション一覧（public-safe summary only）
 - ルール overlay summary
 
 ### reader mode
 
 - owner / maintainer mode: 全セッション
-- public mode: visibility: public な campaign のみ
+- public mode: list surface では visibility: public な campaign のみ返す。detail route は draft でも draft state を明示して解決してよい。draft child session は返さない
+
+draft house を参照する campaign でも、public mode は house identity block を返さない。
 
 ## Scenario Catalog
 
@@ -90,13 +129,15 @@ PL が自分のキャラクター一覧・詳細を確認する既定 home。
 ### canonical inputs
 
 - scenario
-- ruleset-manifest（sheetSchemaRefs の chain 用）
+- character-sheet-schema（scenario.recommendedSheetSchemaRef がある場合だけ direct に参照する）
 
 ### blocks
 
 - シナリオ一覧（rulesetNsid でフィルタ可能）
 - シナリオ詳細（summary、spoiler の折りたたみ）
-- 「このシナリオからキャラクターを作る」への導線（scenario → manifest → schema chain）
+- 「このシナリオからキャラクターを作る」への導線
+
+scenario に recommendedSheetSchemaRef があるときだけ `scenario -> character-sheet-schema` を canonical create chain とする。recommendedSheetSchemaRef が無い scenario は browse-only とし、AppView は scenario 起点の create CTA を出さない。
 
 ## House Activity
 
@@ -114,4 +155,8 @@ house に紐づくセッション・キャラクターの逆引き。
 
 - house identity（title、canonSummary、externalCommunityUri）
 - 関連 campaign 一覧
-- 関連セッション一覧
+- 関連セッション一覧（public-safe summary only）
+
+public mode では list surface に visibility: public な campaign / session だけを返し、draft child は畳み込まない。house detail route 自体は draft でも draft state を明示して解決してよい。
+
+public session は embedded-only とし、standalone public session detail route は持たない。

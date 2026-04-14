@@ -15,7 +15,6 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 | --- | --- | --- |
 | campaignRef | at-uri | app.cerulia.core.campaign record を指す |
 | houseRef | at-uri | app.cerulia.core.house record を指す |
-| rulesetManifestRef | at-uri | app.cerulia.core.rulesetManifest record を指す |
 | ruleProfileRef | at-uri | app.cerulia.core.ruleProfile record を指す |
 | characterSheetRef | at-uri | app.cerulia.core.characterSheet record を指す |
 | characterBranchRef | at-uri | app.cerulia.core.characterBranch record を指す |
@@ -25,6 +24,7 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 | scenarioRef | at-uri | app.cerulia.core.scenario record を指す |
 | characterSheetSchemaRef | at-uri | app.cerulia.core.characterSheetSchema record を指す |
 | scopeRef | at-uri | house / campaign の scope record を指す |
+| documentUri | uri | 外部ドキュメントや blob の URI を指す |
 | did | did | actor 識別子 |
 | rulesetNsid | nsid | ruleset namespace の根 NSID |
 | datetime | datetime | すべて UTC 前提 |
@@ -36,13 +36,17 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 | --- | --- |
 | visibility | draft / public |
 | ruleProfileScopeKind | house-shared / campaign-shared |
-| branchKind | campaign-fork / local-override |
+| branchKind | main / campaign-fork / local-override |
 | advancementKind | milestone / xp-spend / retrain / respec / correction |
 | sessionRole | pl / gm |
 | projectionSurfaceKind | character-home / campaign-view / scenario-catalog / house-activity |
 | mutationResultKind | accepted / rejected / rebase-needed |
 
+`rebase-needed` は schema pin の更新や version fence で、現行の入力が古いか互換変換を要するときに返す。
+
 ## record-key の基本方針
 
-- campaign、house、character-sheet、character-branch、scenario、character-sheet-schema、ruleset-manifest、rule-profile は stable key
+- campaign、house、character-sheet、character-branch、scenario、character-sheet-schema、rule-profile は stable key
 - character-advancement、character-conversion、session は tid
+
+character-sheet-schema の stable key は mutable current-head alias を意味しない。versioned pin を指す。

@@ -8,7 +8,6 @@ Cerulia の product-core に含める record 群を app.cerulia.core.* に整理
 | --- | --- | --- | --- |
 | app.cerulia.core.house | record | stable | コミュニティの anchor |
 | app.cerulia.core.campaign | record | stable | 長期卓のセッションシリーズ |
-| app.cerulia.core.rulesetManifest | record | stable | ルールシステムの定義 |
 | app.cerulia.core.ruleProfile | record | stable | house / campaign のハウスルール overlay |
 | app.cerulia.core.characterSheetSchema | record | stable | キャラクターシートの型定義 |
 | app.cerulia.core.characterSheet | record | stable | キャラクター原本 |
@@ -21,7 +20,7 @@ Cerulia の product-core に含める record 群を app.cerulia.core.* に整理
 ## core に入れるもの
 
 - house、campaign の scope
-- ruleset の contract と overlay
+- ruleset ごとの schema と overlay
 - character-sheet-schema による型定義
 - character の所有、分岐、変換 provenance、成長
 - session による PL 自身のセッション経験記録
@@ -38,6 +37,6 @@ Cerulia の product-core に含める record 群を app.cerulia.core.* に整理
 
 ## ruleset 拡張の考え方
 
-- ruleProfile は house、campaign の順で後勝ちに重ねる（2 層）
+- house default ruleProfile は campaign 作成時の seed source とし、live な effective overlay は campaign.sharedRuleProfileRefs だけで解決する
 - character-sheet-schema で sheet の型を定義し、sheet は sheetSchemaRef で pin する
-- ruleset-manifest は rulesetNsid + sheetSchemaRefs の chain を提供する
+- character-sheet-schema は rulesetNsid ごとに並び、generic create flow は明示選択で使う

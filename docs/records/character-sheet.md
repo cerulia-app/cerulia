@@ -15,9 +15,8 @@ PL の個人 repo。
 - rulesetNsid
 - displayName
 - portraitRef
-- publicProfile
+- profileSummary
 - stats
-- visibility（draft / public）
 - version
 - createdAt
 - updatedAt
@@ -34,8 +33,13 @@ owner のみ。
 ## 設計上の注意
 
 - sheet 作成時に default branch が自動的にペアで生成される。branch なしの sheet は存在しない
-- sheetSchemaRef がある場合、stats は fieldDefs に準拠する構造化 payload として扱う。sheetSchemaRef がない場合、stats は自由形式の JSON payload
+- 公開 / 非公開の正本は branch.visibility とする。sheet 自体は shared surface の visibility を持たない
+- sheetSchemaRef がある場合、stats は fieldDefs に準拠する構造化 payload として扱う。schema が extensible な group を持つ場合、その追加 field も valid とする。sheetSchemaRef がない場合、stats は自由形式の JSON payload
 - sheetSchemaRef は character-sheet-schema の特定バージョンを pin する。schema が更新されても、sheet は自分で rebase するまで古い定義で valid のまま動く
+- sheetSchemaRef がある場合、`sheetSchemaRef.baseRulesetNsid == rulesetNsid` を満たさなければならない
+- sheetSchemaRef を変更する操作は通常編集ではなく、`rebaseCharacterSheet` のような明示 rebase operation で扱う
+- profileSummary はキャラクター紹介の本文であり、別の disclosure / access-control 機構を意味しない
 - 一時状態や外部 context の current overlay は入れない
-- visibility: draft の sheet は AppView の一覧から除外されるが、AT Protocol 上は公開されている
 - ruleset をまたぐ変換 provenance は character-conversion で残す
+- sheetSchemaRef が無い sheet は AppView で owner-only の raw JSON fallback view / editor を使う
+- sheetSchemaRef が無い sheet でも shared detail route 自体は持てるが、public / anonymous には structured stats block を出さない。raw JSON は owner-only に留める

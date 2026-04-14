@@ -20,7 +20,7 @@ Cerulia は TRPG プレイヤー向けのキャラクター管理・セッショ
 - scope: [campaign](records/campaign.md), [house](records/house.md)
 - lineage: [character-sheet](records/character-sheet.md), [character-branch](records/character-branch.md), [character-conversion](records/character-conversion.md), [character-advancement](records/character-advancement.md)
 - session: [session](records/session.md), [scenario](records/scenario.md)
-- rules: [ruleset-manifest](records/ruleset-manifest.md), [rule-profile](records/rule-profile.md), [character-sheet-schema](records/character-sheet-schema.md)
+- rules: [rule-profile](records/rule-profile.md), [character-sheet-schema](records/character-sheet-schema.md)
 
 ## Core Lexicon
 
@@ -33,5 +33,7 @@ Cerulia は TRPG プレイヤー向けのキャラクター管理・セッショ
 
 - Cerulia は PL の個人アプリとして設計する。GM 専用の機能は作らない
 - 全 record は原則公開。visibility: draft / public で AppView が表示を制御する
+- draft は一覧や発見導線からは隠すが、direct link では draft 状態を明示して表示する
+- public session は embedded-only であり、standalone public page は持たない
 - キャラクター状態の変更は owner のみ。他人の record は書き換えない
 - 他人の DID を自分の record に書かない

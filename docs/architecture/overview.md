@@ -12,8 +12,8 @@ Cerulia の product-core は次を扱う。
 - session による PL 自身のセッション経験記録
 - scenario による公開シナリオ台帳
 - house、campaign による scope
-- ruleset-manifest、rule-profile chain、character-sheet-schema による rules provenance
-- visibility: draft|public による AppView レベルの表示制御
+- rule-profile chain、character-sheet-schema による rules provenance
+- visibility: draft|public による AppView レベルの表示制御（draft は一覧から隠すが、direct link では draft 状態を明示して表示する）
 
 Cerulia の product-core は次を扱わない。
 
@@ -32,6 +32,7 @@ Cerulia の product-core は次を扱わない。
 - session は PL が自分で書く post-run の記録。run control を持たない
 - 全 record は原則公開。visibility flag は AppView の表示制御であり、AT Protocol レベルの秘匿ではない
 - 他人の DID や characterBranchRef を自分の record に書かない。リンクは各自が自分の record を通じて行う
+- character-conversion は same-owner の provenance に限定する
 - Cerulia は記録と共有に絞った薄いアプリケーション。セッション中は read-only
 - 越境利用はシステムで管理しない
 
