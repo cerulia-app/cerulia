@@ -17,13 +17,15 @@ scope に応じて置き場所を分ける。
 - profileTitle
 - scopeKind（house-shared / campaign-shared）
 - scopeRef
-- rulesPatchRef
+- rulesPatchUri
+- ownerDid
+- maintainerDids
 - createdAt
 - updatedAt
 
 ## 更新主体
 
-その scope の owner、または maintainerDids に含まれる actor。
+ownerDid、または maintainerDids に含まれる actor。
 
 ## 参照関係
 
@@ -34,5 +36,7 @@ scope に応じて置き場所を分ける。
 
 - scopeKind は house-shared、campaign-shared の閉じた値
 - scopeRef は、その profile がどの scope に属するかを指す
-- overlay 順序は house shared → campaign shared の 2 層。後ろほど優先する
-- rulesPatchRef はルール差分の本文やドキュメントを指す自由な参照
+- overlay 順序の live 解決は campaign.sharedRuleProfileRefs に materialize された順序だけを見る。house-shared は campaign 作成時の seed source にとどまる
+- rulesPatchUri はルール差分の本文やドキュメントを指す external URI
+- rulesPatchUri は public-safe で永続参照可能な URI だけを使う。owner-only 文書へのリンクは入れない
+- ownerDid と maintainerDids は rule-profile record 自体の更新主体を表す

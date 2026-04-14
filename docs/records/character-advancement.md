@@ -36,3 +36,5 @@ branch owner のみ。
 - deltaPayloadRef は自由形式の JSON payload。schema validation は AppView に任せる
 - 現在の branch 解決結果は、base sheet、branch override、active な advancement sequence から投影する
 - active な advancement sequence の canonical ordering は effectiveAt 昇順とし、同時刻なら record-key の tid 順で解決する
+- previousValues は既存値を書き換える advancement では必須とする。append-only な narrative milestone だけ省略してよい
+- note は public-safe な補足に限る。AppView の public shared surface は note、deltaPayloadRef、previousValues を返さない
