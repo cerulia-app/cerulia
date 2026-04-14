@@ -1,52 +1,43 @@
-# Cerulia Agent Context
+# Cerulia Workspace Instructions
 
-Keep this file minimal. Use it only for repository-specific judgment rules.
+Keep this file minimal. Put durable design detail in docs and link to it from here.
 
-## Primary Context
+## Read First
 
-- `docs/architecture/philosophy.md`
-- `docs/architecture/layers.md`
-- `docs/architecture/overview.md`
+- Cerulia is docs-first. Treat the latest docs under [docs/](docs/) as the source of truth before changing code or contracts.
+- Read the primary context before implementation or design work: [docs/architecture/philosophy.md](docs/architecture/philosophy.md), [docs/architecture/layers.md](docs/architecture/layers.md), [docs/architecture/overview.md](docs/architecture/overview.md).
+- For rationale and scope details, link instead of copying: [docs/architecture/decisions.md](docs/architecture/decisions.md), [docs/architecture/backend-repositories.md](docs/architecture/backend-repositories.md), [docs/architecture/implementation-plan.md](docs/architecture/implementation-plan.md), [docs/architecture/test-plan.md](docs/architecture/test-plan.md), [docs/appview/README.md](docs/appview/README.md), [docs/records/](docs/records/), [docs/lexicon/](docs/lexicon/).
+- Treat [docs/archive/out-of-product-scope/](docs/archive/out-of-product-scope/) as non-current material unless the task explicitly needs historical context.
 
-## Implementation Mindset
+## Workspace Shape
 
-- Before implementing, read the primary context and any adjacent architecture docs needed to understand Cerulia's philosophy, architecture, and boundaries well enough to justify the design.
-- As a rule, if one file is growing past about 100 lines, reconsider the design and whether that file is still only one cohesive concern.
-- A file may exceed that size only when the whole file still cleanly represents one concern.
-- Do not extract trivial inline logic into extra functions just to satisfy style or file-length pressure.
+- This workspace is docs-first and currently centers on design docs plus a minimal appview skeleton.
+- [appview/](appview/) is the active runnable package for the next implementation pass.
+- [api/](api/), [projection/](projection/), and [protocol/](protocol/) are placeholders here. Backend repository roles are defined in [docs/architecture/backend-repositories.md](docs/architecture/backend-repositories.md).
 
-## Decision Rule
+## Build And Test
 
-When a task requires design judgment, implementation judgment, tradeoff analysis, or idea generation:
+- [appview/package.json](appview/package.json) is the source of truth for frontend commands. For substantial appview work, prefer `npm run verify` in [appview/](appview/) before considering the unit complete.
+- [api/package.json](api/package.json), [projection/package.json](projection/package.json), and [protocol/package.json](protocol/package.json) currently expose no scripts. Do not invent backend commands without updating the package definitions or docs.
 
-1. Always generate at least 4 plausible options.
-2. Re-evaluate those options from first principles against Cerulia's philosophy, architecture, and boundaries, not generic product or framework defaults.
-3. Choose the single option that best fits Cerulia and proceed with that decision unless the user explicitly asks to keep multiple options open.
+## Architecture Boundaries
 
-## Commit Rule
+- Treat [docs/architecture/philosophy.md](docs/architecture/philosophy.md), [docs/architecture/layers.md](docs/architecture/layers.md), and [docs/architecture/overview.md](docs/architecture/overview.md) as authoritative for scope and boundary rules.
+- The easiest boundary mistakes are adding non-owner character writes, turning `session` into run control, treating `draft` as protocol secrecy, or writing other players' identifiers into someone else's record.
 
-- Unless the user explicitly says otherwise, commit autonomously when the smallest meaningful implementation unit is complete.
-- When the smallest meaningful implementation unit is complete, make a git commit.
-- If work is organized into roadmap sprints or similarly named milestones, treat each sprint as its own smallest meaningful implementation unit. Do not batch multiple completed sprints into one review or one commit.
-- Never use whole-worktree staging or commit shortcuts such as `git add .`, `git add -A`, or `git commit -a`.
-- Always specify the exact target files when staging for a commit, and keep each commit limited to those files.
-- Use Conventional Commits with an English prefix and a Japanese subject, for example: `feat: ルータ初期化を追加`
+## Implementation Conventions
 
-## Review Rule
+- Before implementing, read the relevant architecture or product docs needed to justify the change.
+- When a task requires design judgment, generate at least 4 plausible options, evaluate them from Cerulia's philosophy and boundary rules, then choose the single best fit unless the user explicitly wants multiple options kept open.
+- Prefer the smallest change that preserves the boundaries cleanly.
+- If one file grows past about 100 lines, reconsider whether it still represents one cohesive concern. A longer file is acceptable only when it still cleanly maps to a single concern.
+- Do not extract trivial inline logic into helper functions just to satisfy style pressure.
+- In Svelte instance scripts, avoid `declare global` for window extensions; use local casts instead.
 
-- Unless the user explicitly says otherwise, use the `cerulia-review` skill for periodic reviews during substantial work and for the review step in the completion hook.
-- Review for architectural fit, boundary violations, regressions, and missing tests before considering a unit complete.
+## Review And Commit
 
-## Completion Hook
-
-- Treat review and commit as the required completion hook for each implementation task unless the user explicitly says otherwise.
-- Before declaring an implementation task complete, run the review for that unit with the `cerulia-review` skill, then make the commit for that same unit.
-- Do not treat an implementation task as finished until both steps have been completed.
-- If multiple sprints are requested in one pass, finish the completion hook for sprint N before starting sprint N+1. If changes from multiple sprints accumulate in one worktree, split them back into sprint-sized units before review and commit.
-
-## Cerulia Invariants
-
-- Treat Cerulia core as a continuity ledger for character, campaign, rules provenance, publication, and reuse.
-- Keep optional extensions optional. Session, live play, board, disclosure, and dispute concerns must not redefine core truth.
-- Do not move canonical roots, publication truth, or provenance ownership into carrier, session, or social surfaces.
-- Prefer the smallest change that preserves these boundaries cleanly.
+- Unless the user explicitly says otherwise, use the `cerulia-review` skill for substantial work and for the completion review step.
+- Review for architectural fit, boundary violations, regressions, and missing tests before treating a unit as complete.
+- Unless the user explicitly says otherwise, commit the smallest meaningful implementation unit after review.
+- Never use whole-worktree staging shortcuts such as `git add .`, `git add -A`, or `git commit -a`. Stage exact target files only.
+- Use Conventional Commits with an English prefix and a Japanese subject, for example `feat: ルータ初期化を追加`.
