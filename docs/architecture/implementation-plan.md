@@ -8,4 +8,5 @@ Go backend 前提の計画、`cmd/` 前提の作業単位、migration / rebuild 
 ## 取り扱い
 
 - このファイルは historical note として扱ってください。
-- 新しい実装計画は、新方針に沿った構造が固まってから書き直します。
+- backend の構造判断は `backend-repositories.md` を正本にしてください。
+- 新しい実装計画は、`protocol`、`pds`、`relay` の submodule 構造を前提に別途書き直します。
