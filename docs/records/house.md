@@ -43,4 +43,4 @@ house owner、または maintainerDids に含まれる actor。
 - canonSummary は世界観や上位設定を説明するフリーテキスト。運用上の世界観ラベルとして使う
 - externalCommunityUri は外部コミュニティへのリンク。メンバー管理自体は外部に任せる
 - visibility: draft の house は Cerulia AppView では一覧から隠すが、direct link では draft 状態を明示して表示する
-- public projection は draft house の identity を露出しない。public campaign が draft house を参照していても、house block は省略する
+- direct-link の house detail では draft state 付きで identity を返してよい。一方、埋め込み public projection は draft house の identity を露出しない。public campaign が draft house を参照していても、house block は省略する

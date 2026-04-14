@@ -49,6 +49,7 @@ session record の owner（PL 本人）。
 - 1 シナリオ完走 = 1 session。1 回の集まりで 2 本のシナリオを完走した場合は 2 つの session を書く
 - session は PL が自分で書く record であり、他人の DID や characterBranchRef を含めない。他の参加者とのリンクは、各自が自分で session を書くことで projection が成立させる
 - role: pl の session では characterBranchRef を必須とする。GM として参加した場合は role: gm とし、characterBranchRef は省略してよい
+- characterBranchRef を使う場合、その branch owner は必ず session owner と一致しなければならない
 - campaignRef は任意。単発卓（多数派）では省略する
 - visibility: draft のセッションは Cerulia AppView では一覧や public embedding から隠す。AT Protocol 上は公開されているため、owner-only の秘匿を意味しない
 - hoLabel と hoSummary はネタバレを含まない公開情報だけを扱う。secret handout や disclosure payload は product-core に入れず、AppView で折りたたみ表示する

@@ -33,6 +33,7 @@ Cerulia は TRPG プレイヤー向けのキャラクター管理・セッショ
 
 - Cerulia は PL の個人アプリとして設計する。GM 専用の機能は作らない
 - 全 record は原則公開。visibility: draft / public で AppView が表示を制御する
+- publication record は持たない。公開一覧は projection から自動生成する
 - draft は一覧や発見導線からは隠すが、direct link では draft 状態を明示して表示する
 - public session は embedded-only であり、standalone public page は持たない
 - キャラクター状態の変更は owner のみ。他人の record は書き換えない

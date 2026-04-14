@@ -15,6 +15,9 @@ Cerulia の product-core は次を扱う。
 - rule-profile chain、character-sheet-schema による rules provenance
 - visibility: draft|public による AppView レベルの表示制御（draft は一覧から隠すが、direct link では draft 状態を明示して表示する）
 
+active な character 作成は schema-backed を正本とする。schema-less sheet は legacy/import/recovery の safety valve としてだけ残す。
+rules provenance record である rule-profile と character-sheet-schema は public-only とし、draft/public lifecycle に乗せない。
+
 Cerulia の product-core は次を扱わない。
 
 - session の run authority（開始、一時停止、権限移譲）

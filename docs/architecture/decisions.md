@@ -124,6 +124,8 @@ Cerulia の設計における主要な判断を記録する。
 
 理由: 型付きのキャラクターシートは Cerulia の差別化ポイント。UX の即時性は AppView の preflight で担保し、正本への書き込み可否は API の authoritative validation で固定する。
 
+補足: AppView の primary create flow は schema-backed を前提にする。sheetSchemaRef を持たない schema-less sheet は legacy/import/recovery の safety valve に限り、public/shared surface では structured stats を出さない。
+
 ## 20. 優先度: キャラクター作成 > セッション記録 > 共有
 
 採用: キャラクター作成体験を最も重要な機能として位置づける。

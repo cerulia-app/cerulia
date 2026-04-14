@@ -37,7 +37,14 @@ schema 作者または maintainer の repo。
 
 ### 再帰構造の方針
 
-fieldDefs はグループ（section）と配列（list of objects）を許す。これにより「能力値」セクション内に STR, DEX... を置いたり、技能リストを配列で表現できる。ただし core schema に universal DSL を押し込まない。extensible な group は未定義 field を受け入れてよく、追加 field は additionalFieldDef に従って validate する。deep nesting の上限や具体的な型名は将来の実装で詰める。
+fieldDefs はグループ（section）と配列（list of objects）を許す。これにより「能力値」セクション内に STR, DEX... を置いたり、技能リストを配列で表現できる。ただし core schema に universal DSL を押し込まない。extensible な group は未定義 field を受け入れてよく、追加 field は additionalFieldDef に従って validate する。
+
+再帰構造の規範は次に固定する。
+
+- container depth は root から最大 3 層までとする
+- array の itemDef は scalar または group に限る。array of array は許可しない
+- extensible を付けられるのは group field だけとする
+- additionalFieldDef は 1 つの追加 child field shape を表し、自身を extensible にしてはならない
 
 ## 発行主体
 

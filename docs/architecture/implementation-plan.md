@@ -93,4 +93,4 @@ scenario から create flow に deterministic に遷移したい場合は、scen
 - 他人の DID を record に書く API を作らない
 - アクセス制限を AT Protocol レベルで実装しない
 - 既存サービスのスコープ（セッション進行等）をカバーしない
-- draft record を AppView public mode に混ぜない
+- draft record を一覧には混ぜず、direct route では draft 状態付きで扱う

@@ -76,6 +76,8 @@ AT Protocol 上に書かれた record は原則公開である。「書かれた
 
 rules は character-sheet-schema と rule-profile chain の問題であり、character は sheet、branch、advancement、session の問題である。
 
+schema-less な自由形式 sheet は primary authoring model にしない。active な作成体験は schema-backed を正本とし、schema-less は legacy/import/recovery の safety valve に留める。
+
 ### 8. 越境利用はシステムで管理しない
 
 キャラクターを別の campaign や house に持ち出してよいかは、プレイヤーと GM のコミュニケーションで決める。TRPG はコミュニケーションのゲームであり、ありとあらゆる可能性を考慮して厳格なルールを定めるべきではない。

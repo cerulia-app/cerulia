@@ -35,7 +35,9 @@ branch owner のみ。
 
 - sheet 作成時に default branch が自動生成される。branch なしの character は存在しない
 - sheet 作成時に生成される default branch は `branchKind = main` を使う
+- `branchKind = main` が canonical lineage root を表す。`campaign-fork` と `local-override` は branch の用途ラベルであり、branchRef を跨いだ自動優先順位は持たない
 - same baseSheetRef から複数 branch を作ることで、同じキャラの複数 campaign 分岐を表現できる
+- baseSheetRef は branch owner 自身の sheet を指さなければならない
 - 共有 surface の公開 / 非公開の正本は branch.visibility とする。sheet 側の metadata では代替しない
 - branchRef 自体は安定 object として扱う。branch metadata の更新で branchRef を差し替えない
 - ruleset をまたぐ変換で生じた target branch は durable subject であり、変換 provenance は character-conversion で残す

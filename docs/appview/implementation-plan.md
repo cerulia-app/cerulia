@@ -12,7 +12,7 @@
 
 - rulesetNsid 選択 UI
 - schema-driven フォーム生成（fieldDefs → 動的フィールド）
-- schema-less sheet の raw JSON fallback view / editor
+- legacy/import/recovery 用 schema-less sheet の owner-only raw JSON fallback view / editor
 - extensible な schema group に対する追加 field 入力
 - rulesetNsid を選んだ後に `listCharacterSheetSchemas` から explicit schema selection UI を出す generic create flow
 - scenario.recommendedSheetSchemaRef がある場合の deterministic schema 解決

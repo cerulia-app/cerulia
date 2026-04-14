@@ -34,6 +34,10 @@ ownerDid、または maintainerDids に含まれる actor。
 
 ## 設計上の注意
 
+- rule-profile は rules provenance の public-only record とする。visibility: draft/public lifecycle には参加させない
+- rule-profile は mutable current-head record として扱う。schema のような versioned pin にはしない
+- rule-profile に archived / retired の別 status axis は持たせない。無効化や置換は scope 側の参照から外すことで表現する
+- public shared surface は raw rule-profile を直接読まず、campaign / house projection に畳み込まれた overlay summary を使う
 - scopeKind は house-shared、campaign-shared の閉じた値
 - scopeRef は、その profile がどの scope に属するかを指す
 - overlay 順序の live 解決は campaign.sharedRuleProfileRefs に materialize された順序だけを見る。house-shared は campaign 作成時の seed source にとどまる

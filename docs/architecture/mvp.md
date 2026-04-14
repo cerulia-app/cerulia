@@ -11,7 +11,7 @@ MVP は PL がキャラクターを作り、セッション経験を記録し、
 - character-sheet + character-branch のペア作成
 - character-sheet-schema（CoC 7版の schema を最初のサンプルとする）
 - rulesetNsid ごとの schema 選択
-- scenario → character-sheet-schema の direct chain で作成画面にナビゲート
+- recommendedSheetSchemaRef を持つ scenario だけが character-sheet-schema の direct chain で作成画面にナビゲートする
 - ダイスロール（AppView クライアント側）
 - CCFolia clipboard 形式でのエクスポート
 - visibility: draft / public の切り替え
