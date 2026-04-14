@@ -17,7 +17,7 @@ Keep this file minimal. Put durable design detail in docs and link to it from he
 
 ## Build And Test
 
-- [appview/package.json](appview/package.json) is the source of truth for frontend commands. For substantial appview work, prefer `npm run verify` in [appview/](appview/) before considering the unit complete.
+- [appview/package.json](appview/package.json) is the source of truth for frontend commands. For substantial appview work, prefer `bun run verify` in [appview/](appview/) before considering the unit complete.
 - [api/package.json](api/package.json), [projection/package.json](projection/package.json), and [protocol/package.json](protocol/package.json) currently expose no scripts. Do not invent backend commands without updating the package definitions or docs.
 
 ## Architecture Boundaries
