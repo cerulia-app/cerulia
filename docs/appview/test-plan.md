@@ -54,6 +54,13 @@
 | D-6 | retired branch detail が read-only historical detail になり、edit CTA を出さないこと |
 | D-7 | draft retired branch も direct link では draft 状態付きの historical detail として表示されること |
 
+### E. Rules Overlay
+
+| ID | 検証点 |
+|---|---|
+| E-1 | campaign / house の public surface が raw rule-profile read に依存せず、overlay summary だけを表示すること |
+| E-2 | owner / maintainer 向け rule-profile read/edit 導線が public surface から分離されていること |
+
 ## Release Gate
 
-A-1 〜 A-7、B-1 〜 B-5、C-1 〜 C-5、D-1 〜 D-7 が green であること。
+A-1 〜 A-7、B-1 〜 B-5、C-1 〜 C-5、D-1 〜 D-7、E-1 〜 E-2 が green であること。
