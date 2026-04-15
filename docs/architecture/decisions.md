@@ -149,3 +149,27 @@ Cerulia の設計における主要な判断を記録する。
 採用: character-conversion は source / target が同一 owner の場合だけ product-core で扱う。cross-owner conversion は scope 外に置く。
 
 理由: 他人の branch を provenance として持ち出す consent primitive を product-core に入れないため。same-owner であれば provenance を安全に閉じられる。
+
+## 24. public shared root は character detail
+
+採用: public shared surface の canonical landing は character detail とする。プレイヤー単位の public character collection は secondary surface とし、MVP では後回しにする。
+
+理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。public surface を最初から広げると、draft や spoiler の扱いと一覧導線が先に複雑になる。
+
+## 25. pending save は AppView の local state に限定する
+
+採用: mutation transport の結果種別は `accepted` / `rejected` / `rebase-needed` のまま固定する。AppView は submit 直後に local な `pending` を表示してよいが、新しい protocol result kind は増やさない。
+
+理由: ユーザーには「保存ボタンを押したら処理が進んでいる」感触が必要だが、canonical truth の契約は単純である方がよい。`pending` を UI state に閉じれば、整合性と可搬性を保ったまま保存 UX を改善できる。
+
+## 26. public direct detail は鮮度より安定性を優先する
+
+採用: public character detail は数分程度の stale を許容しても direct link を安定して返すことを優先する。owner workbench と write 後の確認導線は authoritative read を優先する。ただし stale 許容は visibility が引き続き public である場合に限る。public から draft への切り替え時は最新 visibility で再解決する。
+
+理由: Cerulia の最初の価値は共有リンクが壊れずに見られることにある。ユーザーは public detail に厳密なリアルタイム性より、安定して開けることを期待する。
+
+## 27. shared detail は text-first で返す
+
+採用: 低速回線では、character detail のプロフィールと structured stats を先に表示し、portrait や大きい asset は後から読み込む。
+
+理由: GM 共有で最低限必要なのはプロフィール、ステータス、立ち絵だが、判断に直結するのはまずテキストと数値である。portrait を後ろに回せば、低速回線でも実用性を落とさずに済む。

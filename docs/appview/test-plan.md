@@ -1,6 +1,6 @@
 # AppView テスト計画
 
-## 状態
+## current runtime
 
 2026-04-14 のリセットにより、旧 mounted / final-gate 前提のテスト計画は current ではありません。
 
@@ -8,8 +8,40 @@
 
 - `npm run check`
 - `npm run lint`
-- `npm run test`
 - `npm run build`
 
-現在の `npm run test` は reset 状態の最小 smoke として、placeholder copy の整合だけを確認します。
-将来の component / route / e2e 計画は再実装後に再定義してください。
+現在の workspace には `npm run test` の実行口はあるが、target route / component を検証する test file はまだ揃っていない。placeholder smoke を復帰させるまでは、`npm run test` を current release gate とみなさない。
+
+## target MVP gates
+
+### route / surface
+
+- `/` が public top として価値説明、共有キャラクターへの入口、サインイン導線を持つこと
+- `/characters` と `/characters/new` で owner flow が成立すること
+- `/characters/[branch]` が canonical shared detail として direct link で解決すること
+- `/sessions` が owner-only workbench として inline detail / edit を持つこと
+
+### boundary
+
+- public session 専用 route を持たないこと
+- draft の character / session / campaign / house は一覧や discovery から隠れること
+- draft の direct link は draft state を明示して解決すること
+- public から draft への visibility 変更後に stale public detail を返さないこと
+- rule-profile と character-sheet-schema に visibility toggle を出さないこと
+- scenario に recommendedSheetSchemaRef が無い場合、scenario 起点の create CTA を出さないこと
+- archived campaign で archive 以外の更新導線を閉じること
+- submit 後の `pending` / `accepted` / `rejected` / `rebase-needed` が区別され、pending を accepted と同じ表示にしないこと
+
+### shared UX
+
+- character detail の first view でプロフィール、structured stats、立ち絵が確認できること
+- summary / spoiler の折りたたみと warning copy が崩れないこと
+
+### performance rehearsal
+
+- timing / bandwidth 依存の項目は、browser harness が入るまでは release gate ではなく rehearsal として扱う
+- warm path の public character detail が 0.3 秒以内を目標に測定できること
+- warm path の owner list と save 完了表示が 0.5 秒以内を目標に測定できること
+- public direct link が短時間 stale でも継続して開けることを rehearsal で確認すること
+- 遅延注入や低速回線シミュレーション下で、pending 表示、text-first 表示、stale direct link が崩れないことをブラウザレベルで確認すること
+- 画像遅延時でも portrait プレースホルダーにより大きな layout shift が起きないことを確認すること
