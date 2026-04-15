@@ -29,6 +29,17 @@ Cerulia が最初に end-to-end で成立させるべき体験は次の 1 本で
 3. セッション後に完走記録とキャラクターの恒久的な変化を残す
 4. 次の卓で同じキャラクターをもう一度共有する
 
+## 5W1H で見る Cerulia
+
+| 観点 | 現在の答え |
+| --- | --- |
+| Why | TRPG のキャラクター情報と経歴記録を相互運用できる形で扱い、AT Protocol 上のオープンなエコシステムに寄与するため |
+| Who | 複数システムを遊び、多くの PC を持ち、卓ごとにサービスが分かれて困っている PL |
+| What | character を作り、post-run の session を記録し、character detail を共有する個人向けサービス |
+| When | character は卓の前に作り、session は卓の後に記録し、共有は卓前後の連絡や SNS で行う |
+| Where | AT Protocol 上の personal repo と Cerulia AppView を主な場にし、共有の入口は character detail link に置く |
+| How | schema-backed authoring、personal character / session record の owner-only write、shared-managed record の owner / maintainer control、post-run record、public-by-default な record と AppView の draft / spoiler 表示制御で成立させる |
+
 ## 何を AT Protocol に任せるか
 
 AT Protocol に向いているのは、次の責務である。
@@ -108,6 +119,16 @@ schema-less な自由形式 sheet は primary authoring model にしない。act
 - 全 TRPG システムを一つの巨大汎用 schema に押し込むこと
 - アクセス制限を AT Protocol レベルで実装すること
 - 既存サービスのスコープもカバーして劣化版になること
+
+## 判断の 3 区分
+
+この文書では、「やらない」「後でやる」「補助として後で足す」を分けて読む。
+
+| 区分 | 意味 | 現時点の例 |
+| --- | --- | --- |
+| product non-goal | roadmap に入れない。将来も Cerulia product-core では扱わない | run authority、membership / 参加承認、live 卓中イベント、disclosure / secret / handout、board / realtime / replay、appeal / governance、アクセス制限、standalone public session page、cross-owner conversion |
+| post-MVP core-later | scope 内だが、MVP 後に回す | same-owner の character-conversion |
+| secondary later | core flow を壊さない追加 surface として後で検討する | プレイヤー単位の public character collection |
 
 ## 優先度
 

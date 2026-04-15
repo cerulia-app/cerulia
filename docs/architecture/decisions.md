@@ -56,9 +56,9 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 9. 他人について書かない
 
-採用: 他人の DID や characterBranchRef を自分の record に書かない。
+採用: PL の personal record である character / session 系 record には、他人の DID や characterBranchRef を書かない。campaign、house、scenario、rule-profile、character-sheet-schema の ownerDid / maintainerDids のような shared-managed record の管理メタデータはこの禁止の対象外とする。
 
-理由: 本人の opt-in なしに公開 graph を作ってしまうのを避ける。全 record が原則公開であるため、他人を一方的にリンクするリスクが高い。他のプレイヤーとのリンクは、各自が自分で session を書くことで成立する。
+理由: character / session 系 record は PL の公開される個人史であり、ここに第三者識別子を入れると、本人の opt-in なしに活動 graph や参加関係を durable に作ってしまう。Cerulia が避けたいのはこの public graph 化である。一方、shared-managed record の ownerDid / maintainerDids は「誰がその record を管理するか」を示す control metadata であり、他人の行動履歴を public graph 化するための field ではない。
 
 ## 10. 越境利用はシステムで管理しない
 
@@ -158,12 +158,6 @@ Cerulia の設計における主要な判断を記録する。
 
 理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。public surface を最初から広げると、draft や spoiler の扱いと一覧導線が先に複雑になる。
 
-## 28. standalone public session page は置かない
-
-採用: standalone な public session 個別 page / route は作らない。public-safe な session 情報は character detail、campaign、house の surface に畳み込む。
-
-理由: session は owner の post-run 記録であり、shared surface の root ではない。session 単位の public page を置くと、記録の主語が character から run-centric にずれ、public surface の境界も複雑になる。
-
 ## 25. pending save は AppView の local state に限定する
 
 採用: mutation transport の結果種別は `accepted` / `rejected` / `rebase-needed` のまま固定する。AppView は submit 直後に local な `pending` を表示してよいが、新しい protocol result kind は増やさない。
@@ -181,3 +175,9 @@ Cerulia の設計における主要な判断を記録する。
 採用: 低速回線では、character detail のプロフィールと structured stats を先に表示し、portrait や大きい asset は後から読み込む。
 
 理由: GM 共有で最低限必要なのはプロフィール、ステータス、立ち絵だが、判断に直結するのはまずテキストと数値である。portrait を後ろに回せば、低速回線でも実用性を落とさずに済む。
+
+## 28. standalone public session page は置かない
+
+採用: standalone な public session 個別 page / route は作らない。public-safe な session 情報は character detail、campaign、house の surface に畳み込む。
+
+理由: session は owner の post-run 記録であり、shared surface の root ではない。session 単位の public page を置くと、記録の主語が character から run-centric にずれ、public surface の境界も複雑になる。
