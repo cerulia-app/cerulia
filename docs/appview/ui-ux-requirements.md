@@ -23,9 +23,15 @@
 ### character detail
 
 - first view でプロフィール、structured stats、立ち絵を優先表示する
+- shared character detail は profile-led dossier として構成し、feed ではなく 1 つの detail page として読む
+- first viewport に portrait、identity、主要 stats を収め、初手の section switch を必要にしない
+- in-page anchor は許容するが、タブ UI で必要情報を隠さない
 - public-safe な session 履歴と advancement は character detail の中に埋め込んで見せる
+- public に埋め込む session 履歴は accepted かつ public の record だけに限る
+- session 履歴は SNS 風 timeline ではなく、play record の ledger / card として見せる
 - public session 専用 route は作らない
 - draft の direct link は解決し、draft state を明確に表示する
+- owner 向けの edit / export / save state は public read order を壊さない補助領域に分離する
 
 ### create / edit / record
 
