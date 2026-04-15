@@ -110,7 +110,7 @@ Cerulia の設計における主要な判断を記録する。
 
 採用: 争いの workflow は product-core に入れない。
 
-理由: Cerulia は moderation machine ではない。必要なら将来検討するが、現行の前提にはしない。
+理由: Cerulia は moderation machine ではない。Cerulia の roadmap に入れる対象ではなく、product scope 外として固定する。
 
 ## 18. fieldDefs は再帰構造を許す
 
@@ -146,15 +146,23 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 23. character-conversion は same-owner に限定する
 
-採用: character-conversion は source / target が同一 owner の場合だけ product-core で扱う。cross-owner conversion は scope 外に置く。
+採用: character-conversion は source / target が同一 owner の場合だけ product-core 候補として扱う。cross-owner conversion は scope 外に置く。
 
 理由: 他人の branch を provenance として持ち出す consent primitive を product-core に入れないため。same-owner であれば provenance を安全に閉じられる。
 
+補足: same-owner conversion は post-MVP candidate であり、MVP の必須範囲には入れない。
+
 ## 24. public shared root は character detail
 
-採用: public shared surface の canonical landing は character detail とする。プレイヤー単位の public character collection は secondary surface とし、MVP では後回しにする。
+採用: public shared surface の canonical landing は character detail とする。プレイヤー単位の public character collection は secondary surface とし、post-MVP candidate に留める。
 
 理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。public surface を最初から広げると、draft や spoiler の扱いと一覧導線が先に複雑になる。
+
+## 28. standalone public session page は置かない
+
+採用: standalone な public session 個別 page / route は作らない。public-safe な session 情報は character detail、campaign、house の surface に畳み込む。
+
+理由: session は owner の post-run 記録であり、shared surface の root ではない。session 単位の public page を置くと、記録の主語が character から run-centric にずれ、public surface の境界も複雑になる。
 
 ## 25. pending save は AppView の local state に限定する
 
