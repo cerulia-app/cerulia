@@ -24,6 +24,7 @@
 ### boundary
 
 - public session 専用 route を持たないこと
+- MVP では public profile route を持たず、canonical shared surface を character detail に固定すること
 - draft の character / session / campaign / house は一覧や discovery から隠れること
 - draft の direct link は draft state を明示して解決すること
 - public から draft への visibility 変更後に stale public detail を返さないこと
@@ -35,6 +36,7 @@
 ### shared UX
 
 - character detail の first view でプロフィール、structured stats、立ち絵が確認できること
+- public history に owner-only note、save state、spoiler text が出ないこと
 - summary / spoiler の折りたたみと warning copy が崩れないこと
 
 ### performance rehearsal
@@ -45,3 +47,12 @@
 - public direct link が短時間 stale でも継続して開けることを rehearsal で確認すること
 - 遅延注入や低速回線シミュレーション下で、pending 表示、text-first 表示、stale direct link が崩れないことをブラウザレベルで確認すること
 - 画像遅延時でも portrait プレースホルダーにより大きな layout shift が起きないことを確認すること
+
+### localization
+
+- public top と character detail の UI chrome が locale 切り替えに追従すること
+- locale 指定が無い場合に browser preference から妥当な locale が選ばれること
+- OGP metadata は explicit locale が無い場合 default locale で安定して返ること
+- translation 欠落時に default locale へ fallback し、raw key を出さないこと
+- user-authored content が勝手に翻訳・改変されないこと
+- 日本語と Latin script の長さ差でも mobile / desktop レイアウトが崩れないこと

@@ -23,3 +23,5 @@
 7. **pending is UI-local**: AppView は submit 後に local な `pending` を表示してよいが、API から `accepted` が返るまで確定保存済みとして扱わない
 8. **stable public detail**: public direct detail は、visibility が変わっていない限り、数分程度 stale でも安定して返すことを優先してよい。public から draft への切り替え時は stale public 表示を許さず、最新 visibility で再解決する。owner workbench と save 後確認は authoritative read を優先する
 9. **text-first on slow links**: 低速回線ではプロフィールと structured stats を先に出し、portrait などの大きい asset は後から読み込む
+10. **character detail remains canonical**: public profile を将来追加しても、canonical shared surface は character detail のままにする。public profile は secondary surface として各 character detail へ導線を束ねるだけに留める
+11. **locale at AppView**: locale 解決、UI chrome、system message、navigation label、OGP metadata の多言語化は AppView の責務とする。user-authored content の自動翻訳は AppView の責務に含めない。owner locale override は AppView 側の preference に閉じ、shared record に書かない。OGP metadata は explicit locale が無ければ default locale で安定させる

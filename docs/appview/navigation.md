@@ -30,4 +30,9 @@
 ## 明示的に置かない route
 
 - public session 専用 route は置かない。public-safe な session 情報は character detail、campaign、house の surface に畳み込む
-- プレイヤー単位の public profile / public character collection route は secondary surface とし、post-MVP candidate に留める
+- MVP ではプレイヤー単位の public profile / public character collection route を置かない。canonical shared surface を character detail に固定する
+
+## secondary later candidate
+
+- プレイヤー単位の public profile / public character collection route は post-MVP の secondary public surface 候補とする
+- 追加しても shared root は character detail に残し、public profile は導線の束ね役に留める

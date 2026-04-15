@@ -8,7 +8,7 @@ Cerulia は TRPG プレイヤーのためのキャラクター管理サービス
 - **記録する**: 遊んだセッションの履歴がキャラクターに蓄積される
 - **共有する**: キャラクターのリンクを SNS や卓の連絡で渡すだけで、プロフィール、ステータス、立ち絵、経歴が見える
 
-共有リンクで最初に開くページは character detail とする。standalone な public session page は作らない。プレイヤー単位の public character collection は欲しいが、あとで追加する候補に留める。
+共有リンクで最初に開くページは character detail とする。standalone な public session page は作らない。プレイヤー単位の public profile / public character collection は secondary public surface として欲しいが、MVP では character detail を shared root に固定する。
 
 ## 最初に届ける相手
 
@@ -45,5 +45,6 @@ Cerulia は TRPG プレイヤーのためのキャラクター管理サービス
 - 「キャラクターを作る」「遊んだ記録を残す」「見せる」を軸にする
 - AT Protocol を前面に出さない（開発者向けの文脈でのみ言及）
 - 「分散型」は技術者向けの補足。一般ユーザーには「データが自分のもの」と伝える
+- public / owner の UI copy は多言語対応可能な構造で持ち、translation が無い場合も意味の通る fallback copy を返す
 - 既存サービスとの優劣比較をしない
 - 公開面の第一印象は character detail に寄せ、session 一覧や技術説明を入口にしない

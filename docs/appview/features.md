@@ -75,8 +75,21 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - 共有リンクの生成
 - SNS での OGP 表示
 - public shared surface の root は character detail とする
+- public に埋め込む session history の項目は scenario、date、record role、result、external archive link のような public-safe summary に限る
+- owner-only note、save state、private identifier、spoiler text は public history に含めない
+- player 単位の public profile / public character collection は post-MVP の secondary public surface とする
+- public profile を追加しても canonical shared root は character detail のままにする
 - direct link の安定性を優先し、visibility が引き続き public である限りは public detail に数分程度の stale を許容してよい
 - public から draft への visibility 変更時は stale cache を使わず、最新 visibility で再解決する
 - 低速回線ではプロフィールとステータスを先に表示し、立ち絵は後から読み込む
 - 低速回線でも layout shift を増やさないよう、portrait 領域には先にプレースホルダーを確保する
-- プレイヤー単位の public character collection は post-MVP の secondary surface とする
+
+## 多言語対応
+
+- UI copy、system message、navigation label、OGP metadata を locale-aware に管理する
+- public surface は locale 指定、browser preference、default locale の順で解決する
+- OGP metadata は explicit locale が無い場合 default locale で安定して返す
+- owner surface は AppView 側の user setting または local preference による locale 上書きを許容する前提で設計し、shared record には保存しない
+- user-authored content の自動翻訳は primary target にしない
+- 翻訳欠落時は default locale に fallback し、raw key や空表示を出さない
+- 日本語と Latin script の両方でレイアウトが破綻しないことを前提にする

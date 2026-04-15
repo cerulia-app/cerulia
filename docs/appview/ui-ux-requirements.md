@@ -18,6 +18,7 @@
 
 - `/` は「どのシステムでもキャラクターを作れる」「遊んだ記録が残る」「共有できる」を plain words で伝える
 - public entry で AT Protocol や内部語を前面に出しすぎない
+- public entry の UI copy と metadata は locale-aware に出し分けられること
 - canonical shared surface は character detail とし、session 一覧や技術説明を public entry の主役にしない
 
 ### character detail
@@ -28,8 +29,10 @@
 - in-page anchor は許容するが、タブ UI で必要情報を隠さない
 - public-safe な session 履歴と advancement は character detail の中に埋め込んで見せる
 - public に埋め込む session 履歴は accepted かつ public の record だけに限る
+- public history の session card は scenario、date、record role、result、external archive link の範囲に留め、owner-only note や spoiler text を含めない
 - session 履歴は SNS 風 timeline ではなく、play record の ledger / card として見せる
 - public session 専用 route は作らない
+- public profile は secondary later として扱い、MVP の shared root にしない
 - draft の direct link は解決し、draft state を明確に表示する
 - owner 向けの edit / export / save state は public read order を壊さない補助領域に分離する
 
@@ -53,6 +56,16 @@
 - 低速回線ではテキストと structured stats を先に返し、portrait や大きい asset は後から読み込む
 - portrait や大きい asset の遅延読込でも layout shift が大きくならないよう、表示枠やプレースホルダーを先に確保する
 - warm path の public character detail は 0.3 秒以内、owner list と save 完了表示は 0.5 秒以内を目標にする
+
+### language and localization
+
+- public / owner の UI chrome、system message、save state label、OGP metadata は多言語対応を前提に構造化する
+- public surface は locale 指定があればそれを優先し、無ければ browser preference、最後に default locale へ fallback する
+- OGP metadata は crawler ごとのぶれを避けるため、explicit locale が無ければ default locale を使う
+- owner surface は AppView 側の user setting または local preference で locale を上書きできる前提にし、shared record には保存しない
+- user-authored content は自動翻訳を前提にせず、原文のまま表示する
+- translation が欠けても raw key、未翻訳 placeholder、崩れた layout を出さない
+- 日本語と Latin script のどちらでも character detail と form layout が破綻しないこと
 
 ### public link stability
 
