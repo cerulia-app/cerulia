@@ -1,5 +1,8 @@
 # レイヤー構成
 
+この文書は Cerulia product-core の layer を定義する。
+AT Protocol 境界レビュー用の protocol-facing layer は [atproto-boundary-layers.md](./atproto-boundary-layers.md) を参照する。
+
 ## 全体像
 
 Cerulia の product-core は PL 個人向けのキャラクター管理・セッション記録・共有サービスを中心に閉じる。layer は次の 5 層で足りる。
