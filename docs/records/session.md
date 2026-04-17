@@ -53,6 +53,6 @@ session record の owner（PL 本人）。
 - campaignRef は任意。単発卓（多数派）では省略する
 - visibility: draft のセッションは Cerulia AppView では一覧や public embedding から隠す。AT Protocol 上は公開されているため、owner-only の秘匿を意味しない
 - hoLabel と hoSummary はネタバレを含まない公開情報だけを扱う。secret handout や disclosure payload は product-core に入れない
-- outcomeSummary はプレイヤー向けの要約。キャラクターのロスト（死亡等）もここで記録する
+- outcomeSummary は public-safe な結果要約。キャラクターのロスト（死亡等）もここで記録してよいが、シナリオの秘匿情報や spoiler detail は入れない
 - externalArchiveUris は YouTube、ブログ、配信アーカイブ等の外部記録へのリンクに使う
 - note は public-safe な補足だけに使う。private scratch や非公開メモは product-core に入れない

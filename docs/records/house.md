@@ -38,7 +38,8 @@ house owner。
 - defaultRuleProfileRefs を使う場合、その house は 1 つの ruleset family に閉じる。複数 ruleset を併用する house では空にして、campaign 側で明示する
 - house.defaultRuleProfileRefs は campaign 作成時の seed source に限る。live な effective overlay を直接構成しない
 - house から過去の session を辿るのは projection で扱う。house record 自体に sessions リストは持たない
-- canonSummary は世界観や上位設定を説明するフリーテキスト。運用上の世界観ラベルとして使う
+- canonSummary は public-safe な世界観や上位設定のフリーテキスト。運用上の世界観ラベルとして使う
+- policySummary は public-safe なコミュニティ方針の説明に限る
 - externalCommunityUri は外部コミュニティへのリンク。メンバー管理自体は外部に任せる
 - visibility: draft の house は Cerulia AppView では一覧から隠すが、direct link では draft 状態を明示して表示する
 - direct-link の house detail では draft state 付きで identity を返してよい。一方、埋め込み public projection は draft house の identity を露出しない。public campaign が draft house を参照していても、house block は省略する
