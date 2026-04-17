@@ -8,6 +8,8 @@ XRPC 系は app.cerulia.rpc.* にまとめる。
 - list query は `limit` と `cursor` を共通で受ける。`limit` の既定値は 50、最大は 100
 - domain-level result は `200 OK + mutationAck` に統一し、malformed request / auth failure / endpoint not found だけを XRPC error にする
 - public record に永続化される free-text input は、title、label、summary、description を含めてすべて public-safe でなければならない
+- public shared surface に出る URI input は credential-free な公開 URI に限る。embedded credential、署名 query、one-time token を含む URL は `rejected` にする
+- owner mode と public / anonymous mode の両方を持つ query は、同じ record を返しても同じ payload shape を返さない。public mode は summary view に閉じ、owner-only field、raw payload、internal linkage を含めない
 
 ## 共通 error 名
 
@@ -29,7 +31,7 @@ XRPC 系は app.cerulia.rpc.* にまとめる。
 | correlationId | string | no | support / log correlation 用の request identifier |
 | message | string | no | human-readable short explanation |
 
-推奨 `reasonCode` は `forbidden-owner-mismatch`, `invalid-required-field`, `invalid-exactly-one`, `invalid-schema-link`, `rebase-required`, `terminal-state-readonly` とする。
+推奨 `reasonCode` は `forbidden-owner-mismatch`, `invalid-required-field`, `invalid-exactly-one`, `invalid-schema-link`, `invalid-public-uri`, `rebase-required`, `terminal-state-readonly` とする。
 
 ## query contract
 
@@ -45,17 +47,33 @@ owner-only query。public / anonymous には公開しない。
 
 - auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
 - params: `characterBranchRef` required
-- output: `branch`, `sheet`, `recentSessions`, `advancements`, `conversions`
+- output:
+	- owner mode: `branch`, `sheet`, `recentSessions`, `advancements`, `conversions`
+	- public / anonymous mode: `branchSummary`, `sheetSummary`, `recentSessionSummaries`, `advancementSummaries`, `conversionSummaries`
 
-draft branch も direct ref があれば解決するが、response に `visibility` を含めて AppView が draft state を表示する。public / anonymous mode では draft child を畳み込まず、advancement / conversion は public-safe subset だけを返す。
+draft branch も direct ref があれば解決するが、response に `visibility` を含めて AppView が draft state を表示する。public / anonymous mode では draft child を畳み込まず、`note`、`deltaPayload`、`previousValues`、`overridePayload`、`characterBranchRef` のような raw payload / linkage field を返さない。
+
+### app.cerulia.rpc.getPlayerProfileView
+
+- auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct DID read を許す
+- params: `did` required
+- output:
+	- owner mode: `profile`, `blueskyFallbackProfile`, `publicBranches`
+	- public / anonymous mode: `profileSummary`, `publicBranches`
+
+`did` は owner repo の `app.cerulia.core.playerProfile/self` を解決するために使う。profile record が無い場合も、ownerDid に紐づく `app.bsky.actor.profile` fallback だけで public summary を返してよい。Cerulia override がある項目だけを fallback より優先する。
+fallback 由来の field も public-safe 条件を満たすものだけを返す。`website` は credential-free 公開 URI 条件を満たさない場合、summary から省略する。
+`publicBranches` は link-only summary row に固定し、`characterBranchRef`、`displayName`、`branchLabel`、`rulesetNsid` だけを返す。owner-only linkage や raw payload は含めない。
 
 ### app.cerulia.rpc.getCampaignView
 
 - auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
 - params: `campaignRef` required
-- output: `campaign`, `sessions`, `ruleOverlay`
+- output:
+	- owner mode: `campaign`, `sessions`, `ruleOverlay`
+	- public / anonymous mode: `campaignSummary`, `sessionSummaries`, `ruleOverlaySummary`
 
-draft campaign も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child session を返さない。
+draft campaign も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child session を返さず、owner-only linkage や raw rule-profile payload を返さない。
 
 ### app.cerulia.rpc.listScenarios
 
@@ -67,7 +85,7 @@ draft campaign も direct ref があれば解決するが、list query には含
 
 - auth: anonymous read を許す
 - params: `scenarioRef` required
-- output: `scenario`
+- output: `scenarioSummary`
 
 recommendedSheetSchemaRef が無い scenario は browse-only とし、create flow 用の deterministic schema 解決結果を返さない。
 
@@ -105,9 +123,11 @@ owner-only query。`/sessions` 一覧内の inline detail / edit のために使
 
 - auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
 - params: `houseRef` required
-- output: `house`, `campaigns`, `sessions`
+- output:
+	- owner mode: `house`, `campaigns`, `sessions`
+	- public / anonymous mode: `houseSummary`, `campaignSummaries`, `sessionSummaries`
 
-draft house も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child campaign / session を返さない。
+draft house も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child campaign / session を返さず、draft house を参照する public campaign からは house identity を省略してよい。
 
 ### app.cerulia.rpc.listRuleProfiles
 
@@ -130,7 +150,7 @@ owner 向けの rule-profile canonical read。public surface は raw profile を
 ### app.cerulia.rpc.createCharacterSheet
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `rulesetNsid`, `sheetSchemaRef`, `displayName`, `portraitRef?`, `profileSummary?`, `stats?`, `initialBranchVisibility?`
+- input: `rulesetNsid`, `sheetSchemaRef`, `displayName`, `portraitBlob?`, `profileSummary?`, `stats?`, `initialBranchVisibility?`
 - output: `emittedRecordRefs = [characterSheetRef, characterBranchRef]`
 - note: sheet + default branch をペアで生成する。default branch には `branchKind = main` を使い、`initialBranchVisibility` を seed する
 
@@ -140,11 +160,12 @@ server は create 時に `character-sheet.version = 1` を設定する。
 
 `sheetSchemaRef` を渡す場合、schema の `baseRulesetNsid` は `rulesetNsid` と一致しなければならない。
 `sheetSchemaRef` を渡す場合、server は fieldDefs に対する stats の構造検証を行う。extensible な group で許可された追加 field は valid とし、それ以外の unknown field は reject する。AppView の検証は preflight であり、server validation を代替しない。
+`portraitBlob` を渡す場合、caller repo で upload された blob metadata でなければならない。外部 URL や他 actor repo の blob 参照は受け付けない。
 
 ### app.cerulia.rpc.updateCharacterSheet
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `characterSheetRef`, `displayName?`, `portraitRef?`, `profileSummary?`, `stats?`
+- input: `characterSheetRef`, `displayName?`, `portraitBlob?`, `profileSummary?`, `stats?`
 - output: `emittedRecordRefs = [characterSheetRef]`
 
 accepted な update は `character-sheet.version` を 1 ずつ増やす。
@@ -164,21 +185,21 @@ accepted な rebase は `character-sheet.version` を 1 ずつ増やす。
 ### app.cerulia.rpc.createCharacterBranch
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `baseSheetRef`, `branchKind`, `branchLabel`, `overridePayloadRef?`, `visibility?`
+- input: `baseSheetRef`, `branchKind`, `branchLabel`, `overridePayload?`, `visibility?`
 - output: `emittedRecordRefs = [characterBranchRef]`
 - note: 2 本目以降の branch を作る場合に使う。`branchKind = main` は createCharacterSheet が生成する default branch 専用であり、`campaign-fork` と `local-override` は用途ラベルであって canonical root を置き換えない
 
 `baseSheetRef` の ownerDid は callerDid と一致しなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
-`overridePayloadRef` を使う場合、その参照先は public-safe な overlay payload に限る。
+`overridePayload` を使う場合、それは active schema の fieldId / group key に沿う public-safe な inline object に限る。payload 専用 record や owner-only sidecar を参照してはならない。
 
 ### app.cerulia.rpc.updateCharacterBranch
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `characterBranchRef`, `branchLabel?`, `overridePayloadRef?`, `visibility?`
+- input: `characterBranchRef`, `branchLabel?`, `overridePayload?`, `visibility?`
 - output: `emittedRecordRefs = [characterBranchRef]`
 
 retiredAt が設定された branch への mutation は `resultKind = rejected` と `reasonCode = terminal-state-readonly` を返す。
-`overridePayloadRef` を更新する場合も、参照先は public-safe な overlay payload に限る。
+`overridePayload` を更新する場合も、active schema の fieldId / group key に沿う public-safe な inline object に限る。
 
 ### app.cerulia.rpc.retireCharacterBranch
 
@@ -191,10 +212,11 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 ### app.cerulia.rpc.recordCharacterAdvancement
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `characterBranchRef`, `advancementKind`, `deltaPayloadRef`, `sessionRef?`, `previousValues?`, `effectiveAt`, `note?`
+- input: `characterBranchRef`, `advancementKind`, `deltaPayload`, `sessionRef?`, `previousValues?`, `effectiveAt`, `note?`
 - output: `emittedRecordRefs = [characterAdvancementRef]`
 
-`deltaPayloadRef` と `previousValues` は公開前提の public-safe payload として扱う。hidden correction memo や owner-only 情報は入れない。
+`deltaPayload` と `previousValues` は公開前提の public-safe inline payload として扱う。hidden correction memo や owner-only 情報は入れない。
+`advancementKind` が `retrain`、`respec`、`correction` の場合、`previousValues` は必須とする。`milestone` と `xp-spend` では省略してよい。
 
 ### app.cerulia.rpc.createSession
 
@@ -208,6 +230,7 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 `hoLabel` と `hoSummary` は Handout Overview の略で、spoiler-safe な公開ラベルだけを扱う。secret disclosure や handout payload は product-core に入れない。
 `role = pl` のときは `characterBranchRef` 必須。`role = gm` のときは省略してよい。
 `characterBranchRef` を渡す場合、その branch の ownerDid は callerDid と一致しなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+`externalArchiveUris` は credential-free な公開 URI に限る。署名付き query や閲覧 token を含む URL は `resultKind = rejected` と `reasonCode = invalid-public-uri` を返す。
 
 ### app.cerulia.rpc.updateSession
 
@@ -218,6 +241,7 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 `scenarioRef` と `scenarioLabel` を更新する場合も、結果は exactly one を満たさなければならない。
 `role = pl` の結果になるときは `characterBranchRef` 必須。`role = gm` の結果になるときは省略してよい。
 `characterBranchRef` を渡す結果になる場合、その branch の ownerDid は callerDid と一致しなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+`externalArchiveUris` を渡す結果になる場合、それらは credential-free な公開 URI に限る。
 
 ### app.cerulia.rpc.createScenario
 
@@ -227,6 +251,7 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 
 `recommendedSheetSchemaRef` がある場合、`rulesetNsid` は必須であり、その schema の `baseRulesetNsid` は `rulesetNsid` と一致しなければならない。
 `summary` と `sourceCitationUri` は public-safe な情報だけを扱う。spoiler payload は product-core に入れない。
+`sourceCitationUri` を使う場合、それは credential-free な公開 URI に限る。
 
 ### app.cerulia.rpc.updateScenario
 
@@ -235,6 +260,17 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 - output: `emittedRecordRefs = [scenarioRef]`
 
 `recommendedSheetSchemaRef` を持つ結果になる場合、`rulesetNsid` を必須とし、schema の `baseRulesetNsid` と一致しなければならない。`recommendedSheetSchemaRef` を省略した scenario は browse-only のままとする。
+`sourceCitationUri` を更新する場合も、credential-free な公開 URI に限る。条件を満たさない場合は `resultKind = rejected` と `reasonCode = invalid-public-uri` を返す。
+
+### app.cerulia.rpc.updatePlayerProfile
+
+- auth: `app.cerulia.authCoreWriter`
+- input: `blueskyProfileRef?`, `displayNameOverride?`, `descriptionOverride?`, `avatarOverrideBlob?`, `bannerOverrideBlob?`, `websiteOverride?`, `pronounsOverride?`, `roleDistribution?`, `playFormats[]?`, `tools[]?`, `ownedRulebooks?`, `playableTimeSummary?`, `preferredScenarioStyles[]?`, `playStyles[]?`, `boundaries[]?`, `skills[]?`
+- output: `emittedRecordRefs = [playerProfileRef]`
+
+player-profile は `literal:self` singleton とし、この procedure は record が無ければ create、あれば update として扱ってよい。
+`blueskyProfileRef` を使う場合、それは callerDid 自身の `app.bsky.actor.profile` に限る。`avatarOverrideBlob` と `bannerOverrideBlob` は caller repo で upload された blob metadata に限る。
+`websiteOverride` を使う場合、それは credential-free な公開 URI に限る。`playFormats` は `text`、`semi-text`、`voice`、`offline` の閉じた値に限る。
 
 ### app.cerulia.rpc.createCampaign
 
@@ -256,11 +292,15 @@ archivedAt が設定された campaign に対して archivedAt 以外の mutable
 - input: `title`, `canonSummary?`, `defaultRuleProfileRefs[]?`, `policySummary?`, `externalCommunityUri?`, `visibility?`
 - output: `emittedRecordRefs = [houseRef]`
 
+`externalCommunityUri` を使う場合、それは credential-free な公開 URI に限る。
+
 ### app.cerulia.rpc.updateHouse
 
 - auth: `app.cerulia.authCoreWriter`
 - input: `houseRef`, `title?`, `canonSummary?`, `defaultRuleProfileRefs[]?`, `policySummary?`, `externalCommunityUri?`, `visibility?`
 - output: `emittedRecordRefs = [houseRef]`
+
+`externalCommunityUri` を使う場合、それは credential-free な公開 URI に限る。
 
 ### app.cerulia.rpc.createRuleProfile
 
@@ -268,11 +308,16 @@ archivedAt が設定された campaign に対して archivedAt 以外の mutable
 - input: `baseRulesetNsid`, `profileTitle`, `scopeKind`, `scopeRef`, `rulesPatchUri`
 - output: `emittedRecordRefs = [ruleProfileRef]`
 
+`scopeKind = house-shared` の場合、`scopeRef` は callerDid 自身が owner である house を指さなければならない。`scopeKind = campaign-shared` の場合も同様に callerDid 自身が owner である campaign に限る。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+`rulesPatchUri` は credential-free な公開 URI に限る。
+
 ### app.cerulia.rpc.updateRuleProfile
 
 - auth: `app.cerulia.authCoreWriter`
 - input: `ruleProfileRef`, `profileTitle?`, `rulesPatchUri?`
 - output: `emittedRecordRefs = [ruleProfileRef]`
+
+`rulesPatchUri` を更新する場合も、credential-free な公開 URI に限る。
 
 ### app.cerulia.rpc.createCharacterSheetSchema
 

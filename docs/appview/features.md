@@ -12,7 +12,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - フィールド入力（schema の fieldDefs に基づく動的フォーム）
 - extensible な schema group への追加 field 入力
 - ダイスロール（クライアント側）
-- 立ち絵設定（portraitRef）
+- 立ち絵設定（portraitBlob）
 - CCFolia clipboard 形式でのエクスポート
 - visibility: draft / public の切り替え
 - submit 後の保存状態表示。canonical result は `accepted` / `rejected` / `rebase-needed` に対応するが、UI copy は plain words で出す
@@ -31,7 +31,8 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 
 - player profile 表示（public + owner）
 - player profile 編集（owner）
-- Bluesky 既存項目の fallback 参照（displayName、description、avatar、banner、website、pronouns）
+- `/profile` は `updatePlayerProfile` を正本にし、初回は singleton の self record を作成、以後は同じ record を更新する
+- Bluesky 既存項目の fallback 参照（displayName、description、avatar、banner、website、pronouns）。website は credential-free 公開 URI 条件を満たす場合だけ表示する
 - Cerulia 上書き値がある項目は Bluesky 値より優先
 - TRPG 固有項目はすべて任意入力とする
 - 主な役割（PL --- 両方 --- GM の割合）
@@ -64,6 +65,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - シナリオの検索・一覧（rulesetNsid でフィルタ）
 - シナリオの登録
 - シナリオ詳細（summary + source citation）
+- シナリオ編集（owner）
 - recommendedSheetSchemaRef を持つシナリオからだけ character 作成へのナビゲーション
 - scenario detail では ownerDid を作者として扱わず、登録者と sourceCitationUri を見せる
 
@@ -98,6 +100,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - public shared surface の root は character detail とする
 - public に埋め込む session history の項目は scenario、date、record role、result、external archive link のような public-safe summary に限る
 - save state、private identifier、raw change payload、non-summary field は public history に含めない
+- public shared surface は raw payload を返さず、summary shape に閉じる
 - player profile を追加しても canonical shared root は character detail のままにする
 - player profile は character detail と同格に近い共有面として扱う
 - follow / timeline / 通知のような SNS 機能は Cerulia で実装しない

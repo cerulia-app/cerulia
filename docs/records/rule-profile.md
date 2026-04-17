@@ -11,6 +11,8 @@ scope に応じて置き場所を分ける。
 - house shared の profile は house owner の repo
 - campaign shared の profile は campaign owner の repo
 
+record-key は API が生成する lower-case opaque token とし、`profileTitle` や scope 名の変更で rkey を変えない。
+
 ## 主なフィールド
 
 - baseRulesetNsid
@@ -39,9 +41,9 @@ ownerDid。
 - public shared surface は raw rule-profile を直接読まず、campaign / house projection に畳み込まれた overlay summary を使う
 - overlay summary は raw rule-profile の `profileTitle`、`scopeKind`、`rulesPatchUri` から導出し、別の summary field は持たない
 - scopeKind は house-shared、campaign-shared の閉じた値
-- scopeRef は、その profile がどの scope に属するかを指す
+- scopeRef は、その profile がどの scope に属するかを指す。`scopeKind = house-shared` の場合は caller 自身が owner である house、`scopeKind = campaign-shared` の場合は caller 自身が owner である campaign に限る
 - profileTitle は public-safe な overlay 名に限る
 - overlay 順序の live 解決は campaign.sharedRuleProfileRefs に materialize された順序だけを見る。house-shared は campaign 作成時の seed source にとどまる
 - rulesPatchUri はルール差分の本文やドキュメントを指す external URI
-- rulesPatchUri は public-safe で永続参照可能な URI だけを使う。owner-only 文書へのリンクは入れない
+- rulesPatchUri は credential-free で永続参照可能な公開 URI だけを使う。owner-only 文書、署名付き一時 URL、招待限定 URL は入れない
 - ownerDid は rule-profile record 自体の更新主体を表す

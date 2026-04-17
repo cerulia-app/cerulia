@@ -37,11 +37,17 @@
 - permission bundle 解決と visibility 判定の test
 - mutation result contract が `accepted` / `rejected` / `rebase-needed` に閉じていることの test
 - direct-ref public read と owner read の mode 差分 test
+- getPlayerProfileView が owner mode / public mode で異なる summary shape を返す test
 - scenario.recommendedSheetSchemaRef と rulesetNsid の整合 test
 - scenario / campaign / house の mutable update contract test
+- player-profile の `literal:self` upsert と Bluesky fallback / Cerulia override 合成の test
 - archived campaign が archive 以外の mutable update を拒否する test
 - same-owner conversion の許可と cross-owner conversion の拒否 test
+- rule-profile の caller-owned scope invariant test
+- `retrain` / `respec` / `correction` で previousValues 必須、`milestone` / `xp-spend` で optional の test
+- public URI field が credential-free 条件を満たさない場合に reject する test
 - rules provenance record が public-only のままで visibility lifecycle に乗らない test
+- public direct read が raw payload と owner-only linkage を返さない redaction shape test
 - SQLite migration test
 - Bun entrypoint integration test
 - Workers adapter smoke test
@@ -55,9 +61,11 @@
 
 - fold / replay の determinism test
 - scenario catalog、campaign view、house activity の query test
+- player profile summary と public branch link の query test
 - reverse index と draft 除外の test
 - SQLite derived store rebuild test
 - owner-only payload や auth secret を保持しない boundary test
+- public summary fixture から raw payload field が欠落していることの test
 
 重点リスク:
 
@@ -68,10 +76,13 @@
 
 - `appview + api` だけで character create と session record が完了すること
 - direct-link shared detail が `projection` なしでも解決すること
+- `/players/[did]` が `projection` なしでも `api` の direct read で解決すること
 - public session 専用 route を持たず、public-safe な session 情報が character detail / campaign / house にだけ出ること
 - draft record は一覧から隠れ、direct link では draft state を明示して解決すること
 - scenario に recommendedSheetSchemaRef が無い場合、scenario 起点の create CTA を出さないこと
 - AppView の `pending` state が accepted 前に確定状態として露出しないこと
+- public direct read と projection summary が不一致でも canonical detail は `api` を正本にすること
+- owner read と public read の payload shape 差分が route で崩れないこと
 - `projection` 追加時に catalog / search / public list が増えること
 - `projection` を停止しても owner flow と direct detail が維持されること
 
@@ -92,3 +103,4 @@
 - Bun self-host で file-backed SQLite が動くこと
 - Workers deploy で D1 adapter が同じ domain rule を維持すること
 - `api` と `projection` が別々にデプロイされても contract drift が起きないこと
+- `api` と `projection` の summary shape contract を snapshot または version matrix で比較できること

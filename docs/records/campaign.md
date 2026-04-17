@@ -8,9 +8,11 @@
 
 campaign owner の repo。
 
+record-key は lower-case slug とし、campaign 作成時に固定する。title 更新で rkey を変えない。slug は API が title から生成し、同一 collection で衝突した場合は suffix で一意化する。
+
 ## 主なフィールド
 
-- campaignId
+- campaignId（record-key slug の別名。immutable）
 - title
 - houseRef（任意）
 - rulesetNsid
@@ -33,6 +35,7 @@ campaign owner。
 
 - 単発セッションが多数派であり、campaign は長期卓のオプションである
 - campaign はセッションのシリーズであり、参加管理や通信の責務を持たない
+- campaignId は route 表示や互換表示のための別名であり、cross-record identity には使わない
 - title は public-safe なシリーズ名に限る
 - rulesetNsid は campaign のデフォルトルールシステムを表す
 - campaign 作成時に house.defaultRuleProfileRefs を初期 sharedRuleProfileRefs にコピーしてよい。以後の正本は campaign.sharedRuleProfileRefs とする

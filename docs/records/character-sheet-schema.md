@@ -8,6 +8,8 @@
 
 schema 作者の repo。
 
+record-key は API が生成する lower-case opaque token とする。schema の version pin は `schemaVersion` field で表し、rkey を current-head alias に使わない。
+
 ## 主なフィールド
 
 - baseRulesetNsid

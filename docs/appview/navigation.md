@@ -15,7 +15,7 @@
 | `/sessions/new` | owner-only | session record create |
 | `/scenarios` | public + owner | scenario catalog |
 | `/scenarios/new` | owner | scenario create |
-| `/scenarios/[scenario]` | public | scenario detail |
+| `/scenarios/[scenario]` | public + owner | scenario detail。owner には編集導線も出す |
 | `/campaigns/new` | owner | campaign create |
 | `/campaigns/[campaign]` | public + owner | campaign detail |
 | `/houses/new` | owner | house create |

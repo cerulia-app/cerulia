@@ -8,6 +8,8 @@ PL の自己紹介プロフィール。character detail とは別に、卓前の
 
 PL の個人 repo。
 
+record-key は `literal:self` に固定する。AppView の `/players/[did]` は DID から owner repo の `self` record を解決する。
+
 ## 主なフィールド
 
 - ownerDid
@@ -42,8 +44,10 @@ owner のみ。
 ## 設計上の注意
 
 - `app.bsky.actor.profile` の既存項目（displayName、description、avatar、banner、website、pronouns）は、Cerulia 側の override が無い場合に fallback 表示する
+- fallback で読んだ Bluesky 項目も、そのまま無条件では public summary に出さない。特に `website` は Cerulia 側と同じ credential-free 公開 URI 条件を満たす場合だけ表示し、満たさない場合は省略する
 - `blueskyProfileRef` は ownerDid が持つ自分自身の `app.bsky.actor.profile` に限定する。他人の profile を指定してはならない。省略時は ownerDid から解決する
 - `avatarOverrideBlob` と `bannerOverrideBlob` は blob 型であり、at-uri record 参照（`*Ref`）ではない
+- `websiteOverride` は credential-free な公開 URI に限る。招待専用 URL、署名付き URL、token 付き URL は保存しない
 - TRPG 固有項目はすべて任意。初回連携時に入力必須にしない
 - `tools`、`preferredScenarioStyles`、`playStyles`、`boundaries`、`skills` は Lexicon 上では自由記述 string 配列とし、AppView のチェック項目は入力補助に留める
 - `playFormats` は closed multi-select とし、有効値（`text`、`semi-text`、`voice`、`offline`）以外は保存しない

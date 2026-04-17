@@ -8,6 +8,8 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 - core の `*Ref` は canonical DID authority の normalized at-uri だけを受け入れる
 - record 内の `*Id` field は record-local stable identifier。cross-record reference では `*Ref` at-uri を使う
 - blob 型の override field は `*Blob` 命名を使い、`*Ref`（at-uri）と区別する
+- public 共有面に出る外部 URI は credential-free な公開 URI に限る。embedded credential、署名付き query、one-time token を含む URI は受け入れない
+- payload carrier が record 本体に閉じる場合、public-safe な object を inline field として持つ。payload 専用 record を増やさない
 - 新規 field の追加は optional のみとし、既存 field の rename や type change は行わない
 
 ## scalar / ref defs
@@ -26,11 +28,20 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 | scenarioRef | at-uri | app.cerulia.core.scenario record を指す |
 | characterSheetSchemaRef | at-uri | app.cerulia.core.characterSheetSchema record を指す |
 | scopeRef | at-uri | house / campaign の scope record を指す |
-| documentUri | uri | 外部ドキュメントや blob の URI を指す |
+| documentUri | uri | credential-free な公開外部 URI を指す |
 | did | did | actor 識別子 |
 | rulesetNsid | nsid | ruleset namespace の根 NSID |
 | datetime | datetime | すべて UTC 前提 |
 | cursor | string | list query の continuation token |
+
+## object defs
+
+| def | format | semantic invariant |
+| --- | --- | --- |
+| portraitBlob | blob | caller が自分の repo から参照する public-safe portrait 用 blob |
+| branchOverridePayload | object | sheet fieldId / group key に沿った public-safe overlay payload |
+| advancementDeltaPayload | object | advancement で追加または変更された public-safe payload |
+| previousValuesSnapshot | object | 上書き前の public-safe 値 snapshot |
 
 ## enum defs
 
@@ -48,7 +59,10 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 
 ## record-key の基本方針
 
-- campaign、house、character-sheet、character-branch、scenario、character-sheet-schema、rule-profile は stable key
+- campaign、house、scenario は `any` 型の lower-case slug key を使う
+- character-sheet、character-branch、character-sheet-schema、rule-profile は `any` 型の lower-case opaque key を使う
 - character-advancement、character-conversion、session は tid
 
-character-sheet-schema の stable key は mutable current-head alias を意味しない。versioned pin を指す。
+- `any` 型 key でも current-head alias は作らない。record-key は immutable で、更新は同一 record の内容だけを変える
+- slug key は `a-z0-9._:-~` の lower-case subset を使い、title や表示名の更新で rkey を変えない
+- opaque key も同じ lower-case subset を使い、API が生成する。caller は key の意味を前提にしない

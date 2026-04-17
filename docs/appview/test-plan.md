@@ -18,9 +18,10 @@
 - `/characters/[branch]` が canonical shared detail として direct link で解決すること
 - `/players/[did]` が public profile として direct link で解決すること
 - `/profile` で owner が player profile を編集できること
+- `/profile` の初回保存が self record を作り、再保存が同じ player-profile を更新すること
 - `/sessions` が owner-only workbench として inline detail / edit を持つこと
 - `/scenarios` が scenario catalog として browse できること
-- `/scenarios/[scenario]` が scenario detail として public に解決すること
+- `/scenarios/[scenario]` が scenario detail として public に解決し、owner には編集導線を出すこと
 - `/campaigns/[campaign]` が campaign detail として public に解決すること
 - `/houses/[house]` が house detail として public に解決すること
 
@@ -38,12 +39,14 @@
 - Bluesky 既存項目に Cerulia 上書きが無いとき、player profile で fallback 値を表示すること
 - TRPG 固有項目が未入力でも player profile が成立すること
 - `使用ツール`、`好みのシナリオ`、`プレイスタイル`、`地雷・苦手`、`できること・スキル` が自由記述 string 配列として round-trip すること
+- public shared route が raw payload、owner-only linkage、credential-bearing URI を露出しないこと
 - follow / timeline 導線を Cerulia UI に持ち込まないこと
 
 ### shared UX
 
 - character detail の first view でプロフィール、structured stats、立ち絵が確認できること
 - public history に save state、raw change payload、低レベル identifier が出ないこと
+- player profile が fallback と上書きの合成結果だけを見せ、raw Bluesky payload を UI に出さないこと
 - scenario detail が summary と source citation を安定表示すること
 
 ### performance rehearsal

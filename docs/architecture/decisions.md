@@ -184,7 +184,7 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 29. player profile は Bluesky fallback + Cerulia 上書きで合成する
 
-採用: player profile の Bluesky 既存項目（displayName、description、avatar、banner、website、pronouns）は、Cerulia 側の明示上書きがない限り Bluesky 値を表示する。fallback 元は ownerDid が持つ `app.bsky.actor.profile` に固定し、他の DID の profile は参照しない。省略時も ownerDid から自動解決する。
+採用: player profile の Bluesky 既存項目（displayName、description、avatar、banner、website、pronouns）は、Cerulia 側の明示上書きがない限り Bluesky 値を fallback 候補として使う。fallback 元は ownerDid が持つ `app.bsky.actor.profile` に固定し、他の DID の profile は参照しない。省略時も ownerDid から自動解決する。website は Cerulia 側と同じ credential-free 公開 URI 条件を満たす場合だけ表示し、満たさない場合は省略する。
 
 理由: 初回連携直後に大量入力を強いると離脱しやすい。fallback を自分自身の profile に限定することで、表示内容の本人性を保証しつつ入力負担を下げられる。他人の profile を参照できると identity の誤認リスクが生まれるため、所有者制約は必須である。
 

@@ -36,6 +36,7 @@ Cerulia は TRPG プレイヤーのためのキャラクター管理サービス
 ## Player Profile 方針
 
 - player profile の Bluesky 既存項目（displayName、description、avatar、banner、website、pronouns）は、Cerulia 側の明示上書きが無い場合は Bluesky 値を参照する
+- fallback で読んだ website は、そのまま無条件では出さない。Cerulia 側と同じ credential-free 公開 URI 条件を満たす場合だけ表示し、満たさない場合は省略する
 - Cerulia 固有の TRPG 項目は任意入力とし、初回連携時の入力必須項目にしない
 - `主な役割` は手動指定を基本にし、十分な session 実績（目安 10 件以上）が溜まった時に、Cerulia 上の role 比率を自動適用するか提案できるようにする
 - `使用ツール`、`好みのシナリオ`、`プレイスタイル`、`地雷・苦手`、`できること・スキル` は Lexicon では自由記述 string 配列として保持し、AppView は入力補助の選択肢を提供する

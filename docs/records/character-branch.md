@@ -14,7 +14,7 @@ PL の個人 repo。
 - baseSheetRef
 - branchKind
 - branchLabel
-- overridePayloadRef
+- overridePayload
 - visibility（draft / public）
 - revision
 - createdAt
@@ -41,10 +41,11 @@ branch owner のみ。
 - branchLabel は public-safe な表示名に限る
 - 共有 surface の公開 / 非公開の正本は branch.visibility とする。sheet 側の metadata では代替しない
 - branchRef 自体は安定 object として扱う。branch metadata の更新で branchRef を差し替えない
-- overridePayloadRef は public-safe な branch overlay payload だけを指してよい。private memo、secret、owner-only 情報は入れない
+- `overridePayload` は branch record に inline で持つ public-safe overlay payload とする。payload 専用 record や owner-only sidecar を指さない
+- `overridePayload` は active schema の fieldId / group key に沿う object に限る。profileSummary や visibility のような top-level metadata をここで上書きしない
 - ruleset をまたぐ変換で生じた target branch は durable subject であり、変換 provenance は character-conversion で残す
 - character の canonical 解決順は、base sheet、branch override、active な advancement sequence の順とする
-- revision は作成時に 1 から始め、branchLabel、overridePayloadRef の accepted metadata update ごとに 1 ずつ増やす
+- revision は作成時に 1 から始め、branchLabel、overridePayload の accepted metadata update ごとに 1 ずつ増やす
 - campaign-less な local branch は正当な first state である（単発卓が多数派）。campaign への結びつきは session.campaignRef で表現される
 - visibility: draft の branch は Cerulia AppView では一覧から隠すが、direct link では draft 状態を明示して表示する
 - retired branch の direct link は read-only historical detail として表示する。draft なら draft 状態も併記する
