@@ -1,26 +1,19 @@
 # UI/UX 要件
 
-## current runtime
-
-2026-04-14 のリセット時点で、現行 AppView は最小 skeleton です。
-旧 `/home`、`/characters`、`/sessions` などを前提にした UI/UX 要件は current ではありません。
-
-## 現在の最小要件
-
-- `/` で reset 状態が明確に伝わること
-- desktop と mobile の両方でレイアウトが破綻しないこと
-- 最新の方針文書へ進むための参照先が分かること
-- 再実装前の段階で、存在しない機能を UI が示唆しないこと
+このファイルは AppView の target MVP interaction を定義する。トップページは [top-page.md](top-page.md) の固定仕様を正本とする。
 
 ## target MVP interaction model
 
 ### public entry
 
-- `/` は「どのシステムでもキャラクターを作れる」「遊んだ記録が残る」「共有できる」を plain words で伝える
+- `/` は「どのシステムでもキャラクターを作れる」「遊んだ記録が残る」「共有できる」を平易な文言で伝える
+- `/` の固定キーワードは「作る」「記録する」「共有する」とし、同義語へ置換しない
 - public entry で AT Protocol や内部語を前面に出しすぎない
 - public entry の UI copy と metadata は locale-aware に出し分けられること
 - canonical shared surface は character detail とし、session 一覧や技術説明を public entry の主役にしない
 - character detail 向け共有と player profile 向け共有の違いが分かる導線を持つこと
+- top section 順は `hero -> value pillars -> flow preview -> surface split -> primary cta -> trust copy` を固定する
+- CTA の意味順は「作成開始 -> character detail 例 -> player profile 例」を固定する
 
 ### character detail
 
