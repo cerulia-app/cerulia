@@ -17,7 +17,7 @@ Cerulia の product-core は次を扱う。
 
 - character-sheet + character-branch（常にペアで作成）による character 管理
 - character-advancement による成長・変更履歴
-- character-conversion による ruleset をまたぐ変換 provenance
+- character-conversion による ruleset をまたぐ変換 provenance（scope 内だが same-owner の post-MVP core-later）
 - session による PL 自身のセッション経験記録
 - scenario による公開シナリオ台帳
 - house、campaign による scope
