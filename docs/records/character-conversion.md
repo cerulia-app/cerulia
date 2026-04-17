@@ -40,5 +40,5 @@ target sheet owner のみ。
 - same-owner conversion だけを product-core で扱う。cross-owner conversion は consent primitive を持たないため product scope 外とする
 - source / target の sheet と branch はすべて conversion owner と一致しなければならない
 - convertedAt は変換が行われた日時を記録する
-- conversionContractRef は変換ガイド、マニュアル、ツール等への参照として自由に使える
+- conversionContractRef は変換ガイド、マニュアル、ツール等への public-safe 参照として使える。owner-only 文書や private workspace 参照は入れない
 - note は public-safe な補足に限る。AppView の public shared surface は note を既定では返さなくてよいが、これは秘匿ではなく表示上の簡略化である

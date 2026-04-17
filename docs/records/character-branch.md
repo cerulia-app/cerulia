@@ -40,6 +40,7 @@ branch owner のみ。
 - baseSheetRef は branch owner 自身の sheet を指さなければならない
 - 共有 surface の公開 / 非公開の正本は branch.visibility とする。sheet 側の metadata では代替しない
 - branchRef 自体は安定 object として扱う。branch metadata の更新で branchRef を差し替えない
+- overridePayloadRef は public-safe な branch overlay payload だけを指してよい。private memo、secret、owner-only 情報は入れない
 - ruleset をまたぐ変換で生じた target branch は durable subject であり、変換 provenance は character-conversion で残す
 - character の canonical 解決順は、base sheet、branch override、active な advancement sequence の順とする
 - revision は作成時に 1 から始め、branchLabel、overridePayloadRef の accepted metadata update ごとに 1 ずつ増やす

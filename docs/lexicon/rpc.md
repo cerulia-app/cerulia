@@ -168,6 +168,7 @@ accepted な rebase は `character-sheet.version` を 1 ずつ増やす。
 - note: 2 本目以降の branch を作る場合に使う。`branchKind = main` は createCharacterSheet が生成する default branch 専用であり、`campaign-fork` と `local-override` は用途ラベルであって canonical root を置き換えない
 
 `baseSheetRef` の ownerDid は callerDid と一致しなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+`overridePayloadRef` を使う場合、その参照先は public-safe な overlay payload に限る。
 
 ### app.cerulia.rpc.updateCharacterBranch
 
@@ -176,6 +177,7 @@ accepted な rebase は `character-sheet.version` を 1 ずつ増やす。
 - output: `emittedRecordRefs = [characterBranchRef]`
 
 retiredAt が設定された branch への mutation は `resultKind = rejected` と `reasonCode = terminal-state-readonly` を返す。
+`overridePayloadRef` を更新する場合も、参照先は public-safe な overlay payload に限る。
 
 ### app.cerulia.rpc.retireCharacterBranch
 
@@ -285,3 +287,4 @@ archivedAt が設定された campaign に対して archivedAt 以外の mutable
 
 server は accepted 時に source / target の current `sheet.version` を読み取り、conversion record に `sourceSheetVersion` と `targetSheetVersion` として固定する。
 source / target の sheet と branch はすべて callerDid 所有でなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+`conversionContractRef` を使う場合、その参照先は public-safe な guide / tool / contract に限る。
