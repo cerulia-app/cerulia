@@ -2,6 +2,7 @@
 name: "API Authority Review"
 description: "Use when: Cerulia API の authoritative validation、owner-only write、visibility judgment、direct read、owner read、auth bundle、canonical flow をレビューしたいとき。"
 tools: [read, search]
+disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

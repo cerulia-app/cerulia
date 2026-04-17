@@ -2,6 +2,7 @@
 name: "Security Boundary Review"
 description: "Use when: Cerulia の auth、authorization、visibility、trust boundary、fail-open、data exposure、unsafe client assumption をレビューしたいとき。"
 tools: [read, search]
+disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

@@ -2,6 +2,7 @@
 name: "Clean Slate Review"
 description: "Use when: Cerulia の再設計や大きな方針変更の後に、古い命名、旧ルート、互換 shim、TODO shell、AI 編集の残骸、部分移行の取り残しが残っていないかレビューしたいとき。"
 tools: [read, search]
+disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

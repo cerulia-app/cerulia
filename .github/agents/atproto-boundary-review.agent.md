@@ -2,6 +2,7 @@
 name: "AT Protocol Boundary Review"
 description: "Use when: Cerulia の identity、repo ownership、auth、XRPC、record authority、reference format、spec と app policy の境界をレビューしたいとき。"
 tools: [read, search, web]
+disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

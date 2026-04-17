@@ -2,6 +2,7 @@
 name: "Implementation Alignment Review"
 description: "Use when: Cerulia の現行 docs、scripts、config、code、route、package 境界が最新方針と噛み合っているかをレビューしたいとき。"
 tools: [read, search]
+disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

@@ -1,6 +1,7 @@
 ---
 name: "AppView UI Screenshot Review"
 description: "Use when: Cerulia AppView の UI をスクリーンショットやレンダリング結果ベースでレビューしたいとき。CSS ではなく実際の見え方、階層、導線、信頼感、モバイル適合を評価する。"
+disable-model-invocation: true
 user-invocable: false
 model: Gemini 3 Flash (Preview) (copilot)
 ---

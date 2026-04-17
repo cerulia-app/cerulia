@@ -2,6 +2,7 @@
 name: "Records And Lexicon Review"
 description: "Use when: Cerulia の records、lexicon、schema、cross-reference、ownership、lifecycle、migration pain をレビューしたいとき。"
 tools: [read, search, web]
+disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---
