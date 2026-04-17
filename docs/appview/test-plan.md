@@ -22,6 +22,10 @@
 - `/players/[did]` が public profile として direct link で解決すること
 - `/profile` で owner が player profile を編集できること
 - `/sessions` が owner-only workbench として inline detail / edit を持つこと
+- `/scenarios` が scenario catalog として browse できること
+- `/scenarios/[scenario]` が scenario detail として public に解決すること
+- `/campaigns/[campaign]` が campaign detail として public に解決すること
+- `/houses/[house]` が house detail として public に解決すること
 
 ### boundary
 

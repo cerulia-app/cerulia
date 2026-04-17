@@ -7,6 +7,7 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 - ref 型は Lexicon 上は at-uri string として定義し、どの collection を指すかは semantic invariant で固定する
 - core の `*Ref` は canonical DID authority の normalized at-uri だけを受け入れる
 - record 内の `*Id` field は record-local stable identifier。cross-record reference では `*Ref` at-uri を使う
+- blob 型の override field は `*Blob` 命名を使い、`*Ref`（at-uri）と区別する
 - 新規 field の追加は optional のみとし、既存 field の rename や type change は行わない
 
 ## scalar / ref defs

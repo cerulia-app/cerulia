@@ -35,7 +35,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - Cerulia 上書き値がある項目は Bluesky 値より優先
 - TRPG 固有項目はすべて任意入力とする
 - 主な役割（PL --- 両方 --- GM の割合）
-- プレイ形式（テキスト / 半テキスト / ボイス / オフライン）
+- プレイ形式（`text` / `semi-text` / `voice` / `offline` の closed multi-select。自由入力は受け付けない）
 - 使用ツール（複数選択 + その他）
 - 所持ルールブック・サプリメント（自由記述）
 - プレイ可能時間帯（自由記述）
