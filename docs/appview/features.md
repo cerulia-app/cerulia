@@ -27,6 +27,25 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - branch 作成（main から local / campaign 分岐）
 - branch の retire
 
+## プレイヤープロフィール
+
+- player profile 表示（public + owner）
+- player profile 編集（owner）
+- Bluesky 既存項目の fallback 参照（displayName、description、avatar、banner、website、pronouns）
+- Cerulia 上書き値がある項目は Bluesky 値より優先
+- TRPG 固有項目はすべて任意入力とする
+- 主な役割（PL --- 両方 --- GM の割合）
+- プレイ形式（テキスト / 半テキスト / ボイス / オフライン）
+- 使用ツール（複数選択 + その他）
+- 所持ルールブック・サプリメント（自由記述）
+- プレイ可能時間帯（自由記述）
+- 好みのシナリオ（複数選択 + その他）
+- プレイスタイル（複数選択 + その他）
+- 地雷・苦手（複数選択 + その他）
+- できること・スキル（複数選択 + その他）
+- `使用ツール`、`好みのシナリオ`、`プレイスタイル`、`地雷・苦手`、`できること・スキル` は Lexicon では自由記述 string 配列として保存し、AppView の選択肢は入力補助として扱う
+- session 実績が 10 件以上たまった時に、record role 比率から `主な役割` を自動適用するか確認できる
+
 ## セッション記録
 
 - セッション経験の記録（シナリオ、キャラクター、日付、record role、結果）
@@ -73,13 +92,16 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 ## 共有
 
 - キャラクターの public view（canonical shared surface）
+- プレイヤーの public profile view（shared surface）
 - 共有リンクの生成
 - SNS での OGP 表示
 - public shared surface の root は character detail とする
 - public に埋め込む session history の項目は scenario、date、record role、result、external archive link のような public-safe summary に限る
 - save state、private identifier、raw change payload、non-summary field は public history に含めない
-- player 単位の public profile / public character collection は post-MVP の secondary public surface とする
-- public profile を追加しても canonical shared root は character detail のままにする
+- player profile を追加しても canonical shared root は character detail のままにする
+- player profile は character detail と同格に近い共有面として扱う
+- follow / timeline / 通知のような SNS 機能は Cerulia で実装しない
+- キャラクター作成やシナリオ通過の Bluesky 投稿は任意機能として扱う
 - direct link の安定性を優先し、visibility が引き続き public である限りは public detail に数分程度の stale を許容してよい
 - public から draft への visibility 変更時は stale cache を使わず、最新 visibility で再解決する
 - 低速回線ではプロフィールとステータスを先に表示し、立ち絵は後から読み込む

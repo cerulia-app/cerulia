@@ -6,9 +6,9 @@ Cerulia は、AT Protocol 上の PL 個人向けサービスである。TRPG キ
 
 - Why: 分散型で相互運用できる character / session 記録基盤を作り、AT Protocol の周辺エコシステムに寄与する
 - Who: 複数システムを遊び、多くの PC を持ち、卓ごとに別サービスへ分散して困っている PL
-- What: character 作成、post-run session 記録、character detail 共有
+- What: character 作成、post-run session 記録、character detail 共有、player profile 共有
 - When: 作成は卓前、記録は卓後、共有は卓前後の連絡と SNS
-- Where: AT Protocol 上の personal repo と Cerulia AppView。共有入口は character detail
+- Where: AT Protocol 上の personal repo と Cerulia AppView。共有入口の主軸は character detail、自己紹介共有は player profile
 - How: schema-backed authoring、personal character / session record の owner-only write、owner-centered な optional scope / rules record、public-safe record、AppView の表示制御
 
 ## 製品スコープ
@@ -19,6 +19,7 @@ Cerulia の product-core は次を扱う。
 - character-advancement による成長・変更履歴
 - character-conversion による ruleset をまたぐ変換 provenance（scope 内だが same-owner の post-MVP core-later）
 - session による PL 自身のセッション経験記録
+- player-profile による PL 自己紹介と卓前共有
 - scenario による公開シナリオ台帳
 - house、campaign による scope
 - rule-profile chain、character-sheet-schema による rules provenance

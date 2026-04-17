@@ -20,6 +20,7 @@
 - public entry で AT Protocol や内部語を前面に出しすぎない
 - public entry の UI copy と metadata は locale-aware に出し分けられること
 - canonical shared surface は character detail とし、session 一覧や技術説明を public entry の主役にしない
+- character detail 向け共有と player profile 向け共有の違いが分かる導線を持つこと
 
 ### character detail
 
@@ -32,9 +33,17 @@
 - public history の session card は scenario、date、record role、result、external archive link の範囲に留め、save state や raw change payload のような低レベル情報を含めない
 - session 履歴は SNS 風 timeline ではなく、play record の ledger / card として見せる
 - public session 専用 route は作らない
-- public profile は secondary later として扱い、MVP の shared root にしない
 - draft の direct link は解決し、draft state を明確に表示する
 - owner 向けの edit / export / save state は public read order を壊さない補助領域に分離する
+
+### player profile
+
+- player profile は character detail と同格に近い共有面として扱うが、shared root は character detail に残す
+- Bluesky 既存項目（displayName、description、avatar、banner、website、pronouns）は Cerulia 側上書きがない場合に fallback 参照する
+- TRPG 固有項目はすべて任意入力とし、初回連携の必須入力にしない
+- `使用ツール`、`好みのシナリオ`、`プレイスタイル`、`地雷・苦手`、`できること・スキル` は AppView では選択肢を提示しつつ、保存値は自由記述 string 配列として扱う
+- `主な役割` は手動指定を基本にし、session 実績が十分にある時だけ自動比率適用の提案を出す
+- player profile に follower / following や feed 導線を持ち込まない
 
 ### create / edit / record
 

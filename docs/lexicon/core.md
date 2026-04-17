@@ -15,6 +15,7 @@ Cerulia の product-core に含める record 群を app.cerulia.core.* に整理
 | app.cerulia.core.characterConversion | record | tid | ruleset をまたぐ変換 provenance |
 | app.cerulia.core.characterAdvancement | record | tid | 成長・変更の履歴 |
 | app.cerulia.core.session | record | tid | PL のセッション経験記録 |
+| app.cerulia.core.playerProfile | record | literal:self | PL 自己紹介プロフィール |
 | app.cerulia.core.scenario | record | stable | シナリオの公開台帳 |
 
 ## core に入れるもの
@@ -24,6 +25,7 @@ Cerulia の product-core に含める record 群を app.cerulia.core.* に整理
 - character-sheet-schema による型定義
 - character の所有、分岐、変換 provenance、成長
 - session による PL 自身のセッション経験記録
+- player-profile による PL 自己紹介と卓前共有
 - scenario の公開台帳
 
 ## core に入れないもの

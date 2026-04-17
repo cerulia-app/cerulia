@@ -21,6 +21,7 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 | characterAdvancementRef | at-uri | app.cerulia.core.characterAdvancement record を指す |
 | characterConversionRef | at-uri | app.cerulia.core.characterConversion record を指す |
 | sessionRef | at-uri | app.cerulia.core.session record を指す |
+| playerProfileRef | at-uri | app.cerulia.core.playerProfile record を指す |
 | scenarioRef | at-uri | app.cerulia.core.scenario record を指す |
 | characterSheetSchemaRef | at-uri | app.cerulia.core.characterSheetSchema record を指す |
 | scopeRef | at-uri | house / campaign の scope record を指す |

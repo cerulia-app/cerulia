@@ -19,12 +19,14 @@
 - `/` が public top として価値説明、共有キャラクターへの入口、サインイン導線を持つこと
 - `/characters` と `/characters/new` で owner flow が成立すること
 - `/characters/[branch]` が canonical shared detail として direct link で解決すること
+- `/players/[did]` が public profile として direct link で解決すること
+- `/profile` で owner が player profile を編集できること
 - `/sessions` が owner-only workbench として inline detail / edit を持つこと
 
 ### boundary
 
 - public session 専用 route を持たないこと
-- MVP では public profile route を持たず、canonical shared surface を character detail に固定すること
+- player profile route を持っても、canonical shared surface が character detail に固定されること
 - draft の character / session / campaign / house は一覧や discovery から隠れること
 - draft の direct link は draft state を明示して解決すること
 - public から draft への visibility 変更後に stale public detail を返さないこと
@@ -32,6 +34,10 @@
 - scenario に recommendedSheetSchemaRef が無い場合、scenario 起点の create CTA を出さないこと
 - archived campaign で archive 以外の更新導線を閉じること
 - submit 後の `pending` と保存結果が区別され、schema 更新必須の状態が internal label ではなく plain words で表示されること
+- Bluesky 既存項目に Cerulia 上書きが無いとき、player profile で fallback 値を表示すること
+- TRPG 固有項目が未入力でも player profile が成立すること
+- `使用ツール`、`好みのシナリオ`、`プレイスタイル`、`地雷・苦手`、`できること・スキル` が自由記述 string 配列として round-trip すること
+- follow / timeline 導線を Cerulia UI に持ち込まないこと
 
 ### shared UX
 

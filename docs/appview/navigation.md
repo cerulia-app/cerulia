@@ -17,6 +17,8 @@
 | `/characters` | owner-only | 自分の branch 一覧、draft 管理、作成導線 |
 | `/characters/new` | owner-only | schema-backed create flow |
 | `/characters/[branch]` | public + owner | canonical shared detail。owner には編集導線も出す |
+| `/players/[did]` | public + owner | player profile。卓前の自己紹介と character detail への導線 |
+| `/profile` | owner-only | 自分の player profile 編集 |
 | `/sessions` | owner-only | session workbench。一覧、inline detail、再編集 |
 | `/sessions/new` | owner-only | session record create |
 | `/scenarios` | public + owner | scenario catalog |
@@ -30,9 +32,9 @@
 ## 明示的に置かない route
 
 - public session 専用 route は置かない。public-safe な session 情報は character detail、campaign、house の surface に畳み込む
-- MVP ではプレイヤー単位の public profile / public character collection route を置かない。canonical shared surface を character detail に固定する
+- canonical shared surface は character detail に固定する。player profile route は置くが、shared root は移さない
 
 ## secondary later candidate
 
-- プレイヤー単位の public profile / public character collection route は post-MVP の secondary public surface 候補とする
-- 追加しても shared root は character detail に残し、public profile は導線の束ね役に留める
+- public character collection route は post-MVP の secondary public surface 候補とする
+- 追加しても shared root は character detail に残し、player profile は自己紹介と公開 character 導線の束ね役に留める

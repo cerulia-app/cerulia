@@ -154,9 +154,9 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 24. public shared root は character detail
 
-採用: public shared surface の canonical landing は character detail とする。プレイヤー単位の public character collection は secondary surface とし、post-MVP candidate に留める。
+採用: public shared surface の canonical landing は character detail とする。player profile は MVP で提供するが、shared root は character detail から動かさない。プレイヤー単位の public character collection は secondary surface とし、post-MVP candidate に留める。
 
-理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。public surface を最初から広げると、draft や public-safe summary の扱いと一覧導線が先に複雑になる。
+理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。一方で卓前の自己紹介需要も高いため、player profile を同格に近い共有面として追加する。
 
 ## 25. pending save は AppView の local state に限定する
 
@@ -181,3 +181,15 @@ Cerulia の設計における主要な判断を記録する。
 採用: standalone な public session 個別 page / route は作らない。public-safe な session 情報は character detail、campaign、house の surface に畳み込む。
 
 理由: session は owner の post-run 記録であり、shared surface の root ではない。session 単位の public page を置くと、記録の主語が character から run-centric にずれ、public surface の境界も複雑になる。
+
+## 29. player profile は Bluesky fallback + Cerulia 上書きで合成する
+
+採用: player profile の Bluesky 既存項目（displayName、description、avatar、banner、website、pronouns）は、Cerulia 側の明示上書きがない限り Bluesky 値を表示する。
+
+理由: 初回連携直後に大量入力を強いると離脱しやすい。fallback 表示を使えば入力負担を抑えつつ、必要な場合だけ Cerulia 側で表現を上書きできる。
+
+## 30. player profile のカテゴリ項目は Lexicon で自由記述 string 配列にする
+
+採用: `使用ツール`、`好みのシナリオ`、`プレイスタイル`、`地雷・苦手`、`できること・スキル` は Lexicon 上は自由記述 string 配列で保持する。AppView の固定選択肢は入力補助に留める。
+
+理由: TRPG 文脈の語彙は変化が速く、コミュニティ差も大きい。Lexicon で選択肢を固定しすぎると表現力と将来拡張を損なう。
