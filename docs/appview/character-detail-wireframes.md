@@ -40,7 +40,7 @@
 | session card | session card | session card                                       |
 | each card: scenario / date / role / result / external archive link               |
 | only accepted + public sessions appear here                                      |
-| exclude owner-only note / spoiler text / save state / private identifier         |
+| exclude raw change payload / save state / private identifier                     |
 | inline expand only. no public session page                                       |
 +----------------------------------------------------------------------------------+
 | 成長                                                                             |

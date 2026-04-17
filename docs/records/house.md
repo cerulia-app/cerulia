@@ -16,14 +16,13 @@ house owner の repo。
 - defaultRuleProfileRefs
 - policySummary
 - externalCommunityUri（任意: Discord サーバーや外部サイトへのリンク）
-- maintainerDids
 - visibility（draft / public）
 - createdAt
 - updatedAt
 
 ## 更新主体
 
-house owner、または maintainerDids に含まれる actor。
+house owner。
 
 ## 参照関係
 
@@ -38,7 +37,6 @@ house owner、または maintainerDids に含まれる actor。
 - defaultRuleProfileRefs は新規 campaign を作るときの seed-only default として扱う。campaign 作成時にコピーした後は campaign.sharedRuleProfileRefs が正本であり、既存 campaign に自動追随させない
 - defaultRuleProfileRefs を使う場合、その house は 1 つの ruleset family に閉じる。複数 ruleset を併用する house では空にして、campaign 側で明示する
 - house.defaultRuleProfileRefs は campaign 作成時の seed source に限る。live な effective overlay を直接構成しない
-- maintainerDids は scope record（house）のみを更新できる。character 系 record の write authority には影響しない
 - house から過去の session を辿るのは projection で扱う。house record 自体に sessions リストは持たない
 - canonSummary は世界観や上位設定を説明するフリーテキスト。運用上の世界観ラベルとして使う
 - externalCommunityUri は外部コミュニティへのリンク。メンバー管理自体は外部に任せる

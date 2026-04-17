@@ -6,7 +6,7 @@
 
 ## 置き場所
 
-schema 作者または maintainer の repo。
+schema 作者の repo。
 
 ## 主なフィールド
 
@@ -15,7 +15,6 @@ schema 作者または maintainer の repo。
 - title
 - fieldDefs
 - ownerDid
-- maintainerDids
 - createdAt
 
 ### fieldDefs
@@ -48,7 +47,7 @@ fieldDefs はグループ（section）と配列（list of objects）を許す。
 
 ## 発行主体
 
-schema の ownerDid、または maintainerDids に含まれる actorが、新しい schema record version を発行できる。
+schema の ownerDid が、新しい schema record version を発行できる。
 
 ## 参照関係
 
@@ -62,5 +61,4 @@ schema の ownerDid、または maintainerDids に含まれる actorが、新し
 - extensible な group では、schema に未列挙の追加 field も valid とする。CoC 汎用 schema の追加技能のようなケースをここで受け止める
 - extensible でない位置の未定義 field は invalid とする。authoritative validation はこれを reject する
 - rules provenance 層に属する record であり、character data を混ぜない
-- maintainerDids は schema record のみを更新できる。character 系 record の write authority には影響しない
 - baseRulesetNsid で、どのシステム向けの schema かを識別する。ハウスルール版は同じ baseRulesetNsid で別の schema record を作ってよい

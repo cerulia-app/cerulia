@@ -29,7 +29,7 @@
 - in-page anchor は許容するが、タブ UI で必要情報を隠さない
 - public-safe な session 履歴と advancement は character detail の中に埋め込んで見せる
 - public に埋め込む session 履歴は accepted かつ public の record だけに限る
-- public history の session card は scenario、date、record role、result、external archive link の範囲に留め、owner-only note や spoiler text を含めない
+- public history の session card は scenario、date、record role、result、external archive link の範囲に留め、save state や raw change payload のような低レベル情報を含めない
 - session 履歴は SNS 風 timeline ではなく、play record の ledger / card として見せる
 - public session 専用 route は作らない
 - public profile は secondary later として扱い、MVP の shared root にしない
@@ -44,9 +44,9 @@
 - `/sessions` は owner-only workbench とし、一覧、inline detail、再編集で閉じる
 - session は完走後の記録として扱い、進行中の卓や未完走の状態を管理しない
 
-### spoiler / draft / trust
+### public-safe / draft / trust
 
-- scenario detail は summary を既定表示にし、spoiler は warning 付きの折りたたみで開く
+- scenario detail は summary と sourceCitationUri を既定表示にし、spoiler payload は product-core に持ち込まない
 - 見せたくないものの第一対象は編集中の character であり、draft を一覧や発見導線に混ぜない
 - public campaign や public house でも draft な参照先 identity を不用意に露出しない
 

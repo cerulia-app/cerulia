@@ -38,7 +38,7 @@ Cerulia が最初に end-to-end で成立させるべき体験は次の 1 本で
 | What | character を作り、post-run の session を記録し、character detail を共有する個人向けサービス |
 | When | character は卓の前に作り、session は卓の後に記録し、共有は卓前後の連絡や SNS で行う |
 | Where | AT Protocol 上の personal repo と Cerulia AppView を主な場にし、共有の入口は character detail link に置く |
-| How | schema-backed authoring、personal character / session record の owner-only write、shared-managed record の owner / maintainer control、post-run record、public-by-default な record と AppView の draft / spoiler 表示制御で成立させる |
+| How | schema-backed authoring、personal character / session record の owner-only write、owner-centered な optional scope / rules record、post-run record、public-safe な record と AppView の draft 表示制御で成立させる |
 
 ## 何を AT Protocol に任せるか
 
@@ -92,7 +92,7 @@ GM だけでセッション経験を記録でき、参加者が後から Cerulia
 
 ### 5. 全ての record は原則公開
 
-AT Protocol 上に書かれた record は原則公開である。「書かれたら公開されている」が既定であり、アクセス制限はシステムの責務ではない。作成途中のキャラクターを一覧から隠したい場合は visibility: draft で AppView が制御する。Cerulia AppView では draft は一覧や発見導線からは隠すが、direct link では draft 状態を明示して表示する。ネタバレの秘匿も AT Protocol レベルでは行わず、AppView の UI で対応する。
+AT Protocol 上に書かれた record は原則公開である。「書かれたら公開されている」が既定であり、アクセス制限はシステムの責務ではない。作成途中のキャラクターを一覧から隠したい場合は visibility: draft で AppView が制御する。Cerulia AppView では draft は一覧や発見導線からは隠すが、direct link では draft 状態を明示して表示する。record に入れる内容はすべて public-safe に限り、private scratch、spoiler payload、private annotation は product-core に入れない。
 
 ### 6. 他人について書かない
 

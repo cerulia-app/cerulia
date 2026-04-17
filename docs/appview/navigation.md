@@ -20,12 +20,12 @@
 | `/sessions` | owner-only | session workbench。一覧、inline detail、再編集 |
 | `/sessions/new` | owner-only | session record create |
 | `/scenarios` | public + owner | scenario catalog |
-| `/scenarios/new` | owner / maintainer | scenario create |
+| `/scenarios/new` | owner | scenario create |
 | `/scenarios/[scenario]` | public | scenario detail |
-| `/campaigns/new` | owner / maintainer | campaign create |
-| `/campaigns/[campaign]` | public + owner / maintainer | campaign detail |
-| `/houses/new` | owner / maintainer | house create |
-| `/houses/[house]` | public + owner / maintainer | house detail |
+| `/campaigns/new` | owner | campaign create |
+| `/campaigns/[campaign]` | public + owner | campaign detail |
+| `/houses/new` | owner | house create |
+| `/houses/[house]` | public + owner | house detail |
 
 ## 明示的に置かない route
 

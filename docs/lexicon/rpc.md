@@ -50,7 +50,7 @@ draft branch も direct ref があれば解決するが、response に `visibili
 
 ### app.cerulia.rpc.getCampaignView
 
-- auth: owner / maintainer mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
+- auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
 - params: `campaignRef` required
 - output: `campaign`, `sessions`, `ruleOverlay`
 
@@ -102,7 +102,7 @@ owner-only query。`/sessions` 一覧内の inline detail / edit のために使
 
 ### app.cerulia.rpc.getHouseView
 
-- auth: owner / maintainer mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
+- auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
 - params: `houseRef` required
 - output: `house`, `campaigns`, `sessions`
 
@@ -114,7 +114,7 @@ draft house も direct ref があれば解決するが、list query には含め
 - params: `scopeRef` optional, `baseRulesetNsid` optional, `limit`, `cursor`
 - output: `items`（rule-profile summary row）
 
-owner / maintainer 向けの rule-profile 読取一覧。public surface は getCampaignView / getHouseView に畳み込まれた rule overlay summary を使い、raw profile read に依存しない。
+owner 向けの rule-profile 読取一覧。public surface は getCampaignView / getHouseView に畳み込まれた rule overlay summary を使い、raw profile read に依存しない。
 
 ### app.cerulia.rpc.getRuleProfile
 
@@ -122,7 +122,7 @@ owner / maintainer 向けの rule-profile 読取一覧。public surface は getC
 - params: `ruleProfileRef` required
 - output: `ruleProfile`
 
-owner / maintainer 向けの rule-profile canonical read。public surface は raw profile を直接返さない。
+owner 向けの rule-profile canonical read。public surface は raw profile を直接返さない。
 
 ## procedure contract
 
@@ -191,6 +191,8 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 - input: `characterBranchRef`, `advancementKind`, `deltaPayloadRef`, `sessionRef?`, `previousValues?`, `effectiveAt`, `note?`
 - output: `emittedRecordRefs = [characterAdvancementRef]`
 
+`deltaPayloadRef` と `previousValues` は公開前提の public-safe payload として扱う。hidden correction memo や owner-only 情報は入れない。
+
 ### app.cerulia.rpc.createSession
 
 - auth: `app.cerulia.authCoreWriter`
@@ -217,15 +219,16 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 ### app.cerulia.rpc.createScenario
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `title`, `rulesetNsid?`, `recommendedSheetSchemaRef?`, `sourceCitationUri?`, `summary?`, `spoilerRef?`, `maintainerDids[]?`
+- input: `title`, `rulesetNsid?`, `recommendedSheetSchemaRef?`, `sourceCitationUri?`, `summary?`
 - output: `emittedRecordRefs = [scenarioRef]`
 
 `recommendedSheetSchemaRef` がある場合、`rulesetNsid` は必須であり、その schema の `baseRulesetNsid` は `rulesetNsid` と一致しなければならない。
+`summary` と `sourceCitationUri` は public-safe な情報だけを扱う。spoiler payload は product-core に入れない。
 
 ### app.cerulia.rpc.updateScenario
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `scenarioRef`, `title?`, `rulesetNsid?`, `recommendedSheetSchemaRef?`, `sourceCitationUri?`, `summary?`, `spoilerRef?`, `maintainerDids[]?`
+- input: `scenarioRef`, `title?`, `rulesetNsid?`, `recommendedSheetSchemaRef?`, `sourceCitationUri?`, `summary?`
 - output: `emittedRecordRefs = [scenarioRef]`
 
 `recommendedSheetSchemaRef` を持つ結果になる場合、`rulesetNsid` を必須とし、schema の `baseRulesetNsid` と一致しなければならない。`recommendedSheetSchemaRef` を省略した scenario は browse-only のままとする。
@@ -233,13 +236,13 @@ retiredAt が設定された branch への mutation は `resultKind = rejected` 
 ### app.cerulia.rpc.createCampaign
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `title`, `houseRef?`, `rulesetNsid`, `sharedRuleProfileRefs[]?`, `maintainerDids[]?`, `visibility?`
+- input: `title`, `houseRef?`, `rulesetNsid`, `sharedRuleProfileRefs[]?`, `visibility?`
 - output: `emittedRecordRefs = [campaignRef]`
 
 ### app.cerulia.rpc.updateCampaign
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `campaignRef`, `title?`, `houseRef?`, `rulesetNsid?`, `sharedRuleProfileRefs[]?`, `maintainerDids[]?`, `visibility?`, `archivedAt?`
+- input: `campaignRef`, `title?`, `houseRef?`, `rulesetNsid?`, `sharedRuleProfileRefs[]?`, `visibility?`, `archivedAt?`
 - output: `emittedRecordRefs = [campaignRef]`
 
 archivedAt が設定された campaign に対して archivedAt 以外の mutable field を更新しようとした場合は `resultKind = rejected` と `reasonCode = terminal-state-readonly` を返す。
@@ -247,31 +250,31 @@ archivedAt が設定された campaign に対して archivedAt 以外の mutable
 ### app.cerulia.rpc.createHouse
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `title`, `canonSummary?`, `defaultRuleProfileRefs[]?`, `policySummary?`, `externalCommunityUri?`, `maintainerDids[]?`, `visibility?`
+- input: `title`, `canonSummary?`, `defaultRuleProfileRefs[]?`, `policySummary?`, `externalCommunityUri?`, `visibility?`
 - output: `emittedRecordRefs = [houseRef]`
 
 ### app.cerulia.rpc.updateHouse
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `houseRef`, `title?`, `canonSummary?`, `defaultRuleProfileRefs[]?`, `policySummary?`, `externalCommunityUri?`, `maintainerDids[]?`, `visibility?`
+- input: `houseRef`, `title?`, `canonSummary?`, `defaultRuleProfileRefs[]?`, `policySummary?`, `externalCommunityUri?`, `visibility?`
 - output: `emittedRecordRefs = [houseRef]`
 
 ### app.cerulia.rpc.createRuleProfile
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `baseRulesetNsid`, `profileTitle`, `scopeKind`, `scopeRef`, `rulesPatchUri`, `maintainerDids[]?`
+- input: `baseRulesetNsid`, `profileTitle`, `scopeKind`, `scopeRef`, `rulesPatchUri`
 - output: `emittedRecordRefs = [ruleProfileRef]`
 
 ### app.cerulia.rpc.updateRuleProfile
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `ruleProfileRef`, `profileTitle?`, `rulesPatchUri?`, `maintainerDids[]?`
+- input: `ruleProfileRef`, `profileTitle?`, `rulesPatchUri?`
 - output: `emittedRecordRefs = [ruleProfileRef]`
 
 ### app.cerulia.rpc.createCharacterSheetSchema
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `baseRulesetNsid`, `schemaVersion`, `title`, `fieldDefs`, `maintainerDids[]?`
+- input: `baseRulesetNsid`, `schemaVersion`, `title`, `fieldDefs`
 - output: `emittedRecordRefs = [characterSheetSchemaRef]`
 
 ### app.cerulia.rpc.recordCharacterConversion

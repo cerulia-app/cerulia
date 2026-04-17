@@ -43,5 +43,5 @@ owner のみ。
 - 一時状態や外部 context の current overlay は入れない
 - ruleset をまたぐ変換 provenance は character-conversion で残す
 - AppView と通常 XRPC の create flow は sheetSchemaRef を必須とする
-- sheetSchemaRef が無い sheet は AppView で owner-only の raw JSON fallback view / editor を使う。これは legacy/import/recovery 用の safety valve であり、通常の新規作成導線では使わない
-- sheetSchemaRef が無い sheet でも shared detail route 自体は持てるが、public / anonymous には structured stats block を出さない。raw JSON は owner-only に留める
+- sheetSchemaRef が無い sheet は AppView の owner workbench で raw JSON fallback view / editor を使ってよい。これは legacy/import/recovery 用の safety valve であり、通常の新規作成導線では使わない
+- sheetSchemaRef が無い sheet でも shared detail route 自体は持てるが、public / anonymous には structured stats block を出さない。raw JSON も public record であるため public-safe な内容に限り、shared surface の主要 block にはしない

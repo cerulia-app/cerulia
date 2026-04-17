@@ -33,8 +33,8 @@ branch owner のみ。
 - キャラクターの状態変更はセッション単位で履歴を残す。sessionRef で「どのセッションで何が変わったか」を追える
 - previousValues に変更前の値を保持する。変更履歴を遡れるようにする
 - sessionRef は任意。セッション外のキャラクター変更（初期設定の修正等）もリンクなしで記録できる
-- deltaPayloadRef は自由形式の JSON payload。AppView は profile-specific な preflight hint を出してよいが、record の書き込み可否と core invariant の判定は API が正本とする
+- deltaPayloadRef は public-safe な change payload を指す参照。private な correction memo、spoiler、owner-only 情報は入れない。AppView は profile-specific な preflight hint を出してよいが、record の書き込み可否と core invariant の判定は API が正本とする
 - 現在の branch 解決結果は、base sheet、branch override、active な advancement sequence から投影する
 - active な advancement sequence の canonical ordering は effectiveAt 昇順とし、同時刻なら record-key の tid 順で解決する
-- previousValues は既存値を書き換える advancement では必須とする。append-only な narrative milestone だけ省略してよい
-- note は public-safe な補足に限る。AppView の public shared surface は note、deltaPayloadRef、previousValues を返さない
+- previousValues は既存値を書き換える advancement では必須とする。append-only な narrative milestone だけ省略してよい。ここに入れる snapshot も public-safe に限る
+- note は public-safe な補足に限る。AppView の shared surface は読みやすさのため note、deltaPayloadRef、previousValues を既定では表示しなくてよいが、いずれも public record であり owner-only payload ではない

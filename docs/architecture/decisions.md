@@ -56,9 +56,9 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 9. 他人について書かない
 
-採用: PL の personal record である character / session 系 record には、他人の DID や characterBranchRef を書かない。campaign、house、scenario、rule-profile、character-sheet-schema の ownerDid / maintainerDids のような shared-managed record の管理メタデータはこの禁止の対象外とする。
+採用: PL の personal record である character / session 系 record には、他人の DID や characterBranchRef を書かない。campaign、house、scenario、rule-profile、character-sheet-schema も owner-centered とし、第三者への durable な管理委譲 field は持たない。ownerDid は record owner / registrant metadata としてだけ持ってよい。
 
-理由: character / session 系 record は PL の公開される個人史であり、ここに第三者識別子を入れると、本人の opt-in なしに活動 graph や参加関係を durable に作ってしまう。Cerulia が避けたいのはこの public graph 化である。一方、shared-managed record の ownerDid / maintainerDids は「誰がその record を管理するか」を示す control metadata であり、他人の行動履歴を public graph 化するための field ではない。
+理由: character / session 系 record は PL の公開される個人史であり、ここに第三者識別子を入れると、本人の opt-in なしに活動 graph や参加関係を durable に作ってしまう。Cerulia が避けたいのはこの public graph 化である。owner-centered を徹底するなら、scope / rules 系 record にも第三者への durable な管理委譲を持ち込まない方が設計が単純で説明しやすい。
 
 ## 10. 越境利用はシステムで管理しない
 
@@ -94,9 +94,9 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 15. キャラクター変更はセッション単位で履歴保持
 
-採用: character-advancement に previousValues を持たせ、変更前の値を保持する。sessionRef で「どのセッションで何が変わったか」を追える。
+採用: character-advancement は sessionRef で「どのセッションで何が変わったか」を追える public-safe な change record とする。previousValues や delta payload を持つ場合も、公開前提で説明可能な内容に限る。
 
-理由: append-only immutable ledger は個人アプリとしては過剰だが、セッション単位の変更履歴は PL にとって価値がある。
+理由: append-only immutable ledger は個人アプリとしては過剰だが、セッション単位の変更履歴は PL にとって価値がある。一方で AppView で隠すことを前提にした payload は、全 record 公開の原則と整合しない。
 
 ## 16. correction は直接編集
 
@@ -142,7 +142,7 @@ Cerulia の設計における主要な判断を記録する。
 
 採用: campaign、house、scenario は create-only ではなく mutable record とし、対応する update procedure を持つ。
 
-理由: title、summary、maintainerDids、外部リンクなどの修正需要が自然にある。updatedAt を持つ以上、transport 契約も更新経路を持つべきである。
+理由: title、summary、外部リンクなどの修正需要が自然にある。updatedAt を持つ以上、transport 契約も更新経路を持つべきである。
 
 ## 23. character-conversion は same-owner に限定する
 
@@ -156,7 +156,7 @@ Cerulia の設計における主要な判断を記録する。
 
 採用: public shared surface の canonical landing は character detail とする。プレイヤー単位の public character collection は secondary surface とし、post-MVP candidate に留める。
 
-理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。public surface を最初から広げると、draft や spoiler の扱いと一覧導線が先に複雑になる。
+理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。public surface を最初から広げると、draft や public-safe summary の扱いと一覧導線が先に複雑になる。
 
 ## 25. pending save は AppView の local state に限定する
 

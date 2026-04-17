@@ -43,7 +43,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 
 - シナリオの検索・一覧（rulesetNsid でフィルタ）
 - シナリオの登録
-- シナリオ詳細（summary + spoiler 折りたたみ）
+- シナリオ詳細（summary + source citation）
 - recommendedSheetSchemaRef を持つシナリオからだけ character 作成へのナビゲーション
 - scenario detail では ownerDid を作者として扱わず、登録者と sourceCitationUri を見せる
 
@@ -76,7 +76,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - SNS での OGP 表示
 - public shared surface の root は character detail とする
 - public に埋め込む session history の項目は scenario、date、record role、result、external archive link のような public-safe summary に限る
-- owner-only note、save state、private identifier、spoiler text は public history に含めない
+- save state、private identifier、raw change payload、non-summary field は public history に含めない
 - player 単位の public profile / public character collection は post-MVP の secondary public surface とする
 - public profile を追加しても canonical shared root は character detail のままにする
 - direct link の安定性を優先し、visibility が引き続き public である限りは public detail に数分程度の stale を許容してよい

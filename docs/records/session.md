@@ -52,7 +52,7 @@ session record の owner（PL 本人）。
 - characterBranchRef を使う場合、その branch owner は必ず session owner と一致しなければならない
 - campaignRef は任意。単発卓（多数派）では省略する
 - visibility: draft のセッションは Cerulia AppView では一覧や public embedding から隠す。AT Protocol 上は公開されているため、owner-only の秘匿を意味しない
-- hoLabel と hoSummary はネタバレを含まない公開情報だけを扱う。secret handout や disclosure payload は product-core に入れず、AppView で折りたたみ表示する
+- hoLabel と hoSummary はネタバレを含まない公開情報だけを扱う。secret handout や disclosure payload は product-core に入れない
 - outcomeSummary はプレイヤー向けの要約。キャラクターのロスト（死亡等）もここで記録する
 - externalArchiveUris は YouTube、ブログ、配信アーカイブ等の外部記録へのリンクに使う
 - note は public-safe な補足だけに使う。private scratch や非公開メモは product-core に入れない

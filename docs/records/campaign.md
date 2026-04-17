@@ -15,7 +15,6 @@ campaign owner の repo。
 - houseRef（任意）
 - rulesetNsid
 - sharedRuleProfileRefs
-- maintainerDids
 - visibility（draft / public）
 - createdAt
 - archivedAt
@@ -23,7 +22,7 @@ campaign owner の repo。
 
 ## 更新主体
 
-campaign owner、または maintainerDids に含まれる actor。
+campaign owner。
 
 ## 参照関係
 
@@ -38,7 +37,6 @@ campaign owner、または maintainerDids に含まれる actor。
 - campaign 作成時に house.defaultRuleProfileRefs を初期 sharedRuleProfileRefs にコピーしてよい。以後の正本は campaign.sharedRuleProfileRefs とする
 - sharedRuleProfileRefs は ordered list とし、campaign 独自の rule overlay を持てる。live な effective overlay の唯一の正本は campaign.sharedRuleProfileRefs である
 - sharedRuleProfileRefs に含める rule-profile は、すべて `baseRulesetNsid == campaign.rulesetNsid` を満たさなければならない
-- maintainerDids は scope record（campaign）のみを更新できる。character 系 record の write authority には影響しない
 - archivedAt はシリーズの終端を表すが、過去の session や advancement を巻き戻さない
 - visibility: draft の campaign は Cerulia AppView では一覧から隠すが、direct link では draft 状態を明示して表示する
 - public campaign projection は draft house の identity を表示しない

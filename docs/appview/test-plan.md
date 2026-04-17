@@ -36,8 +36,8 @@
 ### shared UX
 
 - character detail の first view でプロフィール、structured stats、立ち絵が確認できること
-- public history に owner-only note、save state、spoiler text が出ないこと
-- summary / spoiler の折りたたみと warning copy が崩れないこと
+- public history に save state、raw change payload、低レベル identifier が出ないこと
+- scenario detail が summary と source citation を安定表示すること
 
 ### performance rehearsal
 

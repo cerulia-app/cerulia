@@ -9,7 +9,7 @@ Cerulia は、AT Protocol 上の PL 個人向けサービスである。TRPG キ
 - What: character 作成、post-run session 記録、character detail 共有
 - When: 作成は卓前、記録は卓後、共有は卓前後の連絡と SNS
 - Where: AT Protocol 上の personal repo と Cerulia AppView。共有入口は character detail
-- How: schema-backed authoring、personal character / session record の owner-only write、shared-managed record の owner / maintainer control、public-by-default record、AppView の表示制御
+- How: schema-backed authoring、personal character / session record の owner-only write、owner-centered な optional scope / rules record、public-safe record、AppView の表示制御
 
 ## 製品スコープ
 
@@ -42,7 +42,7 @@ Cerulia の product-core は次を扱わない。
 
 - character state の write authority は常に owner のみ
 - session は PL が自分で書く post-run の記録。run control を持たない
-- 全 record は原則公開。visibility flag は AppView の表示制御であり、AT Protocol レベルの秘匿ではない
+- 全 record は原則公開。visibility flag は AppView の表示制御であり、AT Protocol レベルの秘匿ではない。record に入れる内容は public-safe に限る
 - 他人の DID や characterBranchRef を自分の record に書かない。リンクは各自が自分の record を通じて行う
 - character-conversion は same-owner の provenance に限定する
 - Cerulia は記録と共有に絞った薄いアプリケーション。セッション中は read-only

@@ -41,4 +41,4 @@ target sheet owner のみ。
 - source / target の sheet と branch はすべて conversion owner と一致しなければならない
 - convertedAt は変換が行われた日時を記録する
 - conversionContractRef は変換ガイド、マニュアル、ツール等への参照として自由に使える
-- note は public-safe な補足に限る。AppView の public shared surface は note や owner-only annotation を返さない
+- note は public-safe な補足に限る。AppView の public shared surface は note を既定では返さなくてよいが、これは秘匿ではなく表示上の簡略化である

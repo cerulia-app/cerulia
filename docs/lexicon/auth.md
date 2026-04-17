@@ -12,15 +12,15 @@ permission-set 定義は auth lexicon にまとめ、app.cerulia.auth* の bundl
 
 | bundle | 役割 | 代表 capability |
 | --- | --- | --- |
-| app.cerulia.authCoreReader | owner / maintainer 向け authenticated core projection を読む | getCharacterHome、getCharacterBranchView、getCampaignView、getHouseView、listSessions、getSessionView |
+| app.cerulia.authCoreReader | owner 向け authenticated core projection を読む | getCharacterHome、getCharacterBranchView、getCampaignView、getHouseView、listSessions、getSessionView |
 | app.cerulia.authCoreWriter | core record を更新する | createCharacterSheet、updateCharacterSheet、rebaseCharacterSheet、createCharacterBranch、updateCharacterBranch、retireCharacterBranch、createSession、updateSession、recordCharacterAdvancement、recordCharacterConversion、createScenario、updateScenario、createCampaign、updateCampaign、createHouse、updateHouse、createRuleProfile、updateRuleProfile、createCharacterSheetSchema |
 
 ## endpoint matrix
 
 - `getCharacterHome`: caller 自身の self-home だけを返す owner-only query。`app.cerulia.authCoreReader` 必須
 - `getCharacterBranchView`: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの public reader として同じ endpoint の public lens を使う。draft は一覧に出さない
-- `getCampaignView`: owner / maintainer mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの public reader として同じ endpoint の public lens を使う。draft は一覧に出さず、public mode では draft child を返さない
-- `getHouseView`: owner / maintainer mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの public reader として同じ endpoint の public lens を使う。draft は一覧に出さず、public mode では draft child を返さない
+- `getCampaignView`: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの public reader として同じ endpoint の public lens を使う。draft は一覧に出さず、public mode では draft child を返さない
+- `getHouseView`: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの public reader として同じ endpoint の public lens を使う。draft は一覧に出さず、public mode では draft child を返さない
 - `listSessions`, `getSessionView`: caller 自身の session workbench 用 owner-only query
 - `listScenarios`, `getScenarioView`: auth bundle なしで anonymous read を許す
 - `getCharacterBranchView`, `getCampaignView`, `getHouseView`: public / anonymous mode は auth bundle なしで public lens read を許す
@@ -31,13 +31,12 @@ permission-set 定義は auth lexicon にまとめ、app.cerulia.auth* の bundl
 ## mutation authorization matrix
 
 - character-sheet / character-branch / character-advancement / character-conversion / session: owner-only
-- campaign / house / scenario / rule-profile: owner または maintainerDids に含まれる actor
-- character-sheet-schema: owner または maintainerDids に含まれる actorが新しい version pin を発行する
-- `authCoreWriter` は transport bundle であり、個別 procedure の owner / maintainer 判定を省略しない
+- campaign / house / scenario / rule-profile / character-sheet-schema: owner-only
+- `authCoreWriter` は transport bundle であり、個別 procedure の owner 判定を省略しない
 
 ## 設計上の注意
 
-- authCoreReader は owner / maintainer 向けの read bundle。public mode は endpoint ごとに anonymous read 可否を明示し、visibility: public な record だけを返す
+- authCoreReader は owner 向けの read bundle。public mode は endpoint ごとに anonymous read 可否を明示し、visibility: public な record だけを返す
 - authCoreWriter は全ての core mutation に使う
 - auth bundle 名は role 名に寄せず、technical responsibility を名前に出す
 

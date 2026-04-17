@@ -19,13 +19,12 @@ scope に応じて置き場所を分ける。
 - scopeRef
 - rulesPatchUri
 - ownerDid
-- maintainerDids
 - createdAt
 - updatedAt
 
 ## 更新主体
 
-ownerDid、または maintainerDids に含まれる actor。
+ownerDid。
 
 ## 参照関係
 
@@ -43,4 +42,4 @@ ownerDid、または maintainerDids に含まれる actor。
 - overlay 順序の live 解決は campaign.sharedRuleProfileRefs に materialize された順序だけを見る。house-shared は campaign 作成時の seed source にとどまる
 - rulesPatchUri はルール差分の本文やドキュメントを指す external URI
 - rulesPatchUri は public-safe で永続参照可能な URI だけを使う。owner-only 文書へのリンクは入れない
-- ownerDid と maintainerDids は rule-profile record 自体の更新主体を表す
+- ownerDid は rule-profile record 自体の更新主体を表す
