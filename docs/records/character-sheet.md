@@ -35,6 +35,7 @@ owner のみ。
 - sheet 作成時に default branch が自動的にペアで生成される。branch なしの sheet は存在しない
 - 公開 / 非公開の正本は branch.visibility とする。sheet 自体は shared surface の visibility を持たない
 - active record では sheetSchemaRef を必須とし、stats は fieldDefs に準拠する構造化 payload として扱う。schema が extensible な group を持つ場合、その追加 field も valid とする。sheetSchemaRef がない場合、stats は自由形式の JSON payloadだが、legacy/import/recovery 用に限る
+- sheetSchemaRef がない legacy/import/recovery payload でも、stats は public-safe に限る。historical intake や editor 保存時に non-public-safe な内容は sanitize または reject する
 - sheetSchemaRef は character-sheet-schema の特定バージョンを pin する。schema が更新されても、sheet は自分で rebase するまで古い定義で valid のまま動く
 - sheetSchemaRef がある場合、`sheetSchemaRef.baseRulesetNsid == rulesetNsid` を満たさなければならない
 - sheetSchemaRef を変更する操作は通常編集ではなく、`rebaseCharacterSheet` のような明示 rebase operation で扱う

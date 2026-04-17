@@ -37,6 +37,7 @@ ownerDid。
 - rule-profile は mutable current-head record として扱う。schema のような versioned pin にはしない
 - rule-profile に archived / retired の別 status axis は持たせない。無効化や置換は scope 側の参照から外すことで表現する
 - public shared surface は raw rule-profile を直接読まず、campaign / house projection に畳み込まれた overlay summary を使う
+- overlay summary は raw rule-profile の `profileTitle`、`scopeKind`、`rulesPatchUri` から導出し、別の summary field は持たない
 - scopeKind は house-shared、campaign-shared の閉じた値
 - scopeRef は、その profile がどの scope に属するかを指す
 - profileTitle は public-safe な overlay 名に限る

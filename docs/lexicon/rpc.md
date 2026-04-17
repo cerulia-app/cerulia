@@ -77,7 +77,7 @@ recommendedSheetSchemaRef が無い scenario は browse-only とし、create flo
 - params: `rulesetNsid` optional, `limit`, `cursor`
 - output: `items`（character-sheet-schema summary row）
 
-generic create flow は rulesetNsid ごとに schema 一覧を取得し、caller が明示選択する。
+generic create flow は rulesetNsid ごとに schema 一覧を取得し、caller が明示選択する。summary row の短い説明は追加の free-text field を持たず、schema metadata から導出してよい。
 
 ### app.cerulia.rpc.getCharacterSheetSchema
 
