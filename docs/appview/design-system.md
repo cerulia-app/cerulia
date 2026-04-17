@@ -1,11 +1,10 @@
 # Design System
 
 このファイルは AppView の target MVP に向けた visual / interaction design system を定義する。
-2026-04-14 のリセット以後、現行 runtime は最小 skeleton のままだが、再実装ではここを正本として扱う。
+
 
 ## 状態
 
-- current runtime はトップページの最小 skeleton のみ
 - target MVP では character detail を shared surface の主役として設計する
 - target MVP では player profile も共有面として提供する
 - [DESIGN.md](../../DESIGN.md) は exploratory な aesthetic proposal とし、product-specific な判断はこの文書と関連文書で固定する
@@ -140,7 +139,7 @@ session 履歴と advancement は別の意味を持つ。
 
 ## Shared Surface Rules
 
-1. public direct link の意味は常に character detail に固定する
+1. shared root としての public direct link の意味は character detail に固定する（player profile の direct link 提供とは矛盾しない）
 2. first view で profile、portrait、主要 stats を同時に読む
 3. public-safe な session と advancement は detail の内部で完結させる
 4. draft は隠さず明示するが、発見導線には混ぜない

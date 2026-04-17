@@ -1,13 +1,5 @@
 # AppView Navigation
 
-## current runtime
-
-2026-04-14 のリセット時点で、現行 AppView の runtime surface は最小スケルトンだけです。
-
-## 現在の導線
-
-- `/`: reset 状態を示すトップページ
-
 ## target MVP route tree
 
 | route | surface | 役割 |
@@ -34,7 +26,3 @@
 - public session 専用 route は置かない。public-safe な session 情報は character detail、campaign、house の surface に畳み込む
 - canonical shared surface は character detail に固定する。player profile route は置くが、shared root は移さない
 
-## secondary later candidate
-
-- public character collection route は post-MVP の secondary public surface 候補とする
-- 追加しても shared root は character detail に残し、player profile は自己紹介と公開 character 導線の束ね役に留める

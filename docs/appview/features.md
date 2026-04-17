@@ -1,6 +1,6 @@
 # 必要機能一覧
 
-このファイルは AppView の target MVP feature spec を定義する。reset 後の current runtime のみを説明する文書ではない。
+このファイルは AppView の target MVP feature spec を定義する。
 
 ## キャラクター作成
 
@@ -20,7 +20,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 ## キャラクター管理
 
 - キャラクター一覧（branch 単位）
-- キャラクター詳細表示（stats、立ち絵、プロフィール、公開セッション履歴、conversion provenance）。schema-less の場合は structured stats を公開しない
+- キャラクター詳細表示（stats、立ち絵、プロフィール、公開セッション履歴）。conversion provenance は post-MVP の optional 表示として扱う。schema-less の場合は structured stats を公開しない
 - character detail の first view でプロフィール、structured stats、立ち絵を優先表示する
 - キャラクター編集
 - schema 更新時の recovery 導線。advanced owner maintenance として扱い、通常の編集主導線には置かない

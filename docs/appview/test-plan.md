@@ -1,16 +1,13 @@
 # AppView テスト計画
 
-## current runtime
-
-2026-04-14 のリセットにより、旧 mounted / final-gate 前提のテスト計画は current ではありません。
-
-## 現在の最小検証
+## 実行コマンド
 
 - `bun run check`
 - `bun run lint`
 - `bun run build`
+- `bun run test`
 
-現在の workspace には `bun run test` の実行口はあるが、target route / component を検証する test file はまだ揃っていない。placeholder smoke を復帰させるまでは、`bun run test` を current release gate とみなさない。
+`bun run test` は target route / component の検証を順次追加して gate に含める。
 
 ## target MVP gates
 
