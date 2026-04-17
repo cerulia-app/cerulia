@@ -48,6 +48,13 @@
 - public URI field が credential-free 条件を満たさない場合に reject する test
 - rules provenance record が public-only のままで visibility lifecycle に乗らない test
 - public direct read が raw payload と owner-only linkage を返さない redaction shape test
+- public redaction matrix を record 行単位で検証する test
+	- character detail が summary shape のみ返し、owner-only field を含まないこと
+	- player profile が override + fallback 合成 shape のみ返し、credential-bearing URI を含まないこと
+	- session / campaign / house 一覧が discovery summary のみ返すこと
+	- scenario detail が summary + source citation のみ返すこと
+	- rule-profile / character-sheet-schema が public-only canonical field のみ返すこと
+	- owner workbench route が owner mode full payload を返し、同一 record の public route は summary shape に留まること
 - SQLite migration test
 - Bun entrypoint integration test
 - Workers adapter smoke test

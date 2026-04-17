@@ -47,6 +47,8 @@
 
 - character detail の first view でプロフィール、structured stats、立ち絵が確認できること
 - public history に save state、raw change payload、低レベル identifier が出ないこと
+- character detail の advancement summary が date、changeKind、changeSummary、linkedSession だけを表示すること
+- conversion provenance を表示する場合、sourceRuleset、targetRuleset、convertedAt、conversionNote 以外を公開しないこと
 - player profile が fallback と上書きの合成結果だけを見せ、raw Bluesky payload を UI に出さないこと
 - scenario detail が summary と source citation を安定表示すること
 - campaign detail の rule overlay が `適用ルール` の表示語で安定表示されること
@@ -66,6 +68,7 @@
 - public top と character detail の UI chrome が locale 切り替えに追従すること
 - system message が locale 切り替えに追従し、raw key を出さないこと
 - navigation label が locale 切り替えに追従し、default locale fallback で欠落表示しないこと
+- owner locale override が AppView 側 preference にだけ永続化され、shared record に保存されないこと
 - locale 指定が無い場合に browser preference から妥当な locale が選ばれること
 - OGP metadata は explicit locale が無い場合 default locale で安定して返ること
 - translation 欠落時に default locale へ fallback し、raw key を出さないこと

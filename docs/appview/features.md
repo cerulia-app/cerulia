@@ -126,6 +126,8 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - SNS での OGP 表示
 - public shared surface の root は character detail とする
 - public に埋め込む session history の項目は scenario、date、record role、result、external archive link のような public-safe summary に限る
+- public に埋め込む advancement summary の項目は date、changeKind、changeSummary、linkedSession の 4 項目に限る
+- conversion provenance は post-MVP optional 表示とし、公開時は sourceRuleset、targetRuleset、convertedAt、conversionNote の summary だけを出す
 - save state、private identifier、raw change payload、non-summary field は public history に含めない
 - public shared surface は raw payload を返さず、summary shape に閉じる
 - player profile を追加しても canonical shared root は character detail のままにする

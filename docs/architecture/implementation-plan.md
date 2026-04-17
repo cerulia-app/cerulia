@@ -49,8 +49,21 @@ public mode の redaction 粒度は record ごとの matrix で固定する。
 - character detail: public-safe summary（profile、structured stats、portrait 参照、公開 session summary）だけ返す
 - player profile: Cerulia override と Bluesky fallback を合成した表示 shape を返す。credential-bearing URI は返さない
 - session / campaign / house 一覧: discovery 用 summary だけ返す
+- scenario detail: summary と source citation だけ返す。owner-private memo は返さない
+- rule-profile / character-sheet-schema: public-only の canonical field だけ返す。visibility 派生 field は返さない
+- owner workbench route: `owner` mode で full payload を返すが、public route は同一 endpoint でも `public` mode summary に固定する
 
 `credential-free` URI は、認証ヘッダ、cookie、署名付き query を必要としない公開 URI を指す。
+
+## OAuth 戦略の固定
+
+Cerulia の実装パターンは Authorization Code + PKCE に固定する。
+
+- AppView は public client として動作し、token を長期保存しない
+- `api` は caller DID と token claim を照合して callerProof を確定する
+- refresh と再認証は caller の PDS / authorization server の current authority に追随する
+
+この戦略は `api` フェーズ開始前に変更しない。別案比較は実装後ではなく設計段階でのみ行う。
 
 ## フェーズ 1: protocol を固定する
 
