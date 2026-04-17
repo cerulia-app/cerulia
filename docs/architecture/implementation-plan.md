@@ -9,6 +9,49 @@
 - `protocol` は generated artifact と thin wrapper に限定する
 - `projection` が無い状態でも `appview + api` で canonical flow を成立させる
 
+## API read と redaction の契約
+
+`api` は read mode を `owner` と `public` に分け、同じ record でも mode ごとに返却 shape を固定する。
+
+- `owner` mode: owner workbench 向け。編集に必要な full payload を返す
+- `public` mode: direct-link 共有向け。public-safe summary shape のみ返す
+
+`api` が mode を決めるときの permission bundle は次の判定軸に閉じる。
+
+- `actorDid`（呼び出し主体）
+- `ownerDid`（record owner）
+- `isOwner`（owner 判定）
+- `visibility`（record visibility）
+- `callerProof`（OAuth token と DID 解決で結びつく caller 証明）
+
+判定結果は次の contract に閉じる。
+
+- owner かつ record が存在する場合は `owner` mode を返す
+- owner 以外は `public` mode だけを返す
+- public に許可できない record は非公開状態として返し、private payload は返さない
+
+caller と owner の拘束条件は次で固定する。
+
+- mutation は caller-owned repo にだけ許可する
+- same-owner 制約を持つ record（character-conversion など）は `callerDid == ownerDid` を必須とする
+- third-party repo への write proxy は許可しない
+
+mutation result の返却条件は次で固定する。
+
+- `accepted`: validation と ownership 制約を満たし、base rev が最新
+- `rejected`: validation / ownership / policy のいずれかに違反
+- `rebase-needed`: validation と ownership は満たすが base rev が古い
+
+AppView preflight はこの contract を上書きしない。最終判定は常に `api` authoritative validation と read policy が担う。
+
+public mode の redaction 粒度は record ごとの matrix で固定する。
+
+- character detail: public-safe summary（profile、structured stats、portrait 参照、公開 session summary）だけ返す
+- player profile: Cerulia override と Bluesky fallback を合成した表示 shape を返す。credential-bearing URI は返さない
+- session / campaign / house 一覧: discovery 用 summary だけ返す
+
+`credential-free` URI は、認証ヘッダ、cookie、署名付き query を必要としない公開 URI を指す。
+
 ## フェーズ 1: protocol を固定する
 
 親 repo で固定済みの `docs/records`、`docs/lexicon`、`docs/architecture` を入力にして、`protocol` submodule を起こす。

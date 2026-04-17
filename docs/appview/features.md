@@ -16,6 +16,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - CCFolia clipboard 形式でのエクスポート
 - visibility: draft / public の切り替え
 - submit 後の保存状態表示。canonical result は `accepted` / `rejected` / `rebase-needed` に対応するが、UI copy は plain words で出す
+- schema が取得不能または破損している場合、create / edit は `閲覧のみ` にフォールバックし、`シート定義を取得できないため編集できません` を出す
 
 ## キャラクター管理
 
@@ -68,12 +69,14 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - シナリオ編集（owner）
 - recommendedSheetSchemaRef を持つシナリオからだけ character 作成へのナビゲーション
 - scenario detail では ownerDid を作者として扱わず、登録者と sourceCitationUri を見せる
+- `sourceCitationUri` の表示ラベルは `出典リンク` に固定し、内部 field 名を主表示に使わない
 
 ## 長期卓（campaign）
 
 - campaign 作成
 - campaign に紐づくセッション一覧
 - rule overlay の表示
+- rule overlay の主表示ラベルは `適用ルール` に固定し、内部語（overlay / profile chain）を主表示に使わない
 - archived campaign は read-only detail とし、archive 以外の更新導線を出さない
 
 ## コミュニティ（house）
@@ -88,8 +91,32 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - visibility toggle を出す対象は character-branch、session、campaign、house に限る
 - rule-profile と character-sheet-schema は public-only record であり、draft / public toggle の対象にしない
 - `pending` は AppView の local UI state であり、mutation transport の canonical result kind ではない
+- visibility の主表示は次の plain words に固定する
+
+| visibility | primary copy | 補助コピー |
+| --- | --- | --- |
+| `draft` | 下書き | あなたにだけ表示されます |
+| `public` | 公開 | 共有リンクで表示できます |
+
+- 保存結果の主表示は次の plain words に固定する
+
+| canonical result | primary copy | 補助コピー |
+| --- | --- | --- |
+| `accepted` | 保存しました | 公開反映まで数秒かかることがあります |
+| `rejected` | 保存できませんでした | 入力内容を確認して再試行してください |
+| `rebase-needed` | ほかの更新が先に保存されました | 最新状態を読み直して、もう一度保存してください |
+
 - public surface では accepted になるまで新規更新を確定表示しない
 - rejected と schema 更新必須の状態は pending と区別して、再試行や recovery の導線を明示する
+
+## 表示語の固定
+
+- `fallback` は `補完表示` として出す
+- `branch` は `系統` として出す
+- `browse-only` は `閲覧のみ` として出す
+- `record role` は `記録時の役割` として出す
+- `draft direct link` は `下書きリンク` として出す
+- `sourceCitationUri` は `出典リンク` として出す
 
 ## 共有
 
@@ -109,6 +136,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - public から draft への visibility 変更時は stale cache を使わず、最新 visibility で再解決する
 - 低速回線ではプロフィールとステータスを先に表示し、立ち絵は後から読み込む
 - 低速回線でも layout shift を増やさないよう、portrait 領域には先にプレースホルダーを確保する
+- portrait プレースホルダーは character detail の初期描画で固定アスペクト比（3:4）を確保し、画像未読込時は `立ち絵を読み込み中` を代替テキストとして表示する
 
 ## 多言語対応
 

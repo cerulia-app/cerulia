@@ -34,6 +34,7 @@
 - public から draft への visibility 変更後に stale public detail を返さないこと
 - rule-profile と character-sheet-schema に visibility toggle を出さないこと
 - scenario に recommendedSheetSchemaRef が無い場合、scenario 起点の create CTA を出さないこと
+- schema 取得不能または破損時に create / edit が `閲覧のみ` へフォールバックし、編集導線を閉じること
 - archived campaign で archive 以外の更新導線を閉じること
 - submit 後の `pending` と保存結果が区別され、schema 更新必須の状態が internal label ではなく plain words で表示されること
 - Bluesky 既存項目に Cerulia 上書きが無いとき、player profile で fallback 値を表示すること
@@ -48,6 +49,7 @@
 - public history に save state、raw change payload、低レベル identifier が出ないこと
 - player profile が fallback と上書きの合成結果だけを見せ、raw Bluesky payload を UI に出さないこと
 - scenario detail が summary と source citation を安定表示すること
+- campaign detail の rule overlay が `適用ルール` の表示語で安定表示されること
 
 ### performance rehearsal
 
@@ -57,10 +59,13 @@
 - public direct link が短時間 stale でも継続して開けることを rehearsal で確認すること
 - 遅延注入や低速回線シミュレーション下で、pending 表示、text-first 表示、stale direct link が崩れないことをブラウザレベルで確認すること
 - 画像遅延時でも portrait プレースホルダーにより大きな layout shift が起きないことを確認すること
+- 画像遅延時でも portrait プレースホルダーが 3:4 比率を維持し、代替テキストを失わないことを確認すること
 
 ### localization
 
 - public top と character detail の UI chrome が locale 切り替えに追従すること
+- system message が locale 切り替えに追従し、raw key を出さないこと
+- navigation label が locale 切り替えに追従し、default locale fallback で欠落表示しないこと
 - locale 指定が無い場合に browser preference から妥当な locale が選ばれること
 - OGP metadata は explicit locale が無い場合 default locale で安定して返ること
 - translation 欠落時に default locale へ fallback し、raw key を出さないこと

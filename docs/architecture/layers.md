@@ -5,11 +5,12 @@ AT Protocol 境界レビュー用の protocol-facing layer は [atproto-boundary
 
 ## 全体像
 
-Cerulia の product-core は PL 個人向けのキャラクター管理・セッション記録・共有サービスを中心に閉じる。layer は次の 5 層で足りる。
+Cerulia の product-core は PL 個人向けのキャラクター管理・セッション記録・共有サービスを中心に閉じる。layer は次の 6 層で足りる。
 
 | レイヤー | 役割 | 主に使う要素 | 典型的なデータ |
 | --- | --- | --- | --- |
 | アイデンティティ層 | 誰が誰かを確定する | DID、handle、OAuth | actor 識別、署名主体 |
+| profile 層 | PL の自己紹介を durable に保つ | player-profile | 表示名補足、自己紹介、TRPG プロフィール |
 | scope 層 | セッションやキャラクターの文脈 | house、campaign | コミュニティ方針、世界観ラベル、セッションシリーズ |
 | rules provenance 層 | どのルールで遊んでいるか | rule-profile、character-sheet-schema | system 定義、ハウスルール、シート型 |
 | character ledger 層 | キャラクターの durable な継続線 | character-sheet、character-branch、character-conversion、character-advancement | 所有、分岐、変換 provenance、成長 |
@@ -52,15 +53,26 @@ AT Protocol 上の record は原則公開される。visibility: draft は AppVi
 
 character-sheet-schema は rules provenance 層に置く。character-sheet には sheetSchemaRef で参照するだけにし、型定義を sheet 本体に埋め込まない。
 
+### 7. player-profile は override record として扱う
+
+player-profile は PL の personal repo に置く self record を正本とし、Bluesky profile 由来の値は read 時の fallback 合成で扱う。fallback 元は Cerulia record に保存しない。
+
+### 8. cross-record reference の型を固定する
+
+live 参照は DID authority の AT URI を使う。exact version が必要な provenance だけ strong reference（`uri` + `cid`）を使う。
+
 ## どこに何を置くか
 
 ### PL の個人 repo
 
+- player-profile
 - character-sheet
 - character-branch
 - character-advancement
 - character-conversion
 - session
+
+`player-profile` は override payload だけを保持する。display 時に Bluesky fallback と合成しても、合成結果を再保存しない。
 
 ### owner-defined scope repo
 

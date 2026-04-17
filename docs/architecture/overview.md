@@ -49,6 +49,27 @@ Cerulia の product-core は次を扱わない。
 - Cerulia は記録と共有に絞った薄いアプリケーション。セッション中は read-only
 - 越境利用はシステムで管理しない
 
+## canonical lifecycle semantics
+
+visibility lifecycle は record class ごとに次の状態機械に固定する。
+
+- character-branch / session / campaign / house: `draft <-> public`
+- rule-profile / character-sheet-schema / scenario: `public-only`
+
+`public -> draft` へ戻した record は public discovery から即時に除外する。direct link は draft 状態を明示して解決し、stale public 表示を残さない。
+
+mutation の canonical result は次の条件で固定する。
+
+- `accepted`: authoritative validation を満たし、owner authority と競合条件を満たしたとき
+- `rejected`: authoritative validation 不一致、authority 不一致、または policy 違反のとき
+- `rebase-needed`: owner authority は成立しているが、保存対象の基準 rev が最新でないとき
+
+`rebase-needed` は入力不正ではなく競合解消フローとして扱う。
+
+## scope payload semantics
+
+house と campaign は context record であり、membership や参加承認の正本を持たない。scope payload は canon summary と公開共有に必要な最小フィールドに閉じる。
+
 ## 判断の 3 区分
 
 | 区分 | 意味 | 現時点の例 |
