@@ -37,6 +37,7 @@ house owner。
 - defaultRuleProfileRefs は新規 campaign を作るときの seed-only default として扱う。campaign 作成時にコピーした後は campaign.sharedRuleProfileRefs が正本であり、既存 campaign に自動追随させない
 - defaultRuleProfileRefs を使う場合、その house は 1 つの ruleset family に閉じる。複数 ruleset を併用する house では空にして、campaign 側で明示する
 - house.defaultRuleProfileRefs は campaign 作成時の seed source に限る。live な effective overlay を直接構成しない
+- title は public-safe なコミュニティ名に限る
 - house から過去の session を辿るのは projection で扱う。house record 自体に sessions リストは持たない
 - canonSummary は public-safe な世界観や上位設定のフリーテキスト。運用上の世界観ラベルとして使う
 - policySummary は public-safe なコミュニティ方針の説明に限る

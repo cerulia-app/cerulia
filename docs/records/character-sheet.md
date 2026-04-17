@@ -39,6 +39,7 @@ owner のみ。
 - sheetSchemaRef がある場合、`sheetSchemaRef.baseRulesetNsid == rulesetNsid` を満たさなければならない
 - sheetSchemaRef を変更する操作は通常編集ではなく、`rebaseCharacterSheet` のような明示 rebase operation で扱う
 - version は create 時に 1 で始まり、accepted な updateCharacterSheet / rebaseCharacterSheet ごとに 1 ずつ増やす
+- displayName は public-safe なキャラクター名に限る
 - profileSummary は public-safe なキャラクター紹介の本文であり、別の disclosure / access-control 機構を意味しない
 - 一時状態や外部 context の current overlay は入れない
 - ruleset をまたぐ変換 provenance は character-conversion で残す
