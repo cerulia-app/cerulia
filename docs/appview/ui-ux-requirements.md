@@ -39,8 +39,11 @@
 ### create / edit / record
 
 - 通常の create は schema-backed を前提にし、scenario 起点の create CTA は recommendedSheetSchemaRef がある場合だけ出す
-- submit 後は `pending` / `accepted` / `rejected` / `rebase-needed` を視覚的に区別する
+- schema 選択は title と短い説明を主にし、sheetSchemaRef、schemaVersion、exact pin を通常利用の UI に出さない
+- submit 後は `pending`、保存成功、保存失敗、schema 更新必須の recovery 状態を視覚的に区別する
 - `pending` は AppView の local state であり、accepted と同じ見え方にしない
+- transport が `rebase-needed` を返しても、UI copy は plain words で「シート定義の更新が必要」のように出し、内部語を前面に出さない
+- 通常の edit 画面に schema 再移行の CTA を主ボタンとして置かない。必要時だけ recovery 導線を出す
 - `/sessions` は owner-only workbench とし、一覧、inline detail、再編集で閉じる
 - session は完走後の記録として扱い、進行中の卓や未完走の状態を管理しない
 

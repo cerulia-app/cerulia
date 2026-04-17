@@ -96,7 +96,7 @@
 ### Owner Rules
 
 - owner actions は public content の前に割り込ませない
-- pending / accepted / rejected / rebase-needed は owner panel で明確に出し分ける
+- pending / accepted / rejected / schema update required は owner panel で明確に出し分ける
 - export や edit は owner が control する補助面として扱う
 
 ## State Variants

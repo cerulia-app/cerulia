@@ -45,6 +45,11 @@ session 履歴と advancement は重要だが、主役は character そのもの
 
 owner にだけ必要な編集、保存状態、再試行導線は残すが、public read の視線を壊さない位置に分離する。
 
+### 5. exact pin は backstage に置く
+
+schema の exact pin や互換性管理は canonical contract として残してよいが、通常利用の主語にしない。
+ユーザーには schema title、ruleset、入力可能な field を前面に出し、pin や migration は必要時だけ recovery として見せる。
+
 ### 5. 画像がなくても成立させる
 
 portrait は強い価値だが、テキストと structured stats だけでも「そのキャラを共有された」と感じられることを正とする。
@@ -112,7 +117,7 @@ session 履歴と advancement は別の意味を持つ。
 
 - base は暗い neutral を使い、彩度の高い色は primary action と状態の強調に限定する
 - section 区切りは 1px divider ではなく tonal shift で作る
-- draft、rebase-needed、rejected は CTA と別の意味として色を分離する
+- draft、schema 更新必須、rejected は CTA と別の意味として色を分離する
 
 ### Typography
 

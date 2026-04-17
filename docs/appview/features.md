@@ -6,6 +6,7 @@
 
 - ルールシステム選択（rulesetNsid）
 - schema 一覧取得と明示選択
+- AppView は schema title と ruleset 文脈で選ばせ、sheetSchemaRef や exact version pin を primary UI に出さない
 
 scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> character-sheet-schema` を canonical chain とする。無い場合、その scenario は browse-only とし、scenario 起点の create CTA は出さない。
 - フィールド入力（schema の fieldDefs に基づく動的フォーム）
@@ -14,7 +15,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - 立ち絵設定（portraitRef）
 - CCFolia clipboard 形式でのエクスポート
 - visibility: draft / public の切り替え
-- submit 後の保存状態表示（`pending` / `accepted` / `rejected` / `rebase-needed`）
+- submit 後の保存状態表示。canonical result は `accepted` / `rejected` / `rebase-needed` に対応するが、UI copy は plain words で出す
 
 ## キャラクター管理
 
@@ -22,7 +23,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - キャラクター詳細表示（stats、立ち絵、プロフィール、公開セッション履歴、conversion provenance）。schema-less の場合は structured stats を公開しない
 - character detail の first view でプロフィール、structured stats、立ち絵を優先表示する
 - キャラクター編集
-- schema rebase（sheetSchemaRef の明示更新）
+- schema 更新時の recovery 導線。advanced owner maintenance として扱い、通常の編集主導線には置かない
 - branch 作成（main から local / campaign 分岐）
 - branch の retire
 
@@ -37,7 +38,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - セッション履歴一覧
 - Sessions 一覧画面。owner-only workbench とし、public session 専用 route は作らない
 - Sessions 一覧内の inline detail / edit
-- submit 後の保存状態表示（`pending` / `accepted` / `rejected` / `rebase-needed`）
+- submit 後の保存状態表示。transport の内部語をそのまま主表示にしない
 
 ## シナリオ
 
@@ -67,7 +68,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - rule-profile と character-sheet-schema は public-only record であり、draft / public toggle の対象にしない
 - `pending` は AppView の local UI state であり、mutation transport の canonical result kind ではない
 - public surface では accepted になるまで新規更新を確定表示しない
-- rejected / rebase-needed は pending と区別して、再試行や rebase の導線を明示する
+- rejected と schema 更新必須の状態は pending と区別して、再試行や recovery の導線を明示する
 
 ## 共有
 

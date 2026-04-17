@@ -104,7 +104,7 @@ Cerulia の設計における主要な判断を記録する。
 
 理由: 個人アプリとして、誤りの修正に「新しい record を積む」手続きは過剰。ただし character-advancement のセッション単位の履歴は保持する。
 
-補足: schema pin の差し替えは通常編集と分け、明示 rebase として扱う。UI と transport では rejected と rebase-needed を区別する。
+補足: schema pin の差し替えは通常編集と分け、明示 rebase として扱う。ただし rebase は AppView の通常編集主導線に置かず、必要時だけ recovery として出す。UI と transport では rejected と rebase-needed を区別するが、UI copy は plain words を優先する。
 
 ## 17. dispute workflow は product scope 外
 

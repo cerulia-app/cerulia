@@ -31,7 +31,7 @@
 - rule-profile と character-sheet-schema に visibility toggle を出さないこと
 - scenario に recommendedSheetSchemaRef が無い場合、scenario 起点の create CTA を出さないこと
 - archived campaign で archive 以外の更新導線を閉じること
-- submit 後の `pending` / `accepted` / `rejected` / `rebase-needed` が区別され、pending を accepted と同じ表示にしないこと
+- submit 後の `pending` と保存結果が区別され、schema 更新必須の状態が internal label ではなく plain words で表示されること
 
 ### shared UX
 
