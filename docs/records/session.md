@@ -29,7 +29,7 @@ PL の個人 repo。
 
 ### scenarioRef と scenarioLabel
 
-scenarioRef は scenario record への参照。scenario record が存在しない場合は scenarioLabel で名前だけを記録する。`scenarioRef` と `scenarioLabel` はちょうど 1 つだけ持つ。
+scenarioRef は scenario record への参照。scenario record が存在しない場合は scenarioLabel で名前だけを記録する。`scenarioRef` と `scenarioLabel` はちょうど 1 つだけ持つ。scenarioLabel は public-safe かつ spoiler-free な公開タイトルに限る。
 
 label-only session は後から updateSession で scenarioRef に置き換えてよい。同じ履歴エントリを保ったまま link を正規化する。
 

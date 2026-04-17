@@ -30,7 +30,7 @@ schema 作者の repo。
 - itemDef（任意: array の場合の要素定義）
 - valueRange（任意: { min?, max? } や enum の選択肢）
 - required（必須かどうか）
-- description（任意: フィールドの説明）
+- description（任意: フィールドの説明。public-safe な説明に限る）
 - extensible（任意: group で追加 field を許可するか）
 - additionalFieldDef（任意: extensible な group に追加される field の型テンプレート）
 
