@@ -6,11 +6,11 @@
 
 ## 現在の最小検証
 
-- `npm run check`
-- `npm run lint`
-- `npm run build`
+- `bun run check`
+- `bun run lint`
+- `bun run build`
 
-現在の workspace には `npm run test` の実行口はあるが、target route / component を検証する test file はまだ揃っていない。placeholder smoke を復帰させるまでは、`npm run test` を current release gate とみなさない。
+現在の workspace には `bun run test` の実行口はあるが、target route / component を検証する test file はまだ揃っていない。placeholder smoke を復帰させるまでは、`bun run test` を current release gate とみなさない。
 
 ## target MVP gates
 
