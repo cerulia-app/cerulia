@@ -31,6 +31,7 @@ scenario の ownerDid。
 
 - scenario は AT Protocol 上の public record であり、第三者クライアントからも全フィールドが読める。ネタバレ秘匿を保証しない
 - ownerDid は登録者であり、シナリオの作者（著者）とは限らない。市販シナリオを誰かが登録することも想定
+- title は public-safe な公開タイトルに限る
 - sourceCitationUri は登録者とは別に、販売ページ、配布ページ、原作告知などの provenance を示す公開 URI に使う
 - sourceCitationUri は軽量 provenance であり、author 名や版情報の完全な構造化台帳ではない
 - summary は spoiler-safe な公開要約として扱う。AppView はこれを初期表示する

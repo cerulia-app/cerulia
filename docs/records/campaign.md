@@ -33,6 +33,7 @@ campaign owner。
 
 - 単発セッションが多数派であり、campaign は長期卓のオプションである
 - campaign はセッションのシリーズであり、参加管理や通信の責務を持たない
+- title は public-safe なシリーズ名に限る
 - rulesetNsid は campaign のデフォルトルールシステムを表す
 - campaign 作成時に house.defaultRuleProfileRefs を初期 sharedRuleProfileRefs にコピーしてよい。以後の正本は campaign.sharedRuleProfileRefs とする
 - sharedRuleProfileRefs は ordered list とし、campaign 独自の rule overlay を持てる。live な effective overlay の唯一の正本は campaign.sharedRuleProfileRefs である

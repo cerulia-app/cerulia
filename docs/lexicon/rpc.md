@@ -7,6 +7,7 @@ XRPC 系は app.cerulia.rpc.* にまとめる。
 - query は GET + Lexicon params、procedure は POST + application/json input / output
 - list query は `limit` と `cursor` を共通で受ける。`limit` の既定値は 50、最大は 100
 - domain-level result は `200 OK + mutationAck` に統一し、malformed request / auth failure / endpoint not found だけを XRPC error にする
+- public record に永続化される free-text input は、title、label、summary、description を含めてすべて public-safe でなければならない
 
 ## 共通 error 名
 

@@ -12,7 +12,7 @@ schema 作者の repo。
 
 - baseRulesetNsid
 - schemaVersion
-- title
+- title（public-safe な表示名）
 - fieldDefs
 - ownerDid
 - createdAt
@@ -24,7 +24,7 @@ schema 作者の repo。
 各 entry は次を持つ。
 
 - fieldId（一意な識別子）
-- label（表示名）
+- label（表示名。public-safe に限る）
 - fieldType（integer, string, boolean, enum, group, array）
 - children（任意: group / array の場合の子フィールド定義）
 - itemDef（任意: array の場合の要素定義）

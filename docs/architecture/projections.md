@@ -79,7 +79,7 @@ PL が自分のキャラクター一覧・詳細を確認する既定 home。
 
 - branch identity（displayName、branchLabel、rulesetNsid）
 - 立ち絵、stats、profileSummary
-- public-safe なセッション履歴（scenarioLabel / scenario summary、playedAt、outcomeSummary、hoLabel、hoSummary、externalArchiveUris のみ）
+- public-safe なセッション履歴（scenarioLabel / scenario summary、playedAt、role、outcomeSummary、hoLabel、hoSummary、externalArchiveUris のみ）
 - public-safe な advancement summary（advancementKind、effectiveAt、紐づく session summary）
 - public-safe な conversion summary（sourceRulesetNsid、targetRulesetNsid、convertedAt）
 
