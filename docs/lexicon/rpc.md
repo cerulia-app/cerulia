@@ -113,11 +113,13 @@ owner-only query。`/sessions` 一覧のために使う。
 
 ### app.cerulia.rpc.getSessionView
 
-- auth: `app.cerulia.authCoreReader`
+- auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
 - params: `sessionRef` required
-- output: `session`
+- output:
+	- owner mode: `session`
+	- public / anonymous mode: `sessionSummary`（public-safe fields only）
 
-owner-only query。`/sessions` 一覧内の inline detail / edit のために使う。
+owner workbench の inline detail / edit と、public direct-link detail の両方に使う。
 
 ### app.cerulia.rpc.getHouseView
 

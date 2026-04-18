@@ -22,7 +22,8 @@ permission-set 定義は auth lexicon にまとめ、app.cerulia.auth* の bundl
 - `getPlayerProfileView`: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで DID 直解決を許す。shared root は character detail のまま保つ
 - `getCampaignView`: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの public reader として同じ endpoint の public lens を使う。draft は一覧に出さず、public mode では draft child を返さない
 - `getHouseView`: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの public reader として同じ endpoint の public lens を使う。draft は一覧に出さず、public mode では draft child を返さない
-- `listSessions`, `getSessionView`: caller 自身の session workbench 用 owner-only query
+- `listSessions`: caller 自身の session workbench 用 owner-only query
+- `getSessionView`: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしの direct ref read を許す
 - `getPlayerProfileView`: caller 自身の profile 編集前確認と public summary の両方に使う
 - `listScenarios`, `getScenarioView`: auth bundle なしで anonymous read を許す
 - `getCharacterBranchView`, `getCampaignView`, `getHouseView`: public / anonymous mode は auth bundle なしで public lens read を許す

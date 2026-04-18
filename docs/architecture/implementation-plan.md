@@ -100,10 +100,11 @@ Cerulia の実装パターンは Authorization Code + PKCE に固定する。
 
 - character create / edit / session record の canonical flow が `appview + api` だけで成立する
 - `projection` が未実装でも direct-link 共有 detail が壊れない
+- Workers entrypoint が placeholder ではなく canonical API handler に配線される
 
 ## フェーズ 3: appview を api に接続する
 
-AppView の owner workbench を `api` に接続し、MVP の優先度に従って先にキャラクター作成を完成させる。
+AppView 接続の hardening と UX 改善を行う。phase 2 の時点で最小 canonical flow は接続済みであることを前提にする。
 
 実装範囲:
 
