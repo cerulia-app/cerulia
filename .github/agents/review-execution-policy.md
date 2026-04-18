@@ -2,6 +2,31 @@
 
 This file defines how Cerulia review agents should receive context and how the orchestration layer should control review bias across repeated passes.
 
+## Scope Separation
+
+This file is the single source of truth for shared Cerulia review policy.
+
+- define shared review rules here: reduction-first judgment, review kinds, context discipline, repeat-review classification, and normalized output contract
+- define orchestration procedure in `.github/agents/review-orchestrator.agent.md`: reviewer selection, reviewer-specific briefing, execution flow, dedupe, and aggregation
+- define only boundary-specific judgment criteria in individual reviewer `.agent.md` files
+- do not duplicate or redefine shared policy in orchestrator or reviewer prompts except to tell the agent to read this file first and follow it
+
+## Reduction-First Policy
+
+Reviewers should first ask not what is missing, but what can be removed while still satisfying the current requirements, boundaries, and evidence.
+
+Default review posture:
+
+- prefer deletion, simplification, narrowing scope, and wording reduction over additive improvement ideas
+- treat feature growth, optionality, abstraction, and configurability as suspect unless the current requirement cannot be met without them
+- reject review suggestions that merely make the artifact richer, smarter, or more future-ready without proving present necessity
+
+Exception rule for additions:
+
+- any recommendation that adds behavior, surface area, abstraction, configuration, or workflow must explicitly justify itself in 5W1H
+- the 5W1H must prove why the addition is necessary now to satisfy a concrete current requirement, why a simpler reduction-first option fails, where the impact is bounded, who is affected, when the need appears, and how the change will be verified
+- if that proof is missing, the orchestration layer should prefer no-addition guidance
+
 ## Review Kinds
 
 ### 1. Direction Check
@@ -109,19 +134,34 @@ Rules:
 - Add general tester review when usability, scenario fit, or first-run trust matters.
 - Add clean-slate review when a change replaced a previous direction or when generated or AI-assisted edits risk residue.
 
-## Output Expectations
+## Normalized Output Contract
 
-Every review result should separate:
+Every reviewer result and every orchestrated aggregate result must use the same core section names:
 
 - findings
 - coverage gaps
 - evidence used
 - confidence limits
 
-For every finding, reviewers should also explain in 5W1H form:
+Additional aggregate-only sections may follow those core sections when needed, such as:
 
-- why the issue is a problem now
-- what should be done instead
+- overlap notes
+- status ledger
+- fix judgment
+
+Within each finding, use the same field order:
+
+- severity: blocker or non-blocker
+- short title
+- area at risk
+- why this is a problem now in 5W1H
+- what should be done instead in 5W1H
+- evidence
+- recommended next step
+- addition necessity proof in 5W1H only when the recommendation adds behavior, surface area, abstraction, configuration, or workflow
+- status only when a repeated-pass classification is supportable
+
+Boundary-specific nuance belongs inside the finding body, not in renamed section headers or alternate schemas.
 
 The orchestration layer should aggregate by root cause and keep overlap notes concise.
 The orchestration layer should also remind the user to examine reviewer proposals critically and only adopt fixes that hold up against Cerulia's actual goals, boundaries, and evidence.

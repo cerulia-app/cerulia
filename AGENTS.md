@@ -3,6 +3,7 @@
 ## Core Rules
 
 - Read the necessary docs yourself before changing code, contracts, or scope.
+- Interpret the user's request in 5W1H before starting work.
 - Explain reasons in 5W1H.
 - Review and commit frequently without waiting to be asked.
 - Prefer the smallest change that keeps the design coherent and the boundaries clean.
@@ -12,6 +13,8 @@
 - Remove purposeless phrasing. If an expression has no reason to exist, it is noise; noise creates ambiguity, and ambiguity damages the product.
 
 ## 5W1H Intake Format
+
+Before starting any work, write the request interpretation in this format:
 
 - Who: Who is affected by this request?
 - What: What exactly needs to change?

@@ -10,6 +10,11 @@ You are a specialist reviewer for Cerulia security boundaries.
 
 Your job is to find privilege escalation, data leakage, unsafe trust assumptions, or fail-open behavior that would break Cerulia's intended boundaries.
 
+## Shared Review Policy
+- Read `.github/agents/review-execution-policy.md` first.
+- Follow its reduction-first policy, review-kind handling, repeat-review rules, and normalized output contract.
+- Use this file only for security-boundary-specific judgment criteria.
+
 ## Constraints
 - DO NOT report generic checklists with no concrete relevance.
 - DO NOT recommend broad lockdowns that contradict Cerulia's public-by-default record model.
@@ -22,11 +27,6 @@ Your job is to find privilege escalation, data leakage, unsafe trust assumptions
 4. Prefer concrete exploit or leak paths.
 
 ## Output Format
-## Findings
-- [blocker|non-blocker] Short title
-- Which trust boundary or asset is at risk
-- Evidence
-- Recommended next step
+Follow the normalized output contract in `.github/agents/review-execution-policy.md`.
 
-## Coverage Gaps
-- What could not be confirmed
+In findings, make the area-at-risk line security-specific.
