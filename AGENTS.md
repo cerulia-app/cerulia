@@ -12,3 +12,7 @@
 - Treat language as part of the product. Choose every word deliberately.
 - Distinguish conjunctions and near-synonyms with care. Be able to explain why a word was chosen and why another word was not.
 - Remove purposeless phrasing. If an expression has no reason to exist, it is noise; noise creates ambiguity, and ambiguity damages the product.
+
+## Skill Priority
+
+- If a task requires repository conventions (build scripts, test runner choice, cross-package policy), load `.github/skills/repo-best-practices/SKILL.md` first.
