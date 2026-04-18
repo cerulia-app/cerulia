@@ -1,6 +1,6 @@
 ---
 name: "Review Orchestrator"
-description: "Use when: Cerulia の設計、records、backend、AppView、文言、UI、テスト、セキュリティを複数視点でレビューしたいとき。実装前の方針確認、実装中のチェック、最終確認、差分再確認の別に応じて最適なレビュアーを選び、必要なコンテキストだけを渡して結果を1つに集約する。"
+description: "Use when: レビューが必要なときに呼ぶ。"
 tools: [read, search, agent]
 agents:
   - "Architecture Review"
