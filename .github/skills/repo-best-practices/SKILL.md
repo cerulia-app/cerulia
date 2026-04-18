@@ -20,6 +20,13 @@ Provide a single source of truth for repository-wide conventions that affect imp
 - Applies to: New test commands, CI test jobs, and local verification commands.
 - Exception: The `appview` package can use its existing test runner and configuration.
 
+### Rule: prefer-bun-over-npm
+
+- Policy: Prefer Bun over npm for package management and script execution.
+- Why: The repository standardizes on Bun to reduce toolchain drift.
+- Applies to: Dependency installation, script execution, updates, and lockfile decisions.
+- Exception: Use npm only when a concrete compatibility requirement is verified.
+
 ## Decision Procedure
 
 1. Identify whether the task touches build tooling, scripts, or tests.
@@ -31,6 +38,7 @@ Provide a single source of truth for repository-wide conventions that affect imp
 
 - Scripts added for build or automation are JavaScript-based.
 - Test commands default to `bun test` unless the target is `appview`.
+- Commands and documentation prefer Bun over npm unless an explicit exception exists.
 - Any exception is explicitly stated in commit or PR rationale.
 
 ## Maintenance
