@@ -118,4 +118,10 @@ Every review result should separate:
 - evidence used
 - confidence limits
 
+For every finding, reviewers should also explain in 5W1H form:
+
+- why the issue is a problem now
+- what should be done instead
+
 The orchestration layer should aggregate by root cause and keep overlap notes concise.
+The orchestration layer should also remind the user to examine reviewer proposals critically and only adopt fixes that hold up against Cerulia's actual goals, boundaries, and evidence.

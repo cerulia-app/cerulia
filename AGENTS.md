@@ -1,10 +1,12 @@
 # Cerulia Workspace Instructions
 
-Keep this file minimal. Durable design detail belongs in docs, and the agent should find the relevant material without a catalog here.
-
 ## Core Rules
 
 - Read the necessary docs yourself before changing code, contracts, or scope.
+- Interpret the user's request in 5W1H before starting work.
+- Explain reasons in 5W1H.
+- Prefer bun over npm.
+- Review and commit frequently without waiting to be asked.
 - Prefer the smallest change that keeps the design coherent and the boundaries clean.
 - Enforce KISS, DRY, and YAGNI. Do not add abstraction, indirection, configuration, helpers, options, or future-facing structure without a present and concrete need.
 - Treat language as part of the product. Choose every word deliberately.
