@@ -1,6 +1,6 @@
 ---
 name: "Review Orchestrator"
-description: "Use when: レビューが必要なときに呼ぶ。"
+description: "レビュー依頼があったとき、実装前の方針確認、実装中のチェック、最終確認、差分再確認など、あらゆるレビューシナリオのエントリポイント"
 tools: [read, search, agent]
 agents:
   - "Architecture Review"
