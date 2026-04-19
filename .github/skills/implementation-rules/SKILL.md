@@ -1,9 +1,8 @@
 ---
-name: repo-best-practices
-description: 'Use when: working in this repository and needing shared implementation conventions, build/testing defaults, or exception rules. Load this first before domain-specific skills when repository policy may affect decisions.'
-user-invocable: true
+name: implementation-rules
+description: "Always use this before starting implementation work. This skill provides rules for implementation choices that affect the product's consistency, maintainability, and alignment with repository conventions."
+user-invocable: false
 ---
-
 Provide a single source of truth for repository-wide conventions that affect implementation choices and tool selection.
 
 ### Rule: build-scripts-must-be-javascript
