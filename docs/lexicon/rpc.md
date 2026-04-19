@@ -78,7 +78,7 @@ draft campaign も direct ref があれば解決するが、list query には含
 
 - auth: anonymous read を許す
 - params: `rulesetNsid` optional, `limit`, `cursor`
-- output: `items`（scenario summary row）
+- output: `items`（scenario summary row）, `cursor?`
 
 ### app.cerulia.scenario.getView
 
@@ -92,7 +92,7 @@ recommendedSheetSchemaRef が無い scenario は browse-only とし、create flo
 
 - auth: anonymous read を許す
 - params: `rulesetNsid` optional, `limit`, `cursor`
-- output: `items`（character-sheet-schema summary row）
+- output: `items`（character-sheet-schema summary row）, `cursor?`
 
 generic create flow は rulesetNsid ごとに schema 一覧を取得し、caller が明示選択する。summary row の短い説明は追加の free-text field を持たず、schema metadata から導出してよい。
 
@@ -106,7 +106,7 @@ generic create flow は rulesetNsid ごとに schema 一覧を取得し、caller
 
 - auth: `app.cerulia.authCoreReader`
 - params: `limit`, `cursor`
-- output: `items`（caller 自身の session summary row）
+- output: `items`（caller 自身の session summary row）, `cursor?`
 
 owner-only query。`/sessions` 一覧のために使う。
 
@@ -118,7 +118,7 @@ owner-only query。`/sessions` 一覧のために使う。
 	- owner mode: `session`
 	- public / anonymous mode: `sessionSummary`（public-safe fields only）
 
-owner workbench の inline detail / edit と、public direct-link detail の両方に使う。
+owner workbench の inline detail / edit と、public surface へ埋め込む summary 解決に使う。standalone な public session root は持たない。
 
 ### app.cerulia.house.getView
 
@@ -134,7 +134,7 @@ draft house も direct ref があれば解決するが、list query には含め
 
 - auth: `app.cerulia.authCoreReader`
 - params: `scopeRef` optional, `baseRulesetNsid` optional, `limit`, `cursor`
-- output: `items`（rule-profile summary row）
+- output: `items`（rule-profile summary row）, `cursor?`
 
 owner 向けの rule-profile 読取一覧。public surface は getCampaignView / getHouseView に畳み込まれた rule overlay summary を使い、raw profile read に依存しない。
 
