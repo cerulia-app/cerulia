@@ -6,7 +6,7 @@ XRPC 系は domain-scoped NSID families (app.cerulia.character.*, app.cerulia.se
 
 - query は GET + Lexicon params、procedure は POST + application/json input / output
 - list query は `limit` と `cursor` を共通で受ける。`limit` の既定値は 50、最大は 100
-- domain-level result は `200 OK + mutationAck` に統一し、malformed request / auth failure / endpoint not found だけを XRPC error にする
+- domain-level result は `200 OK + mutationAck` に統一し、malformed request / auth failure / endpoint not found / service-side internal failure だけを XRPC error にする
 - public-safe text と credential-free URI のポリシー正本は architecture / records 文書に置く。rpc.md では transport 上の要求だけを記述する
 - owner mode と public / anonymous mode の両方を持つ query は、同じ record を返しても同じ payload shape を返さない。public mode は summary view に閉じ、owner-only field、raw payload、internal linkage を含めない
 
