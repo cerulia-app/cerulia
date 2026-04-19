@@ -44,6 +44,30 @@ mutation result の返却条件は次で固定する。
 
 AppView preflight はこの contract を上書きしない。最終判定は常に `api` authoritative validation と read policy が担う。
 
+## API authoritative semantic validation の固定
+
+`api` は Lexicon の型検証だけで accept/reject を決めない。cross-record reference、schema pin、caller-owned invariant、public URI policy は共通の semantic validation layer で判定する。
+
+この layer の責務は次に固定する。
+
+- `protocol`: NSID、AT URI、blob、datetime などの構文検証だけを担う
+- `appview`: UX のための advisory preflight だけを担う
+- `api`: record 実体の解決、owner 判定、active schema 解決、public policy 判定を行い、mutationAck を確定する
+
+`api` が authoritative に判定する invariant は少なくとも次を含む。
+
+| invariant family | what | where |
+| --- | --- | --- |
+| schema link consistency | `sheetSchemaRef.baseRulesetNsid == rulesetNsid`、`targetSheetSchemaRef.baseRulesetNsid == target sheet.rulesetNsid`、`recommendedSheetSchemaRef.baseRulesetNsid == scenario.rulesetNsid` | createCharacterSheet、rebaseCharacterSheet、createScenario、updateScenario |
+| schema payload conformance | `stats` と `overridePayload` が active schema の `fieldDefs` / `fieldId` / group key に沿うこと。extensible で許可された追加 field だけを受け入れること | createCharacterSheet、updateCharacterSheet、rebaseCharacterSheet、createCharacterBranch、updateCharacterBranch |
+| caller-owned blob | `portraitBlob`、`avatarOverrideBlob`、`bannerOverrideBlob` が caller repo で upload された blob metadata であること | createCharacterSheet、updateCharacterSheet、updatePlayerProfile |
+| caller-owned scope reference | `scopeRef`、`houseRef`、`campaignRef`、`baseSheetRef`、`characterBranchRef` などが caller が control する record を指すこと | createRuleProfile、createSession、updateSession、createCharacterBranch |
+| ruleset overlay consistency | `sharedRuleProfileRefs[*].baseRulesetNsid == campaign.rulesetNsid`、default rule profile seed 後の live source が campaign 側に閉じること | createCampaign、updateCampaign |
+| public URI policy | public surface に出る URI が credential-free であること | session、scenario、house、rule-profile、player-profile |
+| terminal mutation policy | retired / archived state に対する更新制約を守ること | updateCharacterBranch、retireCharacterBranch、updateCampaign |
+
+この表にある条件は個別 procedure の補足説明ではなく、`api` phase で最初に実装する共通判定面として扱う。新しい mutation を追加するときは、この family のどれに属するかを先に決め、Lexicon の型だけで吸収しようとしない。
+
 public mode の redaction 粒度は record ごとの matrix で固定する。
 
 - character detail: public-safe summary（profile、structured stats、portrait 参照、公開 session summary）だけ返す
@@ -90,6 +114,7 @@ Cerulia の実装パターンは Authorization Code + PKCE に固定する。
 - OAuth
 - repo write/read
 - authoritative validation
+- semantic validation layer（schema link、fieldDefs 準拠、caller-owned ref/blob、public URI policy、terminal-state policy）
 - owner workbench 向け read
 - public / anonymous の direct-ref detail read
 - SQLite schema と migration

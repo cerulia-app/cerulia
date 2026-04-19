@@ -32,6 +32,14 @@
 ## api の検証
 
 - authoritative validation の unit test
+- semantic validation matrix test
+	- createCharacterSheet で `sheetSchemaRef.baseRulesetNsid == rulesetNsid` を満たさない入力を reject すること
+	- createCharacterSheet / updateCharacterSheet / rebaseCharacterSheet で `stats` が active schema の `fieldDefs` に反する場合に reject すること
+	- createCharacterBranch / updateCharacterBranch で `overridePayload` が active schema の `fieldId` / group key に反する場合に reject すること
+	- createCharacterSheet / updatePlayerProfile で caller-owned でない blob を reject すること
+	- createScenario / updateScenario で `recommendedSheetSchemaRef.baseRulesetNsid != scenario.rulesetNsid` を reject すること
+	- createCampaign / updateCampaign で `sharedRuleProfileRefs[*].baseRulesetNsid != campaign.rulesetNsid` を reject すること
+	- createRuleProfile で caller-owned でない scopeRef を reject すること
 - owner-only write authority の test
 - createCharacterSheet が sheet と default `main` branch をペア生成する test
 - permission bundle 解決と visibility 判定の test
