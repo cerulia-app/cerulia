@@ -116,7 +116,7 @@ owner-only query。`/sessions` 一覧のために使う。
 - params: `sessionRef` required
 - output:
 	- owner mode: `session`
-	- public / anonymous mode: `sessionSummary`（public-safe fields only）
+	- public / anonymous mode: `sessionSummary`（public-safe fields only, `visibility` を含む）
 
 owner workbench の inline detail / edit と、public surface へ埋め込む summary 解決に使う。standalone な public session root は持たない。
 
