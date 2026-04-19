@@ -1,9 +1,12 @@
 # Docs
 
-このディレクトリには、Cerulia の current な方針文書と archive を置きます。
+このディレクトリには、Cerulia の current な設計文書と archive を置きます。
 
-- backend の現行方針は `docs/architecture/backend-repositories.md` を正本にしてください。
-- AT Protocol 境界レビュー用の layer と principle は `docs/architecture/atproto-boundary-layers.md` を正本にしてください。
-- `docs/architecture/layers.md` は Cerulia product-core の layer であり、AT Protocol boundary layer とは別です。
-- 実装順序は `docs/architecture/implementation-plan.md`、検証方針は `docs/architecture/test-plan.md`、ホスティング方針は `docs/architecture/hosting-workers-sqlite.md` を参照してください。
-- archive 配下は current な設計判断ではなく、参照が必要なときだけ明示的に読みます。
+- `architecture`: 現行の設計原則、境界、判断、構造。
+- `appview`: AppView の体験設計、画面設計、実装方針。
+- `records`: record の意味と product-core の責務。
+- `lexicon`: Lexicon と XRPC の契約。
+- `implemention`: 実装順序、検証方針、ホスティング方針。
+- `archive`: 現行ではない文書。必要なときだけ明示的に参照する。
+
+マップは常にシンプルに保ち、ファイル名だけで役割を判別できる場合は README から個別ファイルへの直接言及を増やさない。
