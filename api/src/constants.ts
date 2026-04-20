@@ -1,4 +1,6 @@
 export const XRPC_PREFIX = "/xrpc";
+export const SESSION_COOKIE_NAME = "cerulia_session";
+export const OAUTH_SCOPE = "atproto transition:generic";
 
 export const AUTH_SCOPES = {
 	reader: "app.cerulia.authCoreReader",

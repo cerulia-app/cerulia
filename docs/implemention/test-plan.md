@@ -4,7 +4,7 @@
 
 ## 状態
 
-この workspace skeleton の `api`、`projection`、`protocol` package には、まだ共通ゲート用の script が定義されていない。以下は bootstrap 後に各 repo が満たすべき required gate であり、現時点では aspirational list ではなく target contract として扱う。
+`api` と `protocol` package には check / test 用 script が定義されている。`projection` は minimal package のままであり、この計画は bootstrap 後の target contract と current gate の両方を兼ねる。
 
 ## 共通ゲート
 
@@ -52,6 +52,7 @@
 - archived campaign が archive 以外の mutable update を拒否する test
 - same-owner conversion の許可と cross-owner conversion の拒否 test
 - rule-profile の caller-owned scope invariant test
+- OAuth BFF route と browser session cookie の integration test
 - `retrain` / `respec` / `correction` で previousValues 必須、`milestone` / `xp-spend` で optional の test
 - public URI field が credential-free 条件を満たさない場合に reject する test
 - rules provenance record が public-only のままで visibility lifecycle に乗らない test

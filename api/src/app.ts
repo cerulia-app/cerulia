@@ -26,14 +26,70 @@ import {
 	createAnonymousAuthContext,
 	type AuthContext,
 	type AuthResolver,
+	readCookie,
 } from "./auth.js";
 import { toErrorResponse } from "./errors.js";
 import { ApiError } from "./errors.js";
 import { requireReaderDid, requireWriterDid } from "./auth.js";
-import { XRPC_PREFIX } from "./constants.js";
+import { SESSION_COOKIE_NAME, XRPC_PREFIX } from "./constants.js";
 import { createServices } from "./services/index.js";
 import { MemoryRecordStore } from "./store/memory.js";
 import type { RecordStore } from "./store/types.js";
+
+export interface ApiOAuthFeature {
+	clientMetadata: Record<string, unknown>;
+	jwks: Record<string, unknown>;
+	beginLogin(identifier: string, returnTo: string): Promise<string>;
+	finishLogin(params: URLSearchParams): Promise<{
+		sessionId: string;
+		did: string;
+		grantedScope: string;
+		returnTo: string | null;
+	}>;
+	signOut(sessionId: string): Promise<void>;
+	getBrowserSession(sessionId: string): Promise<{
+		did: string;
+		grantedScope: string;
+	} | null>;
+}
+
+function sanitizeReturnTo(returnTo: string | null | undefined): string {
+	if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//")) {
+		return "/";
+	}
+
+	return returnTo;
+}
+
+function serializeSessionCookie(requestUrl: string, sessionId: string): string {
+	const url = new URL(requestUrl);
+	const secure = url.protocol === "https:";
+	return [
+		`${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
+		"Path=/",
+		"HttpOnly",
+		"SameSite=Lax",
+		secure ? "Secure" : undefined,
+	]
+		.filter((fragment): fragment is string => Boolean(fragment))
+		.join("; ");
+}
+
+function clearSessionCookie(requestUrl: string): string {
+	const url = new URL(requestUrl);
+	const secure = url.protocol === "https:";
+	return [
+		`${SESSION_COOKIE_NAME}=`,
+		"Path=/",
+		"HttpOnly",
+		"SameSite=Lax",
+		"Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+		"Max-Age=0",
+		secure ? "Secure" : undefined,
+	]
+		.filter((fragment): fragment is string => Boolean(fragment))
+		.join("; ");
+}
 
 async function readJsonBody<T>(
 	request: Request,
@@ -65,6 +121,7 @@ export interface ApiAppBindings {
 export interface ApiAppOptions {
 	store?: RecordStore;
 	authResolver?: AuthResolver;
+	oauthFeature?: ApiOAuthFeature;
 }
 
 export function createApiApp(options: ApiAppOptions = {}) {
@@ -72,6 +129,7 @@ export function createApiApp(options: ApiAppOptions = {}) {
 	const store = options.store ?? new MemoryRecordStore();
 	const authResolver =
 		options.authResolver ?? (() => createAnonymousAuthContext());
+	const oauthFeature = options.oauthFeature;
 	const services = createServices(store);
 
 	app.onError((error) => {
@@ -79,7 +137,7 @@ export function createApiApp(options: ApiAppOptions = {}) {
 	});
 
 	app.use("*", async (context, next) => {
-		context.set("auth", authResolver(context.req.raw));
+		context.set("auth", await authResolver(context.req.raw));
 		context.set("store", store);
 		await next();
 	});
@@ -87,6 +145,61 @@ export function createApiApp(options: ApiAppOptions = {}) {
 	app.get("/_health", (context) => {
 		return context.json({ status: "ok" });
 	});
+
+	if (oauthFeature) {
+		app.get("/client-metadata.json", (context) => {
+			return context.json(oauthFeature.clientMetadata);
+		});
+
+		app.get("/jwks.json", (context) => {
+			return context.json(oauthFeature.jwks);
+		});
+
+		app.get("/oauth/login", async (context) => {
+			const identifier = context.req.query("identifier");
+			if (!identifier) {
+				throw new ApiError(
+					"InvalidRequest",
+					"identifier is required",
+					400,
+				);
+			}
+
+			const redirectUrl = await oauthFeature.beginLogin(
+				identifier,
+				sanitizeReturnTo(context.req.query("returnTo")),
+			);
+			return context.redirect(redirectUrl, 302);
+		});
+
+		app.get("/oauth/callback", async (context) => {
+			const result = await oauthFeature.finishLogin(
+				new URL(context.req.url).searchParams,
+			);
+			context.header(
+				"Set-Cookie",
+				serializeSessionCookie(context.req.url, result.sessionId),
+			);
+			return context.redirect(sanitizeReturnTo(result.returnTo), 302);
+		});
+
+		app.get("/oauth/session", async (context) => {
+			const auth = context.get("auth");
+			return context.json({
+				did: auth.callerDid ?? null,
+				scopes: Array.from(auth.scopes),
+			});
+		});
+
+		app.post("/oauth/logout", async (context) => {
+			const sessionId = readCookie(context.req.raw, SESSION_COOKIE_NAME);
+			if (sessionId) {
+				await oauthFeature.signOut(sessionId);
+			}
+			context.header("Set-Cookie", clearSessionCookie(context.req.url));
+			return context.json({ ok: true });
+		});
+	}
 
 	app.post(
 		`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,

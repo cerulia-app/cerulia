@@ -1,9 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { createApiApp } from "./app.js";
-import { resolveHeaderAuthContext } from "./auth.js";
+import {
+	createSessionAuthResolver,
+	resolveHeaderAuthContext,
+} from "./auth.js";
 import {
 	AUTH_SCOPES,
 	COLLECTIONS,
+	SESSION_COOKIE_NAME,
 	SELF_RKEY,
 	XRPC_PREFIX,
 } from "./constants.js";
@@ -131,6 +135,146 @@ describe("createApiApp", () => {
 		expect(response.status).toBe(400);
 		expect(await response.json()).toMatchObject({
 			error: "InvalidRequest",
+		});
+	});
+
+	test("maps an atproto-only browser session to reader access", async () => {
+		const authResolver = createSessionAuthResolver({
+			async getBrowserSession(sessionId) {
+				if (sessionId !== "browser-reader") {
+					return null;
+				}
+
+				return {
+					did: DID,
+					grantedScope: "atproto",
+				};
+			},
+		});
+
+		const auth = await authResolver(
+			new Request("https://cerulia.example.com/oauth/session", {
+				headers: {
+					cookie: `${SESSION_COOKIE_NAME}=browser-reader`,
+				},
+			}),
+		);
+
+		expect(auth.callerDid).toBe(DID);
+		expect(auth.scopes.has(AUTH_SCOPES.reader)).toBe(true);
+		expect(auth.scopes.has(AUTH_SCOPES.writer)).toBe(false);
+	});
+
+	test("supports oauth routes and cookie-backed session auth", async () => {
+		const store = new MemoryRecordStore();
+		const browserSessions = new Map<
+			string,
+			{
+				did: string;
+				grantedScope: string;
+			}
+		>();
+		const oauthFeature = {
+			clientMetadata: {
+				client_id: "https://cerulia.example.com/client-metadata.json",
+			},
+			jwks: {
+				keys: [],
+			},
+			async beginLogin(identifier: string, returnTo: string) {
+				return `https://auth.example.com/authorize?identifier=${encodeURIComponent(identifier)}&returnTo=${encodeURIComponent(returnTo)}`;
+			},
+			async finishLogin() {
+				browserSessions.set("browser-writer", {
+					did: DID,
+					grantedScope: "atproto transition:generic",
+				});
+				return {
+					sessionId: "browser-writer",
+					did: DID,
+					grantedScope: "atproto transition:generic",
+					returnTo: "/workbench",
+				};
+			},
+			async signOut(sessionId: string) {
+				browserSessions.delete(sessionId);
+			},
+			async getBrowserSession(sessionId: string) {
+				return browserSessions.get(sessionId) ?? null;
+			},
+		};
+		const app = createApiApp({
+			store,
+			authResolver: createSessionAuthResolver(oauthFeature),
+			oauthFeature,
+		});
+
+		const loginResponse = await app.request(
+			"/oauth/login?identifier=alice.test&returnTo=/workbench",
+		);
+		expect(loginResponse.status).toBe(302);
+		expect(loginResponse.headers.get("location")).toContain(
+			"https://auth.example.com/authorize",
+		);
+
+		const callbackResponse = await app.request("/oauth/callback?code=test");
+		expect(callbackResponse.status).toBe(302);
+		expect(callbackResponse.headers.get("location")).toBe("/workbench");
+
+		const setCookie = callbackResponse.headers.get("set-cookie");
+		expect(setCookie).toBeString();
+		const cookie = setCookie?.split(";")[0] ?? "";
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Cookie Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			{
+				cookie,
+				"content-type": "application/json",
+			},
+		);
+		expect(schemaResponse.status).toBe(200);
+		expectAccepted(await schemaResponse.json());
+
+		const sessionResponse = await getJson(app, "/oauth/session", {
+			cookie,
+		});
+		expect(sessionResponse.status).toBe(200);
+		expect(await sessionResponse.json()).toEqual({
+			did: DID,
+			scopes: [AUTH_SCOPES.reader, AUTH_SCOPES.writer],
+		});
+
+		const logoutResponse = await app.request("/oauth/logout", {
+			method: "POST",
+			headers: {
+				cookie,
+			},
+		});
+		expect(logoutResponse.status).toBe(200);
+		expect(logoutResponse.headers.get("set-cookie")).toContain(
+			`${SESSION_COOKIE_NAME}=`,
+		);
+
+		const signedOutSessionResponse = await getJson(app, "/oauth/session", {
+			cookie,
+		});
+		expect(await signedOutSessionResponse.json()).toEqual({
+			did: null,
+			scopes: [],
 		});
 	});
 

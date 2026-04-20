@@ -5,7 +5,7 @@ function asBindings(params: unknown[]): SQLQueryBindings[] {
 	return params as SQLQueryBindings[];
 }
 
-class BunSqlDriver implements SqlDriver {
+export class BunSqlDriver implements SqlDriver {
 	private readonly db: Database;
 
 	constructor(path: string) {
@@ -26,6 +26,10 @@ class BunSqlDriver implements SqlDriver {
 	}
 }
 
+export function createBunSqliteDriver(path: string): BunSqlDriver {
+	return new BunSqlDriver(path);
+}
+
 export function createBunSqliteStore(path: string): SqlRecordStore {
-	return new SqlRecordStore(new BunSqlDriver(path));
+	return new SqlRecordStore(createBunSqliteDriver(path));
 }
