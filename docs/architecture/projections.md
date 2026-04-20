@@ -158,7 +158,7 @@ draft house を参照する campaign でも、public mode は house identity blo
 
 `getCampaignView` は owner mode では authenticated reader、public / anonymous mode では auth bundle なしの public lens で解決する。
 
-public mode の output は `campaignSummary`、`sessionSummaries`、`ruleOverlaySummary` に固定する。raw rule-profile payload や owner-only linkage は返さない。
+public mode の output は `campaignSummary`、`sessionSummaries`、`ruleOverlaySummary` に固定する。raw rule-profile payload や owner-only linkage は返さない。embedded `sessionSummaries` は軽量 summary に留め、`externalArchiveUris` は持ち込まない。
 
 ## Scenario Catalog
 
@@ -203,4 +203,4 @@ public session は embedded-only とし、standalone public session detail route
 
 `getHouseView` は owner mode では authenticated reader、public / anonymous mode では auth bundle なしの public lens で解決する。
 
-public mode の output は `houseSummary`、`campaignSummaries`、`sessionSummaries` に固定する。draft house identity を public campaign 埋め込みから返さない。
+public mode の output は `houseSummary`、`campaignSummaries`、`sessionSummaries` に固定する。draft house identity を public campaign 埋め込みから返さない。embedded `sessionSummaries` は軽量 summary に留め、`externalArchiveUris` は持ち込まない。

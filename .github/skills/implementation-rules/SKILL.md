@@ -26,6 +26,14 @@ Provide a single source of truth for repository-wide conventions that affect imp
 - Applies to: Dependency installation, script execution, updates, and lockfile decisions.
 - Exception: Use npm only when a concrete compatibility requirement is verified.
 
+### Rule: cross-repo-dependencies-must-use-package-boundaries
+
+- Policy: When one repository in this workspace consumes another repository, do so only through a declared package dependency and package import boundary. Do not commit relative imports into sibling repository source trees.
+- Why: The backend topology depends on api, protocol, and projection staying individually runnable, versionable, and replaceable. Source-level cross-repo imports make the parent workspace layout part of runtime behavior and break that boundary.
+- Applies to: api/projection consumption of protocol and any future sibling-repository dependency.
+- Prefer: Package imports such as `@cerulia/protocol`, with versioned dependency management handled in package metadata.
+- Avoid: `../../protocol/src/...` and similar committed source-level reach-through.
+
 ## Decision Procedure
 
 1. Identify whether the task touches build tooling, scripts, or tests.
@@ -38,6 +46,7 @@ Provide a single source of truth for repository-wide conventions that affect imp
 - Scripts added for build or automation are JavaScript-based.
 - Test commands default to `bun test` unless the target is `appview`.
 - Commands and documentation prefer Bun over npm unless an explicit exception exists.
+- Cross-repo usage goes through package imports, not sibling source paths.
 - Any exception is explicitly stated in commit or PR rationale.
 
 ## Maintenance

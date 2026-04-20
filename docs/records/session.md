@@ -55,4 +55,5 @@ session record の owner（PL 本人）。
 - hoLabel と hoSummary はネタバレを含まない公開情報だけを扱う。secret handout や disclosure payload は product-core に入れない
 - outcomeSummary は public-safe な結果要約。キャラクターのロスト（死亡等）もここで記録してよいが、シナリオの秘匿情報や spoiler detail は入れない
 - externalArchiveUris は YouTube、ブログ、配信アーカイブ等の外部記録へのリンクに使う。credential、署名 query、期限付き token を含む URL は保存しない
+- externalArchiveUris は session record 自体の public-safe metadata であり、session detail や character shared detail では返してよい。一方で campaign / house の embedded session summary では必須にしない
 - note は public-safe な補足だけに使う。private scratch や非公開メモは product-core に入れない

@@ -73,7 +73,7 @@ fallback 由来の field も public-safe 条件を満たすものだけを返す
 	- public / anonymous mode: `campaignSummary`, `sessionSummaries`, `ruleOverlaySummary`
 
 draft campaign も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child session を返さず、owner-only linkage や raw rule-profile payload を返さない。
-`sessionSummaries` の public-safe field には `externalArchiveUris` を含めてよい。
+`sessionSummaries` は軽量な embedded summary に留め、`externalArchiveUris` は含めない。
 
 ### app.cerulia.scenario.list
 
@@ -122,6 +122,7 @@ owner-only query。`/sessions` 一覧のために使う。
 	- public / anonymous mode: `sessionSummary`（public-safe fields only, `visibility` を含む）
 
 owner workbench の inline detail / edit と、public surface へ埋め込む summary 解決に使う。standalone な public session root は持たない。
+`sessionSummary` には `externalArchiveUris` を含めてよい。
 
 ### app.cerulia.house.getView
 
@@ -132,7 +133,7 @@ owner workbench の inline detail / edit と、public surface へ埋め込む su
 	- public / anonymous mode: `houseSummary`, `campaignSummaries`, `sessionSummaries`
 
 draft house も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child campaign / session を返さず、draft house を参照する public campaign からは house identity を省略してよい。
-`sessionSummaries` の public-safe field には `externalArchiveUris` を含めてよい。
+`sessionSummaries` は軽量な embedded summary に留め、`externalArchiveUris` は含めない。
 
 ### app.cerulia.rule.listProfiles
 
