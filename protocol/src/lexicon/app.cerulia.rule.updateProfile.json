@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.rule.updateProfile",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update rule profile.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["ruleProfileRef"],
+          "properties": {
+            "ruleProfileRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "profileTitle": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "rulesPatchUri": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

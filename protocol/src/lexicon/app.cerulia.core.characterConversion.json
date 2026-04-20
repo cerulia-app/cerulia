@@ -1,0 +1,70 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.core.characterConversion",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "properties": {
+          "sourceSheetRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "sourceSheetVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sourceBranchRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "sourceRulesetNsid": {
+            "type": "string",
+            "format": "nsid"
+          },
+          "targetSheetRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "targetSheetVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "targetBranchRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "targetRulesetNsid": {
+            "type": "string",
+            "format": "nsid"
+          },
+          "conversionContractRef": {
+            "type": "string",
+            "format": "uri"
+          },
+          "convertedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 3000
+          }
+        },
+        "required": [
+          "sourceSheetRef",
+          "sourceSheetVersion",
+          "sourceBranchRef",
+          "sourceRulesetNsid",
+          "targetSheetRef",
+          "targetSheetVersion",
+          "targetBranchRef",
+          "targetRulesetNsid",
+          "convertedAt"
+        ]
+      }
+    }
+  }
+}

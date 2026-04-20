@@ -1,0 +1,70 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.recordConversion",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Record character conversion.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "sourceSheetRef",
+            "sourceBranchRef",
+            "sourceRulesetNsid",
+            "targetSheetRef",
+            "targetBranchRef",
+            "targetRulesetNsid",
+            "convertedAt"
+          ],
+          "properties": {
+            "sourceSheetRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "sourceBranchRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "sourceRulesetNsid": {
+              "type": "string",
+              "format": "nsid"
+            },
+            "targetSheetRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "targetBranchRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "targetRulesetNsid": {
+              "type": "string",
+              "format": "nsid"
+            },
+            "convertedAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "conversionContractRef": {
+              "type": "string",
+              "format": "uri"
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 3000
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

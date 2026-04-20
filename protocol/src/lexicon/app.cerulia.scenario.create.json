@@ -1,0 +1,46 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.scenario.create",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create scenario.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["title"],
+          "properties": {
+            "title": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "rulesetNsid": {
+              "type": "string",
+              "format": "nsid"
+            },
+            "recommendedSheetSchemaRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "sourceCitationUri": {
+              "type": "string",
+              "format": "uri"
+            },
+            "summary": {
+              "type": "string",
+              "maxLength": 3000
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

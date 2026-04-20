@@ -1,0 +1,60 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.core.ruleProfile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "properties": {
+          "baseRulesetNsid": {
+            "type": "string",
+            "format": "nsid"
+          },
+          "profileTitle": {
+            "type": "string",
+            "maxLength": 640
+          },
+          "scopeKind": {
+            "type": "string",
+            "knownValues": [
+              "house-shared",
+              "campaign-shared"
+            ]
+          },
+          "scopeRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "rulesPatchUri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "ownerDid": {
+            "type": "string",
+            "format": "did"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        },
+        "required": [
+          "baseRulesetNsid",
+          "profileTitle",
+          "scopeKind",
+          "scopeRef",
+          "rulesPatchUri",
+          "ownerDid",
+          "createdAt",
+          "updatedAt"
+        ]
+      }
+    }
+  }
+}

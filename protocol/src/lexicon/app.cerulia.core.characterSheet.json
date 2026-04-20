@@ -1,0 +1,65 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.core.characterSheet",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Character original. The portable base with settings, stats, and portrait for a character owned by a player.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["ownerDid", "rulesetNsid", "displayName", "version", "createdAt", "updatedAt"],
+        "properties": {
+          "ownerDid": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the player who owns this character."
+          },
+          "sheetSchemaRef": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Reference to the character-sheet-schema this sheet conforms to. Required for active records; schema-less is legacy/import/recovery only."
+          },
+          "rulesetNsid": {
+            "type": "string",
+            "format": "nsid",
+            "description": "Root NSID of the ruleset this character belongs to."
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 640,
+            "description": "Public-safe character name."
+          },
+          "portraitBlob": {
+            "type": "blob",
+            "description": "Portrait image blob uploaded to the owner's repo."
+          },
+          "profileSummary": {
+            "type": "string",
+            "maxLength": 3000,
+            "description": "Public-safe character introduction text."
+          },
+          "stats": {
+            "type": "unknown",
+            "description": "Structured stats payload conforming to fieldDefs when sheetSchemaRef is present; free-form JSON for legacy/import/recovery otherwise."
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Monotonically increasing version counter. Starts at 1 on create."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "UTC datetime when the record was created."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "UTC datetime when the record was last updated."
+          }
+        }
+      }
+    }
+  }
+}

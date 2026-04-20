@@ -1,0 +1,73 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.session.list",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "List sessions.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["items"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#sessionListItem"
+              }
+            },
+            "cursor": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "sessionListItem": {
+      "type": "object",
+      "required": ["sessionRef", "role", "playedAt", "visibility"],
+      "properties": {
+        "sessionRef": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "role": {
+          "type": "string",
+          "knownValues": ["pl", "gm"]
+        },
+        "playedAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "scenarioLabel": {
+          "type": "string",
+          "maxLength": 640
+        },
+        "characterBranchRef": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "visibility": {
+          "type": "string",
+          "knownValues": ["draft", "public"]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.house.update",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update house.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["houseRef"],
+          "properties": {
+            "houseRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "canonSummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "defaultRuleProfileRefs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "policySummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "externalCommunityUri": {
+              "type": "string",
+              "format": "uri"
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

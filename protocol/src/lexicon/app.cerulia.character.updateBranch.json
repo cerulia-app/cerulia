@@ -1,0 +1,46 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.updateBranch",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update character branch.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["characterBranchRef", "expectedRevision"],
+          "properties": {
+            "characterBranchRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "expectedRevision": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Revision the client based the edit on. Used to detect write conflicts and return rebase-needed."
+            },
+            "branchLabel": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "overridePayload": {
+              "type": "unknown"
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

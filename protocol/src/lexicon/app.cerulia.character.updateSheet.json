@@ -1,0 +1,49 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.updateSheet",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update character sheet.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["characterSheetRef", "expectedVersion"],
+          "properties": {
+            "characterSheetRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "expectedVersion": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Version the client based the edit on. Used to detect write conflicts and return rebase-needed."
+            },
+            "displayName": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "portraitBlob": {
+              "type": "blob"
+            },
+            "profileSummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "stats": {
+              "type": "unknown"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

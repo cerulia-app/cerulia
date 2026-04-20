@@ -1,0 +1,77 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.rule.listProfiles",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "List rule profiles.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "scopeRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "baseRulesetNsid": {
+            "type": "string",
+            "format": "nsid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["items"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#ruleProfileListItem"
+              }
+            },
+            "cursor": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ruleProfileListItem": {
+      "type": "object",
+      "required": ["ruleProfileRef", "baseRulesetNsid", "profileTitle", "scopeKind", "scopeRef"],
+      "properties": {
+        "ruleProfileRef": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "baseRulesetNsid": {
+          "type": "string",
+          "format": "nsid"
+        },
+        "profileTitle": {
+          "type": "string",
+          "maxLength": 640
+        },
+        "scopeKind": {
+          "type": "string",
+          "knownValues": ["house-shared", "campaign-shared"]
+        },
+        "scopeRef": {
+          "type": "string",
+          "format": "at-uri"
+        }
+      }
+    }
+  }
+}

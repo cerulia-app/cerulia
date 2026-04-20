@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.createBranch",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create character branch.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["baseSheetRef", "branchKind", "branchLabel"],
+          "properties": {
+            "baseSheetRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "branchKind": {
+              "type": "string",
+              "knownValues": ["campaign-fork", "local-override"]
+            },
+            "branchLabel": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "overridePayload": {
+              "type": "unknown"
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

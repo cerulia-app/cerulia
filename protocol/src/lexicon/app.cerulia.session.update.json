@@ -1,0 +1,81 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.session.update",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["sessionRef"],
+          "properties": {
+            "sessionRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "scenarioRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "scenarioLabel": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "characterBranchRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "role": {
+              "type": "string",
+              "knownValues": ["pl", "gm"]
+            },
+            "campaignRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "playedAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "hoLabel": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "hoSummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "outcomeSummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "externalArchiveUris": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 3000
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@cerulia/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/entrypoints/bun.ts",
+    "dev:worker": "bun x wrangler dev",
+    "build": "tsc --noEmit",
+    "migrate": "bun run scripts/migrate-sqlite.mjs",
+    "migrate:d1:local": "bun x wrangler d1 migrations apply cerulia-api --local",
+    "migrate:d1:remote": "bun x wrangler d1 migrations apply cerulia-api --remote",
+    "test": "bun test",
+    "check": "tsc --noEmit && bun test"
+  },
+  "dependencies": {
+    "@cerulia/protocol": "workspace:*",
+    "hono": "^4.10.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.12",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.41.0"
+  }
+}

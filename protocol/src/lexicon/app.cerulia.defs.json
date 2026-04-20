@@ -1,0 +1,44 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.defs",
+  "defs": {
+    "mutationAck": {
+      "type": "object",
+      "description": "Mutation result acknowledgement. Returned by all mutation procedures.",
+      "required": ["resultKind"],
+      "properties": {
+        "resultKind": {
+          "type": "string",
+          "knownValues": ["accepted", "rejected", "rebase-needed"],
+          "description": "Outcome of the mutation attempt."
+        },
+        "emittedRecordRefs": {
+          "type": "array",
+          "items": { "type": "string", "format": "at-uri" },
+          "description": "Persistent record refs emitted on accepted. Present only when resultKind=accepted and at least one record was written."
+        },
+        "reasonCode": {
+          "type": "string",
+          "description": "Machine-readable stable failure category.",
+          "knownValues": [
+            "forbidden-owner-mismatch",
+            "invalid-required-field",
+            "invalid-exactly-one",
+            "invalid-schema-link",
+            "invalid-public-uri",
+            "rebase-required",
+            "terminal-state-readonly"
+          ]
+        },
+        "correlationId": {
+          "type": "string",
+          "description": "Support and log correlation request identifier."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable short explanation."
+        }
+      }
+    }
+  }
+}

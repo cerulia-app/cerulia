@@ -1,0 +1,63 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.core.house",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 640
+          },
+          "canonSummary": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "defaultRuleProfileRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          },
+          "policySummary": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "externalCommunityUri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "visibility": {
+            "type": "string",
+            "knownValues": [
+              "draft",
+              "public"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        },
+        "required": [
+          "houseId",
+          "title",
+          "visibility",
+          "createdAt",
+          "updatedAt"
+        ]
+      }
+    }
+  }
+}

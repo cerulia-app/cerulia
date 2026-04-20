@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.campaign.update",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update campaign.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["campaignRef"],
+          "properties": {
+            "campaignRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "houseRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "rulesetNsid": {
+              "type": "string",
+              "format": "nsid"
+            },
+            "sharedRuleProfileRefs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            },
+            "archivedAt": {
+              "type": "string",
+              "format": "datetime"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

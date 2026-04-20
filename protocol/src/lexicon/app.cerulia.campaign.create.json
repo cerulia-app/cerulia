@@ -1,0 +1,49 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.campaign.create",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create campaign.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["title", "rulesetNsid"],
+          "properties": {
+            "title": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "rulesetNsid": {
+              "type": "string",
+              "format": "nsid"
+            },
+            "houseRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "sharedRuleProfileRefs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

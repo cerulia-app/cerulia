@@ -1,0 +1,10 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.authCoreReader",
+  "defs": {
+    "main": {
+      "type": "token",
+      "description": "OAuth scope bundle granting authenticated read access to core projections for the owner."
+    }
+  }
+}

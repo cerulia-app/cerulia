@@ -1,0 +1,77 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.session.create",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["role", "playedAt"],
+          "properties": {
+            "role": {
+              "type": "string",
+              "knownValues": ["pl", "gm"]
+            },
+            "playedAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "scenarioRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "scenarioLabel": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "characterBranchRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "campaignRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "hoLabel": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "hoSummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "outcomeSummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "externalArchiveUris": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "visibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 3000
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

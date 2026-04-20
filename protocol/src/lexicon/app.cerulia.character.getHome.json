@@ -1,0 +1,105 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.getHome",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get owner character home projection.",
+      "parameters": {
+        "type": "params",
+        "properties": {}
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["ownerDid", "branches"],
+          "properties": {
+            "ownerDid": {
+              "type": "string",
+              "format": "did"
+            },
+            "branches": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#branchListItem"
+              }
+            },
+            "recentSessions": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#sessionListItem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "branchListItem": {
+      "type": "object",
+      "required": ["branchRef", "branchLabel", "baseSheetRef", "branchKind", "visibility", "revision"],
+      "properties": {
+        "branchRef": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "branchLabel": {
+          "type": "string",
+          "maxLength": 640
+        },
+        "baseSheetRef": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "branchKind": {
+          "type": "string",
+          "knownValues": ["main", "campaign-fork", "local-override"]
+        },
+        "visibility": {
+          "type": "string",
+          "knownValues": ["draft", "public"]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    },
+    "sessionListItem": {
+      "type": "object",
+      "required": ["sessionRef", "role", "playedAt", "visibility"],
+      "properties": {
+        "sessionRef": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "role": {
+          "type": "string",
+          "knownValues": ["pl", "gm"]
+        },
+        "playedAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "scenarioLabel": {
+          "type": "string",
+          "maxLength": 640
+        },
+        "characterBranchRef": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "visibility": {
+          "type": "string",
+          "knownValues": ["draft", "public"]
+        }
+      }
+    }
+  }
+}

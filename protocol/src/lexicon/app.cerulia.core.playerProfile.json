@@ -1,0 +1,113 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.core.playerProfile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "record": {
+        "type": "object",
+        "properties": {
+          "ownerDid": {
+            "type": "string",
+            "format": "did"
+          },
+          "blueskyProfileRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "displayNameOverride": {
+            "type": "string",
+            "maxLength": 640
+          },
+          "descriptionOverride": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "avatarOverrideBlob": {
+            "type": "blob"
+          },
+          "bannerOverrideBlob": {
+            "type": "blob"
+          },
+          "websiteOverride": {
+            "type": "string",
+            "format": "uri"
+          },
+          "pronounsOverride": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "roleDistribution": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "playFormats": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "knownValues": [
+                "text",
+                "semi-text",
+                "voice",
+                "offline"
+              ]
+            }
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ownedRulebooks": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "playableTimeSummary": {
+            "type": "string",
+            "maxLength": 3000
+          },
+          "preferredScenarioStyles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "playStyles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "boundaries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        },
+        "required": [
+          "ownerDid",
+          "createdAt",
+          "updatedAt"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.rule.getProfile",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get rule profile.",
+      "parameters": {
+        "type": "params",
+        "required": ["ruleProfileRef"],
+        "properties": {
+          "ruleProfileRef": {
+            "type": "string",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["ruleProfile"],
+          "properties": {
+            "ruleProfile": {
+              "type": "ref",
+              "ref": "app.cerulia.core.ruleProfile"
+            }
+          }
+        }
+      }
+    }
+  }
+}

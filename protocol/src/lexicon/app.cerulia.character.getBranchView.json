@@ -1,0 +1,146 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.getBranchView",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get character branch owner/public projection. Owner mode returns raw record fields. Public/anonymous mode returns summary fields only.",
+      "parameters": {
+        "type": "params",
+        "required": ["characterBranchRef"],
+        "properties": {
+          "characterBranchRef": {
+            "type": "string",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "branch": { "type": "ref", "ref": "app.cerulia.core.characterBranch", "description": "Full branch record. Present in owner mode only." },
+            "sheet": { "type": "ref", "ref": "app.cerulia.core.characterSheet", "description": "Full sheet record. Present in owner mode only." },
+            "advancements": { "type": "array", "items": { "type": "ref", "ref": "app.cerulia.core.characterAdvancement" }, "description": "Full advancement records. Present in owner mode only." },
+            "conversions": { "type": "array", "items": { "type": "ref", "ref": "app.cerulia.core.characterConversion" }, "description": "Full conversion records. Present in owner mode only." },
+            "recentSessions": { "type": "array", "items": { "type": "ref", "ref": "#sessionListItem" }, "description": "Session list items. Present in owner mode only." },
+            "branchSummary": { "type": "ref", "ref": "#branchSummary", "description": "Public-safe branch summary. Present in public/anonymous mode only." },
+            "sheetSummary": { "type": "ref", "ref": "#sheetSummary", "description": "Public-safe sheet summary. Present in public/anonymous mode only." },
+            "recentSessionSummaries": { "type": "array", "items": { "type": "ref", "ref": "#sessionSummary" }, "description": "Public-safe session summaries. Present in public/anonymous mode only." },
+            "advancementSummaries": { "type": "array", "items": { "type": "ref", "ref": "#advancementSummary" }, "description": "Public-safe advancement summaries. Present in public/anonymous mode only." },
+            "conversionSummaries": { "type": "array", "items": { "type": "ref", "ref": "#conversionSummary" }, "description": "Public-safe conversion summaries. Present in public/anonymous mode only." }
+          }
+        }
+      }
+    },
+    "branchSummary": {
+      "type": "object",
+      "description": "Public-safe branch display fields. Excludes overridePayload and owner-only linkage.",
+      "required": ["branchRef", "branchLabel", "branchKind", "visibility", "revision"],
+      "properties": {
+        "branchRef": { "type": "string", "format": "at-uri" },
+        "branchLabel": { "type": "string", "maxLength": 640 },
+        "branchKind": { "type": "string", "knownValues": ["main", "campaign-fork", "local-override"] },
+        "visibility": { "type": "string", "knownValues": ["draft", "public"] },
+        "revision": { "type": "integer", "minimum": 1 },
+        "updatedAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "sheetSummary": {
+      "type": "object",
+      "description": "Public-safe sheet display fields.",
+      "required": ["sheetRef", "displayName", "rulesetNsid"],
+      "properties": {
+        "sheetRef": { "type": "string", "format": "at-uri" },
+        "displayName": { "type": "string", "maxLength": 640 },
+        "rulesetNsid": { "type": "string", "format": "nsid" },
+        "structuredStats": { "type": "array", "items": { "type": "ref", "ref": "#statEntry" }, "description": "Schema-backed public stats only. Omitted when sheetSchemaRef is absent." },
+        "portraitBlob": { "type": "blob" },
+        "profileSummary": { "type": "string", "maxLength": 3000 }
+      }
+    },
+    "sessionSummary": {
+      "type": "object",
+      "description": "Public-safe session summary. Excludes note and characterBranchRef.",
+      "required": ["sessionRef", "role", "playedAt"],
+      "properties": {
+        "sessionRef": { "type": "string", "format": "at-uri" },
+        "role": { "type": "string", "knownValues": ["pl", "gm"] },
+        "playedAt": { "type": "string", "format": "datetime" },
+        "scenarioLabel": { "type": "string", "maxLength": 640 },
+        "hoLabel": { "type": "string", "maxLength": 640 },
+        "hoSummary": { "type": "string", "maxLength": 3000 },
+        "outcomeSummary": { "type": "string", "maxLength": 3000 },
+        "externalArchiveUris": { "type": "array", "items": { "type": "string", "format": "uri" } }
+      }
+    },
+    "advancementSummary": {
+      "type": "object",
+      "description": "Public-safe advancement summary. Excludes deltaPayload and previousValues.",
+      "required": ["advancementRef", "advancementKind", "effectiveAt"],
+      "properties": {
+        "advancementRef": { "type": "string", "format": "at-uri" },
+        "advancementKind": { "type": "string", "knownValues": ["xp-spend", "milestone", "retrain", "respec", "correction"] },
+        "effectiveAt": { "type": "string", "format": "datetime" },
+        "sessionSummary": { "type": "ref", "ref": "#advancementSessionSummary" }
+      }
+    },
+    "conversionSummary": {
+      "type": "object",
+      "description": "Public-safe conversion provenance. Excludes version pins.",
+      "required": ["conversionRef", "sourceRulesetNsid", "targetRulesetNsid", "convertedAt"],
+      "properties": {
+        "conversionRef": { "type": "string", "format": "at-uri" },
+        "sourceRulesetNsid": { "type": "string", "format": "nsid" },
+        "targetRulesetNsid": { "type": "string", "format": "nsid" },
+        "convertedAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "sessionListItem": {
+      "type": "object",
+      "required": ["sessionRef", "role", "playedAt", "visibility"],
+      "properties": {
+        "sessionRef": { "type": "string", "format": "at-uri" },
+        "role": { "type": "string", "knownValues": ["pl", "gm"] },
+        "playedAt": { "type": "string", "format": "datetime" },
+        "scenarioLabel": { "type": "string", "maxLength": 640 },
+        "visibility": { "type": "string", "knownValues": ["draft", "public"] }
+      }
+    },
+    "advancementSessionSummary": {
+      "type": "object",
+      "required": ["sessionRef", "role", "playedAt"],
+      "properties": {
+        "sessionRef": { "type": "string", "format": "at-uri" },
+        "role": { "type": "string", "knownValues": ["pl", "gm"] },
+        "playedAt": { "type": "string", "format": "datetime" },
+        "scenarioLabel": { "type": "string", "maxLength": 640 }
+      }
+    },
+    "statEntry": {
+      "type": "object",
+      "required": ["fieldId", "value"],
+      "properties": {
+        "fieldId": { "type": "string" },
+        "label": { "type": "string", "maxLength": 320 },
+        "value": { "type": "ref", "ref": "#statValue" }
+      }
+    },
+    "statValue": {
+      "type": "object",
+      "description": "Bounded public stat value shape.",
+      "required": ["valueKind"],
+      "properties": {
+        "valueKind": {
+          "type": "string",
+          "knownValues": ["integer", "string", "boolean", "enum"]
+        },
+        "numberValue": { "type": "integer" },
+        "textValue": { "type": "string", "maxLength": 640 },
+        "boolValue": { "type": "boolean" },
+        "enumValue": { "type": "string", "maxLength": 320 }
+      }
+    }
+  }
+}

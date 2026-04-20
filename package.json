@@ -1,0 +1,19 @@
+{
+  "name": "cerulia",
+  "private": true,
+  "packageManager": "bun@1.3.11",
+  "workspaces": [
+    "appview",
+    "api",
+    "protocol",
+    "projection"
+  ],
+  "scripts": {
+    "workspace:check": "bun run --cwd=protocol check && bun run --cwd=api check && bun run --cwd=appview verify",
+    "workspace:build": "bun run --cwd=protocol build && bun run --cwd=api build && bun run --cwd=appview build",
+    "workspace:test": "bun run --cwd=protocol test && bun run --cwd=api test && bun run --cwd=appview test",
+    "dev:appview": "bun run --cwd=appview dev",
+    "dev:api": "bun run --cwd=api dev",
+    "dev:api:worker": "bun run --cwd=api dev:worker"
+  }
+}

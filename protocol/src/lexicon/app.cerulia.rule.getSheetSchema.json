@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.rule.getSheetSchema",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get character sheet schema.",
+      "parameters": {
+        "type": "params",
+        "required": ["characterSheetSchemaRef"],
+        "properties": {
+          "characterSheetSchemaRef": {
+            "type": "string",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["characterSheetSchema"],
+          "properties": {
+            "characterSheetSchema": {
+              "type": "ref",
+              "ref": "app.cerulia.core.characterSheetSchema"
+            }
+          }
+        }
+      }
+    }
+  }
+}

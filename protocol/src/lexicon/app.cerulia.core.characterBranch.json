@@ -1,0 +1,77 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.core.characterBranch",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "properties": {
+          "ownerDid": {
+            "type": "string",
+            "format": "did"
+          },
+          "baseSheetRef": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "branchKind": {
+            "type": "string",
+            "knownValues": [
+              "main",
+              "campaign-fork",
+              "local-override"
+            ]
+          },
+          "branchLabel": {
+            "type": "string",
+            "maxLength": 640
+          },
+          "overridePayload": {
+            "type": "ref",
+            "ref": "#overridePayload"
+          },
+          "visibility": {
+            "type": "string",
+            "knownValues": [
+              "draft",
+              "public"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "retiredAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        },
+        "required": [
+          "ownerDid",
+          "baseSheetRef",
+          "branchKind",
+          "branchLabel",
+          "visibility",
+          "revision",
+          "createdAt",
+          "updatedAt"
+        ]
+      }
+    },
+    "overridePayload": {
+      "type": "object",
+      "description": "Inline override patch payload. Must be a public-safe JSON object.",
+      "properties": {}
+    }
+  }
+}

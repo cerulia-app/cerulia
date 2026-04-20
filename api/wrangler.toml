@@ -1,0 +1,9 @@
+name = "cerulia-api"
+main = "src/entrypoints/worker.ts"
+compatibility_date = "2026-04-20"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cerulia-api"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

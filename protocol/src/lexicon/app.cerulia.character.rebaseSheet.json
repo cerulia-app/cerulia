@@ -1,0 +1,46 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.rebaseSheet",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Rebase character sheet to another schema.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["characterSheetRef", "expectedVersion", "targetSheetSchemaRef"],
+          "properties": {
+            "characterSheetRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "expectedVersion": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Version the client based the rebase on. Used to detect write conflicts and return rebase-needed."
+            },
+            "targetSheetSchemaRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "stats": {
+              "type": "unknown"
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 3000
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

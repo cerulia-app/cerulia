@@ -1,0 +1,52 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.recordAdvancement",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Record character advancement.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["characterBranchRef", "advancementKind", "deltaPayload", "effectiveAt"],
+          "properties": {
+            "characterBranchRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "advancementKind": {
+              "type": "string",
+              "knownValues": ["xp-spend", "milestone", "retrain", "respec", "correction"]
+            },
+            "deltaPayload": {
+              "type": "unknown"
+            },
+            "effectiveAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "sessionRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "previousValues": {
+              "type": "unknown"
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 3000
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.character.createSheet",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create character sheet.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["rulesetNsid", "sheetSchemaRef", "displayName"],
+          "properties": {
+            "rulesetNsid": {
+              "type": "string",
+              "format": "nsid"
+            },
+            "sheetSchemaRef": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "displayName": {
+              "type": "string",
+              "maxLength": 640
+            },
+            "portraitBlob": {
+              "type": "blob"
+            },
+            "profileSummary": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "stats": {
+              "type": "unknown"
+            },
+            "initialBranchVisibility": {
+              "type": "string",
+              "knownValues": ["draft", "public"]
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "app.cerulia.defs#mutationAck"
+        }
+      }
+    }
+  }
+}

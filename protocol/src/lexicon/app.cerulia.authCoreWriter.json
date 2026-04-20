@@ -1,0 +1,10 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.authCoreWriter",
+  "defs": {
+    "main": {
+      "type": "token",
+      "description": "OAuth scope bundle granting write access to all core records."
+    }
+  }
+}

@@ -89,9 +89,9 @@ Cerulia の実装パターンは Authorization Code + PKCE に固定する。
 
 この戦略は `api` フェーズ開始前に変更しない。別案比較は実装後ではなく設計段階でのみ行う。
 
-## フェーズ 1: protocol を固定する
+## フェーズ 1: protocol package を固定する
 
-親 repo で固定済みの `docs/records`、`docs/lexicon`、`docs/architecture` を入力にして、`protocol` submodule を起こす。
+root monorepo で固定済みの `docs/records`、`docs/lexicon`、`docs/architecture` を入力にして、workspace package として `protocol` を固める。
 
 実装範囲:
 
@@ -102,7 +102,7 @@ Cerulia の実装パターンは Authorization Code + PKCE に固定する。
 
 完了条件:
 
-- `api` と `projection` が `protocol` にだけ依存して型共有できる
+- `api` と `projection` が workspace package として `protocol` にだけ依存して型共有できる
 - `protocol` 自体は DB、HTTP server、Workers binding を持たない
 
 ## フェーズ 2: api を起こす

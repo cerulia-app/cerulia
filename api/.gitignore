@@ -1,0 +1,5 @@
+node_modules/
+cerulia-api.sqlite
+cerulia-api.sqlite-shm
+cerulia-api.sqlite-wal
+.wrangler/

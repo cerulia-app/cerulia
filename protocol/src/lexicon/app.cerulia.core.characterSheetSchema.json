@@ -1,0 +1,268 @@
+{
+  "lexicon": 1,
+  "id": "app.cerulia.core.characterSheetSchema",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "properties": {
+          "baseRulesetNsid": {
+            "type": "string",
+            "format": "nsid"
+          },
+          "schemaVersion": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 640
+          },
+          "ownerDid": {
+            "type": "string",
+            "format": "did"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "fieldDefs": {
+            "type": "array",
+            "items": {
+              "type": "ref",
+              "ref": "#fieldDefRoot"
+            }
+          }
+        },
+        "required": [
+          "baseRulesetNsid",
+          "schemaVersion",
+          "title",
+          "ownerDid",
+          "createdAt",
+          "fieldDefs"
+        ]
+      }
+    },
+    "fieldDefLeaf": {
+      "type": "object",
+      "properties": {
+        "fieldId": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "fieldType": {
+          "type": "string",
+          "knownValues": [
+            "integer",
+            "string",
+            "boolean",
+            "enum"
+          ]
+        },
+        "valueRange": {
+          "type": "ref",
+          "ref": "#valueRange"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fieldId",
+        "label",
+        "fieldType",
+        "required"
+      ]
+    },
+    "fieldDefNode": {
+      "type": "object",
+      "properties": {
+        "fieldId": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "fieldType": {
+          "type": "string",
+          "knownValues": [
+            "integer",
+            "string",
+            "boolean",
+            "enum",
+            "group",
+            "array"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#fieldDefNode"
+          }
+        },
+        "itemDef": {
+          "type": "ref",
+          "ref": "#fieldDefNode"
+        },
+        "valueRange": {
+          "type": "ref",
+          "ref": "#valueRange"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "extensible": {
+          "type": "boolean"
+        },
+        "additionalFieldDef": {
+          "type": "ref",
+          "ref": "#fieldDefAdditional"
+        }
+      },
+      "required": [
+        "fieldId",
+        "label",
+        "fieldType",
+        "required"
+      ]
+    },
+    "fieldDefRoot": {
+      "type": "object",
+      "properties": {
+        "fieldId": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "fieldType": {
+          "type": "string",
+          "knownValues": [
+            "integer",
+            "string",
+            "boolean",
+            "enum",
+            "group",
+            "array"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#fieldDefNode"
+          }
+        },
+        "itemDef": {
+          "type": "ref",
+          "ref": "#fieldDefNode"
+        },
+        "valueRange": {
+          "type": "ref",
+          "ref": "#valueRange"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "extensible": {
+          "type": "boolean"
+        },
+        "additionalFieldDef": {
+          "type": "ref",
+          "ref": "#fieldDefAdditional"
+        }
+      },
+      "required": [
+        "fieldId",
+        "label",
+        "fieldType",
+        "required"
+      ]
+    },
+    "fieldDefAdditional": {
+      "type": "object",
+      "description": "Additional child field template. Must not be extensible.",
+      "properties": {
+        "fieldId": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "fieldType": {
+          "type": "string",
+          "knownValues": [
+            "integer",
+            "string",
+            "boolean",
+            "enum",
+            "group",
+            "array"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#fieldDefNode"
+          }
+        },
+        "itemDef": {
+          "type": "ref",
+          "ref": "#fieldDefNode"
+        },
+        "valueRange": {
+          "type": "ref",
+          "ref": "#valueRange"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fieldId",
+        "label",
+        "fieldType",
+        "required"
+      ]
+    },
+    "valueRange": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "integer"
+        },
+        "max": {
+          "type": "integer"
+        },
+        "enumValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
