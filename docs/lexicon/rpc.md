@@ -73,6 +73,7 @@ fallback 由来の field も public-safe 条件を満たすものだけを返す
 	- public / anonymous mode: `campaignSummary`, `sessionSummaries`, `ruleOverlaySummary`
 
 draft campaign も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child session を返さず、owner-only linkage や raw rule-profile payload を返さない。
+`sessionSummaries` の public-safe field には `externalArchiveUris` を含めてよい。
 
 ### app.cerulia.scenario.list
 
@@ -80,13 +81,15 @@ draft campaign も direct ref があれば解決するが、list query には含
 - params: `rulesetNsid` optional, `limit`, `cursor`
 - output: `items`（scenario summary row）, `cursor?`
 
+scenario summary row は `hasRecommendedSheetSchema` を返し、AppView が browse-only と createable を分岐できるようにする。
+
 ### app.cerulia.scenario.getView
 
 - auth: anonymous read を許す
 - params: `scenarioRef` required
 - output: `scenarioSummary`
 
-recommendedSheetSchemaRef が無い scenario は browse-only とし、create flow 用の deterministic schema 解決結果を返さない。
+recommendedSheetSchemaRef が無い scenario は browse-only とし、create flow 用の deterministic schema 解決結果を返さない。public summary は `hasRecommendedSheetSchema` を返して create CTA の可否を表現する。
 
 ### app.cerulia.rule.listSheetSchemas
 
@@ -129,6 +132,7 @@ owner workbench の inline detail / edit と、public surface へ埋め込む su
 	- public / anonymous mode: `houseSummary`, `campaignSummaries`, `sessionSummaries`
 
 draft house も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child campaign / session を返さず、draft house を参照する public campaign からは house identity を省略してよい。
+`sessionSummaries` の public-safe field には `externalArchiveUris` を含めてよい。
 
 ### app.cerulia.rule.listProfiles
 
