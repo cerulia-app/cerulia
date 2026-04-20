@@ -268,13 +268,13 @@ Cerulia backend の storage は SQLite-first とする。
 - `projection`
 - `appview`
 
-実リポジトリ名は Cerulia prefix を付けて次を採用する。
+実リポジトリ名も path と同じ責務名に揃える。
 
-- `cerulia-protocol`
-- `cerulia-api`
-- `cerulia-projection`
+- `protocol`
+- `api`
+- `projection`
 
-親 repo では local 開発と将来の remote 差し替えをしやすくするため、submodule path は短い責務名、実 repo 名は prefix 付きの固有名に分ける。
+親 repo では submodule path と実 repo 名を一致させ、`cerulia-app/{name}` でそのまま解決できる形を採る。
 
 URL 未発行の段階では、親 repo から見て sibling の local repository を相対 URL として登録する。
 
