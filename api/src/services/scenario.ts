@@ -1,196 +1,226 @@
 import type {
-  AppCeruliaCoreScenario,
-  AppCeruliaScenarioCreate,
-  AppCeruliaScenarioGetView,
-  AppCeruliaScenarioList,
-  AppCeruliaScenarioUpdate,
-} from '@cerulia/protocol'
-import { accepted, rejected } from '../ack.js'
-import type { AuthContext } from '../auth.js'
-import { isOwnerReader } from '../auth.js'
-import { COLLECTIONS } from '../constants.js'
-import { parseAtUri } from '../refs.js'
-import { paginate } from '../pagination.js'
-import type { ServiceRuntime } from './runtime.js'
+	AppCeruliaCoreScenario,
+	AppCeruliaScenarioCreate,
+	AppCeruliaScenarioGetView,
+	AppCeruliaScenarioList,
+	AppCeruliaScenarioUpdate,
+} from "@cerulia/protocol";
+import { accepted, rejected } from "../ack.js";
+import type { AuthContext } from "../auth.js";
+import { isOwnerReader } from "../auth.js";
+import { COLLECTIONS } from "../constants.js";
+import { parseAtUri } from "../refs.js";
+import { paginate } from "../pagination.js";
+import type { ServiceRuntime } from "./runtime.js";
 import {
-  assertCredentialFreeUri,
-  createTypedRecord,
-  createUniqueSlugRkey,
-  loadSchema,
-  requireRecord,
-  updateTypedRecord,
-} from './shared.js'
+	assertCredentialFreeUri,
+	createTypedRecord,
+	createUniqueSlugRkey,
+	loadSchema,
+	requireRecord,
+	updateTypedRecord,
+} from "./shared.js";
 
 export function createScenarioService(runtime: ServiceRuntime) {
-  return {
-    async create(
-      callerDid: string,
-      input: AppCeruliaScenarioCreate.InputSchema,
-    ) {
-      if (input.recommendedSheetSchemaRef && !input.rulesetNsid) {
-        return rejected('invalid-required-field', 'recommendedSheetSchemaRef requires rulesetNsid')
-      }
+	return {
+		async create(
+			callerDid: string,
+			input: AppCeruliaScenarioCreate.InputSchema,
+		) {
+			if (input.recommendedSheetSchemaRef && !input.rulesetNsid) {
+				return rejected(
+					"invalid-required-field",
+					"recommendedSheetSchemaRef requires rulesetNsid",
+				);
+			}
 
-      if (input.recommendedSheetSchemaRef && input.rulesetNsid) {
-        const schema = await loadSchema(runtime, input.recommendedSheetSchemaRef)
-        if (schema.value.baseRulesetNsid !== input.rulesetNsid) {
-          return rejected('invalid-schema-link', 'recommendedSheetSchemaRef must match rulesetNsid')
-        }
-      }
+			if (input.recommendedSheetSchemaRef && input.rulesetNsid) {
+				const schema = await loadSchema(
+					runtime,
+					input.recommendedSheetSchemaRef,
+				);
+				if (schema.value.baseRulesetNsid !== input.rulesetNsid) {
+					return rejected(
+						"invalid-schema-link",
+						"recommendedSheetSchemaRef must match rulesetNsid",
+					);
+				}
+			}
 
-      const sourceCitationError = assertCredentialFreeUri(
-        input.sourceCitationUri,
-        'sourceCitationUri',
-      )
-      if (sourceCitationError) {
-        return rejected('invalid-public-uri', sourceCitationError)
-      }
+			const sourceCitationError = assertCredentialFreeUri(
+				input.sourceCitationUri,
+				"sourceCitationUri",
+			);
+			if (sourceCitationError) {
+				return rejected("invalid-public-uri", sourceCitationError);
+			}
 
-      const createdAt = runtime.now()
-      const rkey = await createUniqueSlugRkey(
-        runtime,
-        COLLECTIONS.scenario,
-        callerDid,
-        input.title,
-      )
-      const scenarioRef = `at://${callerDid}/${COLLECTIONS.scenario}/${rkey}`
-      const record = {
-        $type: COLLECTIONS.scenario,
-        title: input.title,
-        rulesetNsid: input.rulesetNsid,
-        recommendedSheetSchemaRef: input.recommendedSheetSchemaRef,
-        sourceCitationUri: input.sourceCitationUri,
-        summary: input.summary,
-        ownerDid: callerDid,
-        createdAt,
-        updatedAt: createdAt,
-      } satisfies AppCeruliaCoreScenario.Main
+			const createdAt = runtime.now();
+			const rkey = await createUniqueSlugRkey(
+				runtime,
+				COLLECTIONS.scenario,
+				callerDid,
+				input.title,
+			);
+			const scenarioRef = `at://${callerDid}/${COLLECTIONS.scenario}/${rkey}`;
+			const record = {
+				$type: COLLECTIONS.scenario,
+				title: input.title,
+				rulesetNsid: input.rulesetNsid,
+				recommendedSheetSchemaRef: input.recommendedSheetSchemaRef,
+				sourceCitationUri: input.sourceCitationUri,
+				summary: input.summary,
+				ownerDid: callerDid,
+				createdAt,
+				updatedAt: createdAt,
+			} satisfies AppCeruliaCoreScenario.Main;
 
-      await createTypedRecord(runtime, {
-        repoDid: callerDid,
-        collection: COLLECTIONS.scenario,
-        rkey,
-        value: record,
-        createdAt,
-        updatedAt: createdAt,
-      })
+			await createTypedRecord(runtime, {
+				repoDid: callerDid,
+				collection: COLLECTIONS.scenario,
+				rkey,
+				value: record,
+				createdAt,
+				updatedAt: createdAt,
+			});
 
-      return accepted([scenarioRef])
-    },
+			return accepted([scenarioRef]);
+		},
 
-    async update(
-      callerDid: string,
-      input: AppCeruliaScenarioUpdate.InputSchema,
-    ) {
-      const record = await requireRecord<AppCeruliaCoreScenario.Main>(
-        runtime,
-        input.scenarioRef,
-        COLLECTIONS.scenario,
-        'scenarioRef',
-      )
-      if (record.repoDid !== callerDid) {
-        return rejected('forbidden-owner-mismatch', 'scenarioRef must belong to the caller')
-      }
+		async update(
+			callerDid: string,
+			input: AppCeruliaScenarioUpdate.InputSchema,
+		) {
+			const record = await requireRecord<AppCeruliaCoreScenario.Main>(
+				runtime,
+				input.scenarioRef,
+				COLLECTIONS.scenario,
+				"scenarioRef",
+			);
+			if (record.repoDid !== callerDid) {
+				return rejected(
+					"forbidden-owner-mismatch",
+					"scenarioRef must belong to the caller",
+				);
+			}
 
-      const nextRulesetNsid = input.rulesetNsid ?? record.value.rulesetNsid
-      const nextRecommended = input.recommendedSheetSchemaRef ?? record.value.recommendedSheetSchemaRef
+			const nextRulesetNsid = input.rulesetNsid ?? record.value.rulesetNsid;
+			const nextRecommended =
+				input.recommendedSheetSchemaRef ??
+				record.value.recommendedSheetSchemaRef;
 
-      if (nextRecommended && !nextRulesetNsid) {
-        return rejected('invalid-required-field', 'recommendedSheetSchemaRef requires rulesetNsid')
-      }
+			if (nextRecommended && !nextRulesetNsid) {
+				return rejected(
+					"invalid-required-field",
+					"recommendedSheetSchemaRef requires rulesetNsid",
+				);
+			}
 
-      if (nextRecommended && nextRulesetNsid) {
-        const schema = await loadSchema(runtime, nextRecommended)
-        if (schema.value.baseRulesetNsid !== nextRulesetNsid) {
-          return rejected('invalid-schema-link', 'recommendedSheetSchemaRef must match rulesetNsid')
-        }
-      }
+			if (nextRecommended && nextRulesetNsid) {
+				const schema = await loadSchema(runtime, nextRecommended);
+				if (schema.value.baseRulesetNsid !== nextRulesetNsid) {
+					return rejected(
+						"invalid-schema-link",
+						"recommendedSheetSchemaRef must match rulesetNsid",
+					);
+				}
+			}
 
-      const sourceCitationError = assertCredentialFreeUri(
-        input.sourceCitationUri ?? record.value.sourceCitationUri,
-        'sourceCitationUri',
-      )
-      if (sourceCitationError) {
-        return rejected('invalid-public-uri', sourceCitationError)
-      }
+			const sourceCitationError = assertCredentialFreeUri(
+				input.sourceCitationUri ?? record.value.sourceCitationUri,
+				"sourceCitationUri",
+			);
+			if (sourceCitationError) {
+				return rejected("invalid-public-uri", sourceCitationError);
+			}
 
-      const updatedAt = runtime.now()
-      const nextRecord = {
-        ...record.value,
-        title: input.title ?? record.value.title,
-        rulesetNsid: nextRulesetNsid,
-        recommendedSheetSchemaRef: nextRecommended,
-        sourceCitationUri: input.sourceCitationUri ?? record.value.sourceCitationUri,
-        summary: input.summary ?? record.value.summary,
-        updatedAt,
-      } satisfies AppCeruliaCoreScenario.Main
+			const updatedAt = runtime.now();
+			const nextRecord = {
+				...record.value,
+				title: input.title ?? record.value.title,
+				rulesetNsid: nextRulesetNsid,
+				recommendedSheetSchemaRef: nextRecommended,
+				sourceCitationUri:
+					input.sourceCitationUri ?? record.value.sourceCitationUri,
+				summary: input.summary ?? record.value.summary,
+				updatedAt,
+			} satisfies AppCeruliaCoreScenario.Main;
 
-      await updateTypedRecord(runtime, {
-        repoDid: callerDid,
-        collection: COLLECTIONS.scenario,
-        rkey: parseAtUri(input.scenarioRef).rkey,
-        value: nextRecord,
-        createdAt: record.createdAt,
-        updatedAt,
-      })
+			await updateTypedRecord(runtime, {
+				repoDid: callerDid,
+				collection: COLLECTIONS.scenario,
+				rkey: parseAtUri(input.scenarioRef).rkey,
+				value: nextRecord,
+				createdAt: record.createdAt,
+				updatedAt,
+			});
 
-      return accepted([input.scenarioRef])
-    },
+			return accepted([input.scenarioRef]);
+		},
 
-    async getView(
-      auth: AuthContext,
-      scenarioRef: string,
-    ): Promise<AppCeruliaScenarioGetView.OutputSchema> {
-      const record = await requireRecord<AppCeruliaCoreScenario.Main>(
-        runtime,
-        scenarioRef,
-        COLLECTIONS.scenario,
-        'scenarioRef',
-      )
+		async getView(
+			auth: AuthContext,
+			scenarioRef: string,
+		): Promise<AppCeruliaScenarioGetView.OutputSchema> {
+			const record = await requireRecord<AppCeruliaCoreScenario.Main>(
+				runtime,
+				scenarioRef,
+				COLLECTIONS.scenario,
+				"scenarioRef",
+			);
 
-      if (isOwnerReader(auth, record.repoDid)) {
-        return {
-          scenario: record.value,
-        }
-      }
+			if (isOwnerReader(auth, record.repoDid)) {
+				return {
+					scenario: record.value,
+				};
+			}
 
-      return {
-        scenarioSummary: {
-          $type: 'app.cerulia.scenario.getView#scenarioSummary',
-          scenarioRef,
-          title: record.value.title,
-          rulesetNsid: record.value.rulesetNsid,
-          hasRecommendedSheetSchema: Boolean(record.value.recommendedSheetSchemaRef),
-          summary: record.value.summary,
-          sourceCitationUri: record.value.sourceCitationUri,
-        },
-      }
-    },
+			return {
+				scenarioSummary: {
+					$type: "app.cerulia.scenario.getView#scenarioSummary",
+					scenarioRef,
+					title: record.value.title,
+					rulesetNsid: record.value.rulesetNsid,
+					hasRecommendedSheetSchema: Boolean(
+						record.value.recommendedSheetSchemaRef,
+					),
+					summary: record.value.summary,
+					sourceCitationUri: record.value.sourceCitationUri,
+				},
+			};
+		},
 
-    async list(
-      rulesetNsid: string | undefined,
-      limit: string | undefined,
-      cursor: string | undefined,
-    ): Promise<AppCeruliaScenarioList.OutputSchema> {
-      const records = await runtime.store.listRecords<AppCeruliaCoreScenario.Main>(
-        COLLECTIONS.scenario,
-      )
-      const filtered = records
-        .filter((record) => !rulesetNsid || record.value.rulesetNsid === rulesetNsid)
-        .sort((left, right) => left.value.title.localeCompare(right.value.title))
-      const page = paginate(filtered, limit, cursor)
+		async list(
+			rulesetNsid: string | undefined,
+			limit: string | undefined,
+			cursor: string | undefined,
+		): Promise<AppCeruliaScenarioList.OutputSchema> {
+			const records =
+				await runtime.store.listRecords<AppCeruliaCoreScenario.Main>(
+					COLLECTIONS.scenario,
+				);
+			const filtered = records
+				.filter(
+					(record) => !rulesetNsid || record.value.rulesetNsid === rulesetNsid,
+				)
+				.sort((left, right) =>
+					left.value.title.localeCompare(right.value.title),
+				);
+			const page = paginate(filtered, limit, cursor);
 
-      return {
-        items: page.items.map((record) => ({
-          $type: 'app.cerulia.scenario.list#scenarioListItem',
-          scenarioRef: record.uri,
-          title: record.value.title,
-          rulesetNsid: record.value.rulesetNsid,
-          hasRecommendedSheetSchema: Boolean(record.value.recommendedSheetSchemaRef),
-          summary: record.value.summary,
-        })),
-        cursor: page.cursor,
-      }
-    },
-  }
+			return {
+				items: page.items.map((record) => ({
+					$type: "app.cerulia.scenario.list#scenarioListItem",
+					scenarioRef: record.uri,
+					title: record.value.title,
+					rulesetNsid: record.value.rulesetNsid,
+					hasRecommendedSheetSchema: Boolean(
+						record.value.recommendedSheetSchemaRef,
+					),
+					summary: record.value.summary,
+				})),
+				cursor: page.cursor,
+			};
+		},
+	};
 }

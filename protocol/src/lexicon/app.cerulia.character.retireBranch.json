@@ -1,35 +1,35 @@
 {
-  "lexicon": 1,
-  "id": "app.cerulia.character.retireBranch",
-  "defs": {
-    "main": {
-      "type": "procedure",
-      "description": "Retire character branch.",
-      "input": {
-        "encoding": "application/json",
-        "schema": {
-          "type": "object",
-          "required": ["characterBranchRef", "expectedRevision"],
-          "properties": {
-            "characterBranchRef": {
-              "type": "string",
-              "format": "at-uri"
-            },
-            "expectedRevision": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "Revision the client based the retire operation on. Used to detect write conflicts and return rebase-needed."
-            }
-          }
-        }
-      },
-      "output": {
-        "encoding": "application/json",
-        "schema": {
-          "type": "ref",
-          "ref": "app.cerulia.defs#mutationAck"
-        }
-      }
-    }
-  }
+	"lexicon": 1,
+	"id": "app.cerulia.character.retireBranch",
+	"defs": {
+		"main": {
+			"type": "procedure",
+			"description": "Retire character branch.",
+			"input": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "object",
+					"required": ["characterBranchRef", "expectedRevision"],
+					"properties": {
+						"characterBranchRef": {
+							"type": "string",
+							"format": "at-uri"
+						},
+						"expectedRevision": {
+							"type": "integer",
+							"minimum": 1,
+							"description": "Revision the client based the retire operation on. Used to detect write conflicts and return rebase-needed."
+						}
+					}
+				}
+			},
+			"output": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "ref",
+					"ref": "app.cerulia.defs#mutationAck"
+				}
+			}
+		}
+	}
 }

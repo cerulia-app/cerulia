@@ -1,51 +1,50 @@
 {
-  "lexicon": 1,
-  "id": "app.cerulia.scenario.getView",
-  "defs": {
-    "main": {
-      "type": "query",
-      "description": "Get scenario owner/public view. Owner mode can return raw record fields. Public/anonymous mode returns summary fields.",
-      "parameters": {
-        "type": "params",
-        "required": ["scenarioRef"],
-        "properties": {
-          "scenarioRef": {
-            "type": "string",
-            "format": "at-uri"
-          }
-        }
-      },
-      "output": {
-        "encoding": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "scenario": {
-              "type": "ref",
-              "ref": "app.cerulia.core.scenario",
-              "description": "Full scenario record. Present in owner mode only."
-            },
-            "scenarioSummary": {
-              "type": "ref",
-              "ref": "#scenarioSummary",
-              "description": "Public-safe scenario summary. Present in public/anonymous mode only."
-            }
-          }
-        }
-      }
-    }
-    ,
-    "scenarioSummary": {
-      "type": "object",
-      "required": ["scenarioRef", "title", "hasRecommendedSheetSchema"],
-      "properties": {
-        "scenarioRef": { "type": "string", "format": "at-uri" },
-        "title": { "type": "string", "maxLength": 640 },
-        "rulesetNsid": { "type": "string", "format": "nsid" },
-        "hasRecommendedSheetSchema": { "type": "boolean" },
-        "summary": { "type": "string", "maxLength": 3000 },
-        "sourceCitationUri": { "type": "string", "format": "uri" }
-      }
-    }
-  }
+	"lexicon": 1,
+	"id": "app.cerulia.scenario.getView",
+	"defs": {
+		"main": {
+			"type": "query",
+			"description": "Get scenario owner/public view. Owner mode can return raw record fields. Public/anonymous mode returns summary fields.",
+			"parameters": {
+				"type": "params",
+				"required": ["scenarioRef"],
+				"properties": {
+					"scenarioRef": {
+						"type": "string",
+						"format": "at-uri"
+					}
+				}
+			},
+			"output": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "object",
+					"properties": {
+						"scenario": {
+							"type": "ref",
+							"ref": "app.cerulia.core.scenario",
+							"description": "Full scenario record. Present in owner mode only."
+						},
+						"scenarioSummary": {
+							"type": "ref",
+							"ref": "#scenarioSummary",
+							"description": "Public-safe scenario summary. Present in public/anonymous mode only."
+						}
+					}
+				}
+			}
+		},
+		"scenarioSummary": {
+			"type": "object",
+			"required": ["scenarioRef", "title", "hasRecommendedSheetSchema"],
+			"properties": {
+				"scenarioRef": { "type": "string", "format": "at-uri" },
+				"title": { "type": "string", "maxLength": 640 },
+				"rulesetNsid": { "type": "string", "format": "nsid" },
+				"hasRecommendedSheetSchema": { "type": "boolean" },
+				"summary": { "type": "string", "maxLength": 3000 },
+				"sourceCitationUri": { "type": "string", "format": "uri" }
+			}
+		}
+	}
 }

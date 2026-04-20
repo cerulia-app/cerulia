@@ -1,287 +1,317 @@
 <script lang="ts">
-	type MutationAck = {
-		resultKind: 'accepted' | 'rejected' | 'rebase-needed';
-		reasonCode?: string;
-		message?: string;
-		emittedRecordRefs?: string[];
+type MutationAck = {
+	resultKind: "accepted" | "rejected" | "rebase-needed";
+	reasonCode?: string;
+	message?: string;
+	emittedRecordRefs?: string[];
+};
+
+type CharacterHomeResponse = {
+	ownerDid: string | null;
+	branches: Array<{
+		branch_ref: string;
+		visibility: "draft" | "public";
+		sheet_ref: string;
+		display_name: string;
+	}>;
+	recentSessions: Array<{
+		ref: string;
+		role: "pl" | "gm";
+		played_at: string;
+		character_branch_ref: string | null;
+	}>;
+};
+
+type CharacterBranchViewResponse = {
+	branchSummary?: {
+		characterBranchRef: string;
+		state?: string;
+		visibility?: string;
+	};
+	sheetSummary?: {
+		characterSheetRef: string;
+		displayName: string;
+		profileSummary: string | null;
+	};
+};
+
+type SessionViewResponse = {
+	session?: {
+		sessionRef: string;
+		state?: string;
+		role?: "pl" | "gm";
+		playedAt?: string;
+		outcomeSummary?: string | null;
+	};
+	sessionSummary?: {
+		sessionRef: string;
+		role?: "pl" | "gm";
+		playedAt?: string;
+		outcomeSummary?: string | null;
+	};
+};
+
+let apiBase = $state("http://localhost:8787");
+let bearerToken = $state("");
+
+let displayName = $state("Alice of Cerulia");
+let rulesetNsid = $state("app.cerulia.ruleset.default");
+let sheetSchemaRef = $state(
+	"at://did:plc:rule/app.cerulia.core.characterSheetSchema/aaa",
+);
+let branchVisibility = $state<"draft" | "public">("public");
+
+let createdSheetRef = $state("");
+let createdBranchRef = $state("");
+let expectedSheetRev = $state("1");
+let updatedDisplayName = $state("Alice, Revision 2");
+
+let sessionRole = $state<"pl" | "gm">("pl");
+let sessionPlayedAt = $state(new Date().toISOString());
+let sessionScenarioRef = $state("");
+let sessionScenarioLabel = $state("Unknown Ruin");
+let sessionOutcomeSummary = $state(
+	"We escaped the archive with one unresolved omen.",
+);
+let createdSessionRef = $state("");
+
+let homeView = $state<CharacterHomeResponse | null>(null);
+let branchView = $state<CharacterBranchViewResponse | null>(null);
+let sessionView = $state<SessionViewResponse | null>(null);
+
+let activityLog = $state<string[]>([]);
+let isBusy = $state(false);
+
+function pushLog(message: string) {
+	activityLog = [
+		new Date().toLocaleTimeString() + "  " + message,
+		...activityLog,
+	].slice(0, 20);
+}
+
+async function rpcCall<T>(
+	path: string,
+	method: "GET" | "POST",
+	body?: Record<string, unknown>,
+	extraHeaders?: Record<string, string>,
+): Promise<T> {
+	const headers: Record<string, string> = {
+		...extraHeaders,
 	};
 
-	type CharacterHomeResponse = {
-		ownerDid: string | null;
-		branches: Array<{
-			branch_ref: string;
-			visibility: 'draft' | 'public';
-			sheet_ref: string;
-			display_name: string;
-		}>;
-		recentSessions: Array<{
-			ref: string;
-			role: 'pl' | 'gm';
-			played_at: string;
-			character_branch_ref: string | null;
-		}>;
-	};
-
-	type CharacterBranchViewResponse = {
-		branchSummary?: { characterBranchRef: string; state?: string; visibility?: string };
-		sheetSummary?: {
-			characterSheetRef: string;
-			displayName: string;
-			profileSummary: string | null;
-		};
-	};
-
-	type SessionViewResponse = {
-		session?: {
-			sessionRef: string;
-			state?: string;
-			role?: 'pl' | 'gm';
-			playedAt?: string;
-			outcomeSummary?: string | null;
-		};
-		sessionSummary?: {
-			sessionRef: string;
-			role?: 'pl' | 'gm';
-			playedAt?: string;
-			outcomeSummary?: string | null;
-		};
-	};
-
-	let apiBase = $state('http://localhost:8787');
-	let bearerToken = $state('');
-
-	let displayName = $state('Alice of Cerulia');
-	let rulesetNsid = $state('app.cerulia.ruleset.default');
-	let sheetSchemaRef = $state('at://did:plc:rule/app.cerulia.core.characterSheetSchema/aaa');
-	let branchVisibility = $state<'draft' | 'public'>('public');
-
-	let createdSheetRef = $state('');
-	let createdBranchRef = $state('');
-	let expectedSheetRev = $state('1');
-	let updatedDisplayName = $state('Alice, Revision 2');
-
-	let sessionRole = $state<'pl' | 'gm'>('pl');
-	let sessionPlayedAt = $state(new Date().toISOString());
-	let sessionScenarioRef = $state('');
-	let sessionScenarioLabel = $state('Unknown Ruin');
-	let sessionOutcomeSummary = $state('We escaped the archive with one unresolved omen.');
-	let createdSessionRef = $state('');
-
-	let homeView = $state<CharacterHomeResponse | null>(null);
-	let branchView = $state<CharacterBranchViewResponse | null>(null);
-	let sessionView = $state<SessionViewResponse | null>(null);
-
-	let activityLog = $state<string[]>([]);
-	let isBusy = $state(false);
-
-	function pushLog(message: string) {
-		activityLog = [new Date().toLocaleTimeString() + '  ' + message, ...activityLog].slice(0, 20);
+	if (bearerToken.trim().length > 0) {
+		headers.authorization = `Bearer ${bearerToken.trim()}`;
 	}
 
-	async function rpcCall<T>(
-		path: string,
-		method: 'GET' | 'POST',
-		body?: Record<string, unknown>,
-		extraHeaders?: Record<string, string>
-	): Promise<T> {
-		const headers: Record<string, string> = {
-			...extraHeaders
-		};
-
-		if (bearerToken.trim().length > 0) {
-			headers.authorization = `Bearer ${bearerToken.trim()}`;
-		}
-
-		if (method === 'POST') {
-			headers['content-type'] = 'application/json';
-		}
-
-		const response = await fetch(`${apiBase}${path}`, {
-			method,
-			headers,
-			body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined
-		});
-
-		const payload = (await response.json()) as T | MutationAck | { error: string };
-		if (!response.ok) {
-			throw new Error(JSON.stringify(payload));
-		}
-
-		return payload as T;
+	if (method === "POST") {
+		headers["content-type"] = "application/json";
 	}
 
-	async function createCharacter() {
-		isBusy = true;
-		try {
-			const ack = await rpcCall<MutationAck>('/xrpc/app.cerulia.rpc.createCharacterSheet', 'POST', {
+	const response = await fetch(`${apiBase}${path}`, {
+		method,
+		headers,
+		body: method === "POST" ? JSON.stringify(body ?? {}) : undefined,
+	});
+
+	const payload = (await response.json()) as
+		| T
+		| MutationAck
+		| { error: string };
+	if (!response.ok) {
+		throw new Error(JSON.stringify(payload));
+	}
+
+	return payload as T;
+}
+
+async function createCharacter() {
+	isBusy = true;
+	try {
+		const ack = await rpcCall<MutationAck>(
+			"/xrpc/app.cerulia.rpc.createCharacterSheet",
+			"POST",
+			{
 				rulesetNsid,
 				sheetSchemaRef,
 				displayName,
-				initialBranchVisibility: branchVisibility
-			});
+				initialBranchVisibility: branchVisibility,
+			},
+		);
 
-			if (
-				ack.resultKind !== 'accepted' ||
-				!ack.emittedRecordRefs ||
-				ack.emittedRecordRefs.length < 2
-			) {
-				throw new Error(`Create rejected: ${ack.reasonCode ?? 'unknown'}`);
-			}
-
-			createdSheetRef = ack.emittedRecordRefs[0] ?? '';
-			createdBranchRef = ack.emittedRecordRefs[1] ?? '';
-			pushLog(`Character created: ${createdSheetRef}`);
-		} catch (error) {
-			pushLog(`Create character failed: ${(error as Error).message}`);
-		} finally {
-			isBusy = false;
+		if (
+			ack.resultKind !== "accepted" ||
+			!ack.emittedRecordRefs ||
+			ack.emittedRecordRefs.length < 2
+		) {
+			throw new Error(`Create rejected: ${ack.reasonCode ?? "unknown"}`);
 		}
+
+		createdSheetRef = ack.emittedRecordRefs[0] ?? "";
+		createdBranchRef = ack.emittedRecordRefs[1] ?? "";
+		pushLog(`Character created: ${createdSheetRef}`);
+	} catch (error) {
+		pushLog(`Create character failed: ${(error as Error).message}`);
+	} finally {
+		isBusy = false;
+	}
+}
+
+async function updateCharacter() {
+	if (!createdSheetRef) {
+		pushLog("Update skipped: create a character first.");
+		return;
 	}
 
-	async function updateCharacter() {
-		if (!createdSheetRef) {
-			pushLog('Update skipped: create a character first.');
+	isBusy = true;
+	try {
+		const ack = await rpcCall<MutationAck>(
+			"/xrpc/app.cerulia.rpc.updateCharacterSheet",
+			"POST",
+			{
+				characterSheetRef: createdSheetRef,
+				displayName: updatedDisplayName,
+			},
+			{ "x-cerulia-base-rev": expectedSheetRev.trim() },
+		);
+
+		if (ack.resultKind !== "accepted") {
+			pushLog(
+				`Update returned ${ack.resultKind}: ${ack.reasonCode ?? "no-reason"}`,
+			);
 			return;
 		}
 
-		isBusy = true;
-		try {
-			const ack = await rpcCall<MutationAck>(
-				'/xrpc/app.cerulia.rpc.updateCharacterSheet',
-				'POST',
-				{
-					characterSheetRef: createdSheetRef,
-					displayName: updatedDisplayName
-				},
-				{ 'x-cerulia-base-rev': expectedSheetRev.trim() }
-			);
+		pushLog(`Character updated: ${createdSheetRef}`);
+	} catch (error) {
+		pushLog(`Update character failed: ${(error as Error).message}`);
+	} finally {
+		isBusy = false;
+	}
+}
 
-			if (ack.resultKind !== 'accepted') {
-				pushLog(`Update returned ${ack.resultKind}: ${ack.reasonCode ?? 'no-reason'}`);
-				return;
-			}
-
-			pushLog(`Character updated: ${createdSheetRef}`);
-		} catch (error) {
-			pushLog(`Update character failed: ${(error as Error).message}`);
-		} finally {
-			isBusy = false;
-		}
+async function createSession() {
+	if (sessionRole === "pl" && !createdBranchRef) {
+		pushLog("Session skipped: create a character branch first.");
+		return;
 	}
 
-	async function createSession() {
-		if (sessionRole === 'pl' && !createdBranchRef) {
-			pushLog('Session skipped: create a character branch first.');
+	isBusy = true;
+	try {
+		const scenarioRef = sessionScenarioRef.trim();
+		const scenarioLabel = sessionScenarioLabel.trim();
+
+		if (scenarioRef.length === 0 && scenarioLabel.length === 0) {
+			pushLog(
+				"Create session failed: scenarioRef or scenarioLabel is required.",
+			);
 			return;
 		}
 
-		isBusy = true;
-		try {
-			const scenarioRef = sessionScenarioRef.trim();
-			const scenarioLabel = sessionScenarioLabel.trim();
-
-			if (scenarioRef.length === 0 && scenarioLabel.length === 0) {
-				pushLog('Create session failed: scenarioRef or scenarioLabel is required.');
-				return;
-			}
-
-			if (scenarioRef.length > 0 && scenarioLabel.length > 0) {
-				pushLog('Create session failed: provide either scenarioRef or scenarioLabel, not both.');
-				return;
-			}
-
-			const payload: Record<string, unknown> = {
-				role: sessionRole,
-				playedAt: sessionPlayedAt,
-				outcomeSummary: sessionOutcomeSummary,
-				visibility: 'public'
-			};
-
-			if (sessionRole === 'pl') {
-				payload.characterBranchRef = createdBranchRef;
-			}
-
-			if (scenarioRef.length > 0) {
-				payload.scenarioRef = scenarioRef;
-			} else {
-				payload.scenarioLabel = scenarioLabel;
-			}
-
-			const ack = await rpcCall<MutationAck>('/xrpc/app.cerulia.rpc.createSession', 'POST', {
-				...payload
-			});
-
-			if (
-				ack.resultKind !== 'accepted' ||
-				!ack.emittedRecordRefs ||
-				ack.emittedRecordRefs.length < 1
-			) {
-				throw new Error(`Create session rejected: ${ack.reasonCode ?? 'unknown'}`);
-			}
-
-			createdSessionRef = ack.emittedRecordRefs[0] ?? '';
-			pushLog(`Session created: ${createdSessionRef}`);
-		} catch (error) {
-			pushLog(`Create session failed: ${(error as Error).message}`);
-		} finally {
-			isBusy = false;
-		}
-	}
-
-	async function loadHome() {
-		isBusy = true;
-		try {
-			homeView = await rpcCall<CharacterHomeResponse>(
-				'/xrpc/app.cerulia.rpc.getCharacterHome',
-				'GET'
+		if (scenarioRef.length > 0 && scenarioLabel.length > 0) {
+			pushLog(
+				"Create session failed: provide either scenarioRef or scenarioLabel, not both.",
 			);
-			pushLog('Loaded owner home view.');
-		} catch (error) {
-			pushLog(`Load home failed: ${(error as Error).message}`);
-		} finally {
-			isBusy = false;
-		}
-	}
-
-	async function loadBranchView() {
-		if (!createdBranchRef) {
-			pushLog('Branch view skipped: no branch ref yet.');
 			return;
 		}
 
-		isBusy = true;
-		try {
-			branchView = await rpcCall<CharacterBranchViewResponse>(
-				`/xrpc/app.cerulia.rpc.getCharacterBranchView?characterBranchRef=${encodeURIComponent(createdBranchRef)}`,
-				'GET'
-			);
-			pushLog('Loaded branch view.');
-		} catch (error) {
-			pushLog(`Load branch view failed: ${(error as Error).message}`);
-		} finally {
-			isBusy = false;
-		}
-	}
+		const payload: Record<string, unknown> = {
+			role: sessionRole,
+			playedAt: sessionPlayedAt,
+			outcomeSummary: sessionOutcomeSummary,
+			visibility: "public",
+		};
 
-	async function loadSessionView() {
-		if (!createdSessionRef) {
-			pushLog('Session view skipped: no session ref yet.');
-			return;
+		if (sessionRole === "pl") {
+			payload.characterBranchRef = createdBranchRef;
 		}
 
-		isBusy = true;
-		try {
-			sessionView = await rpcCall<SessionViewResponse>(
-				`/xrpc/app.cerulia.rpc.getSessionView?sessionRef=${encodeURIComponent(createdSessionRef)}`,
-				'GET'
-			);
-			pushLog('Loaded session view.');
-		} catch (error) {
-			pushLog(`Load session view failed: ${(error as Error).message}`);
-		} finally {
-			isBusy = false;
+		if (scenarioRef.length > 0) {
+			payload.scenarioRef = scenarioRef;
+		} else {
+			payload.scenarioLabel = scenarioLabel;
 		}
+
+		const ack = await rpcCall<MutationAck>(
+			"/xrpc/app.cerulia.rpc.createSession",
+			"POST",
+			{
+				...payload,
+			},
+		);
+
+		if (
+			ack.resultKind !== "accepted" ||
+			!ack.emittedRecordRefs ||
+			ack.emittedRecordRefs.length < 1
+		) {
+			throw new Error(
+				`Create session rejected: ${ack.reasonCode ?? "unknown"}`,
+			);
+		}
+
+		createdSessionRef = ack.emittedRecordRefs[0] ?? "";
+		pushLog(`Session created: ${createdSessionRef}`);
+	} catch (error) {
+		pushLog(`Create session failed: ${(error as Error).message}`);
+	} finally {
+		isBusy = false;
 	}
+}
+
+async function loadHome() {
+	isBusy = true;
+	try {
+		homeView = await rpcCall<CharacterHomeResponse>(
+			"/xrpc/app.cerulia.rpc.getCharacterHome",
+			"GET",
+		);
+		pushLog("Loaded owner home view.");
+	} catch (error) {
+		pushLog(`Load home failed: ${(error as Error).message}`);
+	} finally {
+		isBusy = false;
+	}
+}
+
+async function loadBranchView() {
+	if (!createdBranchRef) {
+		pushLog("Branch view skipped: no branch ref yet.");
+		return;
+	}
+
+	isBusy = true;
+	try {
+		branchView = await rpcCall<CharacterBranchViewResponse>(
+			`/xrpc/app.cerulia.rpc.getCharacterBranchView?characterBranchRef=${encodeURIComponent(createdBranchRef)}`,
+			"GET",
+		);
+		pushLog("Loaded branch view.");
+	} catch (error) {
+		pushLog(`Load branch view failed: ${(error as Error).message}`);
+	} finally {
+		isBusy = false;
+	}
+}
+
+async function loadSessionView() {
+	if (!createdSessionRef) {
+		pushLog("Session view skipped: no session ref yet.");
+		return;
+	}
+
+	isBusy = true;
+	try {
+		sessionView = await rpcCall<SessionViewResponse>(
+			`/xrpc/app.cerulia.rpc.getSessionView?sessionRef=${encodeURIComponent(createdSessionRef)}`,
+			"GET",
+		);
+		pushLog("Loaded session view.");
+	} catch (error) {
+		pushLog(`Load session view failed: ${(error as Error).message}`);
+	} finally {
+		isBusy = false;
+	}
+}
 </script>
 
 <svelte:head>

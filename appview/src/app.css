@@ -1,9 +1,9 @@
-@import '@fontsource/newsreader/500.css';
-@import '@fontsource/work-sans/400.css';
-@import '@fontsource/work-sans/600.css';
+@import "@fontsource/newsreader/500.css";
+@import "@fontsource/work-sans/400.css";
+@import "@fontsource/work-sans/600.css";
 
 :root {
-	font-family: 'Work Sans', sans-serif;
+	font-family: "Work Sans", sans-serif;
 	color: #13232f;
 	background:
 		radial-gradient(circle at top, rgba(226, 239, 255, 0.9), transparent 45%),
@@ -19,7 +19,7 @@ body {
 h1,
 h2,
 h3 {
-	font-family: 'Newsreader', serif;
+	font-family: "Newsreader", serif;
 	font-weight: 500;
 }
 

@@ -1,72 +1,72 @@
 {
-  "lexicon": 1,
-  "id": "app.cerulia.scenario.list",
-  "defs": {
-    "main": {
-      "type": "query",
-      "description": "List scenarios.",
-      "parameters": {
-        "type": "params",
-        "properties": {
-          "rulesetNsid": {
-            "type": "string",
-            "format": "nsid"
-          },
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 100,
-            "default": 50
-          },
-          "cursor": {
-            "type": "string"
-          }
-        }
-      },
-      "output": {
-        "encoding": "application/json",
-        "schema": {
-          "type": "object",
-          "required": ["items"],
-          "properties": {
-            "items": {
-              "type": "array",
-              "items": {
-                "type": "ref",
-                "ref": "#scenarioListItem"
-              }
-            },
-            "cursor": {
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
-    "scenarioListItem": {
-      "type": "object",
-      "required": ["scenarioRef", "title", "hasRecommendedSheetSchema"],
-      "properties": {
-        "scenarioRef": {
-          "type": "string",
-          "format": "at-uri"
-        },
-        "title": {
-          "type": "string",
-          "maxLength": 640
-        },
-        "rulesetNsid": {
-          "type": "string",
-          "format": "nsid"
-        },
-        "hasRecommendedSheetSchema": {
-          "type": "boolean"
-        },
-        "summary": {
-          "type": "string",
-          "maxLength": 3000
-        }
-      }
-    }
-  }
+	"lexicon": 1,
+	"id": "app.cerulia.scenario.list",
+	"defs": {
+		"main": {
+			"type": "query",
+			"description": "List scenarios.",
+			"parameters": {
+				"type": "params",
+				"properties": {
+					"rulesetNsid": {
+						"type": "string",
+						"format": "nsid"
+					},
+					"limit": {
+						"type": "integer",
+						"minimum": 1,
+						"maximum": 100,
+						"default": 50
+					},
+					"cursor": {
+						"type": "string"
+					}
+				}
+			},
+			"output": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "object",
+					"required": ["items"],
+					"properties": {
+						"items": {
+							"type": "array",
+							"items": {
+								"type": "ref",
+								"ref": "#scenarioListItem"
+							}
+						},
+						"cursor": {
+							"type": "string"
+						}
+					}
+				}
+			}
+		},
+		"scenarioListItem": {
+			"type": "object",
+			"required": ["scenarioRef", "title", "hasRecommendedSheetSchema"],
+			"properties": {
+				"scenarioRef": {
+					"type": "string",
+					"format": "at-uri"
+				},
+				"title": {
+					"type": "string",
+					"maxLength": 640
+				},
+				"rulesetNsid": {
+					"type": "string",
+					"format": "nsid"
+				},
+				"hasRecommendedSheetSchema": {
+					"type": "boolean"
+				},
+				"summary": {
+					"type": "string",
+					"maxLength": 3000
+				}
+			}
+		}
+	}
 }

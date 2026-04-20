@@ -1,19 +1,19 @@
 export function isCredentialFreeUri(value: string): boolean {
-  let url: URL
+	let url: URL;
 
-  try {
-    url = new URL(value)
-  } catch {
-    return false
-  }
+	try {
+		url = new URL(value);
+	} catch {
+		return false;
+	}
 
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    return false
-  }
+	if (url.protocol !== "https:" && url.protocol !== "http:") {
+		return false;
+	}
 
-  if (url.username || url.password) {
-    return false
-  }
+	if (url.username || url.password) {
+		return false;
+	}
 
-  return url.search.length === 0
+	return url.search.length === 0;
 }

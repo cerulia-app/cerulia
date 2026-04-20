@@ -1,3 +1,3 @@
-declare module 'multiformats/cid' {
-  export const CID: unknown
+declare module "multiformats/cid" {
+	export const CID: unknown;
 }

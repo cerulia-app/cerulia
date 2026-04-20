@@ -1,5 +1,5 @@
 {
-  "name": "@cerulia/projection",
-  "private": true,
-  "type": "module"
+	"name": "@cerulia/projection",
+	"private": true,
+	"type": "module"
 }

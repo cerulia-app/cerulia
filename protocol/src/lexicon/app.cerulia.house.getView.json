@@ -1,124 +1,148 @@
 {
-  "lexicon": 1,
-  "id": "app.cerulia.house.getView",
-  "defs": {
-    "main": {
-      "type": "query",
-      "description": "Get house owner/public projection. Owner mode returns raw record fields. Public/anonymous mode returns summary fields only.",
-      "parameters": {
-        "type": "params",
-        "required": ["houseRef"],
-        "properties": {
-          "houseRef": {
-            "type": "string",
-            "format": "at-uri"
-          }
-        }
-      },
-      "output": {
-        "encoding": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "house": { "type": "ref", "ref": "app.cerulia.core.house", "description": "Full house record. Present in owner mode only." },
-            "campaigns": { "type": "array", "items": { "type": "ref", "ref": "#campaignListItem" }, "description": "Campaign list items. Present in owner mode only." },
-            "sessions": { "type": "array", "items": { "type": "ref", "ref": "#sessionListItem" }, "description": "Session list items. Present in owner mode only." },
-            "houseSummary": { "type": "ref", "ref": "#houseSummary", "description": "Public-safe house summary. Present in public/anonymous mode only." },
-            "campaignSummaries": { "type": "array", "items": { "type": "ref", "ref": "#campaignSummary" }, "description": "Public-safe campaign summaries. Present in public/anonymous mode only." },
-            "sessionSummaries": { "type": "array", "items": { "type": "ref", "ref": "#sessionSummary" }, "description": "Public-safe session summaries. Present in public/anonymous mode only." }
-          }
-        }
-      }
-    },
-    "campaignListItem": {
-      "type": "object",
-      "required": ["campaignRef", "title", "rulesetNsid", "visibility"],
-      "properties": {
-        "campaignRef": {
-          "type": "string",
-          "format": "at-uri"
-        },
-        "title": {
-          "type": "string",
-          "maxLength": 640
-        },
-        "rulesetNsid": {
-          "type": "string",
-          "format": "nsid"
-        },
-        "visibility": {
-          "type": "string",
-          "knownValues": ["draft", "public"]
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "datetime"
-        }
-      }
-    },
-    "sessionListItem": {
-      "type": "object",
-      "required": ["sessionRef", "role", "playedAt", "visibility"],
-      "properties": {
-        "sessionRef": {
-          "type": "string",
-          "format": "at-uri"
-        },
-        "role": {
-          "type": "string",
-          "knownValues": ["pl", "gm"]
-        },
-        "playedAt": {
-          "type": "string",
-          "format": "datetime"
-        },
-        "scenarioLabel": {
-          "type": "string",
-          "maxLength": 640
-        },
-        "visibility": {
-          "type": "string",
-          "knownValues": ["draft", "public"]
-        }
-      }
-    },
-    "houseSummary": {
-      "type": "object",
-      "description": "Public-safe house display fields.",
-      "required": ["houseRef", "title", "visibility"],
-      "properties": {
-        "houseRef": { "type": "string", "format": "at-uri" },
-        "title": { "type": "string", "maxLength": 640 },
-        "visibility": { "type": "string", "knownValues": ["draft", "public"] },
-        "canonSummary": { "type": "string", "maxLength": 3000 },
-        "externalCommunityUri": { "type": "string", "format": "uri" }
-      }
-    },
-    "campaignSummary": {
-      "type": "object",
-      "description": "Public-safe campaign display fields.",
-      "required": ["campaignRef", "title", "rulesetNsid", "visibility"],
-      "properties": {
-        "campaignRef": { "type": "string", "format": "at-uri" },
-        "title": { "type": "string", "maxLength": 640 },
-        "rulesetNsid": { "type": "string", "format": "nsid" },
-        "visibility": { "type": "string", "knownValues": ["draft", "public"] },
-        "updatedAt": { "type": "string", "format": "datetime" }
-      }
-    },
-    "sessionSummary": {
-      "type": "object",
-      "description": "Public-safe session summary. Excludes note and characterBranchRef.",
-      "required": ["sessionRef", "role", "playedAt"],
-      "properties": {
-        "sessionRef": { "type": "string", "format": "at-uri" },
-        "role": { "type": "string", "knownValues": ["pl", "gm"] },
-        "playedAt": { "type": "string", "format": "datetime" },
-        "scenarioLabel": { "type": "string", "maxLength": 640 },
-        "hoLabel": { "type": "string", "maxLength": 640 },
-        "hoSummary": { "type": "string", "maxLength": 3000 },
-        "outcomeSummary": { "type": "string", "maxLength": 3000 }
-      }
-    }
-  }
+	"lexicon": 1,
+	"id": "app.cerulia.house.getView",
+	"defs": {
+		"main": {
+			"type": "query",
+			"description": "Get house owner/public projection. Owner mode returns raw record fields. Public/anonymous mode returns summary fields only.",
+			"parameters": {
+				"type": "params",
+				"required": ["houseRef"],
+				"properties": {
+					"houseRef": {
+						"type": "string",
+						"format": "at-uri"
+					}
+				}
+			},
+			"output": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "object",
+					"properties": {
+						"house": {
+							"type": "ref",
+							"ref": "app.cerulia.core.house",
+							"description": "Full house record. Present in owner mode only."
+						},
+						"campaigns": {
+							"type": "array",
+							"items": { "type": "ref", "ref": "#campaignListItem" },
+							"description": "Campaign list items. Present in owner mode only."
+						},
+						"sessions": {
+							"type": "array",
+							"items": { "type": "ref", "ref": "#sessionListItem" },
+							"description": "Session list items. Present in owner mode only."
+						},
+						"houseSummary": {
+							"type": "ref",
+							"ref": "#houseSummary",
+							"description": "Public-safe house summary. Present in public/anonymous mode only."
+						},
+						"campaignSummaries": {
+							"type": "array",
+							"items": { "type": "ref", "ref": "#campaignSummary" },
+							"description": "Public-safe campaign summaries. Present in public/anonymous mode only."
+						},
+						"sessionSummaries": {
+							"type": "array",
+							"items": { "type": "ref", "ref": "#sessionSummary" },
+							"description": "Public-safe session summaries. Present in public/anonymous mode only."
+						}
+					}
+				}
+			}
+		},
+		"campaignListItem": {
+			"type": "object",
+			"required": ["campaignRef", "title", "rulesetNsid", "visibility"],
+			"properties": {
+				"campaignRef": {
+					"type": "string",
+					"format": "at-uri"
+				},
+				"title": {
+					"type": "string",
+					"maxLength": 640
+				},
+				"rulesetNsid": {
+					"type": "string",
+					"format": "nsid"
+				},
+				"visibility": {
+					"type": "string",
+					"knownValues": ["draft", "public"]
+				},
+				"updatedAt": {
+					"type": "string",
+					"format": "datetime"
+				}
+			}
+		},
+		"sessionListItem": {
+			"type": "object",
+			"required": ["sessionRef", "role", "playedAt", "visibility"],
+			"properties": {
+				"sessionRef": {
+					"type": "string",
+					"format": "at-uri"
+				},
+				"role": {
+					"type": "string",
+					"knownValues": ["pl", "gm"]
+				},
+				"playedAt": {
+					"type": "string",
+					"format": "datetime"
+				},
+				"scenarioLabel": {
+					"type": "string",
+					"maxLength": 640
+				},
+				"visibility": {
+					"type": "string",
+					"knownValues": ["draft", "public"]
+				}
+			}
+		},
+		"houseSummary": {
+			"type": "object",
+			"description": "Public-safe house display fields.",
+			"required": ["houseRef", "title", "visibility"],
+			"properties": {
+				"houseRef": { "type": "string", "format": "at-uri" },
+				"title": { "type": "string", "maxLength": 640 },
+				"visibility": { "type": "string", "knownValues": ["draft", "public"] },
+				"canonSummary": { "type": "string", "maxLength": 3000 },
+				"externalCommunityUri": { "type": "string", "format": "uri" }
+			}
+		},
+		"campaignSummary": {
+			"type": "object",
+			"description": "Public-safe campaign display fields.",
+			"required": ["campaignRef", "title", "rulesetNsid", "visibility"],
+			"properties": {
+				"campaignRef": { "type": "string", "format": "at-uri" },
+				"title": { "type": "string", "maxLength": 640 },
+				"rulesetNsid": { "type": "string", "format": "nsid" },
+				"visibility": { "type": "string", "knownValues": ["draft", "public"] },
+				"updatedAt": { "type": "string", "format": "datetime" }
+			}
+		},
+		"sessionSummary": {
+			"type": "object",
+			"description": "Public-safe session summary. Excludes note and characterBranchRef.",
+			"required": ["sessionRef", "role", "playedAt"],
+			"properties": {
+				"sessionRef": { "type": "string", "format": "at-uri" },
+				"role": { "type": "string", "knownValues": ["pl", "gm"] },
+				"playedAt": { "type": "string", "format": "datetime" },
+				"scenarioLabel": { "type": "string", "maxLength": 640 },
+				"hoLabel": { "type": "string", "maxLength": 640 },
+				"hoSummary": { "type": "string", "maxLength": 3000 },
+				"outcomeSummary": { "type": "string", "maxLength": 3000 }
+			}
+		}
+	}
 }

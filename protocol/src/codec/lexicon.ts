@@ -1,1 +1,1 @@
-export { lexicons, schemaDict, schemas } from '../generated/lexicons.js'
+export { lexicons, schemaDict, schemas } from "../generated/lexicons.js";
