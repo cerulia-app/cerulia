@@ -13,6 +13,7 @@
 		"check": "tsc --noEmit && bun test"
 	},
 	"dependencies": {
+		"@atproto/lexicon": "^0.6.2",
 		"@cerulia/protocol": "workspace:*",
 		"hono": "^4.10.0"
 	},

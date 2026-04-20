@@ -9,10 +9,10 @@
 		"projection"
 	],
 	"scripts": {
-		"check": "bun run --filter '@cerulia/*' check && bun run --cwd=api check && bun run --cwd=appview verify",
-		"build": "bun run --cwd=protocol build && bun run --cwd=api build && bun run --cwd=appview build",
-		"test": "bun run --cwd=protocol test && bun run --cwd=api test && bun run --cwd=appview test",
-		"typecheck": "bun run --cwd=protocol build && bun run --cwd=api build && bun run --cwd=appview check",
+		"check": "bun run --sequential --filter '@cerulia/protocol' --filter '@cerulia/api' check && bun run --filter '@cerulia/appview' verify",
+		"build": "bun run --sequential --workspaces --if-present build",
+		"test": "bun run --sequential --workspaces --if-present test",
+		"typecheck": "bun run --sequential --filter '@cerulia/protocol' --filter '@cerulia/api' build && bun run --filter '@cerulia/appview' check",
 		"dev:appview": "bun run --cwd=appview dev",
 		"dev:api": "bun run --cwd=api dev",
 		"dev:api:worker": "bun run --cwd=api dev:worker",
