@@ -3,10 +3,10 @@
 	url = https://github.com/cerulia-app/appview.git
 [submodule "protocol"]
 	path = protocol
-	url = ../cerulia-protocol
+	url = https://github.com/cerulia-app/protocol.git
 [submodule "api"]
 	path = api
-	url = ../cerulia-api
+	url = https://github.com/cerulia-app/api.git
 [submodule "projection"]
 	path = projection
-	url = ../cerulia-projection
+	url = https://github.com/cerulia-app/projection.git
