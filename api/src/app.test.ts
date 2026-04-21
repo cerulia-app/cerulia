@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { AppCeruliaCoreCharacterBranch } from "@cerulia/protocol";
-import { createApiApp } from "./app.js";
+import { createApiApp, type ApiAppStore } from "./app.js";
 import {
 	createSessionAuthResolver,
 	resolveHeaderAuthContext,
@@ -16,12 +16,8 @@ import { ApiError } from "./errors.js";
 import { paginate } from "./pagination.js";
 import { parseAtUri } from "./refs.js";
 import { MemoryRecordStore } from "./store/memory.js";
-import type {
-	CreateRecordOptions,
-	RecordDraft,
-	RecordStore,
-	UpdateRecordOptions,
-} from "./store/types.js";
+import type { ApplyWritesOptions, RecordWrite } from "./store/types.js";
+import { RecordConflictError, scopeStateTokenEquals } from "./store/types.js";
 
 const DID = "did:plc:alice";
 
@@ -36,19 +32,37 @@ function authHeaders(
 	};
 }
 
-class InterleavingMemoryRecordStore extends MemoryRecordStore {
+class SupportedMemoryRecordStore
+	extends MemoryRecordStore
+	implements ApiAppStore {
+	async applyWrites(writes: RecordWrite[], options: ApplyWritesOptions) {
+		const currentScopeState = await super.getScopeStateToken(
+			options.expectedScopeState.repoDid,
+			Object.keys(options.expectedScopeState.collectionVersions ?? {}),
+		);
+		if (!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)) {
+			throw new RecordConflictError();
+		}
+
+		for (const write of writes) {
+			if (write.kind === "create") {
+				await super.createRecord(write.draft);
+				continue;
+			}
+
+			await super.updateRecord(write.draft);
+		}
+	}
+}
+
+class InterleavingMemoryRecordStore extends SupportedMemoryRecordStore {
 	private readonly listCallCounts = new Map<string, number>();
 	private readonly listHooks = new Map<
 		string,
 		Array<{ callNumber: number; fired: boolean; action: () => void }>
 	>();
-	private readonly createCallCounts = new Map<string, number>();
-	private readonly createHooks = new Map<
-		string,
-		Array<{ callNumber: number; fired: boolean; action: () => void }>
-	>();
-	private readonly updateCallCounts = new Map<string, number>();
-	private readonly updateHooks = new Map<
+	private readonly applyWritesCallCounts = new Map<string, number>();
+	private readonly applyWritesHooks = new Map<
 		string,
 		Array<{ callNumber: number; fired: boolean; action: () => void }>
 	>();
@@ -65,28 +79,14 @@ class InterleavingMemoryRecordStore extends MemoryRecordStore {
 		this.listHooks.set(key, hooks);
 	}
 
-	onCreateCall(
-		collection: string,
-		repoDid: string | undefined,
+	onApplyWritesCall(
+		repoDid: string,
 		callNumber: number,
 		action: () => void,
 	) {
-		const key = `${collection}:${repoDid ?? "*"}`;
-		const hooks = this.createHooks.get(key) ?? [];
+		const hooks = this.applyWritesHooks.get(repoDid) ?? [];
 		hooks.push({ callNumber, fired: false, action });
-		this.createHooks.set(key, hooks);
-	}
-
-	onUpdateCall(
-		collection: string,
-		repoDid: string | undefined,
-		callNumber: number,
-		action: () => void,
-	) {
-		const key = `${collection}:${repoDid ?? "*"}`;
-		const hooks = this.updateHooks.get(key) ?? [];
-		hooks.push({ callNumber, fired: false, action });
-		this.updateHooks.set(key, hooks);
+		this.applyWritesHooks.set(repoDid, hooks);
 	}
 
 	override async listRecords<T>(
@@ -107,47 +107,26 @@ class InterleavingMemoryRecordStore extends MemoryRecordStore {
 		return super.listRecords<T>(collection, repoDid);
 	}
 
-	override async createRecord<T>(
-		draft: RecordDraft<T>,
-		options?: CreateRecordOptions,
-	) {
-		const key = `${draft.collection}:${draft.repoDid}`;
-		const nextCallNumber = (this.createCallCounts.get(key) ?? 0) + 1;
-		this.createCallCounts.set(key, nextCallNumber);
+	override async applyWrites(writes: RecordWrite[], options: ApplyWritesOptions) {
+		const repoDid = options.expectedScopeState.repoDid;
+		const nextCallNumber = (this.applyWritesCallCounts.get(repoDid) ?? 0) + 1;
+		this.applyWritesCallCounts.set(repoDid, nextCallNumber);
 
-		for (const hook of this.createHooks.get(key) ?? []) {
+		for (const hook of this.applyWritesHooks.get(repoDid) ?? []) {
 			if (!hook.fired && hook.callNumber === nextCallNumber) {
 				hook.fired = true;
 				hook.action();
 			}
 		}
 
-		return super.createRecord(draft, options);
-	}
-
-	override async updateRecord<T>(
-		draft: RecordDraft<T>,
-		options?: UpdateRecordOptions<T>,
-	) {
-		const key = `${draft.collection}:${draft.repoDid}`;
-		const nextCallNumber = (this.updateCallCounts.get(key) ?? 0) + 1;
-		this.updateCallCounts.set(key, nextCallNumber);
-
-		for (const hook of this.updateHooks.get(key) ?? []) {
-			if (!hook.fired && hook.callNumber === nextCallNumber) {
-				hook.fired = true;
-				hook.action();
-			}
-		}
-
-		return super.updateRecord(draft, options);
+		return super.applyWrites(writes, options);
 	}
 }
 
-function createTestApp<TStore extends RecordStore = MemoryRecordStore>(
+function createTestApp<TStore extends ApiAppStore = SupportedMemoryRecordStore>(
 	store?: TStore,
 ) {
-	const resolvedStore = (store ?? new MemoryRecordStore()) as TStore;
+	const resolvedStore = (store ?? new SupportedMemoryRecordStore()) as TStore;
 	const app = createApiApp({
 		store: resolvedStore,
 		authResolver: resolveHeaderAuthContext,
@@ -193,7 +172,7 @@ function expectAccepted(data: {
 
 describe("createApiApp", () => {
 	test("returns a health response", async () => {
-		const app = createApiApp();
+		const { app } = createTestApp();
 		const response = await app.request("/_health");
 
 		expect(response.status).toBe(200);
@@ -319,7 +298,7 @@ describe("createApiApp", () => {
 	});
 
 	test("supports oauth routes and cookie-backed session auth", async () => {
-		const store = new MemoryRecordStore();
+		const store = new SupportedMemoryRecordStore();
 		const browserSessions = new Map<
 			string,
 			{
@@ -987,7 +966,7 @@ describe("createApiApp", () => {
 			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		expect(sourceBranch).not.toBeNull();
 
-		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+		store.onApplyWritesCall(DID, 1, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/race-branch`,
 				{
@@ -1074,7 +1053,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+		store.onApplyWritesCall(DID, 1, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/child-race-branch`,
 				{
@@ -1240,7 +1219,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onCreateCall(COLLECTIONS.characterBranch, DID, 2, () => {
+		store.onApplyWritesCall(DID, 1, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/post-sheet-branch-race`,
 				{
@@ -1344,7 +1323,7 @@ describe("createApiApp", () => {
 			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		expect(sourceBranch).not.toBeNull();
 
-		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+		store.onApplyWritesCall(DID, 1, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/race-conversion`,
 				{
@@ -1456,7 +1435,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+		store.onApplyWritesCall(DID, 1, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/child-race-conversion`,
 				{
@@ -1666,7 +1645,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onUpdateCall(COLLECTIONS.characterBranch, DID, 1, () => {
+		store.onApplyWritesCall(DID, 1, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/final-update-race`,
 				{
@@ -1987,7 +1966,7 @@ describe("createApiApp", () => {
 			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		expect(sourceBranch).not.toBeNull();
 
-		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+		store.onApplyWritesCall(DID, 1, () => {
 			store.seedRecord(
 				branchRef,
 				{

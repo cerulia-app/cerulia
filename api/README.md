@@ -15,6 +15,8 @@ Cerulia backend の canonical write/read service repository。
 - auth は OAuth BFF と browser session で caller proof boundary を確定し、owner/public mode を API 側で決定する
 - schema / URI / owner consistency は API の semantic validation で再検証
 
+`createApiApp` に渡す store は atomic multi-record write を持つ app composition 用 backend に限る。deployable entrypoint の supported write backend は AtprotoMirrorRecordStore とし、MemoryRecordStore / SqlRecordStore direct write は cache / test utility であって app runtime の supported path には含めない。
+
 Bun entrypoint で OAuth を有効にした場合、次の internal route を公開する。
 
 - `/client-metadata.json`

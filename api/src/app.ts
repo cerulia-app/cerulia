@@ -33,7 +33,6 @@ import { ApiError } from "./errors.js";
 import { requireReaderDid, requireWriterDid } from "./auth.js";
 import { SESSION_COOKIE_NAME, XRPC_PREFIX } from "./constants.js";
 import { createServices } from "./services/index.js";
-import { MemoryRecordStore } from "./store/memory.js";
 import type { RecordStore } from "./store/types.js";
 
 export interface ApiOAuthFeature {
@@ -118,15 +117,19 @@ export interface ApiAppBindings {
 	};
 }
 
+export type ApiAppStore = RecordStore & {
+	applyWrites: NonNullable<RecordStore["applyWrites"]>;
+};
+
 export interface ApiAppOptions {
-	store?: RecordStore;
+	store: ApiAppStore;
 	authResolver?: AuthResolver;
 	oauthFeature?: ApiOAuthFeature;
 }
 
-export function createApiApp(options: ApiAppOptions = {}) {
+export function createApiApp(options: ApiAppOptions) {
 	const app = new Hono<ApiAppBindings>();
-	const store = options.store ?? new MemoryRecordStore();
+	const store = options.store;
 	const authResolver =
 		options.authResolver ?? (() => createAnonymousAuthContext());
 	const oauthFeature = options.oauthFeature;
