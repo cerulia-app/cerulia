@@ -1,4 +1,8 @@
-import { createApiApp, type ApiOAuthFeature } from "../app.js";
+import {
+	createApiApp,
+	type ApiAppStore,
+	type ApiOAuthFeature,
+} from "../app.js";
 import {
 	createAnonymousAuthContext,
 	createSessionAuthResolver,
@@ -12,7 +16,6 @@ import {
 	createBunSqliteStore,
 } from "../store/bun-sqlite.js";
 import { createSqlOauthStores } from "../store/oauth.js";
-import type { RecordStore } from "../store/types.js";
 
 const port = Number.parseInt(process.env.PORT ?? "8787", 10);
 const dbPath = process.env.CERULIA_API_DB ?? "./cerulia-api.sqlite";
@@ -34,7 +37,7 @@ if (Boolean(publicBaseUrl) !== Boolean(privateJwkJson)) {
 	);
 }
 
-let store: RecordStore = new AtprotoMirrorRecordStore(
+let store: ApiAppStore = new AtprotoMirrorRecordStore(
 	cacheStore,
 	publicAgentProvider,
 );

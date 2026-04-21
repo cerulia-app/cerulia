@@ -1,4 +1,8 @@
-import { createApiApp, type ApiOAuthFeature } from "../app.js";
+import {
+	createApiApp,
+	type ApiAppStore,
+	type ApiOAuthFeature,
+} from "../app.js";
 import {
 	createAnonymousAuthContext,
 	createSessionAuthResolver,
@@ -8,7 +12,6 @@ import { createPublicAgentProvider, createWorkerOAuthRuntime } from "../oauth.js
 import { AtprotoMirrorRecordStore } from "../store/atproto.js";
 import { createD1Driver, createD1Store, type D1DatabaseLike } from "../store/d1.js";
 import { createSqlOauthStores } from "../store/oauth.js";
-import type { RecordStore } from "../store/types.js";
 
 interface WorkerEnv {
 	DB: D1DatabaseLike;
@@ -40,7 +43,7 @@ export async function createWorkerApp(env: WorkerEnv) {
 		);
 	}
 
-	let store: RecordStore = new AtprotoMirrorRecordStore(
+	let store: ApiAppStore = new AtprotoMirrorRecordStore(
 		cacheStore,
 		publicAgentProvider,
 	);

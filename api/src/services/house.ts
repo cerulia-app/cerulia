@@ -253,10 +253,14 @@ export function createHouseService(runtime: ServiceRuntime) {
 				sessionSummaries: await Promise.all(
 					sortSessionsByPlayedAt(sessions)
 						.filter(
-							(session) =>
-								session.value.visibility === "public" &&
-								Boolean(session.value.campaignRef) &&
-								publicCampaignRefs.has(session.value.campaignRef),
+							(session) => {
+								const campaignRef = session.value.campaignRef;
+								return (
+									session.value.visibility === "public" &&
+									campaignRef !== undefined &&
+									publicCampaignRefs.has(campaignRef)
+								);
+							},
 						)
 						.map(async (session) => ({
 							$type: "app.cerulia.house.getView#sessionSummary",
