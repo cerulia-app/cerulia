@@ -192,7 +192,13 @@ export function createHouseService(runtime: ServiceRuntime) {
 					COLLECTIONS.campaign,
 				)
 			).filter((campaign) => campaign.value.houseRef === houseRef);
+			const publicCampaigns = campaigns.filter(
+				(campaign) => campaign.value.visibility === "public",
+			);
 			const campaignRefs = new Set(campaigns.map((campaign) => campaign.uri));
+			const publicCampaignRefs = new Set(
+				publicCampaigns.map((campaign) => campaign.uri),
+			);
 			const sessions = (
 				await runtime.store.listRecords<AppCeruliaCoreSession.Main>(
 					COLLECTIONS.session,
@@ -236,9 +242,7 @@ export function createHouseService(runtime: ServiceRuntime) {
 					canonSummary: record.value.canonSummary,
 					externalCommunityUri: record.value.externalCommunityUri,
 				},
-				campaignSummaries: campaigns
-					.filter((campaign) => campaign.value.visibility === "public")
-					.map((campaign) => ({
+				campaignSummaries: publicCampaigns.map((campaign) => ({
 						$type: "app.cerulia.house.getView#campaignSummary",
 						campaignRef: campaign.uri,
 						title: campaign.value.title,
@@ -248,7 +252,12 @@ export function createHouseService(runtime: ServiceRuntime) {
 					})),
 				sessionSummaries: await Promise.all(
 					sortSessionsByPlayedAt(sessions)
-						.filter((session) => session.value.visibility === "public")
+						.filter(
+							(session) =>
+								session.value.visibility === "public" &&
+								Boolean(session.value.campaignRef) &&
+								publicCampaignRefs.has(session.value.campaignRef),
+						)
 						.map(async (session) => ({
 							$type: "app.cerulia.house.getView#sessionSummary",
 							sessionRef: session.uri,

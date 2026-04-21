@@ -2393,4 +2393,98 @@ describe("createApiApp", () => {
 		expect(houseView.sessionSummaries[0].sessionRef).toBe(publicSessionRef);
 		expect(houseView.sessionSummaries[0].externalArchiveUris).toBeUndefined();
 	});
+
+	test("omits public sessions whose parent campaign is draft from public house view", async () => {
+		const { app, store } = createTestApp();
+		const houseRef = `at://${DID}/${COLLECTIONS.house}/house-public-filter`;
+		const publicCampaignRef = `at://${DID}/${COLLECTIONS.campaign}/public-campaign`;
+		const draftCampaignRef = `at://${DID}/${COLLECTIONS.campaign}/draft-campaign`;
+		const publicSessionRef = `at://${DID}/${COLLECTIONS.session}/public-session`;
+		const draftParentSessionRef = `at://${DID}/${COLLECTIONS.session}/draft-parent-session`;
+
+		store.seedRecord(
+			houseRef,
+			{
+				$type: COLLECTIONS.house,
+				houseId: "house-public-filter",
+				title: "Visibility House",
+				visibility: "public",
+				createdAt: "2026-04-21T00:00:00.000Z",
+				updatedAt: "2026-04-21T00:00:00.000Z",
+			},
+			"2026-04-21T00:00:00.000Z",
+			"2026-04-21T00:00:00.000Z",
+		);
+		store.seedRecord(
+			publicCampaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "public-campaign",
+				title: "Public Campaign",
+				houseRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "public",
+				createdAt: "2026-04-21T01:00:00.000Z",
+				updatedAt: "2026-04-21T01:00:00.000Z",
+			},
+			"2026-04-21T01:00:00.000Z",
+			"2026-04-21T01:00:00.000Z",
+		);
+		store.seedRecord(
+			draftCampaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "draft-campaign",
+				title: "Draft Campaign",
+				houseRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "draft",
+				createdAt: "2026-04-21T01:05:00.000Z",
+				updatedAt: "2026-04-21T01:05:00.000Z",
+			},
+			"2026-04-21T01:05:00.000Z",
+			"2026-04-21T01:05:00.000Z",
+		);
+		store.seedRecord(
+			publicSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				role: "gm",
+				campaignRef: publicCampaignRef,
+				playedAt: "2026-04-21T02:00:00.000Z",
+				scenarioLabel: "Visible Session",
+				visibility: "public",
+				createdAt: "2026-04-21T02:00:00.000Z",
+				updatedAt: "2026-04-21T02:00:00.000Z",
+			},
+			"2026-04-21T02:00:00.000Z",
+			"2026-04-21T02:00:00.000Z",
+		);
+		store.seedRecord(
+			draftParentSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				role: "gm",
+				campaignRef: draftCampaignRef,
+				playedAt: "2026-04-21T02:05:00.000Z",
+				scenarioLabel: "Hidden Session",
+				visibility: "public",
+				createdAt: "2026-04-21T02:05:00.000Z",
+				updatedAt: "2026-04-21T02:05:00.000Z",
+			},
+			"2026-04-21T02:05:00.000Z",
+			"2026-04-21T02:05:00.000Z",
+		);
+
+		const houseViewResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
+		);
+		const houseView = await houseViewResponse.json();
+
+		expect(houseView.campaignSummaries).toHaveLength(1);
+		expect(houseView.campaignSummaries[0].campaignRef).toBe(publicCampaignRef);
+		expect(houseView.sessionSummaries).toHaveLength(1);
+		expect(houseView.sessionSummaries[0].sessionRef).toBe(publicSessionRef);
+	});
 });
