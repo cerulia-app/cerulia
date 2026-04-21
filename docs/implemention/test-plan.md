@@ -6,6 +6,8 @@
 
 `api` と `protocol` package には check / test 用 script が定義されている。`projection` は minimal package のままであり、この計画は bootstrap 後の target contract と current gate の両方を兼ねる。
 
+branch-centered lineage に関する createBranch / recordConversion の項目は current gate である。docs / protocol / api の同期が崩れた場合は、この節のテストと review を両方で fail とみなす。
+
 ## 共通ゲート
 
 各 backend repo は少なくとも次のコマンドを持つ。
@@ -34,8 +36,18 @@
 - authoritative validation の unit test
 - semantic validation matrix test
 	- createCharacterSheet で `sheetSchemaRef.baseRulesetNsid == rulesetNsid` を満たさない入力を reject すること
+	- createCharacterSheet で schema-backed active sheet に `stats` を省略した入力を reject すること
 	- createCharacterSheet / updateCharacterSheet / rebaseCharacterSheet で `stats` が active schema の `fieldDefs` に反する場合に reject すること
-	- createCharacterBranch / updateCharacterBranch で `overridePayload` が active schema の `fieldId` / group key に反する場合に reject すること
+	- createCharacterBranch で sourceBranchRef が caller-owned でない場合と retired branch を source にした場合に reject すること
+	- createCharacterBranch の accepted で source branch の current head を materialize した新しい target sheet と branch ref が返り、新 branch の `forkedFromBranchRef = sourceBranchRef` になること
+	- createCharacterBranch で materialization 中に source branch record または source branch の current state が変わった場合に `rebase-needed` を返すこと
+	- AT Protocol backend が repo-scope compare-and-swap しか提供しない場合、materialization fence は source branch と無関係な同 owner repo write でも保守的に `rebase-needed` へ倒してよいこと
+	- recordCharacterConversion で `targetSheetSchemaRef.baseRulesetNsid != targetRulesetNsid` を reject すること
+	- recordCharacterConversion で `targetRulesetNsid == source.rulesetNsid` を reject すること
+	- recordCharacterConversion で backdated な `convertedAt`（latest conversion または current epoch の active advancement より canonical ordering で前または同順になるもの）を reject すること
+	- recordCharacterConversion で retired branch を reject すること
+	- recordCharacterConversion で `expectedRevision` が stale な場合に `rebase-needed` を返すこと
+	- recordCharacterConversion で materialization 中に source branch record または source branch の current state が変わった場合に `rebase-needed` を返すこと
 	- createCharacterSheet / updatePlayerProfile で caller-owned でない blob を reject すること
 	- createScenario / updateScenario で `recommendedSheetSchemaRef.baseRulesetNsid != scenario.rulesetNsid` を reject すること
 	- createCampaign / updateCampaign で `sharedRuleProfileRefs[*].baseRulesetNsid != campaign.rulesetNsid` を reject すること
@@ -51,6 +63,9 @@
 - player-profile の `literal:self` upsert と Bluesky fallback / Cerulia override 合成の test
 - archived campaign が archive 以外の mutable update を拒否する test
 - same-owner conversion の許可と cross-owner conversion の拒否 test
+- conversion が新しい target sheet を作り、same branch の head を更新する test
+- conversion ack が `characterBranchRef` を含み、branch head 更新を caller が観測できる test
+- parallel line を残したい場合は createCharacterBranch と recordCharacterConversion の組み合わせで表現できる test
 - rule-profile の caller-owned scope invariant test
 - OAuth BFF route と browser session cookie の integration test
 - `retrain` / `respec` / `correction` で previousValues 必須、`milestone` / `xp-spend` で optional の test
@@ -59,6 +74,7 @@
 - public direct read が raw payload と owner-only linkage を返さない redaction shape test
 - public redaction matrix を record 行単位で検証する test
 	- character detail が summary shape のみ返し、owner-only field を含まないこと
+	- character detail が draft child session を public summary に含めないこと
 	- player profile が override + fallback 合成 shape のみ返し、credential-bearing URI を含まないこと
 	- session / campaign / house 一覧が discovery summary のみ返すこと
 	- scenario detail が summary + source citation のみ返すこと

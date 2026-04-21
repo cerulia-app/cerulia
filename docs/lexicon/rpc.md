@@ -50,7 +50,7 @@ owner-only query。public / anonymous には公開しない。
 	- owner mode: `branch`, `sheet`, `recentSessions`, `advancements`, `conversions`
 	- public / anonymous mode: `branchSummary`, `sheetSummary`, `recentSessionSummaries`, `advancementSummaries`, `conversionSummaries`
 
-draft branch も direct ref があれば解決するが、response に `visibility` を含めて AppView が draft state を表示する。public / anonymous mode では draft child を畳み込まず、`note`、`deltaPayload`、`previousValues`、`overridePayload`、`characterBranchRef` のような raw payload / linkage field を返さない。
+draft branch も direct ref があれば解決するが、response に `visibility` を含めて AppView が draft state を表示する。public / anonymous mode では draft child を畳み込まず、`note`、`deltaPayload`、`previousValues`、`characterBranchRef` のような raw payload / linkage field を返さない。
 
 ### app.cerulia.actor.getProfileView
 
@@ -156,9 +156,11 @@ owner 向けの rule-profile canonical read。public surface は raw profile を
 ### app.cerulia.character.createSheet
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `rulesetNsid`, `sheetSchemaRef`, `displayName`, `portraitBlob?`, `profileSummary?`, `stats?`, `initialBranchVisibility?`
+- input: `rulesetNsid`, `sheetSchemaRef`, `displayName`, `stats`, `portraitBlob?`, `profileSummary?`, `initialBranchVisibility?`
 - output: `emittedRecordRefs = [characterSheetRef, characterBranchRef]`
-- note: sheet + default branch をペアで生成する。default branch には `branchKind = main` を使い、`initialBranchVisibility` を seed する
+- note: sheet + default branch をペアで生成する。default branch には `branchKind = main` を使い、`initialBranchVisibility` を seed し、branch の `sheetRef` は新しい sheet を指す
+
+`stats` は create 時点で必須であり、`sheetSchemaRef` の `fieldDefs` に適合しなければならない。
 
 server は create 時に `character-sheet.version = 1` を設定する。
 
@@ -193,21 +195,21 @@ accepted な rebase は `character-sheet.version` を 1 ずつ増やす。
 ### app.cerulia.character.createBranch
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `baseSheetRef`, `branchKind`, `branchLabel`, `overridePayload?`, `visibility?`
-- output: `emittedRecordRefs = [characterBranchRef]`
-- note: 2 本目以降の branch を作る場合に使う。`branchKind = main` は createCharacterSheet が生成する default branch 専用であり、`campaign-fork` と `local-override` は用途ラベルであって canonical root を置き換えない
+- input: `sourceBranchRef`, `branchKind`, `branchLabel`, `visibility?`
+- output: `emittedRecordRefs = [characterSheetRef, characterBranchRef]`
+- note: 2 本目以降の branch を作る場合に使う。source branch の current resolved state を新しい sheet snapshot に materialize し、その snapshot を指す新 branch を作る。新 branch の `forkedFromBranchRef` は `sourceBranchRef` に固定する。`branchKind = main` は createCharacterSheet が生成する default branch 専用であり、`campaign-fork` と `local-override` は用途ラベルであって canonical root を置き換えない。`local-override` は retained enum name であり、field override payload を意味しない
 
-`baseSheetRef` の ownerDid は callerDid と一致しなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
-`overridePayload` を使う場合、それは active schema の fieldId / group key に沿う public-safe な inline object に限る。payload 専用 record や owner-only sidecar を参照してはならない。
+`sourceBranchRef` の ownerDid は callerDid と一致しなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+retiredAt が設定された source branch から新 branch を作ろうとした場合は `resultKind = rejected` と `reasonCode = terminal-state-readonly` を返す。
+materialization 中に source branch record または source branch の current state（sheetRef / current sheet / active advancements for current epoch）が変化した場合は `resultKind = rebase-needed` を返して再試行を促してよい。branchLabel や visibility のような metadata-only update も、server は保守的に競合として扱ってよい。write backend が repo-scope compare-and-swap しか提供しない場合、server は source branch state の不変を証明できない同 owner repo write も保守的に競合として扱ってよい。
 
 ### app.cerulia.character.updateBranch
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `characterBranchRef`, `expectedRevision`, `branchLabel?`, `overridePayload?`, `visibility?`
+- input: `characterBranchRef`, `expectedRevision`, `branchLabel?`, `visibility?`
 - output: `emittedRecordRefs = [characterBranchRef]`
 
 retiredAt が設定された branch への mutation は `resultKind = rejected` と `reasonCode = terminal-state-readonly` を返す。
-`overridePayload` を更新する場合も、active schema の fieldId / group key に沿う public-safe な inline object に限る。
 `expectedRevision` は caller が編集基準にした branch revision を表す。最新 revision と一致しない場合は `resultKind = rebase-needed` を返す。
 
 ### app.cerulia.character.retireBranch
@@ -340,10 +342,18 @@ archivedAt が設定された campaign に対して archivedAt 以外の mutable
 ### app.cerulia.character.recordConversion
 
 - auth: `app.cerulia.authCoreWriter`
-- input: `sourceSheetRef`, `sourceBranchRef`, `sourceRulesetNsid`, `targetSheetRef`, `targetBranchRef`, `targetRulesetNsid`, `conversionContractRef?`, `convertedAt`, `note?`
-- output: `emittedRecordRefs = [characterConversionRef]`
+- input: `characterBranchRef`, `expectedRevision`, `targetRulesetNsid`, `targetSheetSchemaRef`, `convertedAt`, `conversionContractRef?`, `note?`
+- output: `emittedRecordRefs = [characterSheetRef, characterBranchRef, characterConversionRef]`
 
-server は accepted 時に source / target の current `sheet.version` を読み取り、conversion record に `sourceSheetVersion` と `targetSheetVersion` として固定する。
-source / target の sheet と branch はすべて callerDid 所有でなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+server は accepted 時に `characterBranchRef` が現在参照している source sheet を読み取り、新しい target sheet snapshot を作成し、conversion record に `sourceSheetVersion` と `targetSheetVersion` を固定したうえで branch の `sheetRef` を target sheet に進める。
+`characterBranchRef` は callerDid 所有でなければならない。一致しない場合は `resultKind = rejected` と `reasonCode = forbidden-owner-mismatch` を返す。
+`expectedRevision` は caller が conversion 基準にした branch revision を表す。最新 revision と一致しない場合は `resultKind = rebase-needed` を返す。
+`targetRulesetNsid` は source sheet の `rulesetNsid` と異ならなければならない。
+`targetSheetSchemaRef.baseRulesetNsid` は `targetRulesetNsid` と一致しなければならない。
+server は source sheet に対する automatic conversion 結果から target sheet を初期化し、target schema の fieldDefs に対する構造検証を行う。conversion が必要 field を埋められない場合は `resultKind = rejected` または `rebase-needed` を返してよい。
+materialization 中に source branch record または source branch の current state（sheetRef / current sheet / active advancements for current epoch）が変化した場合は `resultKind = rebase-needed` を返して再試行を促してよい。branchLabel や visibility のような metadata-only update も、server は保守的に競合として扱ってよい。write backend が repo-scope compare-and-swap しか提供しない場合、server は source branch state の不変を証明できない同 owner repo write も保守的に競合として扱ってよい。
+`convertedAt` は current branch head の時系列を逆流させてはならない。latest conversion と current epoch の active advancements に対して、canonical ordering（convertedAt / effectiveAt 昇順、同時刻は record-key の tid 順）で後ろに来る場合だけ受け入れてよい。same-timestamp accepted を行う実装は、新しい `characterConversion` の record-key がその時刻の tie-break floor より lexicographically 後ろになることを保証しなければならない。
 `conversionContractRef` を使う場合、その参照先は public-safe な guide / tool / contract に限る。
+conversion は branch divergence 自体を作らない。parallel line を残したい場合は先に createBranch を行う。
+conversion は round-trip を保証しない。accepted 後の target sheet は通常の updateSheet で手動修正してよい。
 

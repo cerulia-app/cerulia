@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { AppCeruliaCoreCharacterBranch } from "@cerulia/protocol";
 import { createApiApp } from "./app.js";
 import {
 	createSessionAuthResolver,
@@ -15,6 +16,12 @@ import { ApiError } from "./errors.js";
 import { paginate } from "./pagination.js";
 import { parseAtUri } from "./refs.js";
 import { MemoryRecordStore } from "./store/memory.js";
+import type {
+	CreateRecordOptions,
+	RecordDraft,
+	RecordStore,
+	UpdateRecordOptions,
+} from "./store/types.js";
 
 const DID = "did:plc:alice";
 
@@ -29,16 +36,126 @@ function authHeaders(
 	};
 }
 
-function createTestApp() {
-	const store = new MemoryRecordStore();
+class InterleavingMemoryRecordStore extends MemoryRecordStore {
+	private readonly listCallCounts = new Map<string, number>();
+	private readonly listHooks = new Map<
+		string,
+		Array<{ callNumber: number; fired: boolean; action: () => void }>
+	>();
+	private readonly createCallCounts = new Map<string, number>();
+	private readonly createHooks = new Map<
+		string,
+		Array<{ callNumber: number; fired: boolean; action: () => void }>
+	>();
+	private readonly updateCallCounts = new Map<string, number>();
+	private readonly updateHooks = new Map<
+		string,
+		Array<{ callNumber: number; fired: boolean; action: () => void }>
+	>();
+
+	onListCall(
+		collection: string,
+		repoDid: string | undefined,
+		callNumber: number,
+		action: () => void,
+	) {
+		const key = `${collection}:${repoDid ?? "*"}`;
+		const hooks = this.listHooks.get(key) ?? [];
+		hooks.push({ callNumber, fired: false, action });
+		this.listHooks.set(key, hooks);
+	}
+
+	onCreateCall(
+		collection: string,
+		repoDid: string | undefined,
+		callNumber: number,
+		action: () => void,
+	) {
+		const key = `${collection}:${repoDid ?? "*"}`;
+		const hooks = this.createHooks.get(key) ?? [];
+		hooks.push({ callNumber, fired: false, action });
+		this.createHooks.set(key, hooks);
+	}
+
+	onUpdateCall(
+		collection: string,
+		repoDid: string | undefined,
+		callNumber: number,
+		action: () => void,
+	) {
+		const key = `${collection}:${repoDid ?? "*"}`;
+		const hooks = this.updateHooks.get(key) ?? [];
+		hooks.push({ callNumber, fired: false, action });
+		this.updateHooks.set(key, hooks);
+	}
+
+	override async listRecords<T>(
+		collection: string,
+		repoDid?: string,
+	) {
+		const key = `${collection}:${repoDid ?? "*"}`;
+		const nextCallNumber = (this.listCallCounts.get(key) ?? 0) + 1;
+		this.listCallCounts.set(key, nextCallNumber);
+
+		for (const hook of this.listHooks.get(key) ?? []) {
+			if (!hook.fired && hook.callNumber === nextCallNumber) {
+				hook.fired = true;
+				hook.action();
+			}
+		}
+
+		return super.listRecords<T>(collection, repoDid);
+	}
+
+	override async createRecord<T>(
+		draft: RecordDraft<T>,
+		options?: CreateRecordOptions,
+	) {
+		const key = `${draft.collection}:${draft.repoDid}`;
+		const nextCallNumber = (this.createCallCounts.get(key) ?? 0) + 1;
+		this.createCallCounts.set(key, nextCallNumber);
+
+		for (const hook of this.createHooks.get(key) ?? []) {
+			if (!hook.fired && hook.callNumber === nextCallNumber) {
+				hook.fired = true;
+				hook.action();
+			}
+		}
+
+		return super.createRecord(draft, options);
+	}
+
+	override async updateRecord<T>(
+		draft: RecordDraft<T>,
+		options?: UpdateRecordOptions<T>,
+	) {
+		const key = `${draft.collection}:${draft.repoDid}`;
+		const nextCallNumber = (this.updateCallCounts.get(key) ?? 0) + 1;
+		this.updateCallCounts.set(key, nextCallNumber);
+
+		for (const hook of this.updateHooks.get(key) ?? []) {
+			if (!hook.fired && hook.callNumber === nextCallNumber) {
+				hook.fired = true;
+				hook.action();
+			}
+		}
+
+		return super.updateRecord(draft, options);
+	}
+}
+
+function createTestApp<TStore extends RecordStore = MemoryRecordStore>(
+	store?: TStore,
+) {
+	const resolvedStore = (store ?? new MemoryRecordStore()) as TStore;
 	const app = createApiApp({
-		store,
+		store: resolvedStore,
 		authResolver: resolveHeaderAuthContext,
 	});
 
 	return {
 		app,
-		store,
+		store: resolvedStore,
 	};
 }
 
@@ -94,7 +211,6 @@ describe("createApiApp", () => {
 			parseAtUri("at://did:plc:alice/app.cerulia.core.session/with/slash"),
 		).toThrow(ApiError);
 	});
-
 	test("rejects malformed pagination input", () => {
 		expect(() => paginate([1, 2, 3], "10abc", undefined)).toThrow(ApiError);
 		expect(() => paginate([1, 2, 3], undefined, "2x")).toThrow(ApiError);
@@ -135,6 +251,43 @@ describe("createApiApp", () => {
 		expect(response.status).toBe(400);
 		expect(await response.json()).toMatchObject({
 			error: "InvalidRequest",
+		});
+	});
+
+	test("rejects createSheet requests that omit stats", async () => {
+		const { app } = createTestApp();
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Required Stats Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Missing Stats Investigator",
+			},
+		);
+		expect(await createSheetResponse.json()).toMatchObject({
+			error: "InvalidRequest",
+			message: 'Input must have the property "stats"',
 		});
 	});
 
@@ -306,6 +459,29 @@ describe("createApiApp", () => {
 		expectAccepted(schemaAck);
 		const schemaRef = schemaAck.emittedRecordRefs[0];
 
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Emoclo Test Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+						valueRange: { min: 0, max: 100 },
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		expectAccepted(targetSchemaAck);
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
 		const createSheetResponse = await postJson(
 			app,
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
@@ -337,6 +513,20 @@ describe("createApiApp", () => {
 		const sessionAck = await sessionCreateResponse.json();
 		expectAccepted(sessionAck);
 		const sessionRef = sessionAck.emittedRecordRefs[0];
+
+		const draftSessionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.create`,
+			{
+				role: "pl",
+				playedAt: "2026-04-20T11:30:00.000Z",
+				scenarioLabel: "Draft Session",
+				characterBranchRef: branchRef,
+				visibility: "draft",
+			},
+			writerHeaders,
+		);
+		expectAccepted(await draftSessionResponse.json());
 
 		store.seedRecord(
 			`at://${DID}/${COLLECTIONS.characterAdvancement}/z-last`,
@@ -384,8 +574,14 @@ describe("createApiApp", () => {
 		const homeData = await homeResponse.json();
 		expect(homeData.ownerDid).toBe(DID);
 		expect(homeData.branches).toHaveLength(1);
-		expect(homeData.recentSessions).toHaveLength(1);
-		expect(homeData.recentSessions[0].sessionRef).toBe(sessionRef);
+		expect(homeData.branches[0].sheetRef).toBe(sheetRef);
+		expect(homeData.recentSessions).toHaveLength(2);
+		expect(homeData.recentSessions[0]).toMatchObject({
+			scenarioLabel: "Draft Session",
+			playedAt: "2026-04-20T11:30:00.000Z",
+			visibility: "draft",
+		});
+		expect(homeData.recentSessions[1].sessionRef).toBe(sessionRef);
 
 		const branchViewResponse = await getJson(
 			app,
@@ -398,6 +594,7 @@ describe("createApiApp", () => {
 		expect(branchView.sheetSummary.structuredStats[0].value.numberValue).toBe(
 			2,
 		);
+		expect(branchView.recentSessionSummaries).toHaveLength(1);
 
 		const sessionViewResponse = await getJson(
 			app,
@@ -418,40 +615,1562 @@ describe("createApiApp", () => {
 		expect(actorView.publicBranches).toHaveLength(1);
 		expect(actorView.publicBranches[0].characterBranchRef).toBe(branchRef);
 
-		const secondCreateResponse = await postJson(
+		const createBranchResponse = await postJson(
 			app,
-			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
 			{
-				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
-				displayName: "Second Investigator",
-				stats: { power: 5 },
-				initialBranchVisibility: "public",
+				sourceBranchRef: branchRef,
+				branchKind: "campaign-fork",
+				branchLabel: "Forked Alice",
+				visibility: "public",
 			},
 			writerHeaders,
 		);
-		const secondCreateAck = await secondCreateResponse.json();
-		expectAccepted(secondCreateAck);
-		const [, secondBranchRef] = secondCreateAck.emittedRecordRefs;
+		const createBranchAck = await createBranchResponse.json();
+		expectAccepted(createBranchAck);
+		const [forkSheetRef, forkBranchRef] = createBranchAck.emittedRecordRefs;
+
+		const forkOwnerViewResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(forkBranchRef)}`,
+			readerHeaders,
+		);
+		expect(forkOwnerViewResponse.status).toBe(200);
+		const forkOwnerView = await forkOwnerViewResponse.json();
+		expect(forkOwnerView.branch.forkedFromBranchRef).toBe(branchRef);
+		expect(forkOwnerView.branch.sheetRef).toBe(forkSheetRef);
+		expect(forkOwnerView.sheet.stats.power).toBe(2);
 
 		const conversionResponse = await postJson(
 			app,
 			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
 			{
-				sourceSheetRef: sheetRef,
-				sourceBranchRef: secondBranchRef,
-				sourceRulesetNsid: "app.cerulia.rules.coc7",
-				targetSheetRef: sheetRef,
-				targetBranchRef: branchRef,
-				targetRulesetNsid: "app.cerulia.rules.coc7",
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
 				convertedAt: "2026-04-20T12:00:00.000Z",
 			},
 			writerHeaders,
 		);
 		expect(conversionResponse.status).toBe(200);
+		const conversionAck = await conversionResponse.json();
+		expectAccepted(conversionAck);
+		const [convertedSheetRef, updatedBranchRef, conversionRef] =
+			conversionAck.emittedRecordRefs;
+		expect(updatedBranchRef).toBe(branchRef);
+		expect(convertedSheetRef).toContain(COLLECTIONS.characterSheet);
+		expect(conversionRef).toContain(COLLECTIONS.characterConversion);
+
+		const convertedBranchViewResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+		);
+		expect(convertedBranchViewResponse.status).toBe(200);
+		const convertedBranchView = await convertedBranchViewResponse.json();
+		expect(convertedBranchView.branchSummary.revision).toBe(2);
+		expect(convertedBranchView.sheetSummary.sheetRef).toBe(convertedSheetRef);
+		expect(convertedBranchView.sheetSummary.rulesetNsid).toBe(
+			"app.cerulia.rules.emoclo",
+		);
+		expect(
+			convertedBranchView.sheetSummary.structuredStats[0].value.numberValue,
+		).toBe(2);
+		expect(convertedBranchView.conversionSummaries).toHaveLength(1);
+		expect(convertedBranchView.conversionSummaries[0].conversionRef).toBeUndefined();
+
+		const postConversionAdvancementResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordAdvancement`,
+			{
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: { power: 3 },
+				sessionRef,
+				effectiveAt: "2026-04-20T13:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expectAccepted(await postConversionAdvancementResponse.json());
+
+		const finalBranchViewResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+		);
+		const finalBranchView = await finalBranchViewResponse.json();
+		expect(finalBranchView.sheetSummary.structuredStats[0].value.numberValue).toBe(
+			3,
+		);
+
+		const actorViewAfterConversionResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.actor.getProfileView?did=${encodeURIComponent(DID)}`,
+		);
+		const actorViewAfterConversion =
+			await actorViewAfterConversionResponse.json();
+		expect(actorViewAfterConversion.publicBranches).toHaveLength(2);
+		expect(actorViewAfterConversion.publicBranches[0].rulesetNsid).toBeDefined();
+	});
+
+	test("keeps session.list ordering stable for equal playedAt timestamps", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const readerHeaders = authHeaders(DID, [AUTH_SCOPES.reader]);
+		const firstSessionRef = `at://${DID}/${COLLECTIONS.session}/00000000`;
+		const secondSessionRef = `at://${DID}/${COLLECTIONS.session}/zzzzzzzz`;
+		store.seedRecord(
+			firstSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				role: "gm",
+				playedAt: "2026-04-20T09:00:00.000Z",
+				scenarioLabel: "First Same-Time Session",
+				visibility: "public",
+				createdAt: "2026-04-20T09:00:00.000Z",
+				updatedAt: "2026-04-20T09:00:00.000Z",
+			},
+			"2026-04-20T09:00:00.000Z",
+			"2026-04-20T09:00:00.000Z",
+		);
+		store.seedRecord(
+			secondSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				role: "gm",
+				playedAt: "2026-04-20T09:00:00.000Z",
+				scenarioLabel: "Second Same-Time Session",
+				visibility: "public",
+				createdAt: "2026-04-20T09:00:01.000Z",
+				updatedAt: "2026-04-20T09:00:01.000Z",
+			},
+			"2026-04-20T09:00:01.000Z",
+			"2026-04-20T09:00:01.000Z",
+		);
+
+		const beforeUpdateResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.list`,
+			readerHeaders,
+		);
+		const beforeUpdate = await beforeUpdateResponse.json();
+		expect(beforeUpdate.items[0].sessionRef).toBe(secondSessionRef);
+		expect(beforeUpdate.items[1].sessionRef).toBe(firstSessionRef);
+
+		const homeBeforeUpdateResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getHome`,
+			readerHeaders,
+		);
+		const homeBeforeUpdate = await homeBeforeUpdateResponse.json();
+		expect(homeBeforeUpdate.recentSessions[0].sessionRef).toBe(secondSessionRef);
+		expect(homeBeforeUpdate.recentSessions[1].sessionRef).toBe(firstSessionRef);
+
+		const updateSessionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.update`,
+			{
+				sessionRef: firstSessionRef,
+				outcomeSummary: "Edited later",
+			},
+			writerHeaders,
+		);
+		expectAccepted(await updateSessionResponse.json());
+
+		const afterUpdateResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.list`,
+			readerHeaders,
+		);
+		const afterUpdate = await afterUpdateResponse.json();
+		expect(afterUpdate.items[0].sessionRef).toBe(secondSessionRef);
+		expect(afterUpdate.items[1].sessionRef).toBe(firstSessionRef);
+
+		const homeAfterUpdateResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getHome`,
+			readerHeaders,
+		);
+		const homeAfterUpdate = await homeAfterUpdateResponse.json();
+		expect(homeAfterUpdate.recentSessions[0].sessionRef).toBe(secondSessionRef);
+		expect(homeAfterUpdate.recentSessions[1].sessionRef).toBe(firstSessionRef);
+	});
+
+	test("keeps campaign and house session ordering stable for equal playedAt timestamps", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const readerHeaders = authHeaders(DID, [AUTH_SCOPES.reader]);
+		const houseRef = `at://${DID}/${COLLECTIONS.house}/ordering-house`;
+		const campaignRef = `at://${DID}/${COLLECTIONS.campaign}/ordering-campaign`;
+		const firstSessionRef = `at://${DID}/${COLLECTIONS.session}/00000001`;
+		const secondSessionRef = `at://${DID}/${COLLECTIONS.session}/zzzzzzzy`;
+
+		store.seedRecord(
+			houseRef,
+			{
+				$type: COLLECTIONS.house,
+				houseId: "ordering-house",
+				title: "Ordering House",
+				visibility: "public",
+				createdAt: "2026-04-20T08:00:00.000Z",
+				updatedAt: "2026-04-20T08:00:00.000Z",
+			},
+			"2026-04-20T08:00:00.000Z",
+			"2026-04-20T08:00:00.000Z",
+		);
+		store.seedRecord(
+			campaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "ordering-campaign",
+				title: "Ordering Campaign",
+				houseRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "public",
+				createdAt: "2026-04-20T08:05:00.000Z",
+				updatedAt: "2026-04-20T08:05:00.000Z",
+			},
+			"2026-04-20T08:05:00.000Z",
+			"2026-04-20T08:05:00.000Z",
+		);
+		store.seedRecord(
+			firstSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				role: "gm",
+				campaignRef,
+				playedAt: "2026-04-20T09:00:00.000Z",
+				scenarioLabel: "First Campaign Session",
+				visibility: "public",
+				createdAt: "2026-04-20T09:00:00.000Z",
+				updatedAt: "2026-04-20T09:00:00.000Z",
+			},
+			"2026-04-20T09:00:00.000Z",
+			"2026-04-20T09:00:00.000Z",
+		);
+		store.seedRecord(
+			secondSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				role: "gm",
+				campaignRef,
+				playedAt: "2026-04-20T09:00:00.000Z",
+				scenarioLabel: "Second Campaign Session",
+				visibility: "public",
+				createdAt: "2026-04-20T09:00:01.000Z",
+				updatedAt: "2026-04-20T09:00:01.000Z",
+			},
+			"2026-04-20T09:00:01.000Z",
+			"2026-04-20T09:00:01.000Z",
+		);
+
+		const campaignOwnerBefore = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
+			readerHeaders,
+		);
+		const campaignOwnerBeforeData = await campaignOwnerBefore.json();
+		expect(campaignOwnerBeforeData.sessions[0].sessionRef).toBe(secondSessionRef);
+		expect(campaignOwnerBeforeData.sessions[1].sessionRef).toBe(firstSessionRef);
+
+		const houseOwnerBefore = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
+			readerHeaders,
+		);
+		const houseOwnerBeforeData = await houseOwnerBefore.json();
+		expect(houseOwnerBeforeData.sessions[0].sessionRef).toBe(secondSessionRef);
+		expect(houseOwnerBeforeData.sessions[1].sessionRef).toBe(firstSessionRef);
+
+		const campaignPublicBefore = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
+		);
+		const campaignPublicBeforeData = await campaignPublicBefore.json();
+		expect(campaignPublicBeforeData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
+		expect(campaignPublicBeforeData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+
+		const housePublicBefore = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
+		);
+		const housePublicBeforeData = await housePublicBefore.json();
+		expect(housePublicBeforeData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
+		expect(housePublicBeforeData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+
+		const updateSessionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.update`,
+			{
+				sessionRef: firstSessionRef,
+				outcomeSummary: "Edited later",
+			},
+			writerHeaders,
+		);
+		expectAccepted(await updateSessionResponse.json());
+
+		const campaignOwnerAfter = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
+			readerHeaders,
+		);
+		const campaignOwnerAfterData = await campaignOwnerAfter.json();
+		expect(campaignOwnerAfterData.sessions[0].sessionRef).toBe(secondSessionRef);
+		expect(campaignOwnerAfterData.sessions[1].sessionRef).toBe(firstSessionRef);
+
+		const houseOwnerAfter = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
+			readerHeaders,
+		);
+		const houseOwnerAfterData = await houseOwnerAfter.json();
+		expect(houseOwnerAfterData.sessions[0].sessionRef).toBe(secondSessionRef);
+		expect(houseOwnerAfterData.sessions[1].sessionRef).toBe(firstSessionRef);
+
+		const campaignPublicAfter = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
+		);
+		const campaignPublicAfterData = await campaignPublicAfter.json();
+		expect(campaignPublicAfterData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
+		expect(campaignPublicAfterData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+
+		const housePublicAfter = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
+		);
+		const housePublicAfterData = await housePublicAfter.json();
+		expect(housePublicAfterData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
+		expect(housePublicAfterData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+	});
+
+	test("rejects createBranch when source state changes during materialization", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Race Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Race Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [sheetRef, branchRef] = createSheetAck.emittedRecordRefs;
+		const sourceBranch =
+			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
+		expect(sourceBranch).not.toBeNull();
+
+		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+			store.seedRecord(
+				`at://${DID}/${COLLECTIONS.characterAdvancement}/race-branch`,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T09:30:00.000Z",
+					createdAt: "2026-04-20T09:30:00.000Z",
+				},
+				"2026-04-20T09:30:00.000Z",
+				"2026-04-20T09:30:00.000Z",
+			);
+			store.seedRecord(
+				branchRef,
+				{
+					...sourceBranch!.value,
+					sheetRef,
+					updatedAt: "2026-04-20T09:30:01.000Z",
+				},
+				sourceBranch!.createdAt,
+				"2026-04-20T09:30:01.000Z",
+			);
+		});
+
+		const createBranchResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
+			{
+				sourceBranchRef: branchRef,
+				branchKind: "campaign-fork",
+				branchLabel: "Race Fork",
+				visibility: "public",
+			},
+			writerHeaders,
+		);
+		expect(await createBranchResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterBranch, DID),
+		).toHaveLength(1);
+	});
+
+	test("rejects createBranch when source child records change before the first write", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Child Race Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Child Race Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+			store.seedRecord(
+				`at://${DID}/${COLLECTIONS.characterAdvancement}/child-race-branch`,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T09:30:00.000Z",
+					createdAt: "2026-04-20T09:30:00.000Z",
+				},
+				"2026-04-20T09:30:00.000Z",
+				"2026-04-20T09:30:00.000Z",
+			);
+		});
+
+		const createBranchResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
+			{
+				sourceBranchRef: branchRef,
+				branchKind: "campaign-fork",
+				branchLabel: "Child Race Fork",
+				visibility: "public",
+			},
+			writerHeaders,
+		);
+		expect(await createBranchResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterBranch, DID),
+		).toHaveLength(1);
+	});
+
+	test("returns rebase-needed when createBranch validation snapshot becomes stale before the fence", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Stale Validation Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Stale Validation Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+		const advancementUri =
+			`at://${DID}/${COLLECTIONS.characterAdvancement}/stale-validation-branch`;
+		store.seedRecord(
+			advancementUri,
+			{
+				$type: COLLECTIONS.characterAdvancement,
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: { power: "bad" },
+				effectiveAt: "2026-04-20T09:30:00.000Z",
+				createdAt: "2026-04-20T09:30:00.000Z",
+			},
+			"2026-04-20T09:30:00.000Z",
+			"2026-04-20T09:30:00.000Z",
+		);
+
+		store.onListCall(COLLECTIONS.characterAdvancement, DID, 2, () => {
+			store.seedRecord(
+				advancementUri,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T09:30:00.000Z",
+					createdAt: "2026-04-20T09:30:00.000Z",
+				},
+				"2026-04-20T09:30:00.000Z",
+				"2026-04-20T09:30:01.000Z",
+			);
+		});
+
+		const createBranchResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
+			{
+				sourceBranchRef: branchRef,
+				branchKind: "campaign-fork",
+				branchLabel: "Stale Validation Fork",
+				visibility: "public",
+			},
+			writerHeaders,
+		);
+		expect(await createBranchResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+	});
+
+	test("returns rebase-needed when createBranch source changes after target sheet creation", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Post Sheet Race Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Post Sheet Race Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		store.onCreateCall(COLLECTIONS.characterBranch, DID, 2, () => {
+			store.seedRecord(
+				`at://${DID}/${COLLECTIONS.characterAdvancement}/post-sheet-branch-race`,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T09:45:00.000Z",
+					createdAt: "2026-04-20T09:45:00.000Z",
+				},
+				"2026-04-20T09:45:00.000Z",
+				"2026-04-20T09:45:00.000Z",
+			);
+		});
+
+		const createBranchResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
+			{
+				sourceBranchRef: branchRef,
+				branchKind: "campaign-fork",
+				branchLabel: "Post Sheet Race Fork",
+				visibility: "public",
+			},
+			writerHeaders,
+		);
+		expect(await createBranchResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterBranch, DID),
+		).toHaveLength(1);
+		expect(
+			await store.listRecords(COLLECTIONS.characterSheet, DID),
+		).toHaveLength(1);
+	});
+
+	test("rejects recordConversion when source state changes during materialization", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Race Conversion Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Race Conversion Target Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Race Conversion Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [sheetRef, branchRef] = createSheetAck.emittedRecordRefs;
+		const sourceBranch =
+			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
+		expect(sourceBranch).not.toBeNull();
+
+		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+			store.seedRecord(
+				`at://${DID}/${COLLECTIONS.characterAdvancement}/race-conversion`,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T10:00:00.000Z",
+					createdAt: "2026-04-20T10:00:00.000Z",
+				},
+				"2026-04-20T10:00:00.000Z",
+				"2026-04-20T10:00:00.000Z",
+			);
+			store.seedRecord(
+				branchRef,
+				{
+					...sourceBranch!.value,
+					sheetRef,
+					updatedAt: "2026-04-20T10:00:01.000Z",
+				},
+				sourceBranch!.createdAt,
+				"2026-04-20T10:00:01.000Z",
+			);
+		});
+
+		const conversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T11:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await conversionResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterConversion, DID),
+		).toHaveLength(0);
+		expect(
+			await store.listRecords(COLLECTIONS.characterSheet, DID),
+		).toHaveLength(1);
+	});
+
+	test("rejects recordConversion when source child records change before the first write", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Child Race Conversion Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Child Race Conversion Target Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Child Race Conversion Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+			store.seedRecord(
+				`at://${DID}/${COLLECTIONS.characterAdvancement}/child-race-conversion`,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T10:00:00.000Z",
+					createdAt: "2026-04-20T10:00:00.000Z",
+				},
+				"2026-04-20T10:00:00.000Z",
+				"2026-04-20T10:00:00.000Z",
+			);
+		});
+
+		const conversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T11:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await conversionResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterConversion, DID),
+		).toHaveLength(0);
+	});
+
+	test("returns rebase-needed when recordConversion validation snapshot becomes stale before the fence", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Stale Validation Conversion Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Stale Validation Conversion Target Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Stale Validation Conversion Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+		const advancementUri =
+			`at://${DID}/${COLLECTIONS.characterAdvancement}/stale-validation-conversion`;
+		store.seedRecord(
+			advancementUri,
+			{
+				$type: COLLECTIONS.characterAdvancement,
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: { power: "bad" },
+				effectiveAt: "2026-04-20T10:00:00.000Z",
+				createdAt: "2026-04-20T10:00:00.000Z",
+			},
+			"2026-04-20T10:00:00.000Z",
+			"2026-04-20T10:00:00.000Z",
+		);
+
+		store.onListCall(COLLECTIONS.characterAdvancement, DID, 2, () => {
+			store.seedRecord(
+				advancementUri,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T10:00:00.000Z",
+					createdAt: "2026-04-20T10:00:00.000Z",
+				},
+				"2026-04-20T10:00:00.000Z",
+				"2026-04-20T10:00:01.000Z",
+			);
+		});
+
+		const conversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T11:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await conversionResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+	});
+
+	test("returns rebase-needed when recordConversion source changes before the final branch update", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Final Update Race Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Final Update Race Target Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Final Update Race Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		store.onUpdateCall(COLLECTIONS.characterBranch, DID, 1, () => {
+			store.seedRecord(
+				`at://${DID}/${COLLECTIONS.characterAdvancement}/final-update-race`,
+				{
+					$type: COLLECTIONS.characterAdvancement,
+					characterBranchRef: branchRef,
+					advancementKind: "milestone",
+					deltaPayload: { power: 2 },
+					effectiveAt: "2026-04-20T11:30:00.000Z",
+					createdAt: "2026-04-20T11:30:00.000Z",
+				},
+				"2026-04-20T11:30:00.000Z",
+				"2026-04-20T11:30:00.000Z",
+			);
+		});
+
+		const conversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T11:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await conversionResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterConversion, DID),
+		).toHaveLength(0);
+		expect(
+			await store.listRecords(COLLECTIONS.characterSheet, DID),
+		).toHaveLength(1);
+	});
+
+	test("rejects backdated recordConversion timestamps", async () => {
+		const { app } = createTestApp();
+		const writerHeaders = authHeaders();
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Backdated Conversion Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Backdated Conversion Target Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Backdated Conversion Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		const advancementResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordAdvancement`,
+			{
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: { power: 2 },
+				effectiveAt: "2026-04-20T10:30:00.000Z",
+			},
+			writerHeaders,
+		);
+		expectAccepted(await advancementResponse.json());
+
+		const conversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T10:00:00.000Z",
+			},
+			writerHeaders,
+		);
 		expect(await conversionResponse.json()).toMatchObject({
 			resultKind: "rejected",
+			reasonCode: "invalid-required-field",
+			message: "convertedAt must be later than active advancements in the current epoch",
+		});
+	});
+
+	test("allows same-timestamp recordConversion when generated tid is later", async () => {
+		const { app } = createTestApp();
+		const writerHeaders = authHeaders();
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Same Timestamp Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const emocloSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Same Timestamp Emoclo Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const emocloSchemaAck = await emocloSchemaResponse.json();
+		const emocloSchemaRef = emocloSchemaAck.emittedRecordRefs[0];
+
+		const fooSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.foo",
+				schemaVersion: "1.0.0",
+				title: "Same Timestamp Foo Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const fooSchemaAck = await fooSchemaResponse.json();
+		const fooSchemaRef = fooSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Same Timestamp Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		const advancementResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordAdvancement`,
+			{
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: { power: 2 },
+				effectiveAt: "2026-04-20T10:30:00.000Z",
+			},
+			writerHeaders,
+		);
+		expectAccepted(await advancementResponse.json());
+
+		const firstConversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: emocloSchemaRef,
+				convertedAt: "2026-04-20T10:30:00.000Z",
+			},
+			writerHeaders,
+		);
+		const firstConversionAck = await firstConversionResponse.json();
+		expectAccepted(firstConversionAck);
+		expect(firstConversionAck.emittedRecordRefs[1]).toBe(branchRef);
+
+		const secondConversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 2,
+				targetRulesetNsid: "app.cerulia.rules.foo",
+				targetSheetSchemaRef: fooSchemaRef,
+				convertedAt: "2026-04-20T10:30:00.000Z",
+			},
+			writerHeaders,
+		);
+		const secondConversionAck = await secondConversionResponse.json();
+		expectAccepted(secondConversionAck);
+		expect(secondConversionAck.emittedRecordRefs[1]).toBe(branchRef);
+
+		const branchViewResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+		);
+		expect(branchViewResponse.status).toBe(200);
+		const branchView = await branchViewResponse.json();
+		expect(branchView.sheetSummary.rulesetNsid).toBe("app.cerulia.rules.foo");
+		expect(branchView.branchSummary.revision).toBe(3);
+		expect(branchView.conversionSummaries).toHaveLength(2);
+		expect(branchView.conversionSummaries[0].targetRulesetNsid).toBe(
+			"app.cerulia.rules.foo",
+		);
+		expect(branchView.conversionSummaries[1].targetRulesetNsid).toBe(
+			"app.cerulia.rules.emoclo",
+		);
+	});
+
+	test("rejects createBranch when source branch metadata changes during materialization", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Metadata Race Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Metadata Race Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [sheetRef, branchRef] = createSheetAck.emittedRecordRefs;
+		const sourceBranch =
+			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
+		expect(sourceBranch).not.toBeNull();
+
+		store.onCreateCall(COLLECTIONS.characterSheet, DID, 2, () => {
+			store.seedRecord(
+				branchRef,
+				{
+					...sourceBranch!.value,
+					sheetRef,
+					branchLabel: "Renamed During Fork",
+					updatedAt: "2026-04-20T09:30:01.000Z",
+				},
+				sourceBranch!.createdAt,
+				"2026-04-20T09:30:01.000Z",
+			);
+		});
+
+		const createBranchResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
+			{
+				sourceBranchRef: branchRef,
+				branchKind: "campaign-fork",
+				branchLabel: "Metadata Race Fork",
+				visibility: "public",
+			},
+			writerHeaders,
+		);
+		expect(await createBranchResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+			message: "source branch state changed during materialization",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterBranch, DID),
+		).toHaveLength(1);
+	});
+
+	test("enforces createBranch and recordConversion conflict rules", async () => {
+		const { app } = createTestApp();
+		const writerHeaders = authHeaders();
+		const otherWriterHeaders = authHeaders("did:plc:bob", [AUTH_SCOPES.writer]);
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Conflict Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Conflict Target Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "Power",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Conflict Character",
+				stats: { power: 10 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		const sameRulesetConversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.coc7",
+				targetSheetSchemaRef: sourceSchemaRef,
+				convertedAt: "2026-04-20T12:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await sameRulesetConversionResponse.json()).toMatchObject({
+			resultKind: "rejected",
 			reasonCode: "invalid-schema-link",
+		});
+
+		const foreignConversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T12:05:00.000Z",
+			},
+			otherWriterHeaders,
+		);
+		expect(await foreignConversionResponse.json()).toMatchObject({
+			resultKind: "rejected",
+			reasonCode: "forbidden-owner-mismatch",
+		});
+
+		const updateBranchResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.updateBranch`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				branchLabel: "Conflict Character v2",
+			},
+			writerHeaders,
+		);
+		expectAccepted(await updateBranchResponse.json());
+
+		const staleConversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T12:10:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await staleConversionResponse.json()).toMatchObject({
+			resultKind: "rebase-needed",
+		});
+
+		const retireBranchResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.retireBranch`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 2,
+			},
+			writerHeaders,
+		);
+		expectAccepted(await retireBranchResponse.json());
+
+		const retiredConversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 3,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T12:20:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await retiredConversionResponse.json()).toMatchObject({
+			resultKind: "rejected",
+			reasonCode: "terminal-state-readonly",
 		});
 	});
 

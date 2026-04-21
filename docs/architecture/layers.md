@@ -13,7 +13,7 @@ Cerulia の product-core は PL 個人向けのキャラクター管理・セッ
 | profile 層 | PL の自己紹介を durable に保つ | player-profile | 表示名補足、自己紹介、TRPG プロフィール |
 | scope 層 | セッションやキャラクターの文脈 | house、campaign | コミュニティ方針、世界観ラベル、セッションシリーズ |
 | rules provenance 層 | どのルールで遊んでいるか | rule-profile、character-sheet-schema | system 定義、ハウスルール、シート型 |
-| character ledger 層 | キャラクターの durable な継続線 | character-sheet、character-branch、character-conversion、character-advancement | 所有、分岐、変換 provenance、成長 |
+| character ledger 層 | キャラクターの durable な継続線 | character-sheet、character-branch、character-conversion、character-advancement | current snapshot、分岐、ruleset 切り替え provenance、成長 |
 | session history 層 | 遊んだ記録 | session、scenario | いつどのシナリオをどのキャラで遊んだか |
 
 ## projection 層
@@ -35,7 +35,7 @@ projection は全 record から自動生成する。PL による手動の curate
 
 ### 2. キャラクター状態の変更は owner のみ
 
-character-sheet、character-branch、character-advancement の write authority は常に owner だけに閉じる。
+character-sheet、character-branch、character-advancement、character-conversion の write authority は常に owner だけに閉じる。
 
 ### 3. session は記録であり、run control ではない
 
@@ -101,4 +101,5 @@ AppView は caller 自身が owner として control する repo にだけ書く
 3. PL がセッションを外部（CCFolia 等）で遊ぶ。
 4. PL が Cerulia に戻り、session record を自分の repo に書く。どのシナリオをどのキャラで遊んだかを記録する。
 5. キャラクターの成長は PL が character-advancement に書く。sessionRef で任意にリンクする。
-6. PL のキャラクターや経歴は Bluesky 等で共有リンクを貼って見せる。
+6. 別 ruleset へ移すときは、同じ branch を character-conversion で次の sheet snapshot へ進める。別 line も残したい場合だけ先に branch を fork する。
+7. PL のキャラクターや経歴は Bluesky 等で共有リンクを貼って見せる。

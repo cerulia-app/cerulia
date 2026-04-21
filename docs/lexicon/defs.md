@@ -39,7 +39,6 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 | def | format | semantic invariant |
 | --- | --- | --- |
 | portraitBlob | blob | caller が自分の repo から参照する public-safe portrait 用 blob |
-| branchOverridePayload | object | sheet fieldId / group key に沿った public-safe overlay payload |
 | advancementDeltaPayload | object | advancement で追加または変更された public-safe payload |
 | previousValuesSnapshot | object | 上書き前の public-safe 値 snapshot |
 
@@ -54,6 +53,8 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 | sessionRole | pl / gm |
 | projectionSurfaceKind | character-home / campaign-view / scenario-catalog / house-activity |
 | mutationResultKind | accepted / rejected / rebase-needed |
+
+`local-override` は retained enum name であり、branch-level field override payload を意味しない。Cerulia では branch は divergence primitive として扱う。
 
 `rebase-needed` は schema pin の更新や version fence で、現行の入力が古いか互換変換を要するときに返す。
 

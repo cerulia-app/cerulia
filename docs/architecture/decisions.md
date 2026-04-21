@@ -20,13 +20,13 @@ Cerulia の設計における主要な判断を記録する。
 
 理由: house はコミュニティ、campaign はセッションシリーズで責務が違う。world はキャラクター経験記録に直接関係しないため、world の canonSummary と defaultRuleProfileRefs は house に吸収する。
 
-## 4. キャラクターは sheet + branch + advancement の 3 層
+## 4. キャラクターは branch-centered に 4 要素で捉える
 
-採用: sheet、branch、advancement で character lineage を表す。sheet 作成時に default branch が自動ペア生成される。
+採用: character-sheet は ruleset-bound な current snapshot、character-branch は stable な継続線、character-conversion は branch 上の ruleset 切り替え edge、character-advancement は same-branch の change log として扱う。sheet 作成時に default branch が自動生成される。
 
-理由: ownership、分岐、成長の 3 層があれば character lineage は成立する。branch なしの character は存在しない（単発卓が多数派のため、最初から branch が必要）。
+理由: branch を分岐の primitive、conversion を ruleset 切り替えの primitiveとして分けると、通常は 1 本の線で経験が積み上がり、parallel line が必要なときだけ branch を増やせる。Cerulia の shared root が branch detail であることとも整合する。
 
-補足: 公開 / 非公開の正本は branch.visibility とする。createCharacterSheet は default branch に初期 visibility を seed し、shared surface の解決は branch.visibility だけを見る。default branch の kind は `main` に固定する。
+補足: 公開 / 非公開の正本は branch.visibility とする。createCharacterSheet は default branch に初期 visibility を seed し、shared surface の解決は branch.visibility だけを見る。default branch の kind は `main` に固定する。createBranch は source branch の current resolved state を新しい sheet snapshot に materialize したうえで新 branch を作る。
 
 ## 5. 全 record は原則公開
 
@@ -94,7 +94,7 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 15. キャラクター変更はセッション単位で履歴保持
 
-採用: character-advancement は sessionRef で「どのセッションで何が変わったか」を追える public-safe な change record とする。previousValues や delta payload を持つ場合も、公開前提で説明可能な内容に限る。
+採用: character-advancement は sessionRef で「どのセッションで何が変わったか」を追える public-safe な change record とする。previousValues や delta payload を持つ場合も、公開前提で説明可能な内容に限る。ruleset の切り替えは character-conversion が扱い、advancement は same-branch の変更に閉じる。
 
 理由: append-only immutable ledger は個人アプリとしては過剰だが、セッション単位の変更履歴は PL にとって価値がある。一方で AppView で隠すことを前提にした payload は、全 record 公開の原則と整合しない。
 
@@ -146,11 +146,11 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 23. character-conversion は same-owner に限定する
 
-採用: character-conversion は source / target が同一 owner の場合だけ product-core 候補として扱う。cross-owner conversion は scope 外に置く。
+採用: character-conversion は同一 owner の branch 上で ruleset を切り替える場合だけ product-core 候補として扱う。cross-owner conversion は scope 外に置く。既定では same branch の successor とし、parallel line を残したい場合だけ先に branch を fork してから conversion を行う。
 
 理由: 他人の branch を provenance として持ち出す consent primitive を product-core に入れないため。same-owner であれば provenance を安全に閉じられる。
 
-補足: same-owner conversion は MVP の character ledger に含める。公開面では version pin を隠した public-safe summary だけを出す。
+補足: same-owner conversion は MVP の character ledger に含める。公開面では version pin を隠した public-safe summary だけを出す。conversion は自動変換の provenance であり、可逆性や round-trip を保証しない。変換後の target sheet は通常の sheet update で手動修正してよい。
 
 ## 24. public shared root は character detail
 
@@ -193,3 +193,11 @@ Cerulia の設計における主要な判断を記録する。
 採用: `使用ツール`、`好みのシナリオ`、`プレイスタイル`、`地雷・苦手`、`できること・スキル` は Lexicon 上は自由記述 string 配列で保持する。AppView の固定選択肢は入力補助に留める。
 
 理由: TRPG 文脈の語彙は変化が速く、コミュニティ差も大きい。Lexicon で選択肢を固定しすぎると表現力と将来拡張を損なう。
+
+## 31. branch は分岐、conversion は ruleset 切り替えを担う
+
+採用: branch は継続線を parallel に分けるための primitive とし、ruleset の切り替え地点は character-conversion を正本にする。branch を増やすかどうかはプレイヤーが意図的に選ぶ。
+
+理由: ruleset の切り替えと継続線の分岐は別の判断である。これを 1 つの概念に混ぜると、通常の一直線な成長と、parallel に残したい分岐とが同じ操作に吸収されてしまう。Cerulia では通常は 1 本の line を継続し、parallel 化したいときだけ branch を増やす方が product root に合う。
+
+補足: canonical shared root は character detail のままとし、その identity unit は branch line で解決する。同じ branch が conversion epoch を跨いでも route root を変えない。別 root が必要な parallel line は createBranch で作る。

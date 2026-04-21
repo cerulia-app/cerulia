@@ -9,7 +9,7 @@
 				"encoding": "application/json",
 				"schema": {
 					"type": "object",
-					"required": ["rulesetNsid", "sheetSchemaRef", "displayName"],
+					"required": ["rulesetNsid", "sheetSchemaRef", "displayName", "stats"],
 					"properties": {
 						"rulesetNsid": {
 							"type": "string",

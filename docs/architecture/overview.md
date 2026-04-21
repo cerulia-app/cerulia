@@ -15,9 +15,9 @@ Cerulia は、AT Protocol 上の PL 個人向けサービスである。TRPG キ
 
 Cerulia の product-core は次を扱う。
 
-- character-sheet + character-branch（常にペアで作成）による character 管理
-- character-advancement による成長・変更履歴
-- same-owner の character-conversion による ruleset をまたぐ変換 provenance
+- character-sheet snapshot + character-branch による current state と stable line の管理
+- character-advancement による same-branch の成長・変更履歴
+- same-owner の character-conversion による branch 上の ruleset 切り替え provenance
 - session による PL 自身のセッション経験記録
 - player-profile による PL 自己紹介と卓前共有
 - scenario による公開シナリオ台帳
@@ -45,7 +45,7 @@ Cerulia の product-core は次を扱わない。
 - session は PL が自分で書く post-run の記録。run control を持たない
 - 全 record は原則公開。visibility flag は AppView の表示制御であり、AT Protocol レベルの秘匿ではない。record に入れる内容は public-safe に限る
 - 他人の DID や characterBranchRef を自分の record に書かない。リンクは各自が自分の record を通じて行う
-- character-conversion は same-owner の provenance に限定する
+- character-conversion は same-owner の branch successor に限定する。branch divergence 自体は createBranch が担う
 - Cerulia は記録と共有に絞った薄いアプリケーション。セッション中は read-only
 - 越境利用はシステムで管理しない
 

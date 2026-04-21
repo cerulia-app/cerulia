@@ -10,38 +10,28 @@
 				"schema": {
 					"type": "object",
 					"required": [
-						"sourceSheetRef",
-						"sourceBranchRef",
-						"sourceRulesetNsid",
-						"targetSheetRef",
-						"targetBranchRef",
+						"characterBranchRef",
+						"expectedRevision",
 						"targetRulesetNsid",
+						"targetSheetSchemaRef",
 						"convertedAt"
 					],
 					"properties": {
-						"sourceSheetRef": {
+						"characterBranchRef": {
 							"type": "string",
 							"format": "at-uri"
 						},
-						"sourceBranchRef": {
-							"type": "string",
-							"format": "at-uri"
-						},
-						"sourceRulesetNsid": {
-							"type": "string",
-							"format": "nsid"
-						},
-						"targetSheetRef": {
-							"type": "string",
-							"format": "at-uri"
-						},
-						"targetBranchRef": {
-							"type": "string",
-							"format": "at-uri"
+						"expectedRevision": {
+							"type": "integer",
+							"minimum": 1
 						},
 						"targetRulesetNsid": {
 							"type": "string",
 							"format": "nsid"
+						},
+						"targetSheetSchemaRef": {
+							"type": "string",
+							"format": "at-uri"
 						},
 						"convertedAt": {
 							"type": "string",

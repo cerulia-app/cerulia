@@ -50,6 +50,9 @@ session record の owner（PL 本人）。
 - session は PL が自分で書く record であり、他人の DID や characterBranchRef を含めない。他の参加者とのリンクは、各自が自分で session を書くことで projection が成立させる
 - role: pl の session では characterBranchRef を必須とする。GM として参加した場合は role: gm とし、characterBranchRef は省略してよい
 - characterBranchRef を使う場合、その branch owner は必ず session owner と一致しなければならない
+- session は branch の継続線にぶら下がる履歴であり、branch が後から ruleset conversion を経ても過去の session を別 branch へ移したり書き換えたりしない
+- history 上でその session 時点の ruleset が必要になった場合は、同じ branch に対する latest conversion before `playedAt` から epoch を導出する
+- session history の canonical ordering は playedAt 昇順とし、同時刻なら record-key の tid 順で解決する。owner workbench や shared detail での表示順はこの canonical ordering を必要に応じて reverse してよい
 - campaignRef は任意。単発卓（多数派）では省略する
 - visibility: draft のセッションは Cerulia AppView では一覧や public embedding から隠す。AT Protocol 上は公開されているため、owner-only の秘匿を意味しない
 - hoLabel と hoSummary はネタバレを含まない公開情報だけを扱う。secret handout や disclosure payload は product-core に入れない

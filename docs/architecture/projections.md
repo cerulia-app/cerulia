@@ -72,12 +72,12 @@ PL が自分のキャラクター一覧・詳細を確認する既定 home。
 
 ### 目的
 
-共有リンクで開く canonical shared surface。public / anonymous reader に branch 単位の公開情報だけを見せる。
+共有リンクで開く canonical character detail。public / anonymous reader に branch line 単位の公開情報だけを見せる。
 
 ### canonical inputs
 
 - character-branch
-- character-sheet
+- branch の current head である character-sheet
 - branch に紐づく session
 - branch に紐づく character-advancement
 - character-conversion
@@ -90,15 +90,19 @@ PL が自分のキャラクター一覧・詳細を確認する既定 home。
 - public-safe な advancement summary（advancementKind、effectiveAt、紐づく session summary）
 - public-safe な conversion summary（sourceRulesetNsid、targetRulesetNsid、convertedAt）
 
+canonical shared root は character detail のままとし、その主語は branch line で解決する。同じ branch 上の conversion epoch を跨いでも route root は変えない。別 root が必要な parallel line は branch fork で表現する。
+
 sheetSchemaRef が無い branch では、public / anonymous 向けの structured stats block を省略する。raw JSON fallback は hidden payload として扱わず、shared detail の主要 block には出さない。
 conversion provenance の canonical replay には source / target の sheet version pin を使う。public-safe summary は version を必須表示しない。
 
 ### reader mode
 
 - owner mode: 全 block を見る
-- public / anonymous mode: public-safe subset を見る。draft の場合も detail route は解決するが、surface 先頭で draft state を明示する。presentation を単純に保つため、note、deltaPayload、previousValues、overridePayload、characterBranchRef は shared detail に畳み込まない。非公開専用 annotation は定義しない
+- public / anonymous mode: public-safe subset を見る。draft の場合も detail route は解決するが、surface 先頭で draft state を明示する。presentation を単純に保つため、note、deltaPayload、previousValues、characterBranchRef は shared detail に畳み込まない。非公開専用 annotation は定義しない
 
-public mode の output は `branchSummary`、`sheetSummary`、`recentSessionSummaries`、`advancementSummaries`、`conversionSummaries` の summary shape に固定する。`overridePayload`、`deltaPayload`、`previousValues`、raw change payload、owner-only linkage は返さない。
+public / anonymous mode の `recentSessionSummaries` は visibility: public の session だけを含み、draft child session は返さない。
+
+public mode の output は `branchSummary`、`sheetSummary`、`recentSessionSummaries`、`advancementSummaries`、`conversionSummaries` の summary shape に固定する。`deltaPayload`、`previousValues`、raw change payload、owner-only linkage は返さない。
 
 `getCharacterBranchView` を canonical shared-surface contract とする。owner mode は authenticated reader、public / anonymous mode は auth bundle なしの public lens で解決する。
 

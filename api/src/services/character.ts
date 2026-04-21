@@ -27,8 +27,13 @@ import {
 	validateStatsAgainstSchema,
 } from "../schema.js";
 import type { ServiceRuntime } from "./runtime.js";
-import type { StoredRecord } from "../store/types.js";
 import {
+	isRecordConflictError,
+	scopeStateTokenEquals,
+	type StoredRecord,
+} from "../store/types.js";
+import {
+	applyTypedWrites,
 	assertCredentialFreeUri,
 	blobBelongsToCaller,
 	createTypedRecord,
@@ -56,27 +61,227 @@ function buildSessionListItem(
 	};
 }
 
+function compareTimestampAndRkey(
+	leftTimestamp: string,
+	leftRkey: string,
+	rightTimestamp: string,
+	rightRkey: string,
+) {
+	if (leftTimestamp !== rightTimestamp) {
+		return leftTimestamp.localeCompare(rightTimestamp);
+	}
+
+	return leftRkey.localeCompare(rightRkey);
+}
+
+function maxRkey(left?: string, right?: string) {
+	if (!left) {
+		return right;
+	}
+
+	if (!right) {
+		return left;
+	}
+
+	return left.localeCompare(right) >= 0 ? left : right;
+}
+
+function sortStoredRecordsAscending<T>(
+	records: StoredRecord<T>[],
+	getTimestamp: (record: StoredRecord<T>) => string,
+) {
+	return [...records].sort((left, right) =>
+		compareTimestampAndRkey(
+			getTimestamp(left),
+			left.rkey,
+			getTimestamp(right),
+			right.rkey,
+		),
+	);
+}
+
+function sortStoredRecordsDescending<T>(
+	records: StoredRecord<T>[],
+	getTimestamp: (record: StoredRecord<T>) => string,
+) {
+	return sortStoredRecordsAscending(records, getTimestamp).reverse();
+}
+
+const MATERIALIZATION_COLLECTIONS = [
+	COLLECTIONS.characterBranch,
+	COLLECTIONS.characterSheet,
+	COLLECTIONS.characterAdvancement,
+	COLLECTIONS.characterConversion,
+];
+
 export function createCharacterService(runtime: ServiceRuntime) {
+	function activeAdvancementsForCurrentEpoch(
+		advancements: StoredRecord<AppCeruliaCoreCharacterAdvancement.Main>[],
+		conversions: StoredRecord<AppCeruliaCoreCharacterConversion.Main>[],
+	) {
+		const orderedAdvancements = sortStoredRecordsAscending(
+			advancements,
+			(record) => record.value.effectiveAt,
+		);
+		const orderedConversions = sortStoredRecordsAscending(
+			conversions,
+			(record) => record.value.convertedAt,
+		);
+
+		const latestConversion = orderedConversions.at(-1);
+		if (!latestConversion) {
+			return orderedAdvancements;
+		}
+
+		return orderedAdvancements.filter((record) => {
+			return (
+				compareTimestampAndRkey(
+					record.value.effectiveAt,
+					record.rkey,
+					latestConversion.value.convertedAt,
+					latestConversion.rkey,
+				) > 0
+			);
+		});
+	}
+
+	function materializationStateSignature(
+		branch: StoredRecord<AppCeruliaCoreCharacterBranch.Main>,
+		sheet: StoredRecord<AppCeruliaCoreCharacterSheet.Main>,
+		advancements: StoredRecord<AppCeruliaCoreCharacterAdvancement.Main>[],
+		conversions: StoredRecord<AppCeruliaCoreCharacterConversion.Main>[],
+	) {
+		const orderedConversions = sortStoredRecordsAscending(
+			conversions,
+			(record) => record.value.convertedAt,
+		);
+		const latestConversion = orderedConversions.at(-1);
+		const activeAdvancementRefs = activeAdvancementsForCurrentEpoch(
+			advancements,
+			conversions,
+		).map((record) => record.uri);
+
+		return JSON.stringify({
+			sheetRef: branch.value.sheetRef,
+			retiredAt: branch.value.retiredAt ?? null,
+			sheetVersion: sheet.value.version,
+			sheetUpdatedAt: sheet.updatedAt,
+			latestConversionRef: latestConversion?.uri ?? null,
+			activeAdvancementRefs,
+		});
+	}
+
+	async function loadMaterializationState(branchRef: string) {
+		const branch = await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
+			runtime,
+			branchRef,
+			COLLECTIONS.characterBranch,
+			"characterBranchRef",
+		);
+		const sheet = await loadSheet(runtime, branch.value.sheetRef);
+		const advancements = (
+			await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
+				COLLECTIONS.characterAdvancement,
+				branch.repoDid,
+			)
+		).filter((record) => record.value.characterBranchRef === branchRef);
+		const conversions = (
+			await runtime.store.listRecords<AppCeruliaCoreCharacterConversion.Main>(
+				COLLECTIONS.characterConversion,
+				branch.repoDid,
+			)
+		).filter((record) => record.value.characterBranchRef === branchRef);
+
+		return {
+			branch,
+			sheet,
+			advancements,
+			conversions,
+			signature: materializationStateSignature(
+				branch,
+				sheet,
+				advancements,
+				conversions,
+			),
+		};
+	}
+
+	async function readStableMaterializationState(
+		repoDid: string,
+		branchRef: string,
+		expectedSignature: string,
+	) {
+		const scopeStateBefore = await runtime.store.getScopeStateToken(
+			repoDid,
+			MATERIALIZATION_COLLECTIONS,
+		);
+		const latestState = await loadMaterializationState(branchRef);
+		const scopeStateAfter = await runtime.store.getScopeStateToken(
+			repoDid,
+			MATERIALIZATION_COLLECTIONS,
+		);
+
+		if (
+			latestState.signature !== expectedSignature ||
+			!scopeStateTokenEquals(scopeStateBefore, scopeStateAfter)
+		) {
+			return null;
+		}
+
+		return {
+			latestState,
+			scopeState: scopeStateAfter,
+		};
+	}
+
+	async function readStableMaterializationStateAfterWrite(
+		repoDid: string,
+		branchRef: string,
+		expectedSignature: string,
+		cleanupUris: string[],
+	) {
+		try {
+			const stableState = await readStableMaterializationState(
+				repoDid,
+				branchRef,
+				expectedSignature,
+			);
+			if (stableState) {
+				return stableState;
+			}
+		} catch (error) {
+			for (const uri of cleanupUris) {
+				await runtime.store.deleteRecord(uri);
+			}
+
+			if (
+				error instanceof ApiError &&
+				error.status === 404
+			) {
+				return null;
+			}
+
+			throw error;
+		}
+
+		for (const uri of cleanupUris) {
+			await runtime.store.deleteRecord(uri);
+		}
+
+		return null;
+	}
+
 	async function resolvedBranchStats(
 		sheet: AppCeruliaCoreCharacterSheet.Main,
-		branch: AppCeruliaCoreCharacterBranch.Main,
 		advancements: StoredRecord<AppCeruliaCoreCharacterAdvancement.Main>[],
+		conversions: StoredRecord<AppCeruliaCoreCharacterConversion.Main>[],
 	) {
 		let current = sheet.stats;
 
-		if (branch.overridePayload) {
-			current = mergeJsonObject(current, branch.overridePayload) as {
-				[_ in string]: unknown;
-			};
-		}
-
-		const orderedAdvancements = [...advancements].sort((left, right) => {
-			if (left.value.effectiveAt !== right.value.effectiveAt) {
-				return left.value.effectiveAt.localeCompare(right.value.effectiveAt);
-			}
-
-			return left.rkey.localeCompare(right.rkey);
-		});
+		const orderedAdvancements = activeAdvancementsForCurrentEpoch(
+			advancements,
+			conversions,
+		);
 
 		for (const advancement of orderedAdvancements) {
 			current = mergeJsonObject(current, advancement.value.deltaPayload) as {
@@ -100,14 +305,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			if (input.stats !== undefined) {
-				const err = validateStatsAgainstSchema(
-					input.stats,
-					schema.value.fieldDefs,
+			if (input.stats === undefined) {
+				return rejected(
+					"invalid-required-field",
+					"stats is required when sheetSchemaRef is provided",
 				);
-				if (err) {
-					return rejected("invalid-required-field", err);
-				}
+			}
+
+			const err = validateStatsAgainstSchema(
+				input.stats,
+				schema.value.fieldDefs,
+			);
+			if (err) {
+				return rejected("invalid-required-field", err);
 			}
 
 			if (
@@ -141,7 +351,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			const branch = {
 				$type: COLLECTIONS.characterBranch,
 				ownerDid: callerDid,
-				baseSheetRef: sheetRef,
+				sheetRef,
 				branchKind: "main",
 				branchLabel: input.displayName,
 				visibility: input.initialBranchVisibility ?? "draft",
@@ -223,14 +433,21 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				updatedAt,
 			} satisfies AppCeruliaCoreCharacterSheet.Main;
 
-			await updateTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterSheet,
-				rkey: parseAtUri(input.characterSheetRef).rkey,
-				value: nextRecord,
-				createdAt: record.createdAt,
-				updatedAt,
-			});
+			try {
+				await updateTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterSheet,
+					rkey: parseAtUri(input.characterSheetRef).rkey,
+					value: nextRecord,
+					createdAt: record.createdAt,
+					updatedAt,
+				}, { expectedCurrent: record });
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("characterSheet version is stale");
+				}
+				throw error;
+			}
 
 			return accepted([input.characterSheetRef]);
 		},
@@ -281,14 +498,21 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				updatedAt,
 			} satisfies AppCeruliaCoreCharacterSheet.Main;
 
-			await updateTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterSheet,
-				rkey: parseAtUri(input.characterSheetRef).rkey,
-				value: nextRecord,
-				createdAt: record.createdAt,
-				updatedAt,
-			});
+			try {
+				await updateTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterSheet,
+					rkey: parseAtUri(input.characterSheetRef).rkey,
+					value: nextRecord,
+					createdAt: record.createdAt,
+					updatedAt,
+				}, { expectedCurrent: record });
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("characterSheet version is stale");
+				}
+				throw error;
+			}
 
 			return accepted([input.characterSheetRef]);
 		},
@@ -297,20 +521,74 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			callerDid: string,
 			input: AppCeruliaCharacterCreateBranch.InputSchema,
 		) {
-			const sheet = await loadSheet(runtime, input.baseSheetRef);
-			if (sheet.repoDid !== callerDid) {
+			const sourceBranch =
+				await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
+					runtime,
+					input.sourceBranchRef,
+					COLLECTIONS.characterBranch,
+					"sourceBranchRef",
+				);
+			if (sourceBranch.repoDid !== callerDid) {
 				return rejected(
 					"forbidden-owner-mismatch",
-					"baseSheetRef must belong to the caller",
+					"sourceBranchRef must belong to the caller",
 				);
 			}
 
-			if (sheet.value.sheetSchemaRef && input.overridePayload) {
-				const schema = await loadSchema(runtime, sheet.value.sheetSchemaRef);
+			if (sourceBranch.value.retiredAt) {
+				return rejected(
+					"terminal-state-readonly",
+					"retired branches are read-only",
+				);
+			}
+
+			const sourceSheet = await loadSheet(runtime, sourceBranch.value.sheetRef);
+			if (sourceSheet.repoDid !== callerDid) {
+				return rejected(
+					"forbidden-owner-mismatch",
+					"source branch sheet must belong to the caller",
+				);
+			}
+			const sourceSchema = sourceSheet.value.sheetSchemaRef
+				? await loadSchema(runtime, sourceSheet.value.sheetSchemaRef)
+				: null;
+
+			const advancements = (
+				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
+					COLLECTIONS.characterAdvancement,
+					callerDid,
+				)
+			).filter((record) => record.value.characterBranchRef === input.sourceBranchRef);
+			const conversions = (
+				await runtime.store.listRecords<AppCeruliaCoreCharacterConversion.Main>(
+					COLLECTIONS.characterConversion,
+					callerDid,
+				)
+			).filter((record) => record.value.characterBranchRef === input.sourceBranchRef);
+			const materializedStats = await resolvedBranchStats(
+				sourceSheet.value,
+				advancements,
+				conversions,
+			);
+			const sourceStateSignature = materializationStateSignature(
+				sourceBranch,
+				sourceSheet,
+				advancements,
+				conversions,
+			);
+			const stableSourceState = await readStableMaterializationState(
+				callerDid,
+				input.sourceBranchRef,
+				sourceStateSignature,
+			);
+			if (!stableSourceState) {
+				return rebaseNeeded("source branch state changed during materialization");
+			}
+
+			if (sourceSchema) {
 				const err = validateStatsAgainstSchema(
-					input.overridePayload,
-					schema.value.fieldDefs,
-					true,
+					materializedStats ?? {},
+					sourceSchema.value.fieldDefs,
 				);
 				if (err) {
 					return rejected("invalid-required-field", err);
@@ -318,31 +596,126 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			}
 
 			const createdAt = runtime.now();
-			const rkey = runtime.nextTid();
-			const branchRef = `at://${callerDid}/${COLLECTIONS.characterBranch}/${rkey}`;
+			const sheetRkey = runtime.nextTid();
+			const branchRkey = runtime.nextTid();
+			const sheetRef = `at://${callerDid}/${COLLECTIONS.characterSheet}/${sheetRkey}`;
+			const branchRef = `at://${callerDid}/${COLLECTIONS.characterBranch}/${branchRkey}`;
+			const sourceStateGuards = [sourceBranch, sourceSheet] as StoredRecord<unknown>[];
+			const sheet = {
+				$type: COLLECTIONS.characterSheet,
+				ownerDid: callerDid,
+				sheetSchemaRef: sourceSheet.value.sheetSchemaRef,
+				rulesetNsid: sourceSheet.value.rulesetNsid,
+				displayName: sourceSheet.value.displayName,
+				portraitBlob: sourceSheet.value.portraitBlob,
+				profileSummary: sourceSheet.value.profileSummary,
+				stats: materializedStats,
+				version: 1,
+				createdAt,
+				updatedAt: createdAt,
+			} satisfies AppCeruliaCoreCharacterSheet.Main;
 			const record = {
 				$type: COLLECTIONS.characterBranch,
 				ownerDid: callerDid,
-				baseSheetRef: input.baseSheetRef,
+				sheetRef,
+				forkedFromBranchRef: input.sourceBranchRef,
 				branchKind: input.branchKind,
 				branchLabel: input.branchLabel,
-				overridePayload: input.overridePayload,
 				visibility: input.visibility ?? "draft",
 				revision: 1,
 				createdAt,
 				updatedAt: createdAt,
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
-			await createTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterBranch,
-				rkey,
-				value: record,
-				createdAt,
-				updatedAt: createdAt,
-			});
+			if (runtime.store.applyWrites) {
+				try {
+					await applyTypedWrites(
+						runtime,
+						[
+							{
+								kind: "create",
+								draft: {
+									repoDid: callerDid,
+									collection: COLLECTIONS.characterSheet,
+									rkey: sheetRkey,
+									value: sheet,
+									createdAt,
+									updatedAt: createdAt,
+								},
+							},
+							{
+								kind: "create",
+								draft: {
+									repoDid: callerDid,
+									collection: COLLECTIONS.characterBranch,
+									rkey: branchRkey,
+									value: record,
+									createdAt,
+									updatedAt: createdAt,
+								},
+							},
+						],
+						{ expectedScopeState: stableSourceState.scopeState },
+					);
+				} catch (error) {
+					if (isRecordConflictError(error)) {
+						return rebaseNeeded("source branch state changed during materialization");
+					}
+					throw error;
+				}
 
-			return accepted([branchRef]);
+				return accepted([sheetRef, branchRef]);
+			}
+
+			try {
+				await createTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterSheet,
+					rkey: sheetRkey,
+					value: sheet,
+					createdAt,
+					updatedAt: createdAt,
+				}, {
+					guardUnchanged: sourceStateGuards,
+					expectedScopeState: stableSourceState.scopeState,
+				});
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("source branch state changed during materialization");
+				}
+				throw error;
+			}
+			const postSheetSourceState = await readStableMaterializationStateAfterWrite(
+				callerDid,
+				input.sourceBranchRef,
+				sourceStateSignature,
+				[sheetRef],
+			);
+			if (!postSheetSourceState) {
+				return rebaseNeeded("source branch state changed during materialization");
+			}
+
+			try {
+				await createTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterBranch,
+					rkey: branchRkey,
+					value: record,
+					createdAt,
+					updatedAt: createdAt,
+				}, {
+					guardUnchanged: sourceStateGuards,
+					expectedScopeState: postSheetSourceState.scopeState,
+				});
+			} catch (error) {
+				await runtime.store.deleteRecord(sheetRef);
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("source branch state changed during materialization");
+				}
+				throw error;
+			}
+
+			return accepted([sheetRef, branchRef]);
 		},
 
 		async updateBranch(
@@ -374,37 +747,30 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				return rebaseNeeded("characterBranch revision is stale");
 			}
 
-			const sheet = await loadSheet(runtime, record.value.baseSheetRef);
-			if (sheet.value.sheetSchemaRef && input.overridePayload) {
-				const schema = await loadSchema(runtime, sheet.value.sheetSchemaRef);
-				const err = validateStatsAgainstSchema(
-					input.overridePayload,
-					schema.value.fieldDefs,
-					true,
-				);
-				if (err) {
-					return rejected("invalid-required-field", err);
-				}
-			}
-
 			const updatedAt = runtime.now();
 			const nextRecord = {
 				...record.value,
 				branchLabel: input.branchLabel ?? record.value.branchLabel,
-				overridePayload: input.overridePayload ?? record.value.overridePayload,
 				visibility: input.visibility ?? record.value.visibility,
 				revision: record.value.revision + 1,
 				updatedAt,
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
-			await updateTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterBranch,
-				rkey: parseAtUri(input.characterBranchRef).rkey,
-				value: nextRecord,
-				createdAt: record.createdAt,
-				updatedAt,
-			});
+			try {
+				await updateTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterBranch,
+					rkey: parseAtUri(input.characterBranchRef).rkey,
+					value: nextRecord,
+					createdAt: record.createdAt,
+					updatedAt,
+				}, { expectedCurrent: record });
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("characterBranch revision is stale");
+				}
+				throw error;
+			}
 
 			return accepted([input.characterBranchRef]);
 		},
@@ -446,14 +812,21 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				revision: record.value.revision + 1,
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
-			await updateTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterBranch,
-				rkey: parseAtUri(input.characterBranchRef).rkey,
-				value: nextRecord,
-				createdAt: record.createdAt,
-				updatedAt,
-			});
+			try {
+				await updateTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterBranch,
+					rkey: parseAtUri(input.characterBranchRef).rkey,
+					value: nextRecord,
+					createdAt: record.createdAt,
+					updatedAt,
+				}, { expectedCurrent: record });
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("characterBranch revision is stale");
+				}
+				throw error;
+			}
 
 			return accepted([input.characterBranchRef]);
 		},
@@ -523,15 +896,43 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				createdAt,
 				note: input.note,
 			} satisfies AppCeruliaCoreCharacterAdvancement.Main;
-
-			await createTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterAdvancement,
-				rkey,
-				value: record,
-				createdAt,
+			const nextBranch = {
+				...branch.value,
 				updatedAt: createdAt,
-			});
+			} satisfies AppCeruliaCoreCharacterBranch.Main;
+
+			try {
+				await createTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterAdvancement,
+					rkey,
+					value: record,
+					createdAt,
+					updatedAt: createdAt,
+				}, { guardUnchanged: [branch] });
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("characterBranch state changed during advancement");
+				}
+				throw error;
+			}
+
+			try {
+				await updateTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterBranch,
+					rkey: parseAtUri(input.characterBranchRef).rkey,
+					value: nextBranch,
+					createdAt: branch.createdAt,
+					updatedAt: createdAt,
+				}, { expectedCurrent: branch });
+			} catch (error) {
+				await runtime.store.deleteRecord(advancementRef);
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("characterBranch state changed during advancement");
+				}
+				throw error;
+			}
 
 			return accepted([advancementRef]);
 		},
@@ -540,53 +941,141 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			callerDid: string,
 			input: AppCeruliaCharacterRecordConversion.InputSchema,
 		) {
-			const sourceSheet = await loadSheet(runtime, input.sourceSheetRef);
-			const targetSheet = await loadSheet(runtime, input.targetSheetRef);
-			const sourceBranch =
+			const branch =
 				await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
 					runtime,
-					input.sourceBranchRef,
+					input.characterBranchRef,
 					COLLECTIONS.characterBranch,
-					"sourceBranchRef",
+					"characterBranchRef",
 				);
-			const targetBranch =
-				await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
-					runtime,
-					input.targetBranchRef,
-					COLLECTIONS.characterBranch,
-					"targetBranchRef",
-				);
-
-			if (
-				sourceSheet.repoDid !== callerDid ||
-				targetSheet.repoDid !== callerDid ||
-				sourceBranch.repoDid !== callerDid ||
-				targetBranch.repoDid !== callerDid
-			) {
+			if (branch.repoDid !== callerDid) {
 				return rejected(
 					"forbidden-owner-mismatch",
-					"all conversion refs must belong to the caller",
+					"characterBranchRef must belong to the caller",
 				);
 			}
 
-			if (
-				input.sourceRulesetNsid !== sourceSheet.value.rulesetNsid ||
-				input.targetRulesetNsid !== targetSheet.value.rulesetNsid
-			) {
+			if (branch.value.retiredAt) {
 				return rejected(
-					"invalid-schema-link",
-					"rulesetNsid values must match the referenced sheets",
+					"terminal-state-readonly",
+					"retired branches are read-only",
 				);
 			}
 
-			if (
-				sourceBranch.value.baseSheetRef !== input.sourceSheetRef ||
-				targetBranch.value.baseSheetRef !== input.targetSheetRef
-			) {
+			if (branch.value.revision !== input.expectedRevision) {
+				return rebaseNeeded("characterBranch revision is stale");
+			}
+
+			const sourceSheet = await loadSheet(runtime, branch.value.sheetRef);
+			if (sourceSheet.repoDid !== callerDid) {
+				return rejected(
+					"forbidden-owner-mismatch",
+					"branch sheet must belong to the caller",
+				);
+			}
+
+			if (input.targetRulesetNsid === sourceSheet.value.rulesetNsid) {
 				return rejected(
 					"invalid-schema-link",
-					"source/target branch refs must match the referenced sheets",
+					"targetRulesetNsid must differ from the current sheet ruleset",
 				);
+			}
+
+			const targetSchema = await loadSchema(runtime, input.targetSheetSchemaRef);
+			if (targetSchema.value.baseRulesetNsid !== input.targetRulesetNsid) {
+				return rejected(
+					"invalid-schema-link",
+					"targetSheetSchemaRef must match targetRulesetNsid",
+				);
+			}
+
+			const advancements = (
+				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
+					COLLECTIONS.characterAdvancement,
+					callerDid,
+				)
+			).filter(
+				(record) => record.value.characterBranchRef === input.characterBranchRef,
+			);
+			const conversions = (
+				await runtime.store.listRecords<AppCeruliaCoreCharacterConversion.Main>(
+					COLLECTIONS.characterConversion,
+					callerDid,
+				)
+			).filter(
+				(record) => record.value.characterBranchRef === input.characterBranchRef,
+			);
+			const latestConversion = sortStoredRecordsAscending(
+				conversions,
+				(record) => record.value.convertedAt,
+			).at(-1);
+			const latestActiveAdvancement = activeAdvancementsForCurrentEpoch(
+				advancements,
+				conversions,
+			).at(-1);
+			const sameTimestampFloorRkey = maxRkey(
+				latestConversion?.value.convertedAt === input.convertedAt
+					? latestConversion.rkey
+					: undefined,
+				latestActiveAdvancement?.value.effectiveAt === input.convertedAt
+					? latestActiveAdvancement.rkey
+					: undefined,
+			);
+			const conversionRkey = runtime.nextTid(sameTimestampFloorRkey);
+			if (
+				latestConversion &&
+				compareTimestampAndRkey(
+					input.convertedAt,
+					conversionRkey,
+					latestConversion.value.convertedAt,
+					latestConversion.rkey,
+				) <= 0
+			) {
+				return rejected(
+					"invalid-required-field",
+					"convertedAt must be later than the current branch conversion head",
+				);
+			}
+			if (
+				latestActiveAdvancement &&
+				compareTimestampAndRkey(
+					input.convertedAt,
+					conversionRkey,
+					latestActiveAdvancement.value.effectiveAt,
+					latestActiveAdvancement.rkey,
+				) <= 0
+			) {
+				return rejected(
+					"invalid-required-field",
+					"convertedAt must be later than active advancements in the current epoch",
+				);
+			}
+			const convertedStats =
+				(await resolvedBranchStats(
+					sourceSheet.value,
+					advancements,
+					conversions,
+				)) ?? {};
+			const sourceStateSignature = materializationStateSignature(
+				branch,
+				sourceSheet,
+				advancements,
+				conversions,
+			);
+			const stableSourceState = await readStableMaterializationState(
+				callerDid,
+				input.characterBranchRef,
+				sourceStateSignature,
+			);
+			if (!stableSourceState) {
+				return rebaseNeeded("source branch state changed during materialization");
+			}
+			const validationError = validateStatsAgainstSchema(
+				convertedStats,
+				targetSchema.value.fieldDefs,
+			);
+			if (validationError) {
+				return rejected("invalid-required-field", validationError);
 			}
 
 			const contractError = assertCredentialFreeUri(
@@ -598,33 +1087,192 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			}
 
 			const createdAt = runtime.now();
-			const rkey = runtime.nextTid();
-			const conversionRef = `at://${callerDid}/${COLLECTIONS.characterConversion}/${rkey}`;
+			const sheetRkey = runtime.nextTid();
+			const targetSheetRef = `at://${callerDid}/${COLLECTIONS.characterSheet}/${sheetRkey}`;
+			const conversionRef = `at://${callerDid}/${COLLECTIONS.characterConversion}/${conversionRkey}`;
+			const sourceStateGuards = [branch, sourceSheet] as StoredRecord<unknown>[];
+			const targetSheet = {
+				$type: COLLECTIONS.characterSheet,
+				ownerDid: callerDid,
+				sheetSchemaRef: input.targetSheetSchemaRef,
+				rulesetNsid: input.targetRulesetNsid,
+				displayName: sourceSheet.value.displayName,
+				portraitBlob: sourceSheet.value.portraitBlob,
+				profileSummary: sourceSheet.value.profileSummary,
+				stats: convertedStats,
+				version: 1,
+				createdAt,
+				updatedAt: createdAt,
+			} satisfies AppCeruliaCoreCharacterSheet.Main;
 			const record = {
 				$type: COLLECTIONS.characterConversion,
-				sourceSheetRef: input.sourceSheetRef,
+				characterBranchRef: input.characterBranchRef,
+				sourceSheetRef: branch.value.sheetRef,
 				sourceSheetVersion: sourceSheet.value.version,
-				sourceBranchRef: input.sourceBranchRef,
-				sourceRulesetNsid: input.sourceRulesetNsid,
-				targetSheetRef: input.targetSheetRef,
-				targetSheetVersion: targetSheet.value.version,
-				targetBranchRef: input.targetBranchRef,
+				sourceRulesetNsid: sourceSheet.value.rulesetNsid,
+				targetSheetRef,
+				targetSheetVersion: targetSheet.version,
 				targetRulesetNsid: input.targetRulesetNsid,
 				conversionContractRef: input.conversionContractRef,
 				convertedAt: input.convertedAt,
 				note: input.note,
 			} satisfies AppCeruliaCoreCharacterConversion.Main;
-
-			await createTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterConversion,
-				rkey,
-				value: record,
-				createdAt,
+			const nextBranch = {
+				...branch.value,
+				sheetRef: targetSheetRef,
+				revision: branch.value.revision + 1,
 				updatedAt: createdAt,
-			});
+			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
-			return accepted([conversionRef]);
+			if (runtime.store.applyWrites) {
+				try {
+					await applyTypedWrites(
+						runtime,
+						[
+							{
+								kind: "create",
+								draft: {
+									repoDid: callerDid,
+									collection: COLLECTIONS.characterSheet,
+									rkey: sheetRkey,
+									value: targetSheet,
+									createdAt,
+									updatedAt: createdAt,
+								},
+							},
+							{
+								kind: "create",
+								draft: {
+									repoDid: callerDid,
+									collection: COLLECTIONS.characterConversion,
+									rkey: conversionRkey,
+									value: record,
+									createdAt,
+									updatedAt: createdAt,
+								},
+							},
+							{
+								kind: "update",
+								draft: {
+									repoDid: callerDid,
+									collection: COLLECTIONS.characterBranch,
+									rkey: parseAtUri(input.characterBranchRef).rkey,
+									value: nextBranch,
+									createdAt: branch.createdAt,
+									updatedAt: createdAt,
+								},
+							},
+						],
+						{ expectedScopeState: stableSourceState.scopeState },
+					);
+				} catch (error) {
+					if (isRecordConflictError(error)) {
+						return rebaseNeeded("source branch state changed during materialization");
+					}
+					throw error;
+				}
+
+				return accepted([targetSheetRef, input.characterBranchRef, conversionRef]);
+			}
+
+			try {
+				await createTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterSheet,
+					rkey: sheetRkey,
+					value: targetSheet,
+					createdAt,
+					updatedAt: createdAt,
+				}, {
+					guardUnchanged: sourceStateGuards,
+					expectedScopeState: stableSourceState.scopeState,
+				});
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("source branch state changed during materialization");
+				}
+				throw error;
+			}
+			const postSheetSourceState = await readStableMaterializationStateAfterWrite(
+				callerDid,
+				input.characterBranchRef,
+				sourceStateSignature,
+				[targetSheetRef],
+			);
+			if (!postSheetSourceState) {
+				return rebaseNeeded("source branch state changed during materialization");
+			}
+
+			try {
+				await createTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterConversion,
+					rkey: conversionRkey,
+					value: record,
+					createdAt,
+					updatedAt: createdAt,
+				}, {
+					guardUnchanged: sourceStateGuards,
+					expectedScopeState: postSheetSourceState.scopeState,
+				});
+			} catch (error) {
+				await runtime.store.deleteRecord(targetSheetRef);
+				if (isRecordConflictError(error)) {
+					return rebaseNeeded("source branch state changed during materialization");
+				}
+				throw error;
+			}
+			const postConversionStateSignature = materializationStateSignature(
+				branch,
+				sourceSheet,
+				advancements,
+				[
+					...conversions,
+					{
+						uri: conversionRef,
+						repoDid: callerDid,
+						collection: COLLECTIONS.characterConversion,
+						rkey: conversionRkey,
+						value: record,
+						createdAt,
+						updatedAt: createdAt,
+					} satisfies StoredRecord<AppCeruliaCoreCharacterConversion.Main>,
+				],
+			);
+			const postConversionSourceState = await readStableMaterializationStateAfterWrite(
+				callerDid,
+				input.characterBranchRef,
+				postConversionStateSignature,
+				[conversionRef, targetSheetRef],
+			);
+			if (!postConversionSourceState) {
+				return rebaseNeeded("source branch state changed during materialization");
+			}
+
+			try {
+				await updateTypedRecord(runtime, {
+					repoDid: callerDid,
+					collection: COLLECTIONS.characterBranch,
+					rkey: parseAtUri(input.characterBranchRef).rkey,
+					value: nextBranch,
+					createdAt: branch.createdAt,
+					updatedAt: createdAt,
+				}, {
+					expectedCurrent: branch,
+					expectedScopeState: postConversionSourceState.scopeState,
+				});
+			} catch (error) {
+				if (isRecordConflictError(error)) {
+					await runtime.store.deleteRecord(conversionRef);
+					await runtime.store.deleteRecord(targetSheetRef);
+					return rebaseNeeded("source branch state changed during materialization");
+				}
+				await runtime.store.deleteRecord(conversionRef);
+				await runtime.store.deleteRecord(targetSheetRef);
+				throw error;
+			}
+
+			return accepted([targetSheetRef, input.characterBranchRef, conversionRef]);
 		},
 
 		async getHome(
@@ -642,10 +1290,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 
 			const recentSessions = await Promise.all(
-				[...sessions]
-					.sort((left, right) =>
-						right.value.playedAt.localeCompare(left.value.playedAt),
-					)
+				sortStoredRecordsDescending(
+					sessions,
+					(record) => record.value.playedAt,
+				)
 					.map(async (record) =>
 						buildSessionListItem(
 							record.uri,
@@ -657,11 +1305,14 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 			return {
 				ownerDid: callerDid,
-				branches: branches.map((record) => ({
+				branches: sortStoredRecordsDescending(
+					branches,
+					(record) => record.value.updatedAt,
+				).map((record) => ({
 					$type: "app.cerulia.character.getHome#branchListItem",
 					branchRef: record.uri,
 					branchLabel: record.value.branchLabel,
-					baseSheetRef: record.value.baseSheetRef,
+					sheetRef: record.value.sheetRef,
 					branchKind: record.value.branchKind,
 					visibility: record.value.visibility,
 					revision: record.value.revision,
@@ -681,7 +1332,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				COLLECTIONS.characterBranch,
 				"characterBranchRef",
 			);
-			const sheet = await loadSheet(runtime, branch.value.baseSheetRef);
+			const sheet = await loadSheet(runtime, branch.value.sheetRef);
 			const advancements = (
 				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
 					COLLECTIONS.characterAdvancement,
@@ -693,12 +1344,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					COLLECTIONS.characterConversion,
 					branch.repoDid,
 				)
-			).filter((record) => {
-				return (
-					record.value.sourceBranchRef === branchRef ||
-					record.value.targetBranchRef === branchRef
-				);
-			});
+			).filter((record) => record.value.characterBranchRef === branchRef);
 			const sessions = (
 				await runtime.store.listRecords<AppCeruliaCoreSession.Main>(
 					COLLECTIONS.session,
@@ -710,13 +1356,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				return {
 					branch: branch.value,
 					sheet: sheet.value,
-					advancements: advancements.map((record) => record.value),
-					conversions: conversions.map((record) => record.value),
+					advancements: sortStoredRecordsDescending(
+						advancements,
+						(record) => record.value.effectiveAt,
+					).map((record) => record.value),
+					conversions: sortStoredRecordsDescending(
+						conversions,
+						(record) => record.value.convertedAt,
+					).map((record) => record.value),
 					recentSessions: await Promise.all(
-						sessions
-							.sort((left, right) =>
-								right.value.playedAt.localeCompare(left.value.playedAt),
-							)
+						sortStoredRecordsDescending(
+							sessions,
+							(record) => record.value.playedAt,
+						)
 							.map(async (record) => ({
 								$type: "app.cerulia.character.getBranchView#sessionListItem",
 								sessionRef: record.uri,
@@ -734,8 +1386,8 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 			const resolvedStats = await resolvedBranchStats(
 				sheet.value,
-				branch.value,
 				advancements,
+				conversions,
 			);
 			const schema = sheet.value.sheetSchemaRef
 				? await loadSchema(runtime, sheet.value.sheetSchemaRef)
@@ -756,7 +1408,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				},
 				sheetSummary: {
 					$type: "app.cerulia.character.getBranchView#sheetSummary",
-					sheetRef: branch.value.baseSheetRef,
+					sheetRef: branch.value.sheetRef,
 					displayName: sheet.value.displayName,
 					rulesetNsid: sheet.value.rulesetNsid,
 					structuredStats,
@@ -764,11 +1416,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					profileSummary: sheet.value.profileSummary,
 				},
 				recentSessionSummaries: await Promise.all(
-					sessions
-						.filter((record) => record.value.visibility === "public")
-						.sort((left, right) =>
-							right.value.playedAt.localeCompare(left.value.playedAt),
-						)
+					sortStoredRecordsDescending(
+						sessions.filter((record) => record.value.visibility === "public"),
+						(record) => record.value.playedAt,
+					)
 						.map(async (record) => ({
 							$type: "app.cerulia.character.getBranchView#sessionSummary",
 							sessionRef: record.uri,
@@ -782,7 +1433,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 						})),
 				),
 				advancementSummaries: await Promise.all(
-					advancements.map(async (record) => ({
+					sortStoredRecordsDescending(
+						advancements,
+						(record) => record.value.effectiveAt,
+					).map(async (record) => ({
 						$type: "app.cerulia.character.getBranchView#advancementSummary",
 						advancementRef: record.uri,
 						advancementKind: record.value.advancementKind,
@@ -793,7 +1447,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 										(sessionRecord) =>
 											sessionRecord.uri === record.value.sessionRef,
 									);
-									if (!session) {
+									if (!session || session.value.visibility !== "public") {
 										return undefined;
 									}
 
@@ -812,9 +1466,11 @@ export function createCharacterService(runtime: ServiceRuntime) {
 							: undefined,
 					})),
 				),
-				conversionSummaries: conversions.map((record) => ({
+				conversionSummaries: sortStoredRecordsDescending(
+					conversions,
+					(record) => record.value.convertedAt,
+				).map((record) => ({
 					$type: "app.cerulia.character.getBranchView#conversionSummary",
-					conversionRef: record.uri,
 					sourceRulesetNsid: record.value.sourceRulesetNsid,
 					targetRulesetNsid: record.value.targetRulesetNsid,
 					convertedAt: record.value.convertedAt,

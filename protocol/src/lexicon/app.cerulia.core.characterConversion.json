@@ -8,6 +8,10 @@
 			"record": {
 				"type": "object",
 				"properties": {
+					"characterBranchRef": {
+						"type": "string",
+						"format": "at-uri"
+					},
 					"sourceSheetRef": {
 						"type": "string",
 						"format": "at-uri"
@@ -15,10 +19,6 @@
 					"sourceSheetVersion": {
 						"type": "integer",
 						"minimum": 1
-					},
-					"sourceBranchRef": {
-						"type": "string",
-						"format": "at-uri"
 					},
 					"sourceRulesetNsid": {
 						"type": "string",
@@ -31,10 +31,6 @@
 					"targetSheetVersion": {
 						"type": "integer",
 						"minimum": 1
-					},
-					"targetBranchRef": {
-						"type": "string",
-						"format": "at-uri"
 					},
 					"targetRulesetNsid": {
 						"type": "string",
@@ -54,13 +50,12 @@
 					}
 				},
 				"required": [
+					"characterBranchRef",
 					"sourceSheetRef",
 					"sourceSheetVersion",
-					"sourceBranchRef",
 					"sourceRulesetNsid",
 					"targetSheetRef",
 					"targetSheetVersion",
-					"targetBranchRef",
 					"targetRulesetNsid",
 					"convertedAt"
 				]

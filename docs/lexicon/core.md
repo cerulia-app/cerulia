@@ -10,9 +10,9 @@ Cerulia の product-core に含める record 群を app.cerulia.core.* に整理
 | app.cerulia.core.campaign | record | any: lower-case slug | 長期卓のセッションシリーズ |
 | app.cerulia.core.ruleProfile | record | any: lower-case opaque token | house / campaign のハウスルール overlay |
 | app.cerulia.core.characterSheetSchema | record | any: lower-case opaque token | キャラクターシートの型定義 |
-| app.cerulia.core.characterSheet | record | any: lower-case opaque token | キャラクター原本 |
-| app.cerulia.core.characterBranch | record | any: lower-case opaque token | campaign 別分岐 |
-| app.cerulia.core.characterConversion | record | tid | ruleset をまたぐ変換 provenance |
+| app.cerulia.core.characterSheet | record | any: lower-case opaque token | branch が現在参照する sheet snapshot |
+| app.cerulia.core.characterBranch | record | any: lower-case opaque token | stable な継続線と shared root |
+| app.cerulia.core.characterConversion | record | tid | branch 上の ruleset 切り替え provenance |
 | app.cerulia.core.characterAdvancement | record | tid | 成長・変更の履歴 |
 | app.cerulia.core.session | record | tid | PL のセッション経験記録 |
 | app.cerulia.core.playerProfile | record | literal:self | PL 自己紹介プロフィール |
@@ -23,7 +23,7 @@ Cerulia の product-core に含める record 群を app.cerulia.core.* に整理
 - house、campaign の scope
 - ruleset ごとの schema と overlay
 - character-sheet-schema による型定義
-- character の所有、分岐、変換 provenance、成長
+- character の current snapshot、継続線、分岐、ruleset 切り替え provenance、成長
 - session による PL 自身のセッション経験記録
 - player-profile による PL 自己紹介と卓前共有
 - scenario の公開台帳

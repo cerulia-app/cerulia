@@ -9,9 +9,9 @@
 				"encoding": "application/json",
 				"schema": {
 					"type": "object",
-					"required": ["baseSheetRef", "branchKind", "branchLabel"],
+					"required": ["sourceBranchRef", "branchKind", "branchLabel"],
 					"properties": {
-						"baseSheetRef": {
+						"sourceBranchRef": {
 							"type": "string",
 							"format": "at-uri"
 						},
@@ -22,9 +22,6 @@
 						"branchLabel": {
 							"type": "string",
 							"maxLength": 640
-						},
-						"overridePayload": {
-							"type": "unknown"
 						},
 						"visibility": {
 							"type": "string",

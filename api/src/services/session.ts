@@ -274,7 +274,7 @@ export function createSessionService(runtime: ServiceRuntime) {
 					return right.value.playedAt.localeCompare(left.value.playedAt);
 				}
 
-				return right.updatedAt.localeCompare(left.updatedAt);
+				return right.rkey.localeCompare(left.rkey);
 			});
 
 			const page = paginate(sorted, limit, cursor);

@@ -12,7 +12,11 @@
 						"type": "string",
 						"format": "did"
 					},
-					"baseSheetRef": {
+					"sheetRef": {
+						"type": "string",
+						"format": "at-uri"
+					},
+					"forkedFromBranchRef": {
 						"type": "string",
 						"format": "at-uri"
 					},
@@ -23,10 +27,6 @@
 					"branchLabel": {
 						"type": "string",
 						"maxLength": 640
-					},
-					"overridePayload": {
-						"type": "ref",
-						"ref": "#overridePayload"
 					},
 					"visibility": {
 						"type": "string",
@@ -51,7 +51,7 @@
 				},
 				"required": [
 					"ownerDid",
-					"baseSheetRef",
+					"sheetRef",
 					"branchKind",
 					"branchLabel",
 					"visibility",
@@ -60,11 +60,6 @@
 					"updatedAt"
 				]
 			}
-		},
-		"overridePayload": {
-			"type": "object",
-			"description": "Inline override patch payload. Must be a public-safe JSON object.",
-			"properties": {}
 		}
 	}
 }

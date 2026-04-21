@@ -24,9 +24,6 @@
 							"type": "string",
 							"maxLength": 640
 						},
-						"overridePayload": {
-							"type": "unknown"
-						},
 						"visibility": {
 							"type": "string",
 							"knownValues": ["draft", "public"]

@@ -1,11 +1,13 @@
+import { TID } from "@atproto/common-web";
+
 function randomBase36(length: number): string {
 	const buffer = new Uint8Array(length);
 	crypto.getRandomValues(buffer);
 	return Array.from(buffer, (value) => (value % 36).toString(36)).join("");
 }
 
-export function createTidLikeId(now = Date.now()): string {
-	return `${now.toString(36)}${randomBase36(8)}`;
+export function createTidLikeId(previousTid?: string): string {
+	return TID.nextStr(previousTid);
 }
 
 export function createOpaqueId(): string {

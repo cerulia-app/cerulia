@@ -82,7 +82,7 @@
 		},
 		"branchSummary": {
 			"type": "object",
-			"description": "Public-safe branch display fields. Excludes overridePayload and owner-only linkage.",
+			"description": "Public-safe branch display fields. Excludes owner-only linkage.",
 			"required": [
 				"branchRef",
 				"branchLabel",
@@ -161,13 +161,11 @@
 			"type": "object",
 			"description": "Public-safe conversion provenance. Excludes version pins.",
 			"required": [
-				"conversionRef",
 				"sourceRulesetNsid",
 				"targetRulesetNsid",
 				"convertedAt"
 			],
 			"properties": {
-				"conversionRef": { "type": "string", "format": "at-uri" },
 				"sourceRulesetNsid": { "type": "string", "format": "nsid" },
 				"targetRulesetNsid": { "type": "string", "format": "nsid" },
 				"convertedAt": { "type": "string", "format": "datetime" }

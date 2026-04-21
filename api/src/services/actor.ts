@@ -195,9 +195,9 @@ export function createActorService(runtime: ServiceRuntime) {
 							const sheet =
 								await requireRecord<AppCeruliaCoreCharacterSheet.Main>(
 									runtime,
-									branch.value.baseSheetRef,
+									branch.value.sheetRef,
 									COLLECTIONS.characterSheet,
-									"baseSheetRef",
+									"sheetRef",
 								);
 
 							return {

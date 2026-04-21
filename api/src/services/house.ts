@@ -13,6 +13,7 @@ import { isOwnerReader } from "../auth.js";
 import { COLLECTIONS } from "../constants.js";
 import { parseAtUri } from "../refs.js";
 import { paginate } from "../pagination.js";
+import type { StoredRecord } from "../store/types.js";
 import type { ServiceRuntime } from "./runtime.js";
 import {
 	assertCredentialFreeUri,
@@ -22,6 +23,18 @@ import {
 	resolveScenarioLabel,
 	updateTypedRecord,
 } from "./shared.js";
+
+function sortSessionsByPlayedAt(
+	sessions: StoredRecord<AppCeruliaCoreSession.Main>[],
+) {
+	return [...sessions].sort((left, right) => {
+		if (left.value.playedAt !== right.value.playedAt) {
+			return right.value.playedAt.localeCompare(left.value.playedAt);
+		}
+
+		return right.rkey.localeCompare(left.rkey);
+	});
+}
 
 async function validateDefaultRuleProfiles(
 	runtime: ServiceRuntime,
@@ -202,7 +215,7 @@ export function createHouseService(runtime: ServiceRuntime) {
 						updatedAt: campaign.value.updatedAt,
 					})),
 					sessions: await Promise.all(
-						sessions.map(async (session) => ({
+						sortSessionsByPlayedAt(sessions).map(async (session) => ({
 							$type: "app.cerulia.house.getView#sessionListItem",
 							sessionRef: session.uri,
 							role: session.value.role,
@@ -234,7 +247,7 @@ export function createHouseService(runtime: ServiceRuntime) {
 						updatedAt: campaign.value.updatedAt,
 					})),
 				sessionSummaries: await Promise.all(
-					sessions
+					sortSessionsByPlayedAt(sessions)
 						.filter((session) => session.value.visibility === "public")
 						.map(async (session) => ({
 							$type: "app.cerulia.house.getView#sessionSummary",

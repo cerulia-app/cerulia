@@ -42,7 +42,7 @@
 			"required": [
 				"branchRef",
 				"branchLabel",
-				"baseSheetRef",
+				"sheetRef",
 				"branchKind",
 				"visibility",
 				"revision"
@@ -56,7 +56,7 @@
 					"type": "string",
 					"maxLength": 640
 				},
-				"baseSheetRef": {
+				"sheetRef": {
 					"type": "string",
 					"format": "at-uri"
 				},
