@@ -21,8 +21,11 @@ export class BunSqlDriver implements SqlDriver {
 		return this.db.query(sql).all(...asBindings(params)) as T[];
 	}
 
-	async run(sql: string, params: unknown[] = []): Promise<void> {
-		this.db.query(sql).run(...asBindings(params));
+	async run(sql: string, params: unknown[] = []): Promise<number | undefined> {
+		const result = this.db.query(sql).run(...asBindings(params)) as {
+			changes?: number;
+		};
+		return result.changes;
 	}
 }
 

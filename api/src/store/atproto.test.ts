@@ -10,22 +10,117 @@ const DID = "did:plc:alice";
 
 function createRemoteAgentStore() {
 	const records = new Map<string, StoredRecord<unknown>>();
+	const cids = new Map<string, string>();
+	const repoCommits = new Map<string, string>();
+	let cidCounter = 0;
+	let commitCounter = 0;
+	let onGetRecord: ((uri: string) => void) | undefined;
+
+	function nextCid() {
+		cidCounter += 1;
+		return `cid-${cidCounter}`;
+	}
+
+	function ensureRepoCommit(repoDid: string) {
+		let current = repoCommits.get(repoDid);
+		if (!current) {
+			current = `commit-${commitCounter}`;
+			repoCommits.set(repoDid, current);
+		}
+		return current;
+	}
+
+	function bumpRepoCommit(repoDid: string) {
+		commitCounter += 1;
+		const next = `commit-${commitCounter}`;
+		repoCommits.set(repoDid, next);
+		return next;
+	}
 
 	const agent = {
 		com: {
 			atproto: {
 				repo: {
+					async applyWrites(input: {
+						repo: string;
+						writes: Array<
+							| {
+								$type?: "com.atproto.repo.applyWrites#create";
+								collection: string;
+								rkey?: string;
+								value: { [_: string]: unknown };
+							}
+							| {
+								$type?: "com.atproto.repo.applyWrites#update";
+								collection: string;
+								rkey: string;
+								value: { [_: string]: unknown };
+							}
+						>;
+						swapCommit?: string;
+					}) {
+						const currentCommit = ensureRepoCommit(input.repo);
+						if (
+							input.swapCommit !== undefined &&
+							input.swapCommit !== currentCommit
+						) {
+							const error = new Error("swap mismatch");
+							error.name = "InvalidSwapError";
+							throw error;
+						}
+
+						for (const write of input.writes) {
+							const rkey = write.rkey ?? "generated";
+							const uri = buildAtUri(input.repo, write.collection, rkey);
+							const cid = nextCid();
+							records.set(uri, {
+								uri,
+								repoDid: input.repo,
+								collection: write.collection,
+								rkey,
+								value: write.value,
+								createdAt: String(
+									write.value.createdAt ?? "2026-04-21T00:00:00.000Z",
+								),
+								updatedAt: String(
+									write.value.updatedAt ?? write.value.createdAt ?? "2026-04-21T00:00:00.000Z",
+								),
+							});
+							cids.set(uri, cid);
+						}
+
+						const commitCid = bumpRepoCommit(input.repo);
+						return {
+							data: {
+								commit: {
+									cid: commitCid,
+									rev: commitCid,
+								},
+							},
+						};
+					},
 					async createRecord(input: {
 						repo: string;
 						collection: string;
 						rkey?: string;
 						record: { [_: string]: unknown };
+						swapCommit?: string;
 					}) {
+						const currentCommit = ensureRepoCommit(input.repo);
+						if (
+							input.swapCommit !== undefined &&
+							input.swapCommit !== currentCommit
+						) {
+							const error = new Error("swap mismatch");
+							error.name = "InvalidSwapError";
+							throw error;
+						}
 						const uri = buildAtUri(
 							input.repo,
 							input.collection,
 							input.rkey ?? "generated",
 						);
+						const cid = nextCid();
 						records.set(uri, {
 							uri,
 							repoDid: input.repo,
@@ -37,10 +132,16 @@ function createRemoteAgentStore() {
 								input.record.updatedAt ?? input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
 							),
 						});
+						cids.set(uri, cid);
+						const commitCid = bumpRepoCommit(input.repo);
 						return {
 							data: {
 								uri,
-								cid: "cid-create",
+								cid,
+								commit: {
+									cid: commitCid,
+									rev: commitCid,
+								},
 							},
 						};
 					},
@@ -49,8 +150,30 @@ function createRemoteAgentStore() {
 						collection: string;
 						rkey: string;
 						record: { [_: string]: unknown };
+						swapRecord?: string | null;
+						swapCommit?: string;
 					}) {
+						const currentCommit = ensureRepoCommit(input.repo);
+						if (
+							input.swapCommit !== undefined &&
+							input.swapCommit !== currentCommit
+						) {
+							const error = new Error("swap mismatch");
+							error.name = "InvalidSwapError";
+							throw error;
+						}
 						const uri = buildAtUri(input.repo, input.collection, input.rkey);
+						const currentCid = cids.get(uri) ?? null;
+						if (
+							input.swapRecord !== undefined &&
+							input.swapRecord !== currentCid
+						) {
+							const error = new Error("swap mismatch");
+							error.name = "InvalidSwapError";
+							throw error;
+						}
+
+						const cid = nextCid();
 						records.set(uri, {
 							uri,
 							repoDid: input.repo,
@@ -62,10 +185,12 @@ function createRemoteAgentStore() {
 								input.record.updatedAt ?? input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
 							),
 						});
+						cids.set(uri, cid);
+						bumpRepoCommit(input.repo);
 						return {
 							data: {
 								uri,
-								cid: "cid-update",
+								cid,
 							},
 						};
 					},
@@ -77,6 +202,7 @@ function createRemoteAgentStore() {
 						records.delete(
 							buildAtUri(input.repo, input.collection, input.rkey),
 						);
+						bumpRepoCommit(input.repo);
 					},
 					async getRecord(input: {
 						repo: string;
@@ -90,11 +216,12 @@ function createRemoteAgentStore() {
 							error.name = "RecordNotFoundError";
 							throw error;
 						}
+						onGetRecord?.(uri);
 
 						return {
 							data: {
 								uri,
-								cid: "cid-get",
+								cid: cids.get(uri) ?? nextCid(),
 								value: record.value as { [_: string]: unknown },
 							},
 						};
@@ -120,12 +247,29 @@ function createRemoteAgentStore() {
 						};
 					},
 				},
+				sync: {
+					async getLatestCommit(input: { did: string }) {
+						const cid = ensureRepoCommit(input.did);
+						return {
+							data: {
+								cid,
+								rev: cid,
+							},
+						};
+					},
+				},
 			},
 		},
 	};
 
 	return {
 		records,
+		cids,
+		repoCommits,
+		setOnGetRecord(handler: ((uri: string) => void) | undefined) {
+			onGetRecord = handler;
+		},
+		bumpRepoCommit,
 		agent: agent as unknown as Agent,
 	};
 }
@@ -174,6 +318,9 @@ describe("AtprotoMirrorRecordStore", () => {
 			async getRecord() {
 				return null;
 			},
+			async getScopeStateToken(repoDid) {
+				return { repoDid, collectionVersions: {} };
+			},
 			async listRecords() {
 				return [];
 			},
@@ -207,6 +354,302 @@ describe("AtprotoMirrorRecordStore", () => {
 			buildAtUri(DID, COLLECTIONS.scenario, "remote-only"),
 		);
 		expect(remote.records.has(created.uri)).toBe(true);
+	});
+
+	test("rejects stale mirrored updates with swapRecord compare-and-swap", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return remote.agent;
+			},
+		});
+
+		const created = await store.createRecord({
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "stale-update",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Original",
+				ownerDid: DID,
+				createdAt: "2026-04-21T00:00:00.000Z",
+				updatedAt: "2026-04-21T00:00:00.000Z",
+			},
+			createdAt: "2026-04-21T00:00:00.000Z",
+			updatedAt: "2026-04-21T00:00:00.000Z",
+		});
+
+		await store.updateRecord(
+			{
+				repoDid: DID,
+				collection: COLLECTIONS.scenario,
+				rkey: "stale-update",
+				value: {
+					$type: COLLECTIONS.scenario,
+					title: "Fresh",
+					ownerDid: DID,
+					createdAt: "2026-04-21T00:00:00.000Z",
+					updatedAt: "2026-04-21T01:00:00.000Z",
+				},
+				createdAt: "2026-04-21T00:00:00.000Z",
+				updatedAt: "2026-04-21T01:00:00.000Z",
+			},
+			{ expectedCurrent: created },
+		);
+
+		await expect(
+			store.updateRecord(
+				{
+					repoDid: DID,
+					collection: COLLECTIONS.scenario,
+					rkey: "stale-update",
+					value: {
+						$type: COLLECTIONS.scenario,
+						title: "Stale",
+						ownerDid: DID,
+						createdAt: "2026-04-21T00:00:00.000Z",
+						updatedAt: "2026-04-21T02:00:00.000Z",
+					},
+					createdAt: "2026-04-21T00:00:00.000Z",
+					updatedAt: "2026-04-21T02:00:00.000Z",
+				},
+				{ expectedCurrent: created },
+			),
+		).rejects.toHaveProperty("name", "RecordConflictError");
+	});
+
+	test("rejects guarded creates when the repo mutates after guard validation", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return remote.agent;
+			},
+		});
+
+		const guardUri = buildAtUri(DID, COLLECTIONS.scenario, "guard-record");
+		const guardRecord: StoredRecord<{
+			$type: string;
+			title: string;
+			ownerDid: string;
+			createdAt: string;
+			updatedAt: string;
+		}> = {
+			uri: guardUri,
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "guard-record",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Guard",
+				ownerDid: DID,
+				createdAt: "2026-04-21T00:00:00.000Z",
+				updatedAt: "2026-04-21T00:00:00.000Z",
+			},
+			createdAt: "2026-04-21T00:00:00.000Z",
+			updatedAt: "2026-04-21T00:00:00.000Z",
+		};
+		remote.records.set(guardUri, guardRecord);
+		remote.cids.set(guardUri, "cid-guard-record");
+		remote.bumpRepoCommit(DID);
+
+		remote.setOnGetRecord((uri) => {
+			if (uri !== guardUri) {
+				return;
+			}
+			remote.setOnGetRecord(undefined);
+			remote.records.set(guardUri, {
+				...guardRecord,
+				value: {
+					...guardRecord.value,
+					updatedAt: "2026-04-21T01:00:00.000Z",
+				},
+				updatedAt: "2026-04-21T01:00:00.000Z",
+			});
+			remote.cids.set(guardUri, "cid-guard-record-updated");
+			remote.bumpRepoCommit(DID);
+		});
+
+		await expect(
+			store.createRecord(
+				{
+					repoDid: DID,
+					collection: COLLECTIONS.scenario,
+					rkey: "guarded-create",
+					value: {
+						$type: COLLECTIONS.scenario,
+						title: "Guarded Create",
+						ownerDid: DID,
+						createdAt: "2026-04-21T02:00:00.000Z",
+						updatedAt: "2026-04-21T02:00:00.000Z",
+					},
+					createdAt: "2026-04-21T02:00:00.000Z",
+					updatedAt: "2026-04-21T02:00:00.000Z",
+				},
+				{ guardUnchanged: [guardRecord] },
+			),
+		).rejects.toHaveProperty("name", "RecordConflictError");
+	});
+
+	test("rejects scoped creates after an unrelated repo mutation bumps the commit", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return remote.agent;
+			},
+		});
+
+		const scopeState = await store.getScopeStateToken(DID, [
+			COLLECTIONS.characterBranch,
+			COLLECTIONS.characterSheet,
+			COLLECTIONS.characterAdvancement,
+			COLLECTIONS.characterConversion,
+		]);
+
+		const unrelatedUri = buildAtUri(DID, COLLECTIONS.scenario, "unrelated-write");
+		remote.records.set(unrelatedUri, {
+			uri: unrelatedUri,
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "unrelated-write",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Unrelated",
+				ownerDid: DID,
+				createdAt: "2026-04-21T03:00:00.000Z",
+				updatedAt: "2026-04-21T03:00:00.000Z",
+			},
+			createdAt: "2026-04-21T03:00:00.000Z",
+			updatedAt: "2026-04-21T03:00:00.000Z",
+		});
+		remote.cids.set(unrelatedUri, "cid-unrelated-write");
+		remote.bumpRepoCommit(DID);
+
+		await expect(
+			store.createRecord(
+				{
+					repoDid: DID,
+					collection: COLLECTIONS.scenario,
+					rkey: "scoped-create",
+					value: {
+						$type: COLLECTIONS.scenario,
+						title: "Scoped Create",
+						ownerDid: DID,
+						createdAt: "2026-04-21T04:00:00.000Z",
+						updatedAt: "2026-04-21T04:00:00.000Z",
+					},
+					createdAt: "2026-04-21T04:00:00.000Z",
+					updatedAt: "2026-04-21T04:00:00.000Z",
+				},
+				{ expectedScopeState: scopeState },
+			),
+		).rejects.toHaveProperty("name", "RecordConflictError");
+	});
+
+	test("rejects scoped updates after an unrelated repo mutation bumps the commit", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return remote.agent;
+			},
+		});
+
+		const created = await store.createRecord({
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "scoped-update",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Scoped Update",
+				ownerDid: DID,
+				createdAt: "2026-04-21T00:00:00.000Z",
+				updatedAt: "2026-04-21T00:00:00.000Z",
+			},
+			createdAt: "2026-04-21T00:00:00.000Z",
+			updatedAt: "2026-04-21T00:00:00.000Z",
+		});
+
+		const scopeState = await store.getScopeStateToken(DID, [COLLECTIONS.scenario]);
+
+		const unrelatedUri = buildAtUri(DID, COLLECTIONS.house, "unrelated-update");
+		remote.records.set(unrelatedUri, {
+			uri: unrelatedUri,
+			repoDid: DID,
+			collection: COLLECTIONS.house,
+			rkey: "unrelated-update",
+			value: {
+				$type: COLLECTIONS.house,
+				title: "Unrelated House",
+				createdAt: "2026-04-21T01:00:00.000Z",
+				updatedAt: "2026-04-21T01:00:00.000Z",
+			},
+			createdAt: "2026-04-21T01:00:00.000Z",
+			updatedAt: "2026-04-21T01:00:00.000Z",
+		});
+		remote.cids.set(unrelatedUri, "cid-unrelated-update");
+		remote.bumpRepoCommit(DID);
+
+		await expect(
+			store.updateRecord(
+				{
+					repoDid: DID,
+					collection: COLLECTIONS.scenario,
+					rkey: "scoped-update",
+					value: {
+						$type: COLLECTIONS.scenario,
+						title: "Scoped Update Changed",
+						ownerDid: DID,
+						createdAt: "2026-04-21T00:00:00.000Z",
+						updatedAt: "2026-04-21T02:00:00.000Z",
+					},
+					createdAt: "2026-04-21T00:00:00.000Z",
+					updatedAt: "2026-04-21T02:00:00.000Z",
+				},
+				{ expectedCurrent: created, expectedScopeState: scopeState },
+			),
+		).rejects.toHaveProperty("name", "RecordConflictError");
+	});
+
+	test("rejects scoped applyWrites after an unrelated repo mutation bumps the commit", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return remote.agent;
+			},
+		});
+
+		const scopeState = await store.getScopeStateToken(DID, [COLLECTIONS.scenario]);
+
+		remote.bumpRepoCommit(DID);
+
+		await expect(
+			store.applyWrites!(
+				[
+					{
+						kind: "create",
+						draft: {
+							repoDid: DID,
+							collection: COLLECTIONS.scenario,
+							rkey: "batched-scenario",
+							value: {
+								$type: COLLECTIONS.scenario,
+								title: "Batched Scenario",
+								ownerDid: DID,
+								createdAt: "2026-04-21T05:00:00.000Z",
+								updatedAt: "2026-04-21T05:00:00.000Z",
+							},
+							createdAt: "2026-04-21T05:00:00.000Z",
+							updatedAt: "2026-04-21T05:00:00.000Z",
+						},
+					},
+				],
+				{ expectedScopeState: scopeState },
+			),
+		).rejects.toHaveProperty("name", "RecordConflictError");
 	});
 
 	test("syncs owner collection reads from the remote repo into cache", async () => {

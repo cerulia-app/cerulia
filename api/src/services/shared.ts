@@ -9,7 +9,15 @@ import { COLLECTIONS, SELF_RKEY } from "../constants.js";
 import { ApiError } from "../errors.js";
 import { slugify } from "../ids.js";
 import { parseAtUri } from "../refs.js";
-import type { BlobRefLike, RecordDraft, StoredRecord } from "../store/types.js";
+import type {
+	ApplyWritesOptions,
+	BlobRefLike,
+	CreateRecordOptions,
+	RecordDraft,
+	RecordWrite,
+	StoredRecord,
+	UpdateRecordOptions,
+} from "../store/types.js";
 import { isCredentialFreeUri } from "../uri-policy.js";
 import type { ServiceRuntime } from "./runtime.js";
 
@@ -32,17 +40,35 @@ function ensureValidation(value: unknown, lexiconId: string): void {
 export async function createTypedRecord<T extends { $type: string }>(
 	runtime: ServiceRuntime,
 	draft: RecordDraft<T>,
+	options?: CreateRecordOptions,
 ): Promise<StoredRecord<T>> {
 	ensureValidation(draft.value, draft.collection);
-	return runtime.store.createRecord(draft);
+	return runtime.store.createRecord(draft, options);
 }
 
 export async function updateTypedRecord<T extends { $type: string }>(
 	runtime: ServiceRuntime,
 	draft: RecordDraft<T>,
+	options?: UpdateRecordOptions<T>,
 ): Promise<StoredRecord<T>> {
 	ensureValidation(draft.value, draft.collection);
-	return runtime.store.updateRecord(draft);
+	return runtime.store.updateRecord(draft, options);
+}
+
+export async function applyTypedWrites(
+	runtime: ServiceRuntime,
+	writes: RecordWrite<{ $type: string }>[],
+	options: ApplyWritesOptions,
+): Promise<void> {
+	if (!runtime.store.applyWrites) {
+		throw new Error("applyWrites is not available for this store");
+	}
+
+	for (const write of writes) {
+		ensureValidation(write.draft.value, write.draft.collection);
+	}
+
+	await runtime.store.applyWrites(writes, options);
 }
 
 export async function requireRecord<T>(

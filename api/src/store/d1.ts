@@ -18,6 +18,31 @@ export interface D1DatabaseLike {
 class D1SqlDriver implements SqlDriver {
 	constructor(private readonly db: D1DatabaseLike) {}
 
+	private extractChanges(result: unknown): number | undefined {
+		if (typeof result !== "object" || result === null) {
+			return undefined;
+		}
+
+		if (
+			"changes" in result &&
+			typeof (result as { changes?: unknown }).changes === "number"
+		) {
+			return (result as { changes: number }).changes;
+		}
+
+		const meta = (result as { meta?: unknown }).meta;
+		if (
+			typeof meta === "object" &&
+			meta !== null &&
+			"changes" in meta &&
+			typeof (meta as { changes?: unknown }).changes === "number"
+		) {
+			return (meta as { changes: number }).changes;
+		}
+
+		return undefined;
+	}
+
 	async get<T>(sql: string, params: unknown[] = []): Promise<T | null> {
 		return this.db
 			.prepare(sql)
@@ -33,11 +58,12 @@ class D1SqlDriver implements SqlDriver {
 		return result.results;
 	}
 
-	async run(sql: string, params: unknown[] = []): Promise<void> {
-		await this.db
+	async run(sql: string, params: unknown[] = []): Promise<number | undefined> {
+		const result = await this.db
 			.prepare(sql)
 			.bind(...params)
 			.run();
+		return this.extractChanges(result);
 	}
 }
 

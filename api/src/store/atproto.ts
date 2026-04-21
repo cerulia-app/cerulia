@@ -1,6 +1,16 @@
 import { Agent } from "@atproto/api";
 import { buildAtUri, parseAtUri } from "../refs.js";
-import type { RecordDraft, RecordStore, StoredRecord } from "./types.js";
+import type {
+	ApplyWritesOptions,
+	RecordWrite,
+	CreateRecordOptions,
+	RecordDraft,
+	RecordStore,
+	ScopeStateToken,
+	StoredRecord,
+	UpdateRecordOptions,
+} from "./types.js";
+import { RecordConflictError, storedRecordMatchesExpected } from "./types.js";
 
 export interface AgentProvider {
 	getAgent(repoDid: string): Promise<Agent | null>;
@@ -111,15 +121,79 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		private readonly agents: AgentProvider,
 	) {}
 
-	async createRecord<T>(draft: RecordDraft<T>): Promise<StoredRecord<T>> {
-		const agent = await this.requireAgent(draft.repoDid);
-		await agent.com.atproto.repo.createRecord({
-			repo: draft.repoDid,
-			collection: draft.collection,
-			rkey: draft.rkey,
-			record: draft.value as { [_ in string]: unknown },
-			validate: true,
+	async getScopeStateToken(
+		repoDid: string,
+		_collections: string[],
+	): Promise<ScopeStateToken> {
+		const agent = await this.requireAgent(repoDid);
+		const latestCommit = await agent.com.atproto.sync.getLatestCommit({
+			did: repoDid,
 		});
+
+		return {
+			repoDid,
+			repoCommit: latestCommit.data.cid,
+		};
+	}
+
+	async createRecord<T>(
+		draft: RecordDraft<T>,
+		options?: CreateRecordOptions,
+	): Promise<StoredRecord<T>> {
+		const agent = await this.requireAgent(draft.repoDid);
+		let swapCommit: string | undefined;
+		if (options?.expectedScopeState) {
+			if (options.expectedScopeState.repoDid !== draft.repoDid) {
+				throw new RecordConflictError();
+			}
+			swapCommit = options.expectedScopeState.repoCommit;
+		}
+		if ((options?.guardUnchanged?.length ?? 0) > 0) {
+			if (!swapCommit) {
+				const latestCommit = await agent.com.atproto.sync.getLatestCommit({
+					did: draft.repoDid,
+				});
+				swapCommit = latestCommit.data.cid;
+			}
+
+			for (const guard of options?.guardUnchanged ?? []) {
+				const parsedGuard = parseAtUri(guard.uri);
+				try {
+					const current = await agent.com.atproto.repo.getRecord({
+						repo: parsedGuard.repoDid,
+						collection: parsedGuard.collection,
+						rkey: parsedGuard.rkey,
+					});
+					const currentRecord = toStoredRecord(
+						current.data.uri,
+						current.data.value as unknown,
+					);
+					if (!storedRecordMatchesExpected(currentRecord, guard)) {
+						throw new RecordConflictError();
+					}
+				} catch (error) {
+					if (error instanceof RecordConflictError || isNotFoundError(error)) {
+						throw new RecordConflictError();
+					}
+					throw error;
+				}
+			}
+		}
+		try {
+			await agent.com.atproto.repo.createRecord({
+				repo: draft.repoDid,
+				collection: draft.collection,
+				rkey: draft.rkey,
+				record: draft.value as { [_ in string]: unknown },
+				validate: true,
+				swapCommit,
+			});
+		} catch (error) {
+			if (error instanceof Error && error.name === "InvalidSwapError") {
+				throw new RecordConflictError();
+			}
+			throw error;
+		}
 
 		await bestEffortCacheSync(
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
@@ -136,15 +210,66 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		};
 	}
 
-	async updateRecord<T>(draft: RecordDraft<T>): Promise<StoredRecord<T>> {
+	async updateRecord<T>(
+		draft: RecordDraft<T>,
+		options?: UpdateRecordOptions<T>,
+	): Promise<StoredRecord<T>> {
 		const agent = await this.requireAgent(draft.repoDid);
-		await agent.com.atproto.repo.putRecord({
-			repo: draft.repoDid,
-			collection: draft.collection,
-			rkey: draft.rkey,
-			record: draft.value as { [_ in string]: unknown },
-			validate: true,
-		});
+		let swapRecord: string | null | undefined;
+		let swapCommit: string | undefined;
+		if (options?.expectedScopeState) {
+			if (options.expectedScopeState.repoDid !== draft.repoDid) {
+				throw new RecordConflictError();
+			}
+			swapCommit = options.expectedScopeState.repoCommit;
+		}
+		if (options?.expectedCurrent !== undefined) {
+			try {
+				const current = await agent.com.atproto.repo.getRecord({
+					repo: draft.repoDid,
+					collection: draft.collection,
+					rkey: draft.rkey,
+				});
+				const currentRecord = toStoredRecord(
+					current.data.uri,
+					current.data.value as T,
+				);
+				if (
+					!storedRecordMatchesExpected(
+						currentRecord as StoredRecord<unknown>,
+						options.expectedCurrent as StoredRecord<unknown>,
+					)
+				) {
+					throw new RecordConflictError();
+				}
+				swapRecord = current.data.cid;
+			} catch (error) {
+				if (error instanceof RecordConflictError || isNotFoundError(error)) {
+					throw new RecordConflictError();
+				}
+				throw error;
+			}
+		}
+
+		try {
+			await agent.com.atproto.repo.putRecord({
+				repo: draft.repoDid,
+				collection: draft.collection,
+				rkey: draft.rkey,
+				record: draft.value as { [_ in string]: unknown },
+				validate: true,
+				swapRecord,
+				swapCommit,
+			});
+		} catch (error) {
+			if (
+				error instanceof Error &&
+				error.name === "InvalidSwapError"
+			) {
+				throw new RecordConflictError();
+			}
+			throw error;
+		}
 
 		await bestEffortCacheSync(
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
@@ -159,6 +284,73 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			createdAt: draft.createdAt,
 			updatedAt: draft.updatedAt,
 		};
+	}
+
+	async applyWrites(
+		writes: RecordWrite[],
+		options: ApplyWritesOptions,
+	): Promise<void> {
+		if (writes.length === 0) {
+			return;
+		}
+
+		const [firstWrite] = writes;
+		if (!firstWrite) {
+			return;
+		}
+
+		const repoDid = firstWrite.draft.repoDid;
+		if (options.expectedScopeState.repoDid !== repoDid) {
+			throw new RecordConflictError();
+		}
+
+		for (const write of writes) {
+			if (write.draft.repoDid !== repoDid) {
+				throw new Error("applyWrites requires a single repoDid");
+			}
+		}
+
+		const agent = await this.requireAgent(repoDid);
+		try {
+			await agent.com.atproto.repo.applyWrites({
+				repo: repoDid,
+				validate: true,
+				swapCommit: options.expectedScopeState.repoCommit,
+				writes: writes.map((write) => {
+					if (write.kind === "create") {
+						return {
+							$type: "com.atproto.repo.applyWrites#create",
+							collection: write.draft.collection,
+							rkey: write.draft.rkey,
+							value: write.draft.value as { [_ in string]: unknown },
+						};
+					}
+
+					return {
+						$type: "com.atproto.repo.applyWrites#update",
+						collection: write.draft.collection,
+						rkey: write.draft.rkey,
+						value: write.draft.value as { [_ in string]: unknown },
+					};
+				}),
+			});
+		} catch (error) {
+			if (error instanceof Error && error.name === "InvalidSwapError") {
+				throw new RecordConflictError();
+			}
+			throw error;
+		}
+
+		await bestEffortCacheSync(
+			this.agents.rememberRepoDid?.(repoDid) ?? Promise.resolve(),
+		);
+		for (const write of writes) {
+			const syncTask =
+				write.kind === "create"
+					? this.cache.createRecord(write.draft)
+					: this.cache.updateRecord(write.draft);
+			await bestEffortCacheSync(syncTask.then(() => undefined));
+		}
 	}
 
 	async deleteRecord(uri: string): Promise<void> {

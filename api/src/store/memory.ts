@@ -1,11 +1,18 @@
 import { parseAtUri } from "../refs.js";
 import type {
 	BlobRefLike,
+	CreateRecordOptions,
 	RecordDraft,
 	RecordStore,
 	StoredRecord,
+	UpdateRecordOptions,
 } from "./types.js";
-import { toStoredRecord } from "./types.js";
+import {
+	RecordConflictError,
+	scopeStateTokenEquals,
+	storedRecordMatchesExpected,
+	toStoredRecord,
+} from "./types.js";
 
 function blobCid(blob: BlobRefLike): string | null {
 	const ref = blob.ref;
@@ -32,17 +39,86 @@ function blobCid(blob: BlobRefLike): string | null {
 export class MemoryRecordStore implements RecordStore {
 	private readonly records = new Map<string, StoredRecord<unknown>>();
 	private readonly ownedBlobs = new Set<string>();
+	private readonly collectionVersions = new Map<string, number>();
 
-	async createRecord<T>(draft: RecordDraft<T>): Promise<StoredRecord<T>> {
+	private bumpCollectionVersion(repoDid: string, collection: string) {
+		const key = `${repoDid}:${collection}`;
+		this.collectionVersions.set(key, (this.collectionVersions.get(key) ?? 0) + 1);
+	}
+
+	async createRecord<T>(
+		draft: RecordDraft<T>,
+		options?: CreateRecordOptions,
+	): Promise<StoredRecord<T>> {
+		if (options?.expectedScopeState) {
+			const currentScopeState = await this.getScopeStateToken(
+				options.expectedScopeState.repoDid,
+				Object.keys(options.expectedScopeState.collectionVersions ?? {}),
+			);
+			if (!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)) {
+				throw new RecordConflictError();
+			}
+		}
+
+		for (const guard of options?.guardUnchanged ?? []) {
+			const current = this.records.get(guard.uri) ?? null;
+			if (!storedRecordMatchesExpected(current, guard)) {
+				throw new RecordConflictError();
+			}
+		}
+
 		const record = toStoredRecord(draft);
 		this.records.set(record.uri, record);
+		this.bumpCollectionVersion(record.repoDid, record.collection);
 		return record;
 	}
 
-	async updateRecord<T>(draft: RecordDraft<T>): Promise<StoredRecord<T>> {
+	async updateRecord<T>(
+		draft: RecordDraft<T>,
+		options?: UpdateRecordOptions<T>,
+	): Promise<StoredRecord<T>> {
+		if (options?.expectedScopeState) {
+			const currentScopeState = await this.getScopeStateToken(
+				options.expectedScopeState.repoDid,
+				Object.keys(options.expectedScopeState.collectionVersions ?? {}),
+			);
+			if (!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)) {
+				throw new RecordConflictError();
+			}
+		}
+
 		const record = toStoredRecord(draft);
+		const existing = this.records.get(record.uri);
+		if (
+			options?.expectedCurrent !== undefined &&
+			!storedRecordMatchesExpected(
+				existing ?? null,
+				options.expectedCurrent as StoredRecord<unknown>,
+			)
+		) {
+			throw new RecordConflictError();
+		}
 		this.records.set(record.uri, record);
+		this.bumpCollectionVersion(record.repoDid, record.collection);
 		return record;
+	}
+
+	async getScopeStateToken(repoDid: string, collections: string[]) {
+		const uniqueCollections = [...new Set(collections)].sort((left, right) =>
+			left.localeCompare(right),
+		);
+
+		return {
+			repoDid,
+			collectionVersions: Object.fromEntries(
+				uniqueCollections.map((collection) => {
+					return [
+						collection,
+						this.collectionVersions.get(`${repoDid}:${collection}`) ?? 0,
+					];
+				}),
+			),
+		};
 	}
 
 	async getRecord<T>(uri: string): Promise<StoredRecord<T> | null> {
@@ -51,7 +127,11 @@ export class MemoryRecordStore implements RecordStore {
 	}
 
 	async deleteRecord(uri: string): Promise<void> {
+		const existing = this.records.get(uri);
 		this.records.delete(uri);
+		if (existing) {
+			this.bumpCollectionVersion(existing.repoDid, existing.collection);
+		}
 	}
 
 	async listRecords<T>(
@@ -112,5 +192,6 @@ export class MemoryRecordStore implements RecordStore {
 			createdAt,
 			updatedAt,
 		});
+		this.bumpCollectionVersion(parsed.repoDid, parsed.collection);
 	}
 }

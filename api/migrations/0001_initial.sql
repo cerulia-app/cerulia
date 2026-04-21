@@ -11,6 +11,37 @@ CREATE TABLE IF NOT EXISTS records (
 CREATE INDEX IF NOT EXISTS records_by_collection
   ON records (collection, repo_did, updated_at);
 
+CREATE TABLE IF NOT EXISTS repo_collection_versions (
+  repo_did TEXT NOT NULL,
+  collection TEXT NOT NULL,
+  version INTEGER NOT NULL,
+  PRIMARY KEY (repo_did, collection)
+);
+
+CREATE TRIGGER IF NOT EXISTS records_repo_collection_versions_insert
+AFTER INSERT ON records
+BEGIN
+  INSERT INTO repo_collection_versions (repo_did, collection, version)
+  VALUES (NEW.repo_did, NEW.collection, 1)
+  ON CONFLICT (repo_did, collection) DO UPDATE SET version = version + 1;
+END;
+
+CREATE TRIGGER IF NOT EXISTS records_repo_collection_versions_update
+AFTER UPDATE ON records
+BEGIN
+  INSERT INTO repo_collection_versions (repo_did, collection, version)
+  VALUES (NEW.repo_did, NEW.collection, 1)
+  ON CONFLICT (repo_did, collection) DO UPDATE SET version = version + 1;
+END;
+
+CREATE TRIGGER IF NOT EXISTS records_repo_collection_versions_delete
+AFTER DELETE ON records
+BEGIN
+  INSERT INTO repo_collection_versions (repo_did, collection, version)
+  VALUES (OLD.repo_did, OLD.collection, 1)
+  ON CONFLICT (repo_did, collection) DO UPDATE SET version = version + 1;
+END;
+
 CREATE TABLE IF NOT EXISTS owned_blobs (
   repo_did TEXT NOT NULL,
   blob_cid TEXT NOT NULL,
