@@ -350,10 +350,10 @@ server は accepted 時に `characterBranchRef` が現在参照している sour
 `expectedRevision` は caller が conversion 基準にした branch revision を表す。最新 revision と一致しない場合は `resultKind = rebase-needed` を返す。
 `targetRulesetNsid` は source sheet の `rulesetNsid` と異ならなければならない。
 `targetSheetSchemaRef.baseRulesetNsid` は `targetRulesetNsid` と一致しなければならない。
-server は source sheet に対する automatic conversion 結果から target sheet を初期化し、target schema の fieldDefs に対する構造検証を行う。conversion が必要 field を埋められない場合は `resultKind = rejected` または `rebase-needed` を返してよい。
+server は source branch の current resolved state を carry-forward した target sheet で初期化し、target schema の fieldDefs に対する構造検証を行う。ruleset 固有の automatic transformation や target-only field の自動補完はこの procedure の contract に含めない。carry-forward state が target schema の required field を満たせない場合は `resultKind = rejected` を返してよい。
 materialization 中に source branch record または source branch の current state（sheetRef / current sheet / active advancements for current epoch）が変化した場合は `resultKind = rebase-needed` を返して再試行を促してよい。branchLabel や visibility のような metadata-only update も、server は保守的に競合として扱ってよい。write backend が repo-scope compare-and-swap しか提供しない場合、server は source branch state の不変を証明できない同 owner repo write も保守的に競合として扱ってよい。
 `convertedAt` は current branch head の時系列を逆流させてはならない。latest conversion と current epoch の active advancements に対して、canonical ordering（convertedAt / effectiveAt 昇順、同時刻は record-key の tid 順）で後ろに来る場合だけ受け入れてよい。same-timestamp accepted を行う実装は、新しい `characterConversion` の record-key がその時刻の tie-break floor より lexicographically 後ろになることを保証しなければならない。
 `conversionContractRef` を使う場合、その参照先は public-safe な guide / tool / contract に限る。
 conversion は branch divergence 自体を作らない。parallel line を残したい場合は先に createBranch を行う。
-conversion は round-trip を保証しない。accepted 後の target sheet は通常の updateSheet で手動修正してよい。
+conversion は round-trip を保証しない。accepted 後の target sheet は通常の updateSheet で手動修正してよい。runtime は legacy branch / conversion shape の dual-read を行わず、既存 legacy data は operator 側で migration または再作成する。
 

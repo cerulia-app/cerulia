@@ -1778,6 +1778,89 @@ describe("createApiApp", () => {
 		});
 	});
 
+	test("rejects recordConversion when the carried-forward state does not satisfy target-only required fields", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+
+		const sourceSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Carry Forward Source Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const sourceSchemaAck = await sourceSchemaResponse.json();
+		const sourceSchemaRef = sourceSchemaAck.emittedRecordRefs[0];
+
+		const targetSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.emoclo",
+				schemaVersion: "1.0.0",
+				title: "Carry Forward Target Schema",
+				fieldDefs: [
+					{
+						fieldId: "heart",
+						label: "Heart",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const targetSchemaAck = await targetSchemaResponse.json();
+		const targetSchemaRef = targetSchemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: sourceSchemaRef,
+				displayName: "Carry Forward Character",
+				stats: { power: 1 },
+				initialBranchVisibility: "public",
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		const conversionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 1,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef: targetSchemaRef,
+				convertedAt: "2026-04-20T12:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(await conversionResponse.json()).toMatchObject({
+			resultKind: "rejected",
+			reasonCode: "invalid-required-field",
+			message: "heart is required",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterConversion, DID),
+		).toHaveLength(0);
+	});
+
 	test("allows same-timestamp recordConversion when generated tid is later", async () => {
 		const { app } = createTestApp();
 		const writerHeaders = authHeaders();

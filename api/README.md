@@ -17,6 +17,8 @@ Cerulia backend の canonical write/read service repository。
 
 `createApiApp` に渡す store は atomic multi-record write を持つ app composition 用 backend に限る。deployable entrypoint の supported write backend は AtprotoMirrorRecordStore とし、MemoryRecordStore / SqlRecordStore direct write は cache / test utility であって app runtime の supported path には含めない。
 
+character-branch / character-conversion は current branch-centered contract だけを read/write する。api runtime は legacy shape の dual-read や backfill job を持たないため、既存の legacy branch / conversion data を継続利用する場合は deploy 前に operator が手動 migration または再作成を行う。
+
 Bun entrypoint で OAuth を有効にした場合、次の internal route を公開する。
 
 - `/client-metadata.json`

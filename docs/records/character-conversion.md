@@ -33,7 +33,7 @@ target branch owner のみ。
 ## 設計上の注意
 
 - character-conversion は branch の ruleset 切り替え地点を表す same-owner の successor edge である。branch 自体を増やす record ではない
-- accepted な conversion は source sheet に対して automatic conversion を適用した新しい target sheet snapshot を作り、branch の `sheetRef` を target sheet へ進める
+- accepted な conversion は source branch の current resolved state を carry-forward した新しい target sheet snapshot を作り、branch の `sheetRef` を target sheet へ進める。ruleset 固有の automatic transformation や target-only field の自動補完は product-core contract に含めない
 - sourceSheetVersion と targetSheetVersion で、どの sheet revision を変換したかを pin する
 - sourceRulesetNsid と targetRulesetNsid でどのシステム間の変換かを記録する
 - sourceRulesetNsid と targetRulesetNsid は必ず異ならなければならない
@@ -45,7 +45,8 @@ target branch owner のみ。
 - accepted な conversion の `convertedAt` は、current branch head を構成している latest conversion と current epoch の active advancements に対して canonical ordering で後ろに来なければならない。backdated conversion で current head を巻き戻さない
 - same-timestamp の accepted conversion を許可する場合、server は新しい conversion record の tid がその時刻の tie-break floor より lexicographically 後ろになることを保証しなければならない。process-local な単調性だけを acceptance 根拠にしてはならない
 - conversion の materialization write は source state の不変を証明する safety fence を伴う。AT Protocol backend が repo-scope compare-and-swap しか提供しない場合、source branch と無関係な同 owner repo write でも保守的に `rebase-needed` へ倒してよい
-- conversion は自動変換の provenance であり、round-trip 可能性や可逆性を保証しない。target sheet が意図とずれた場合は owner が通常の sheet update で手動修正してよい。required field を自動変換で満たせない場合は conversion 自体を reject してよい
+- conversion は ruleset 切り替え provenance であり、round-trip 可能性や可逆性を保証しない。carry-forward した target sheet が意図とずれた場合は owner が通常の sheet update で手動修正してよい。target schema の required field を carry-forward state が満たせない場合、runtime は conversion 自体を reject してよい
 - conversionContractRef は変換ガイド、マニュアル、ツール等への public-safe 参照として使える。owner-only 文書や private workspace 参照は入れない
 - note は public-safe な補足に限る。AppView の public shared surface は note を既定では返さなくてよいが、これは秘匿ではなく表示上の簡略化である
 - conversion record 自体は immutable な provenance log として扱う。誤りがあっても既存 record を書き換えて履歴を取り消さず、新しい branch 操作や sheet update で後続状態を正す
+- runtime は current branch-centered conversion shape だけを読取対象にする。legacy conversion shape の compatibility reader や backfill job は同梱しない

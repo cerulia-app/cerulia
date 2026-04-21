@@ -50,3 +50,4 @@ branch owner のみ。
 - visibility: draft の branch は Cerulia AppView では一覧から隠すが、direct link では draft 状態を明示して表示する
 - retired branch の direct link は read-only historical detail として表示する。draft なら draft 状態も併記する
 - retiredAt が設定された branch は read-only historical detail に入り、updateCharacterBranch / retireCharacterBranch を受け付けない
+- runtime は current branch-centered shape だけを読取対象にする。legacy branch shape の compatibility reader や自動 migration は同梱しない
