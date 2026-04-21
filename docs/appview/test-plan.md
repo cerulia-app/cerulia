@@ -16,7 +16,7 @@
 - `/` が public top として価値説明、共有キャラクターへの入口、サインイン導線を持つこと
 - `/characters` と `/characters/new` で owner flow が成立すること
 - `/characters/[branch]` が canonical shared detail として direct link で解決すること
-- `/players/[did]` が public profile として direct link で解決すること
+- `/players/[did]` が public profile と public character collection を含む shared surface として direct link で解決すること
 - `/profile` で owner が player profile を編集できること
 - `/profile` の初回保存が self record を作り、再保存が同じ player-profile を更新すること
 - `/sessions` が owner-only workbench として inline detail / edit を持つこと
@@ -48,7 +48,8 @@
 - character detail の first view でプロフィール、structured stats、立ち絵が確認できること
 - public history に save state、raw change payload、低レベル identifier が出ないこと
 - character detail の advancement summary が date、changeKind、changeSummary、linkedSession だけを表示すること
-- conversion provenance を表示する場合、sourceRuleset、targetRuleset、convertedAt、conversionNote 以外を公開しないこと
+- character detail の conversion provenance が sourceRuleset、targetRuleset、convertedAt 以外を公開しないこと
+- player profile が public character collection の link-only summary を表示し、owner-only field を含まないこと
 - player profile が fallback と上書きの合成結果だけを見せ、raw Bluesky payload を UI に出さないこと
 - scenario detail が summary と source citation を安定表示すること
 - campaign detail の rule overlay が `適用ルール` の表示語で安定表示されること

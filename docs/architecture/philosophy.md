@@ -127,8 +127,8 @@ schema-less な自由形式 sheet は primary authoring model にしない。act
 | 区分 | 意味 | 現時点の例 |
 | --- | --- | --- |
 | product non-goal | roadmap に入れない。将来も Cerulia product-core では扱わない | run authority、membership / 参加承認、live 卓中イベント、disclosure / secret / handout、board / realtime / replay、appeal / governance、アクセス制限、standalone public session page、cross-owner conversion |
-| post-MVP core-later | scope 内だが、MVP 後に回す | same-owner の character-conversion |
-| secondary later | core flow を壊さない追加 surface として後で検討する | プレイヤー単位の public character collection |
+| post-MVP core-later | scope 内だが、MVP 後に回す | 現時点では空欄 |
+| secondary later | core flow を壊さない追加 surface として後で検討する | public profile から公開 character collection への導線強化 |
 
 ## 優先度
 

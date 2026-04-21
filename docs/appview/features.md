@@ -21,7 +21,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 ## キャラクター管理
 
 - キャラクター一覧（branch 単位）
-- キャラクター詳細表示（stats、立ち絵、プロフィール、公開セッション履歴）。conversion provenance は post-MVP の optional 表示として扱う。schema-less の場合は structured stats を公開しない
+- キャラクター詳細表示（stats、立ち絵、プロフィール、公開セッション履歴、public-safe な conversion provenance）。schema-less の場合は structured stats を公開しない
 - character detail の first view でプロフィール、structured stats、立ち絵を優先表示する
 - キャラクター編集
 - schema 更新時の recovery 導線。advanced owner maintenance として扱い、通常の編集主導線には置かない
@@ -31,6 +31,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 ## プレイヤープロフィール
 
 - player profile 表示（public + owner）
+- 公開 character collection（player profile 内の public branch link list）
 - player profile 編集（owner）
 - `/profile` は `updatePlayerProfile` を正本にし、初回は singleton の self record を作成、以後は同じ record を更新する
 - Bluesky 既存項目の fallback 参照（displayName、description、avatar、banner、website、pronouns）。website は credential-free 公開 URI 条件を満たす場合だけ表示する
@@ -127,7 +128,7 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - public shared surface の root は character detail とする
 - public に埋め込む session history の項目は scenario、date、record role、result、external archive link のような public-safe summary に限る
 - public に埋め込む advancement summary の項目は date、changeKind、changeSummary、linkedSession の 4 項目に限る
-- conversion provenance は post-MVP optional 表示とし、公開時は sourceRuleset、targetRuleset、convertedAt、conversionNote の summary だけを出す
+- conversion provenance は MVP の共有面に含め、公開時は sourceRuleset、targetRuleset、convertedAt の summary だけを出す
 - save state、private identifier、raw change payload、non-summary field は public history に含めない
 - public shared surface は raw payload を返さず、summary shape に閉じる
 - player profile を追加しても canonical shared root は character detail のままにする

@@ -5,7 +5,9 @@
 | 層 | 読む record | 用途 |
 | --- | --- | --- |
 | character | character-sheet, character-branch | キャラクター表示・編集 |
+| conversion | character-conversion | 変換 provenance 表示 |
 | advancement | character-advancement | 成長履歴 |
+| actor | player-profile, public character-branch | public profile / public character collection |
 | session | session | セッション履歴 |
 | scenario | scenario | シナリオ一覧・詳細 |
 | schema | character-sheet-schema | フォーム生成 |

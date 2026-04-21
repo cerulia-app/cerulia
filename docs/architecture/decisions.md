@@ -150,13 +150,13 @@ Cerulia の設計における主要な判断を記録する。
 
 理由: 他人の branch を provenance として持ち出す consent primitive を product-core に入れないため。same-owner であれば provenance を安全に閉じられる。
 
-補足: same-owner conversion は post-MVP candidate であり、MVP の必須範囲には入れない。
+補足: same-owner conversion は MVP の character ledger に含める。公開面では version pin を隠した public-safe summary だけを出す。
 
 ## 24. public shared root は character detail
 
-採用: public shared surface の canonical landing は character detail とする。player profile は MVP で提供するが、shared root は character detail から動かさない。プレイヤー単位の public character collection は secondary surface とし、post-MVP candidate に留める。
+採用: public shared surface の canonical landing は character detail とする。player profile は MVP で提供し、その中にプレイヤー単位の public character collection を含める。ただし shared root は character detail から動かさない。
 
-理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。一方で卓前の自己紹介需要も高いため、player profile を同格に近い共有面として追加する。
+理由: Cerulia を知る入口は「誰かから 1 つのキャラクターを共有される」体験であり、GM が卓前に見たい情報も character detail に閉じる。一方で卓前の自己紹介需要も高く、同じ owner の公開 character 一覧も profile 内にあると再共有導線が安定するため、player profile を同格に近い共有面として追加する。
 
 ## 25. pending save は AppView の local state に限定する
 
