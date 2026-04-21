@@ -5,6 +5,8 @@ import type { RecordDraft, RecordStore, StoredRecord } from "./types.js";
 export interface AgentProvider {
 	getAgent(repoDid: string): Promise<Agent | null>;
 	listRepoDids?(): Promise<string[]>;
+	getPublicAgent?(repoDid: string): Promise<Agent | null>;
+	rememberRepoDid?(repoDid: string): Promise<void>;
 }
 
 function compareStoredRecords<T>(
@@ -119,6 +121,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			validate: true,
 		});
 
+		await bestEffortCacheSync(
+			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
+		);
 		await bestEffortCacheSync(this.cache.createRecord(draft).then(() => undefined));
 		return {
 			uri: buildAtUri(draft.repoDid, draft.collection, draft.rkey),
@@ -141,6 +146,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			validate: true,
 		});
 
+		await bestEffortCacheSync(
+			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
+		);
 		await bestEffortCacheSync(this.cache.updateRecord(draft).then(() => undefined));
 		return {
 			uri: buildAtUri(draft.repoDid, draft.collection, draft.rkey),
@@ -161,15 +169,18 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			collection: parsed.collection,
 			rkey: parsed.rkey,
 		});
+		await bestEffortCacheSync(
+			this.agents.rememberRepoDid?.(parsed.repoDid) ?? Promise.resolve(),
+		);
 		await bestEffortCacheSync(this.cache.deleteRecord(uri));
 	}
 
 	async getRecord<T>(uri: string): Promise<StoredRecord<T> | null> {
 		const parsed = parseAtUri(uri);
-		const agent = await this.agents.getAgent(parsed.repoDid);
-		if (agent) {
+		const readAgent = await this.getReadAgent(parsed.repoDid);
+		if (readAgent) {
 			try {
-				const response = await agent.com.atproto.repo.getRecord({
+				const response = await readAgent.agent.com.atproto.repo.getRecord({
 					repo: parsed.repoDid,
 					collection: parsed.collection,
 					rkey: parsed.rkey,
@@ -177,6 +188,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 				const record = toStoredRecord(
 					response.data.uri,
 					response.data.value as T,
+				);
+				await bestEffortCacheSync(
+					this.agents.rememberRepoDid?.(parsed.repoDid) ?? Promise.resolve(),
 				);
 				await bestEffortCacheSync(upsertCachedRecord(this.cache, record));
 				return record;
@@ -186,9 +200,11 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 					return null;
 				}
 
-				if (!isNotFoundError(error)) {
+				if (readAgent.kind === "authenticated") {
 					throw error;
 				}
+
+				return this.cache.getRecord<T>(uri);
 			}
 		}
 
@@ -200,12 +216,21 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		repoDid?: string,
 	): Promise<StoredRecord<T>[]> {
 		if (!repoDid) {
-			const repoDids = await this.agents.listRepoDids?.();
-			if (!repoDids || repoDids.length === 0) {
-				return this.cache.listRecords<T>(collection);
+			const cachedRecords = await this.cache.listRecords<T>(collection);
+			const repoDids = new Set(cachedRecords.map((record) => record.repoDid));
+			for (const subjectDid of (await this.agents.listRepoDids?.()) ?? []) {
+				repoDids.add(subjectDid);
 			}
 
-			const records = new Map<string, StoredRecord<T>>();
+			if (repoDids.size === 0) {
+				return cachedRecords;
+			}
+
+			const records = this.agents.getPublicAgent
+				? new Map<string, StoredRecord<T>>()
+				: new Map(
+					cachedRecords.map((record) => [record.uri, record] as const),
+				);
 			for (const subjectDid of repoDids) {
 				for (const record of await this.listRecords<T>(collection, subjectDid)) {
 					records.set(record.uri, record);
@@ -215,29 +240,47 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			return [...records.values()].sort(compareStoredRecords);
 		}
 
-		const agent = await this.agents.getAgent(repoDid);
-		if (!agent) {
+		const readAgent = await this.getReadAgent(repoDid);
+		if (!readAgent) {
 			return this.cache.listRecords<T>(collection, repoDid);
 		}
 
 		const remoteRecords: StoredRecord<T>[] = [];
 		let cursor: string | undefined;
 
-		do {
-			const response = await agent.com.atproto.repo.listRecords({
-				repo: repoDid,
-				collection,
-				limit: 100,
-				cursor,
-			});
-			remoteRecords.push(
-				...response.data.records.map((record) =>
-					toStoredRecord(record.uri, record.value as T),
-				),
-			);
-			cursor = response.data.cursor;
-		} while (cursor);
+		try {
+			do {
+				const response = await readAgent.agent.com.atproto.repo.listRecords({
+					repo: repoDid,
+					collection,
+					limit: 100,
+					cursor,
+				});
+				remoteRecords.push(
+					...response.data.records.map((record) =>
+						toStoredRecord(record.uri, record.value as T),
+					),
+				);
+				cursor = response.data.cursor;
+			} while (cursor);
+		} catch (error) {
+			if (readAgent.kind === "authenticated") {
+				throw error;
+			}
 
+			if (isNotFoundError(error)) {
+				await bestEffortCacheSync(
+					this.syncCachedCollection(collection, repoDid, []),
+				);
+				return [];
+			}
+
+			return this.cache.listRecords<T>(collection, repoDid);
+		}
+
+		await bestEffortCacheSync(
+			this.agents.rememberRepoDid?.(repoDid) ?? Promise.resolve(),
+		);
 		await bestEffortCacheSync(
 			this.syncCachedCollection(collection, repoDid, remoteRecords),
 		);
@@ -262,6 +305,26 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		}
 
 		return agent;
+	}
+
+	private async getReadAgent(
+		repoDid: string,
+	): Promise<{ agent: Agent; kind: "authenticated" | "public" } | null> {
+		const authenticatedAgent = await this.agents.getAgent(repoDid);
+		if (authenticatedAgent) {
+			return {
+				agent: authenticatedAgent,
+				kind: "authenticated",
+			};
+		}
+
+		const publicAgent = await this.agents.getPublicAgent?.(repoDid);
+		return publicAgent
+			? {
+				agent: publicAgent,
+				kind: "public",
+			}
+			: null;
 	}
 
 	private async syncCachedCollection<T>(

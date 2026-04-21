@@ -1,9 +1,12 @@
+import { JoseKey } from "@atproto/jwk-jose";
 import type {
-	NodeSavedSession,
-	NodeSavedSessionStore,
-	NodeSavedState,
-	NodeSavedStateStore,
-} from "@atproto/oauth-client-node";
+	InternalStateData,
+	Jwk,
+	Key,
+	Session,
+	SessionStore,
+	StateStore,
+} from "@atproto/oauth-client";
 import { createOpaqueId } from "../ids.js";
 import type { SqlDriver } from "./sql.js";
 
@@ -41,6 +44,78 @@ export interface OAuthSessionCatalog {
 	listSubjects(): Promise<string[]>;
 }
 
+export interface KnownRepoCatalog {
+	rememberRepoDid(repoDid: string): Promise<void>;
+	listRepoDids(): Promise<string[]>;
+	clear?(): Promise<void>;
+}
+
+type JwkBackedStore<K extends string, V> = {
+	set(key: K, value: V): Promise<void>;
+	get(key: K): Promise<V | undefined>;
+	del(key: K): Promise<void>;
+	clear?(): Promise<void>;
+};
+
+type ToDpopJwkValue<V extends { dpopKey: Key }> = Omit<V, "dpopKey"> & {
+	dpopJwk: Jwk;
+};
+
+export type SavedOAuthState = ToDpopJwkValue<InternalStateData>;
+export type SavedOAuthStateStore = JwkBackedStore<string, SavedOAuthState>;
+
+export type SavedOAuthSession = ToDpopJwkValue<Session>;
+export type SavedOAuthSessionStore = JwkBackedStore<string, SavedOAuthSession>;
+
+export function toOAuthKeyStore<
+	K extends string,
+	V extends { dpopKey: Key; dpopJwk?: never },
+>(store: JwkBackedStore<K, ToDpopJwkValue<V>>): JwkBackedStore<K, V> {
+	return {
+		async set(key: K, value: V) {
+			const dpopJwk = value.dpopKey.privateJwk;
+			if (!dpopJwk) {
+				throw new Error("Private DPoP JWK is missing.");
+			}
+
+			const { dpopKey: _, ...rest } = value;
+			await store.set(key, {
+				...rest,
+				dpopJwk,
+			} as ToDpopJwkValue<V>);
+		},
+
+		async get(key: K) {
+			const result = await store.get(key);
+			if (!result) {
+				return undefined;
+			}
+
+			const { dpopJwk, ...rest } = result;
+			const dpopKey = await JoseKey.fromJWK(dpopJwk);
+			return {
+				...rest,
+				dpopKey,
+			} as unknown as V;
+		},
+
+		del: store.del.bind(store),
+		clear: store.clear?.bind(store),
+	};
+}
+
+export function toOAuthStateStore(
+	store: SavedOAuthStateStore,
+): StateStore {
+	return toOAuthKeyStore<string, InternalStateData>(store);
+}
+
+export function toOAuthSessionStore(
+	store: SavedOAuthSessionStore,
+): SessionStore {
+	return toOAuthKeyStore<string, Session>(store);
+}
+
 class SqlJsonStore<T> {
 	constructor(
 		private readonly driver: SqlDriver,
@@ -76,22 +151,22 @@ class SqlJsonStore<T> {
 	}
 }
 
-export class SqlOauthStateStore implements NodeSavedStateStore {
-	private readonly store: SqlJsonStore<NodeSavedState>;
+export class SqlOauthStateStore implements SavedOAuthStateStore {
+	private readonly store: SqlJsonStore<SavedOAuthState>;
 
 	constructor(private readonly driver: SqlDriver) {
-		this.store = new SqlJsonStore<NodeSavedState>(
+		this.store = new SqlJsonStore<SavedOAuthState>(
 			driver,
 			"oauth_states",
 			"state_key",
 		);
 	}
 
-	async set(key: string, value: NodeSavedState): Promise<void> {
+	async set(key: string, value: SavedOAuthState): Promise<void> {
 		await this.store.set(key, value, new Date().toISOString());
 	}
 
-	async get(key: string): Promise<NodeSavedState | undefined> {
+	async get(key: string): Promise<SavedOAuthState | undefined> {
 		return this.store.get(key);
 	}
 
@@ -105,23 +180,23 @@ export class SqlOauthStateStore implements NodeSavedStateStore {
 }
 
 export class SqlOauthSessionStore
-	implements NodeSavedSessionStore, OAuthSessionCatalog
+	implements SavedOAuthSessionStore, OAuthSessionCatalog
 {
-	private readonly store: SqlJsonStore<NodeSavedSession>;
+	private readonly store: SqlJsonStore<SavedOAuthSession>;
 
 	constructor(private readonly driver: SqlDriver) {
-		this.store = new SqlJsonStore<NodeSavedSession>(
+		this.store = new SqlJsonStore<SavedOAuthSession>(
 			driver,
 			"oauth_sessions",
 			"subject",
 		);
 	}
 
-	async set(key: string, value: NodeSavedSession): Promise<void> {
+	async set(key: string, value: SavedOAuthSession): Promise<void> {
 		await this.store.set(key, value, new Date().toISOString());
 	}
 
-	async get(key: string): Promise<NodeSavedSession | undefined> {
+	async get(key: string): Promise<SavedOAuthSession | undefined> {
 		return this.store.get(key);
 	}
 
@@ -199,6 +274,30 @@ export class SqlBrowserSessionStore implements BrowserSessionStore {
 	}
 }
 
+export class SqlKnownRepoCatalog implements KnownRepoCatalog {
+	constructor(private readonly driver: SqlDriver) {}
+
+	async rememberRepoDid(repoDid: string): Promise<void> {
+		const timestamp = new Date().toISOString();
+		await this.driver.run(
+			`INSERT OR REPLACE INTO known_repos (repo_did, updated_at)
+       VALUES (?, ?)`,
+			[repoDid, timestamp],
+		);
+	}
+
+	async listRepoDids(): Promise<string[]> {
+		const rows = await this.driver.all<{ repo_did: string }>(
+			`SELECT repo_did FROM known_repos ORDER BY updated_at DESC, repo_did ASC`,
+		);
+		return rows.map((row) => row.repo_did);
+	}
+
+	async clear(): Promise<void> {
+		await this.driver.run(`DELETE FROM known_repos`);
+	}
+}
+
 function createMemoryJsonStore<T>() {
 	const values = new Map<string, T>();
 
@@ -219,13 +318,13 @@ function createMemoryJsonStore<T>() {
 }
 
 export function createMemoryOauthStores() {
-	const stateStore = createMemoryJsonStore<NodeSavedState>();
-	const sessionValues = new Map<string, NodeSavedSession>();
-	const sessionStore: NodeSavedSessionStore & OAuthSessionCatalog = {
-		async set(key: string, value: NodeSavedSession): Promise<void> {
+	const stateStore = createMemoryJsonStore<SavedOAuthState>();
+	const sessionValues = new Map<string, SavedOAuthSession>();
+	const sessionStore: SavedOAuthSessionStore & OAuthSessionCatalog = {
+		async set(key: string, value: SavedOAuthSession): Promise<void> {
 			sessionValues.set(key, value);
 		},
-		async get(key: string): Promise<NodeSavedSession | undefined> {
+		async get(key: string): Promise<SavedOAuthSession | undefined> {
 			return sessionValues.get(key);
 		},
 		async del(key: string): Promise<void> {
@@ -241,6 +340,7 @@ export function createMemoryOauthStores() {
 		},
 	};
 	const browserSessions = new Map<string, BrowserSessionBinding>();
+	const knownRepos = new Set<string>();
 
 	const browserSessionStore: BrowserSessionStore = {
 		async createBrowserSession(did, grantedScope) {
@@ -267,10 +367,23 @@ export function createMemoryOauthStores() {
 		},
 	};
 
+	const knownRepoCatalog: KnownRepoCatalog = {
+		async rememberRepoDid(repoDid) {
+			knownRepos.add(repoDid);
+		},
+		async listRepoDids() {
+			return [...knownRepos].sort((left, right) => left.localeCompare(right));
+		},
+		async clear() {
+			knownRepos.clear();
+		},
+	};
+
 	return {
 		stateStore,
 		sessionStore,
 		browserSessionStore,
+		knownRepoCatalog,
 	};
 }
 
@@ -279,5 +392,6 @@ export function createSqlOauthStores(driver: SqlDriver) {
 		stateStore: new SqlOauthStateStore(driver),
 		sessionStore: new SqlOauthSessionStore(driver),
 		browserSessionStore: new SqlBrowserSessionStore(driver),
+		knownRepoCatalog: new SqlKnownRepoCatalog(driver),
 	};
 }

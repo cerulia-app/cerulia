@@ -258,6 +258,241 @@ describe("AtprotoMirrorRecordStore", () => {
 		expect(await cache.getRecord(staleUri)).toBeNull();
 	});
 
+	test("uses unauthenticated public agents for direct reads without an oauth session", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const publicUri = buildAtUri(DID, COLLECTIONS.scenario, "public-item");
+		remote.records.set(publicUri, {
+			uri: publicUri,
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "public-item",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Public Scenario",
+				ownerDid: DID,
+				createdAt: "2026-04-21T01:30:00.000Z",
+				updatedAt: "2026-04-21T01:30:00.000Z",
+			},
+			createdAt: "2026-04-21T01:30:00.000Z",
+			updatedAt: "2026-04-21T01:30:00.000Z",
+		});
+
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return repoDid === DID ? remote.agent : null;
+			},
+		});
+
+		const record = await store.getRecord(publicUri);
+		expect(record?.uri).toBe(publicUri);
+		expect(await cache.getRecord(publicUri)).not.toBeNull();
+	});
+
+	test("recovers from temporary public agent lookup failure by serving cached public data", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const uri = buildAtUri(DID, COLLECTIONS.scenario, "recovering-item");
+		await cache.createRecord({
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "recovering-item",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Cached Scenario",
+				ownerDid: DID,
+				createdAt: "2026-04-21T01:45:00.000Z",
+				updatedAt: "2026-04-21T01:45:00.000Z",
+			},
+			createdAt: "2026-04-21T01:45:00.000Z",
+			updatedAt: "2026-04-21T01:45:00.000Z",
+		});
+		remote.records.set(uri, {
+			uri,
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "recovering-item",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Remote Scenario",
+				ownerDid: DID,
+				createdAt: "2026-04-21T01:45:00.000Z",
+				updatedAt: "2026-04-21T02:15:00.000Z",
+			},
+			createdAt: "2026-04-21T01:45:00.000Z",
+			updatedAt: "2026-04-21T02:15:00.000Z",
+		});
+
+		let allowPublicAgent = false;
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return allowPublicAgent && repoDid === DID ? remote.agent : null;
+			},
+		});
+
+		const cachedRecord = await store.getRecord(uri);
+		expect(cachedRecord?.value).toMatchObject({
+			title: "Cached Scenario",
+		});
+
+		allowPublicAgent = true;
+		const refreshedRecord = await store.getRecord(uri);
+		expect(refreshedRecord?.value).toMatchObject({
+			title: "Remote Scenario",
+		});
+		expect((await cache.getRecord<{ title: string }>(uri))?.value.title).toBe(
+			"Remote Scenario",
+		);
+	});
+
+	test("falls back to cached public reads when the public agent request fails", async () => {
+		const cache = new MemoryRecordStore();
+		const uri = buildAtUri(DID, COLLECTIONS.scenario, "cached-fallback");
+		await cache.createRecord({
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "cached-fallback",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Cached Fallback",
+				ownerDid: DID,
+				createdAt: "2026-04-21T02:30:00.000Z",
+				updatedAt: "2026-04-21T02:30:00.000Z",
+			},
+			createdAt: "2026-04-21T02:30:00.000Z",
+			updatedAt: "2026-04-21T02:30:00.000Z",
+		});
+
+		const failingAgent = {
+			com: {
+				atproto: {
+					repo: {
+						async getRecord() {
+							const error = new Error("upstream unavailable");
+							(error as Error & { status?: number }).status = 503;
+							throw error;
+						},
+						async listRecords() {
+							const error = new Error("upstream unavailable");
+							(error as Error & { status?: number }).status = 503;
+							throw error;
+						},
+					},
+				},
+			},
+		} as unknown as Agent;
+
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return repoDid === DID ? failingAgent : null;
+			},
+		});
+
+		expect((await store.getRecord<{ title: string }>(uri))?.value.title).toBe(
+			"Cached Fallback",
+		);
+		expect(await store.listRecords(COLLECTIONS.scenario, DID)).toHaveLength(1);
+	});
+
+	test("drops cached public lists when the remote repo confirms not found", async () => {
+		const cache = new MemoryRecordStore();
+		await cache.createRecord({
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "missing-list-item",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Missing List Item",
+				ownerDid: DID,
+				createdAt: "2026-04-21T02:45:00.000Z",
+				updatedAt: "2026-04-21T02:45:00.000Z",
+			},
+			createdAt: "2026-04-21T02:45:00.000Z",
+			updatedAt: "2026-04-21T02:45:00.000Z",
+		});
+
+		const missingAgent = {
+			com: {
+				atproto: {
+					repo: {
+						async listRecords() {
+							const error = new Error("not found");
+							error.name = "RecordNotFoundError";
+							throw error;
+						},
+					},
+				},
+			},
+		} as unknown as Agent;
+
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return repoDid === DID ? missingAgent : null;
+			},
+		});
+
+		expect(await store.listRecords(COLLECTIONS.scenario, DID)).toHaveLength(0);
+		expect(await cache.listRecords(COLLECTIONS.scenario, DID)).toHaveLength(0);
+	});
+
+	test("drops aggregate anonymous list entries when a public repo now returns not found", async () => {
+		const cache = new MemoryRecordStore();
+		await cache.createRecord({
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "missing-aggregate-item",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Missing Aggregate Item",
+				ownerDid: DID,
+				createdAt: "2026-04-21T02:50:00.000Z",
+				updatedAt: "2026-04-21T02:50:00.000Z",
+			},
+			createdAt: "2026-04-21T02:50:00.000Z",
+			updatedAt: "2026-04-21T02:50:00.000Z",
+		});
+
+		const missingAgent = {
+			com: {
+				atproto: {
+					repo: {
+						async listRecords() {
+							const error = new Error("not found");
+							error.name = "RecordNotFoundError";
+							throw error;
+						},
+					},
+				},
+			},
+		} as unknown as Agent;
+
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return repoDid === DID ? missingAgent : null;
+			},
+			async listRepoDids() {
+				return [DID];
+			},
+		});
+
+		expect(await store.listRecords(COLLECTIONS.scenario)).toHaveLength(0);
+	});
+
 	test("drops stale cached direct reads when the remote repo returns not found", async () => {
 		const cache = new MemoryRecordStore();
 		const remote = createRemoteAgentStore();
@@ -287,23 +522,18 @@ describe("AtprotoMirrorRecordStore", () => {
 		expect(await cache.getRecord(staleUri)).toBeNull();
 	});
 
-	test("aggregates anonymous discovery lists across known oauth session repos", async () => {
+	test("uses cached records for anonymous discovery lists", async () => {
 		const cache = new MemoryRecordStore();
-		const remote = createRemoteAgentStore();
 		const secondDid = "did:plc:bob";
 		const store = new AtprotoMirrorRecordStore(cache, {
-			async getAgent(repoDid) {
-				return repoDid === DID || repoDid === secondDid ? remote.agent : null;
-			},
-			async listRepoDids() {
-				return [DID, secondDid];
+			async getAgent() {
+				return null;
 			},
 		});
 
 		const firstUri = buildAtUri(DID, COLLECTIONS.scenario, "first-item");
 		const secondUri = buildAtUri(secondDid, COLLECTIONS.scenario, "second-item");
-		remote.records.set(firstUri, {
-			uri: firstUri,
+		await cache.createRecord({
 			repoDid: DID,
 			collection: COLLECTIONS.scenario,
 			rkey: "first-item",
@@ -317,8 +547,7 @@ describe("AtprotoMirrorRecordStore", () => {
 			createdAt: "2026-04-21T03:00:00.000Z",
 			updatedAt: "2026-04-21T03:00:00.000Z",
 		});
-		remote.records.set(secondUri, {
-			uri: secondUri,
+		await cache.createRecord({
 			repoDid: secondDid,
 			collection: COLLECTIONS.scenario,
 			rkey: "second-item",
@@ -339,5 +568,64 @@ describe("AtprotoMirrorRecordStore", () => {
 			secondUri,
 			firstUri,
 		]);
+	});
+
+	test("refreshes anonymous discovery lists across known repos", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const secondDid = "did:plc:bob";
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return repoDid === DID || repoDid === secondDid ? remote.agent : null;
+			},
+			async listRepoDids() {
+				return [DID, secondDid];
+			},
+		});
+
+		const firstUri = buildAtUri(DID, COLLECTIONS.scenario, "fresh-first");
+		const secondUri = buildAtUri(secondDid, COLLECTIONS.scenario, "fresh-second");
+		remote.records.set(firstUri, {
+			uri: firstUri,
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "fresh-first",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Fresh First",
+				ownerDid: DID,
+				createdAt: "2026-04-21T05:00:00.000Z",
+				updatedAt: "2026-04-21T05:00:00.000Z",
+			},
+			createdAt: "2026-04-21T05:00:00.000Z",
+			updatedAt: "2026-04-21T05:00:00.000Z",
+		});
+		remote.records.set(secondUri, {
+			uri: secondUri,
+			repoDid: secondDid,
+			collection: COLLECTIONS.scenario,
+			rkey: "fresh-second",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Fresh Second",
+				ownerDid: secondDid,
+				createdAt: "2026-04-21T06:00:00.000Z",
+				updatedAt: "2026-04-21T06:00:00.000Z",
+			},
+			createdAt: "2026-04-21T06:00:00.000Z",
+			updatedAt: "2026-04-21T06:00:00.000Z",
+		});
+
+		const records = await store.listRecords(COLLECTIONS.scenario);
+		expect(records).toHaveLength(2);
+		expect(records.map((record) => record.uri)).toEqual([
+			secondUri,
+			firstUri,
+		]);
+		expect(await cache.getRecord(firstUri)).not.toBeNull();
+		expect(await cache.getRecord(secondUri)).not.toBeNull();
 	});
 });

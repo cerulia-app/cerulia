@@ -41,6 +41,10 @@ class D1SqlDriver implements SqlDriver {
 	}
 }
 
+export function createD1Driver(db: D1DatabaseLike): D1SqlDriver {
+	return new D1SqlDriver(db);
+}
+
 export function createD1Store(db: D1DatabaseLike): SqlRecordStore {
-	return new SqlRecordStore(new D1SqlDriver(db));
+	return new SqlRecordStore(createD1Driver(db));
 }
