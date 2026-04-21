@@ -38,6 +38,8 @@ OAuth を設定しないローカル開発、または `CERULIA_ENABLE_HEADER_AU
 
 ## OAuth Setup
 
+`.env.example` を `api/.env` にコピーしてから値を埋めると、Bun self-host の起動前提を揃えやすい。
+
 OAuth BFF を有効にする Bun entrypoint では、少なくとも次を設定する。
 
 - `CERULIA_PUBLIC_BASE_URL`: HTTPS の公開 base URL
@@ -47,7 +49,10 @@ OAuth BFF を有効にする Bun entrypoint では、少なくとも次を設定
 
 - `CERULIA_API_DB`: SQLite file path
 - `CERULIA_OAUTH_CLIENT_NAME`: client metadata の表示名
+- `CERULIA_DOH_ENDPOINT`: public read 用の DoH endpoint
 - `CERULIA_ENABLE_HEADER_AUTH_SHIM=1`: browser session auth と並行して header shim を許可する
+
+Workers では同じ `CERULIA_*` 名を Wrangler の `vars` / `secrets` として設定する。`DB` は environment variable ではなく D1 binding なので、`wrangler.toml` を正本にする。
 
 ## Scripts
 
