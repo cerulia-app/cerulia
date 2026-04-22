@@ -148,6 +148,8 @@ root monorepo で固定済みの `docs/records`、`docs/lexicon`、`docs/archite
 - Bun entrypoint
 - Workers entrypoint
 
+補足: public / anonymous の cold remote hydration は Bun/self-host 側の pinned adapter を canonical 実装とし、Workers entrypoint では cache-backed read または injected canonical source を使う。
+
 完了条件:
 
 - character create / edit / session record の canonical flow が `appview + api` だけで成立する

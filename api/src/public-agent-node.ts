@@ -220,7 +220,12 @@ export function createNodePublicAgentLookup(
 			return null;
 		}
 
-		const safePdsEndpoint = assertSafePublicServiceUrl(pdsEndpoint);
+		let safePdsEndpoint: URL;
+		try {
+			safePdsEndpoint = assertSafePublicServiceUrl(pdsEndpoint);
+		} catch {
+			return null;
+		}
 
 		return new Agent({
 			service: safePdsEndpoint.toString(),

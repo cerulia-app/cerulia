@@ -1,7 +1,5 @@
 import { createProjectionApp } from "../app.js";
-import { createPublicAgentProvider } from "../agents.js";
 import type { CanonicalRecordSource } from "../source.js";
-import { AtprotoPublicRecordSource } from "../source/atproto.js";
 import { createScenarioCatalogService } from "../services/scenario.js";
 import { createD1Driver, type D1DatabaseLike } from "../store/d1.js";
 import {
@@ -36,31 +34,38 @@ export async function createWorkerApp(
 		parseSeedRepoDids(env.CERULIA_PROJECTION_REPOS),
 	);
 
-	if (!overrides?.source) {
-		throw new Error(
-			"Workers projection adapter requires an injected canonical source until a pre-connect-pinned public agent transport is available",
-		);
-	}
-
-	const source = overrides.source;
+	const source =
+		overrides?.source ??
+		({
+			async getRecord() {
+				return null;
+			},
+			async listRecords() {
+				return [];
+			},
+		} satisfies CanonicalRecordSource);
  	const catalogStore = new SqlScenarioCatalogStore(driver);
- 	const scenarioCatalog = createScenarioCatalogService({
+	const scenarioCatalog = createScenarioCatalogService({
 		source,
 		catalog: catalogStore,
 	});
-	const failedRepoDids = await scenarioCatalog.rebuildKnownRepos(
-		await knownRepoCatalog.listRepoDids(),
-	);
-	if (failedRepoDids.length > 0) {
-		queueMicrotask(() => {
-			void scenarioCatalog.rebuildKnownRepos(failedRepoDids);
-		});
+	if (overrides?.source) {
+		const failedRepoDids = await scenarioCatalog.rebuildKnownRepos(
+			await knownRepoCatalog.listRepoDids(),
+		);
+		if (failedRepoDids.length > 0) {
+			queueMicrotask(() => {
+				void scenarioCatalog.rebuildKnownRepos(failedRepoDids);
+			});
+		}
 	}
 
 	return createProjectionApp({
 		source,
 		catalogStore: catalogStore,
-		internalIngestToken: env.CERULIA_PROJECTION_INTERNAL_INGEST_TOKEN,
+		internalIngestToken: overrides?.source
+			? env.CERULIA_PROJECTION_INTERNAL_INGEST_TOKEN
+			: undefined,
 	});
 }
 
