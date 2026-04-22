@@ -90,6 +90,24 @@ export async function requireRecord<T>(
 	return record;
 }
 
+export async function getOptionalRecord<T>(
+	runtime: ServiceRuntime,
+	uri: string,
+	collection: string,
+	label: string,
+): Promise<StoredRecord<T> | null> {
+	const parsed = parseAtUri(uri);
+	if (parsed.collection !== collection) {
+		throw new ApiError(
+			"InvalidRequest",
+			`${label} must reference ${collection}`,
+			400,
+		);
+	}
+
+	return runtime.store.getRecord<T>(uri);
+}
+
 export function hasSameOwner(uri: string, did: string): boolean {
 	return parseAtUri(uri).repoDid === did;
 }
@@ -156,17 +174,11 @@ export async function loadOptionalSchema(
 		return null;
 	}
 
-	const parsed = parseAtUri(schemaRef);
-	if (parsed.collection !== COLLECTIONS.characterSheetSchema) {
-		throw new ApiError(
-			"InvalidRequest",
-			"characterSheetSchemaRef must reference app.cerulia.core.character-sheet-schema",
-			400,
-		);
-	}
-
-	return runtime.store.getRecord<AppCeruliaCoreCharacterSheetSchema.Main>(
+	return getOptionalRecord<AppCeruliaCoreCharacterSheetSchema.Main>(
+		runtime,
 		schemaRef,
+		COLLECTIONS.characterSheetSchema,
+		"characterSheetSchemaRef",
 	);
 }
 
@@ -186,16 +198,12 @@ export async function loadOptionalSheet(
 	runtime: ServiceRuntime,
 	sheetRef: string,
 ): Promise<StoredRecord<AppCeruliaCoreCharacterSheet.Main> | null> {
-	const parsed = parseAtUri(sheetRef);
-	if (parsed.collection !== COLLECTIONS.characterSheet) {
-		throw new ApiError(
-			"InvalidRequest",
-			"characterSheetRef must reference app.cerulia.core.character-sheet",
-			400,
-		);
-	}
-
-	return runtime.store.getRecord<AppCeruliaCoreCharacterSheet.Main>(sheetRef);
+	return getOptionalRecord<AppCeruliaCoreCharacterSheet.Main>(
+		runtime,
+		sheetRef,
+		COLLECTIONS.characterSheet,
+		"characterSheetRef",
+	);
 }
 
 export async function resolveScenarioLabel(

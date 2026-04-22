@@ -62,10 +62,22 @@ export interface PublicRepoListResponse {
 	};
 }
 
+export interface PublicRepoGetRecordResponse {
+	data: {
+		uri: string;
+		value: unknown;
+	};
+}
+
 export interface PublicRepoAgent {
 	com: {
 		atproto: {
 			repo: {
+				getRecord(input: {
+					repo: string;
+					collection: string;
+					rkey: string;
+				}): Promise<PublicRepoGetRecordResponse>;
 				listRecords(input: {
 					repo: string;
 					collection: string;

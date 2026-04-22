@@ -16,6 +16,7 @@ import type { ServiceRuntime } from "./runtime.js";
 import {
 	createTypedRecord,
 	createUniqueSlugRkey,
+	getOptionalRecord,
 	requireRecord,
 	resolveScenarioLabel,
 	updateTypedRecord,
@@ -227,15 +228,18 @@ export function createCampaignService(runtime: ServiceRuntime) {
 					COLLECTIONS.session,
 				)
 			).filter((session) => session.value.campaignRef === campaignRef);
-			const ruleOverlay = await Promise.all(
+			const ruleOverlay = (await Promise.all(
 				(record.value.sharedRuleProfileRefs ?? []).map((ref) =>
-					requireRecord<AppCeruliaCoreRuleProfile.Main>(
+					getOptionalRecord<AppCeruliaCoreRuleProfile.Main>(
 						runtime,
 						ref,
 						COLLECTIONS.ruleProfile,
 						"ruleProfileRef",
 					),
 				),
+			)).filter(
+				(entry): entry is StoredRecord<AppCeruliaCoreRuleProfile.Main> =>
+					entry !== null,
 			);
 
 			if (isOwnerReader(auth, record.repoDid)) {

@@ -1,10 +1,13 @@
-import type {
+import {
 	AppCeruliaCoreScenario,
 	AppCeruliaScenarioList,
+ 	validateById,
 } from "@cerulia/protocol";
 import { COLLECTIONS } from "../constants.js";
-import type { CanonicalRecordSource, StoredRecord } from "../source.js";
+import type { StoredRecord } from "../source.js";
+import type { CanonicalRecordSource } from "../source.js";
 import {
+	ScenarioCatalogReplaceConflictError,
 	SqlScenarioCatalogStore,
 	type ScenarioCatalogEntry,
 } from "../store/scenario-catalog.js";
@@ -21,16 +24,27 @@ function compareScenarioRecords(
 	return left.uri.localeCompare(right.uri);
 }
 
-function toCatalogEntry(
+
+async function toCatalogEntry(
+	runtime: ScenarioCatalogRuntime,
 	record: StoredRecord<AppCeruliaCoreScenario.Main>,
-): ScenarioCatalogEntry {
+): Promise<ScenarioCatalogEntry> {
+	let hasRecommendedSheetSchema = false;
+	if (record.value.recommendedSheetSchemaRef) {
+		try {
+			hasRecommendedSheetSchema = Boolean(
+				await runtime.source.getRecord(record.value.recommendedSheetSchemaRef),
+			);
+		} catch {
+			hasRecommendedSheetSchema = false;
+		}
+	}
+
 	return {
 		scenarioRef: record.uri,
 		title: record.value.title,
 		rulesetNsid: record.value.rulesetNsid,
-		hasRecommendedSheetSchema: Boolean(
-			record.value.recommendedSheetSchemaRef,
-		),
+		hasRecommendedSheetSchema,
 		summary: record.value.summary,
 	};
 }
@@ -41,23 +55,71 @@ export interface ScenarioCatalogRuntime {
 }
 
 export function createScenarioCatalogService(runtime: ScenarioCatalogRuntime) {
-	async function rebuild(): Promise<void> {
-		const records = await runtime.source.listRecords<AppCeruliaCoreScenario.Main>(
-			COLLECTIONS.scenario,
-		);
-		const sorted = [...records].sort(compareScenarioRecords).map(toCatalogEntry);
-		await runtime.catalog.replaceAll(sorted);
+	async function ingestRepo(repoDid: string): Promise<void> {
+		for (let attempt = 0; attempt < 3; attempt += 1) {
+			const records =
+				await runtime.source.listRecords<AppCeruliaCoreScenario.Main>(
+					COLLECTIONS.scenario,
+					repoDid,
+				);
+			const sorted = [...records]
+				.map((record) => {
+					const validation = validateById(
+						record.value,
+						COLLECTIONS.scenario,
+						"main",
+						true,
+					);
+					if (!validation.success) {
+						throw validation.error;
+					}
+
+					return record;
+				})
+				.sort(compareScenarioRecords);
+			const entries = await Promise.all(
+				sorted.map((record) => toCatalogEntry(runtime, record)),
+			);
+
+			try {
+				await runtime.catalog.replaceRepo(repoDid, entries);
+				return;
+			} catch (error) {
+				if (
+					attempt < 2 &&
+					error instanceof ScenarioCatalogReplaceConflictError
+				) {
+					continue;
+				}
+
+				throw error;
+			}
+		}
 	}
 
 	return {
-		rebuild,
+		ingestRepo,
+
+		async rebuildKnownRepos(repoDids: string[]): Promise<string[]> {
+			const failedRepoDids: string[] = [];
+			for (const repoDid of [...new Set(repoDids)].sort((left, right) =>
+				left.localeCompare(right),
+			)) {
+				try {
+					await ingestRepo(repoDid);
+				} catch {
+					failedRepoDids.push(repoDid);
+				}
+			}
+
+			return failedRepoDids;
+		},
 
 		async list(
 			rulesetNsid: string | undefined,
 			limit: string | undefined,
 			cursor: string | undefined,
 		): Promise<AppCeruliaScenarioList.OutputSchema> {
-			await rebuild();
 			const page = await runtime.catalog.list(rulesetNsid, limit, cursor);
 
 			return {

@@ -16,6 +16,18 @@ class FakePublicRepoAgent implements PublicRepoAgent {
 	readonly com = {
 		atproto: {
 			repo: {
+				getRecord: async ({ repo, collection, rkey }: { repo: string; collection: string; rkey: string }) => {
+					for (const page of this.pages) {
+						const record = page.records.find(
+							(entry) => entry.uri === scenarioUri(repo, rkey),
+						);
+						if (record) {
+							return { data: record };
+						}
+					}
+
+					throw new Error(`record not found in ${collection}/${rkey}`);
+				},
 				listRecords: async ({ cursor }: { cursor?: string }) => {
 					if (this.shouldFail) {
 						throw new Error("temporary public read failure");

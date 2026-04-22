@@ -14,10 +14,26 @@ import {
 	assertCredentialFreeUri,
 	createTypedRecord,
 	createUniqueSlugRkey,
+	loadOptionalSchema,
 	loadSchema,
 	requireRecord,
 	updateTypedRecord,
 } from "./shared.js";
+
+async function hasResolvedRecommendedSheetSchema(
+	runtime: ServiceRuntime,
+	schemaRef: string | undefined,
+): Promise<boolean> {
+	if (!schemaRef) {
+		return false;
+	}
+
+	try {
+		return Boolean(await loadOptionalSchema(runtime, schemaRef));
+	} catch {
+		return false;
+	}
+}
 
 export function createScenarioService(runtime: ServiceRuntime) {
 	return {
@@ -179,9 +195,11 @@ export function createScenarioService(runtime: ServiceRuntime) {
 					scenarioRef,
 					title: record.value.title,
 					rulesetNsid: record.value.rulesetNsid,
-					hasRecommendedSheetSchema: Boolean(
-						record.value.recommendedSheetSchemaRef,
-					),
+					hasRecommendedSheetSchema:
+						await hasResolvedRecommendedSheetSchema(
+							runtime,
+							record.value.recommendedSheetSchemaRef,
+						),
 					summary: record.value.summary,
 					sourceCitationUri: record.value.sourceCitationUri,
 				},

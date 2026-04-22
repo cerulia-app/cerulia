@@ -9,6 +9,7 @@ export interface StoredRecord<T> {
 }
 
 export interface CanonicalRecordSource {
+	getRecord<T>(uri: string): Promise<StoredRecord<T> | null>;
 	listRecords<T>(
 		collection: string,
 		repoDid?: string,

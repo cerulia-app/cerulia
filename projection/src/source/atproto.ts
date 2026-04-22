@@ -96,6 +96,34 @@ function toStoredRecord<T>(
 export class AtprotoPublicRecordSource implements CanonicalRecordSource {
 	constructor(private readonly agents: PublicAgentProvider) {}
 
+	async getRecord<T>(uri: string): Promise<StoredRecord<T> | null> {
+		const { repoDid, collection, rkey } = parseAtUri(uri);
+		const agent = await this.agents.getPublicAgent(repoDid);
+		if (!agent) {
+			throw new RepoReadUnavailableError(repoDid);
+		}
+
+		try {
+			const response = await agent.com.atproto.repo.getRecord({
+				repo: repoDid,
+				collection,
+				rkey,
+			});
+			return toStoredRecord(
+				response.data.uri,
+				response.data.value as T,
+				repoDid,
+				collection,
+			);
+		} catch (error) {
+			if (isNotFoundError(error)) {
+				return null;
+			}
+
+			throw error;
+		}
+	}
+
 	async listRecords<T>(
 		collection: string,
 		repoDid?: string,
