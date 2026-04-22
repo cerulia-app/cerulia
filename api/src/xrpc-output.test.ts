@@ -25,6 +25,24 @@ describe("assertValidXrpcOutputPayload", () => {
 		).toThrow();
 	});
 
+	test("rejects owner-mode raw records when the embedded record loses $type", () => {
+		expect(() =>
+			assertValidXrpcOutputPayload("app.cerulia.campaign.getView", {
+				campaign: {
+					campaignId: "missing-type-campaign",
+					title: "Missing Type Campaign",
+					houseRef: `at://${DID}/${COLLECTIONS.house}/missing-type-house`,
+					rulesetNsid: "app.cerulia.rules.coc7",
+					visibility: "public",
+					createdAt: "2026-04-20T08:05:00.000Z",
+					updatedAt: "2026-04-20T08:05:00.000Z",
+				},
+				sessions: [],
+				ruleOverlay: [],
+			}),
+		).toThrow();
+	});
+
 	test("rejects owner-mode outputs with unexpected top-level properties", () => {
 		expect(() =>
 			assertValidXrpcOutputPayload("app.cerulia.campaign.getView", {
