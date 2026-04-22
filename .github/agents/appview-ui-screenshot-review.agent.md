@@ -24,7 +24,7 @@ Your job is to evaluate the rendered interface from screenshot or equivalent vis
 ## Approach
 1. Read `.github/agents/appview-design-review-guidance.md` first.
 2. Inspect screenshot or rendered evidence before reading styling implementation details.
-3. If rendered evidence is missing but the environment makes browser inspection or automated capture feasible, obtain that evidence yourself before judging.
+3. If rendered evidence is missing but the environment makes browser inspection or automated capture feasible, obtain that evidence yourself before judging. Prefer the browser tool when it can inspect or capture the rendered surface directly. Use the edit tool only to write a temporary E2E test whose sole purpose is taking screenshots, and delete that temporary file after the screenshots have been captured.
 4. Evaluate the visible surface against Cerulia's current AppView docs.
 5. Only if rendered evidence cannot be obtained, report a coverage gap and keep any structural observations explicitly low-confidence.
 

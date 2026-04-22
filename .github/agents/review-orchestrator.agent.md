@@ -3,6 +3,7 @@ name: "Review Orchestrator"
 description: "It supports all review scenarios, from pre-implementation alignment and ongoing checks to final verification and diff analysis. It selects the right reviewer per policy, provides minimal high-value context, normalizes outputs into a unified contract, and returns stable, prioritized, and aggregated results across iterative passes."
 tools: [read, search, agent, execute/runInTerminal]
 agents:
+  - "Explore"
   - "Architecture Review"
   - "Records And Lexicon Review"
   - "AT Protocol Boundary Review"
