@@ -201,3 +201,19 @@ Cerulia の設計における主要な判断を記録する。
 理由: ruleset の切り替えと継続線の分岐は別の判断である。これを 1 つの概念に混ぜると、通常の一直線な成長と、parallel に残したい分岐とが同じ操作に吸収されてしまう。Cerulia では通常は 1 本の line を継続し、parallel 化したいときだけ branch を増やす方が product root に合う。
 
 補足: canonical shared root は character detail のままとし、その identity unit は branch line で解決する。同じ branch が conversion epoch を跨いでも route root を変えない。別 root が必要な parallel line は createBranch で作る。
+
+## 32. missing reference は root と dependent block を分けて扱う
+
+採用: route root が残っている限り、linked record の欠落だけで owner-authored surface 全体を `NotFound` にしない。`NotFound` は canonical root record 自体が失われた場合に限定する。
+
+理由: Cerulia の中心価値は PL が残した durable な履歴と共有リンクの継続性にある。schema、scenario、rule-profile、house のような補助 record が後から失われても、character、session、campaign の主語まで消えたことにすると、ユーザーが残した記録より補助参照の可用性を優先する設計になるため。
+
+補足: missing reference の canonical degradation は次に固定する。
+
+- character detail: current head sheet が残り pinned schema だけが失われた場合、sheet identity と public-safe summary は返し、structured stats block だけを省略する
+- character branch: current head sheet 自体が失われた場合、branch line は durable root のままとし、owner workbench は broken-head repair state を優先してよい。public shared detail は minimal unavailable state へ縮退してよい
+- session history: scenarioRef が失われても session record は維持し、stored scenarioLabel があればそれを使う。stored scenarioLabel が無い場合は scenario label block だけを省略する
+- campaign / house: missing rule-profile、house、campaign などの linked block は省略し、root projection は維持する
+- scenario: recommendedSheetSchemaRef が解決できない scenario は browse-only として扱い、create CTA を出さない
+
+owner-facing surface は missing reference を repair-needed state として明示してよい。public / anonymous surface は public-safe な block だけを残し、欠落した linked block のために route 全体を失敗させない。

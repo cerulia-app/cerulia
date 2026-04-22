@@ -9,6 +9,7 @@ XRPC 系は domain-scoped NSID families (app.cerulia.character.*, app.cerulia.se
 - domain-level result は `200 OK + mutationAck` に統一し、malformed request / auth failure / endpoint not found / service-side internal failure だけを XRPC error にする
 - public-safe text と credential-free URI のポリシー正本は architecture / records 文書に置く。rpc.md では transport 上の要求だけを記述する
 - owner mode と public / anonymous mode の両方を持つ query は、同じ record を返しても同じ payload shape を返さない。public mode は summary view に閉じ、owner-only field、raw payload、internal linkage を含めない
+- query は route root record の欠落と non-root linked record の欠落を区別する。route root が解決できない場合だけ `NotFound` を返し、root が残っている場合は missing linked record を affected block / summary row の省略または downgraded shape で表し、query 全体を失敗させない
 
 ## 共通 error 名
 
@@ -52,6 +53,8 @@ owner-only query。public / anonymous には公開しない。
 
 draft branch も direct ref があれば解決するが、response に `visibility` を含めて AppView が draft state を表示する。public / anonymous mode では draft child を畳み込まず、`note`、`deltaPayload`、`previousValues`、`characterBranchRef` のような raw payload / linkage field を返さない。
 
+pinned `character-sheet-schema` が欠落した場合も query は解決し、`sheetSummary.structuredStats` を省略する。embedded session / advancement summary で linked scenario が欠落した場合は `scenarioLabel` を省略してよい。
+
 ### app.cerulia.actor.getProfileView
 
 - auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct DID read を許す
@@ -64,6 +67,8 @@ draft branch も direct ref があれば解決するが、response に `visibili
 fallback 由来の field も public-safe 条件を満たすものだけを返す。`website` は credential-free 公開 URI 条件を満たさない場合、summary から省略する。
 `publicBranches` は link-only summary row に固定し、`characterBranchRef`、`displayName`、`branchLabel`、`rulesetNsid` だけを返す。owner-only linkage や raw payload は含めない。
 
+current head sheet が解決できない public branch row は省略してよく、profile view 全体を失敗させない。
+
 ### app.cerulia.campaign.getView
 
 - auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
@@ -75,6 +80,8 @@ fallback 由来の field も public-safe 条件を満たすものだけを返す
 draft campaign も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child session を返さず、owner-only linkage や raw rule-profile payload を返さない。
 `sessionSummaries` は軽量な embedded summary に留め、`externalArchiveUris` は含めない。
 
+missing `sharedRuleProfileRefs` は `ruleOverlay` / `ruleOverlaySummary` から省略してよく、missing house identity や linked scenario も affected block / field だけを省略して query 全体を失敗させない。
+
 ### app.cerulia.scenario.list
 
 - auth: anonymous read を許す
@@ -83,6 +90,8 @@ draft campaign も direct ref があれば解決するが、list query には含
 
 scenario summary row は `hasRecommendedSheetSchema` を返し、AppView が browse-only と createable を分岐できるようにする。
 
+`hasRecommendedSheetSchema` は raw field presence ではなく、current read で usable な create chain が解決できるかを表す。unresolved `recommendedSheetSchemaRef` は `false` として扱う。
+
 ### app.cerulia.scenario.getView
 
 - auth: anonymous read を許す
@@ -90,6 +99,8 @@ scenario summary row は `hasRecommendedSheetSchema` を返し、AppView が bro
 - output: `scenarioSummary`
 
 recommendedSheetSchemaRef が無い scenario は browse-only とし、create flow 用の deterministic schema 解決結果を返さない。public summary は `hasRecommendedSheetSchema` を返して create CTA の可否を表現する。
+
+`recommendedSheetSchemaRef` が field 上は存在していても、linked schema が解決できない場合は browse-only として返す。
 
 ### app.cerulia.rule.listSheetSchemas
 
@@ -124,6 +135,8 @@ owner-only query。`/sessions` 一覧のために使う。
 owner workbench の inline detail / edit と、public surface へ埋め込む summary 解決に使う。standalone な public session root は持たない。
 `sessionSummary` には `externalArchiveUris` を含めてよい。
 
+linked scenario が欠落しても session root 自体は失わない。stored `scenarioLabel` が無い場合は `scenarioLabel` field を省略してよい。
+
 ### app.cerulia.house.getView
 
 - auth: owner mode は `app.cerulia.authCoreReader`。public / anonymous mode は auth bundle なしで direct ref read を許す
@@ -134,6 +147,8 @@ owner workbench の inline detail / edit と、public surface へ埋め込む su
 
 draft house も direct ref があれば解決するが、list query には含めない。public / anonymous mode では draft child campaign / session を返さず、draft house を参照する public campaign からは house identity を省略してよい。
 `sessionSummaries` は軽量な embedded summary に留め、`externalArchiveUris` は含めない。
+
+linked campaign / session が欠落した場合は surviving linked items だけを返し、欠落 item のために query 全体を失敗させない。
 
 ### app.cerulia.rule.listProfiles
 
