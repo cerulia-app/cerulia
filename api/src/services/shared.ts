@@ -60,10 +60,6 @@ export async function applyTypedWrites(
 	writes: RecordWrite<{ $type: string }>[],
 	options: ApplyWritesOptions,
 ): Promise<void> {
-	if (!runtime.store.applyWrites) {
-		throw new Error("applyWrites is not available for this store");
-	}
-
 	for (const write of writes) {
 		ensureValidation(write.draft.value, write.draft.collection);
 	}

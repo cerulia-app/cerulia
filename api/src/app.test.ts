@@ -283,6 +283,69 @@ describe("createApiApp", () => {
 		});
 	});
 
+	test("retries createSheet once when the branch scope changes before atomic write", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const concurrentBranchRef = `at://${DID}/${COLLECTIONS.characterBranch}/concurrent-branch`;
+
+		store.onApplyWritesCall(DID, 1, () => {
+			store.seedRecord(
+				concurrentBranchRef,
+				{
+					$type: COLLECTIONS.characterBranch,
+					ownerDid: DID,
+					sheetRef: `at://${DID}/${COLLECTIONS.characterSheet}/concurrent-sheet`,
+					branchKind: "local-override",
+					branchLabel: "Concurrent Branch",
+					visibility: "draft",
+					revision: 1,
+					createdAt: "2026-04-18T00:00:00.000Z",
+					updatedAt: "2026-04-18T00:00:00.000Z",
+				},
+				"2026-04-18T00:00:00.000Z",
+				"2026-04-18T00:00:00.000Z",
+			);
+		});
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Retry Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Retry Character",
+				stats: {
+					power: 70,
+				},
+				initialBranchVisibility: "public",
+			},
+		);
+		const createSheetAck = await createSheetResponse.json();
+
+		expectAccepted(createSheetAck);
+		expect(createSheetAck.emittedRecordRefs).toHaveLength(2);
+	});
+
 	test("maps an atproto-only browser session to reader access", async () => {
 		const authResolver = createSessionAuthResolver({
 			async getBrowserSession(sessionId) {
@@ -1073,7 +1136,7 @@ describe("createApiApp", () => {
 			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		expect(sourceBranch).not.toBeNull();
 
-		store.onApplyWritesCall(DID, 1, () => {
+		store.onApplyWritesCall(DID, 2, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/race-branch`,
 				{
@@ -1160,7 +1223,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onApplyWritesCall(DID, 1, () => {
+		store.onApplyWritesCall(DID, 2, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/child-race-branch`,
 				{
@@ -1326,7 +1389,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onApplyWritesCall(DID, 1, () => {
+		store.onApplyWritesCall(DID, 2, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/post-sheet-branch-race`,
 				{
@@ -1430,7 +1493,7 @@ describe("createApiApp", () => {
 			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		expect(sourceBranch).not.toBeNull();
 
-		store.onApplyWritesCall(DID, 1, () => {
+		store.onApplyWritesCall(DID, 2, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/race-conversion`,
 				{
@@ -1542,7 +1605,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onApplyWritesCall(DID, 1, () => {
+		store.onApplyWritesCall(DID, 2, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/child-race-conversion`,
 				{
@@ -1752,7 +1815,7 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
-		store.onApplyWritesCall(DID, 1, () => {
+		store.onApplyWritesCall(DID, 2, () => {
 			store.seedRecord(
 				`at://${DID}/${COLLECTIONS.characterAdvancement}/final-update-race`,
 				{
@@ -2156,7 +2219,7 @@ describe("createApiApp", () => {
 			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		expect(sourceBranch).not.toBeNull();
 
-		store.onApplyWritesCall(DID, 1, () => {
+		store.onApplyWritesCall(DID, 2, () => {
 			store.seedRecord(
 				branchRef,
 				{
@@ -2188,6 +2251,85 @@ describe("createApiApp", () => {
 		expect(
 			await store.listRecords(COLLECTIONS.characterBranch, DID),
 		).toHaveLength(1);
+	});
+
+	test("returns rebase-needed when recordAdvancement branch state changes before atomic write", async () => {
+		const store = new InterleavingMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Advancement Conflict Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Advancement Character",
+				stats: {
+					power: 55,
+				},
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const branchRef = createSheetAck.emittedRecordRefs[1];
+		const branch = await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(
+			branchRef,
+		);
+		if (!branch) {
+			throw new Error("expected branch record to exist");
+		}
+
+		store.onApplyWritesCall(DID, 2, () => {
+			store.seedRecord(
+				branchRef,
+				{
+					...branch.value,
+					updatedAt: "2026-04-19T00:00:00.000Z",
+				},
+				branch.createdAt,
+				"2026-04-19T00:00:00.000Z",
+			);
+		});
+
+		const advancementResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordAdvancement`,
+			{
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: {
+					power: 60,
+				},
+				effectiveAt: "2026-04-19T00:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		const advancementAck = await advancementResponse.json();
+
+		expect(advancementAck.resultKind).toBe("rebase-needed");
+		expect(advancementAck.reasonCode).toBe("rebase-required");
 	});
 
 	test("enforces createBranch and recordConversion conflict rules", async () => {

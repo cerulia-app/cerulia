@@ -322,28 +322,59 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				createdAt,
 				updatedAt: createdAt,
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
+			const writes = [
+				{
+					kind: "create" as const,
+					draft: {
+						repoDid: callerDid,
+						collection: COLLECTIONS.characterSheet,
+						rkey: sheetRkey,
+						value: sheet,
+						createdAt,
+						updatedAt: createdAt,
+					},
+				},
+				{
+					kind: "create" as const,
+					draft: {
+						repoDid: callerDid,
+						collection: COLLECTIONS.characterBranch,
+						rkey: branchRkey,
+						value: branch,
+						createdAt,
+						updatedAt: createdAt,
+					},
+				},
+			];
+			const scopeCollections = [
+				COLLECTIONS.characterSheet,
+				COLLECTIONS.characterBranch,
+			];
 
-			await createTypedRecord(runtime, {
-				repoDid: callerDid,
-				collection: COLLECTIONS.characterSheet,
-				rkey: sheetRkey,
-				value: sheet,
-				createdAt,
-				updatedAt: createdAt,
-			});
+			const applyCreateSheetWrites = async () => {
+				const expectedScopeState = await runtime.store.getScopeStateToken(
+					callerDid,
+					scopeCollections,
+				);
+				await applyTypedWrites(runtime, writes, { expectedScopeState });
+			};
 
 			try {
-				await createTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterBranch,
-					rkey: branchRkey,
-					value: branch,
-					createdAt,
-					updatedAt: createdAt,
-				});
+				await applyCreateSheetWrites();
 			} catch (error) {
-				await runtime.store.deleteRecord(sheetRef);
-				throw error;
+				if (!isRecordConflictError(error)) {
+					throw error;
+				}
+
+				try {
+					await applyCreateSheetWrites();
+				} catch (retryError) {
+					if (isRecordConflictError(retryError)) {
+						return rebaseNeeded("repo state changed during character creation");
+					}
+
+					throw retryError;
+				}
 			}
 
 			return accepted([sheetRef, branchRef]);
@@ -810,34 +841,44 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				...branch.value,
 				updatedAt: createdAt,
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
+			const expectedScopeState = await runtime.store.getScopeStateToken(
+				callerDid,
+				[
+					COLLECTIONS.characterAdvancement,
+					COLLECTIONS.characterBranch,
+				],
+			);
 
 			try {
-				await createTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterAdvancement,
-					rkey,
-					value: record,
-					createdAt,
-					updatedAt: createdAt,
-				}, { guardUnchanged: [branch] });
+				await applyTypedWrites(
+					runtime,
+					[
+						{
+							kind: "create",
+							draft: {
+								repoDid: callerDid,
+								collection: COLLECTIONS.characterAdvancement,
+								rkey,
+								value: record,
+								createdAt,
+								updatedAt: createdAt,
+							},
+						},
+						{
+							kind: "update",
+							draft: {
+								repoDid: callerDid,
+								collection: COLLECTIONS.characterBranch,
+								rkey: parseAtUri(input.characterBranchRef).rkey,
+								value: nextBranch,
+								createdAt: branch.createdAt,
+								updatedAt: createdAt,
+							},
+						},
+					],
+					{ expectedScopeState },
+				);
 			} catch (error) {
-				if (isRecordConflictError(error)) {
-					return rebaseNeeded("characterBranch state changed during advancement");
-				}
-				throw error;
-			}
-
-			try {
-				await updateTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterBranch,
-					rkey: parseAtUri(input.characterBranchRef).rkey,
-					value: nextBranch,
-					createdAt: branch.createdAt,
-					updatedAt: createdAt,
-				}, { expectedCurrent: branch });
-			} catch (error) {
-				await runtime.store.deleteRecord(advancementRef);
 				if (isRecordConflictError(error)) {
 					return rebaseNeeded("characterBranch state changed during advancement");
 				}
