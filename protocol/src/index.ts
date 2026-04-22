@@ -4,6 +4,7 @@ export * from "./codec/lexicon.js";
 export * from "./codec/parser.js";
 export * from "./codec/validator.js";
 export * from "./auth-scopes.js";
+export * from "./ip.js";
 
 export * as AppCeruliaAuthCoreReader from "./generated/types/app/cerulia/authCoreReader.js";
 export * as AppCeruliaAuthCoreWriter from "./generated/types/app/cerulia/authCoreWriter.js";

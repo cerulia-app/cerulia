@@ -2,6 +2,7 @@ import { AtprotoDohHandleResolver } from "@atproto-labs/handle-resolver";
 import { createIdentityResolver } from "@atproto-labs/identity-resolver";
 import { getPdsEndpoint, isValidDidDoc } from "@atproto/common-web";
 import { Agent } from "@atproto/api";
+import { isPubliclyRoutableIpLiteral, parseIpLiteral } from "@cerulia/protocol";
 import {
 	OAuthClient,
 	type OAuthSession,
@@ -40,6 +41,7 @@ interface BaseOAuthRuntimeOptions {
 	privateJwkJson: string;
 	browserSessionStore: BrowserSessionStore;
 	dohEndpoint?: string;
+	publicAgentLookup?: NonNullable<AgentProvider["getPublicAgent"]>;
 	clientName?: string;
 	clientId?: string;
 	redirectUri?: string;
@@ -94,6 +96,36 @@ function normalizeBaseUrl(value: string): URL {
 	}
 
 	url.pathname = url.pathname.replace(/\/+$/, "");
+	url.search = "";
+	url.hash = "";
+	return url;
+}
+
+function assertSafePublicServiceUrl(rawUrl: string): URL {
+	const url = new URL(rawUrl);
+	const hostname = url.hostname.toLowerCase();
+	if (url.protocol !== "https:") {
+		throw new Error("PDS endpoint must use https");
+	}
+	if (url.username || url.password) {
+		throw new Error("PDS endpoint must not include credentials");
+	}
+	if (url.pathname !== "/" && url.pathname !== "") {
+		throw new Error("PDS endpoint must not include a path");
+	}
+	if (
+		hostname === "localhost" ||
+		hostname.endsWith(".internal") ||
+		hostname.endsWith(".local") ||
+		(!hostname.includes(".") && !hostname.includes(":"))
+	) {
+		throw new Error("PDS endpoint must not target a private or loopback host");
+	}
+	if (parseIpLiteral(hostname) && !isPubliclyRoutableIpLiteral(hostname)) {
+		throw new Error("PDS endpoint must not target a private or loopback host");
+	}
+
+	url.pathname = "";
 	url.search = "";
 	url.hash = "";
 	return url;
@@ -234,18 +266,32 @@ function createPublicAgentLookup(
 	});
 
 	return async (repoDid: string) => {
+		if (!repoDid.startsWith("did:plc:")) {
+			return null;
+		}
+
 		const identity = await identityResolver.resolve(repoDid).catch(() => null);
 		if (!identity || !isValidDidDoc(identity.didDoc)) {
 			return null;
 		}
 
 		const pdsEndpoint = getPdsEndpoint(identity.didDoc);
-		return pdsEndpoint
-			? new Agent({
-				service: pdsEndpoint,
-				fetch: fetchImpl,
-			})
-			: null;
+		if (!pdsEndpoint) {
+			return null;
+		}
+
+		const service = assertSafePublicServiceUrl(pdsEndpoint);
+		if (
+			service.protocol !== "https:" ||
+			!isPubliclyRoutableIpLiteral(service.hostname)
+		) {
+			return null;
+		}
+
+		return new Agent({
+			service: service.toString(),
+			fetch: fetchImpl,
+		});
 	};
 }
 
@@ -298,7 +344,8 @@ export async function createBunOAuthRuntime(
 		options.browserSessionStore,
 		options.sessionStore,
 		options.knownRepoCatalog,
-		createPublicAgentLookup(fetchImpl, options.dohEndpoint),
+		options.publicAgentLookup ??
+			createPublicAgentLookup(fetchImpl, options.dohEndpoint),
 	);
 }
 
