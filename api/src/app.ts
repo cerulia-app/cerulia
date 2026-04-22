@@ -35,6 +35,7 @@ import { requireReaderDid, requireWriterDid } from "./auth.js";
 import { SESSION_COOKIE_NAME, XRPC_PREFIX } from "./constants.js";
 import { createServices } from "./services/index.js";
 import type { AtomicRecordStore, RecordStore } from "./store/types.js";
+import { jsonXrpcOutput } from "./xrpc-output.js";
 
 export interface ApiOAuthFeature {
 	clientMetadata: Record<string, unknown>;
@@ -109,115 +110,6 @@ async function readJsonBody<T>(
 
 	lexicons.assertValidXrpcInput(lexiconId, payload);
 	return payload as T;
-}
-
-function jsonXrpcOutput(
-	context: { json: (payload: unknown) => Response },
-	lexiconId: string,
-	payload: unknown,
-): Response {
-	assertValidXrpcOutputPayload(lexiconId, payload);
-	return context.json(payload);
-}
-
-function isPlainObject(
-	value: unknown,
-): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isObjectOutputSchema(
-	schema: unknown,
-): schema is {
-	properties?: Record<string, unknown>;
-	required?: string[];
-} {
-	return isPlainObject(schema) && schema.type === "object";
-}
-
-function assertTypedValuesAreValid(value: unknown): void {
-	if (Array.isArray(value)) {
-		for (const item of value) {
-			assertTypedValuesAreValid(item);
-		}
-		return;
-	}
-
-	if (!isPlainObject(value)) {
-		return;
-	}
-
-	if (typeof value.$type === "string") {
-		const [lexiconId, defId = "main", ...rest] = value.$type.split("#");
-		if (!lexiconId || rest.length > 0) {
-			throw new Error(`Invalid $type value in XRPC output: ${value.$type}`);
-		}
-
-		const result = validateById(value, lexiconId, defId, true);
-		if (!result.success) {
-			throw result.error;
-		}
-	}
-
-	for (const nested of Object.values(value)) {
-		assertTypedValuesAreValid(nested);
-	}
-}
-
-function assertFallbackXrpcOutputShape(
-	lexiconId: string,
-	payload: unknown,
-): void {
-	if (!isPlainObject(payload)) {
-		throw new Error(`XRPC output for ${lexiconId} must be a JSON object`);
-	}
-
-	const definition = lexicons.getDefOrThrow(lexiconId, ["query", "procedure"]);
-	const outputSchema = definition.output?.schema;
-	if (!isObjectOutputSchema(outputSchema)) {
-		throw new Error(`XRPC output for ${lexiconId} must use an object schema`);
-	}
-	const allowedProperties = new Set(
-		Object.keys(outputSchema.properties ?? {}),
-	);
-	const requiredProperties = outputSchema.required ?? [];
-
-	for (const requiredProperty of requiredProperties) {
-		if (!(requiredProperty in payload)) {
-			throw new Error(
-				`XRPC output for ${lexiconId} is missing required property ${requiredProperty}`,
-			);
-		}
-	}
-
-	for (const property of Object.keys(payload)) {
-		if (!allowedProperties.has(property)) {
-			throw new Error(
-				`XRPC output for ${lexiconId} contains unexpected property ${property}`,
-			);
-		}
-	}
-
-	assertTypedValuesAreValid(payload);
-}
-
-function assertValidXrpcOutputPayload(
-	lexiconId: string,
-	payload: unknown,
-): void {
-	try {
-		lexicons.assertValidXrpcOutput(lexiconId, payload);
-	} catch (error) {
-		if (
-			error instanceof Error &&
-			error.message.includes("Unexpected lexicon type: record")
-		) {
-			assertFallbackXrpcOutputShape(lexiconId, payload);
-			return;
-		}
-
-		throw error;
-	}
 }
 
 export interface ApiAppBindings {

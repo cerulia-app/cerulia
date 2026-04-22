@@ -14,9 +14,13 @@ import {
 } from "./constants.js";
 import { ApiError } from "./errors.js";
 import { paginate } from "./pagination.js";
-import { parseAtUri } from "./refs.js";
+import { buildAtUri, parseAtUri } from "./refs.js";
 import { MemoryRecordStore } from "./store/memory.js";
-import type { ApplyWritesOptions, RecordWrite } from "./store/types.js";
+import type {
+	ApplyWritesOptions,
+	RecordWrite,
+	StoredRecord,
+} from "./store/types.js";
 import { RecordConflictError, scopeStateTokenEquals } from "./store/types.js";
 
 const DID = "did:plc:alice";
@@ -120,6 +124,100 @@ class InterleavingMemoryRecordStore extends SupportedMemoryRecordStore {
 		}
 
 		return super.applyWrites(writes, options);
+	}
+}
+
+class FailingAtomicMemoryRecordStore extends SupportedMemoryRecordStore {
+	private failurePlan: {
+		repoDid: string;
+		afterAppliedWrite: number;
+	} | null = null;
+
+	failNextApplyWrites(repoDid: string, afterAppliedWrite: number) {
+		this.failurePlan = {
+			repoDid,
+			afterAppliedWrite,
+		};
+	}
+
+	private async restoreRecord(previous: StoredRecord<unknown>) {
+		const current = await super.getRecord(previous.uri);
+		if (current) {
+			await super.updateRecord({
+				repoDid: previous.repoDid,
+				collection: previous.collection,
+				rkey: previous.rkey,
+				value: previous.value,
+				createdAt: previous.createdAt,
+				updatedAt: previous.updatedAt,
+			});
+			return;
+		}
+
+		await super.createRecord({
+			repoDid: previous.repoDid,
+			collection: previous.collection,
+			rkey: previous.rkey,
+			value: previous.value,
+			createdAt: previous.createdAt,
+			updatedAt: previous.updatedAt,
+		});
+	}
+
+	override async applyWrites(writes: RecordWrite[], options: ApplyWritesOptions) {
+		const currentScopeState = await super.getScopeStateToken(
+			options.expectedScopeState.repoDid,
+			Object.keys(options.expectedScopeState.collectionVersions ?? {}),
+		);
+		if (!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)) {
+			throw new RecordConflictError();
+		}
+
+		const previousRecords = new Map<string, StoredRecord<unknown> | null>();
+		for (const write of writes) {
+			const uri = buildAtUri(
+				write.draft.repoDid,
+				write.draft.collection,
+				write.draft.rkey,
+			);
+			previousRecords.set(uri, await super.getRecord(uri));
+		}
+
+		let appliedWriteCount = 0;
+
+		try {
+			for (const write of writes) {
+				if (write.kind === "create") {
+					await super.createRecord(write.draft);
+				} else {
+					await super.updateRecord(write.draft);
+				}
+
+				appliedWriteCount += 1;
+				if (
+					this.failurePlan &&
+					this.failurePlan.repoDid === options.expectedScopeState.repoDid &&
+					this.failurePlan.afterAppliedWrite === appliedWriteCount
+				) {
+					this.failurePlan = null;
+					throw new Error("Injected applyWrites failure");
+				}
+			}
+		} catch (error) {
+			for (const [uri, previous] of previousRecords) {
+				if (previous) {
+					await this.restoreRecord(previous);
+					continue;
+				}
+
+				const current = await super.getRecord(uri);
+				if (current) {
+					await super.deleteRecord(uri);
+				}
+			}
+
+			throw error;
+		}
 	}
 }
 
@@ -344,6 +442,57 @@ describe("createApiApp", () => {
 
 		expectAccepted(createSheetAck);
 		expect(createSheetAck.emittedRecordRefs).toHaveLength(2);
+	});
+
+	test("does not persist partial records when createSheet applyWrites fails mid-batch", async () => {
+		const store = new FailingAtomicMemoryRecordStore();
+		const { app } = createTestApp(store);
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Mid Batch Failure Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		store.failNextApplyWrites(DID, 1);
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Mid Batch Failure Character",
+				stats: {
+					power: 70,
+				},
+			},
+		);
+
+		expect(createSheetResponse.status).toBe(500);
+		expect(await createSheetResponse.json()).toMatchObject({
+			error: "InternalError",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterSheet, DID),
+		).toHaveLength(0);
+		expect(
+			await store.listRecords(COLLECTIONS.characterBranch, DID),
+		).toHaveLength(0);
 	});
 
 	test("maps an atproto-only browser session to reader access", async () => {
@@ -2330,6 +2479,83 @@ describe("createApiApp", () => {
 
 		expect(advancementAck.resultKind).toBe("rebase-needed");
 		expect(advancementAck.reasonCode).toBe("rebase-required");
+	});
+
+	test("does not persist partial records when recordAdvancement applyWrites fails mid-batch", async () => {
+		const store = new FailingAtomicMemoryRecordStore();
+		const { app } = createTestApp(store);
+		const writerHeaders = authHeaders();
+
+		const schemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Advancement Mid Batch Failure Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			writerHeaders,
+		);
+		const schemaAck = await schemaResponse.json();
+		const schemaRef = schemaAck.emittedRecordRefs[0];
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Advancement Mid Batch Character",
+				stats: {
+					power: 55,
+				},
+			},
+			writerHeaders,
+		);
+		const createSheetAck = await createSheetResponse.json();
+		const branchRef = createSheetAck.emittedRecordRefs[1];
+		const branchBefore = await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(
+			branchRef,
+		);
+		if (!branchBefore) {
+			throw new Error("expected branch record to exist");
+		}
+
+		store.failNextApplyWrites(DID, 1);
+
+		const advancementResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordAdvancement`,
+			{
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: {
+					power: 60,
+				},
+				effectiveAt: "2026-04-19T00:00:00.000Z",
+			},
+			writerHeaders,
+		);
+
+		expect(advancementResponse.status).toBe(500);
+		expect(await advancementResponse.json()).toMatchObject({
+			error: "InternalError",
+		});
+		expect(
+			await store.listRecords(COLLECTIONS.characterAdvancement, DID),
+		).toHaveLength(0);
+		const branchAfter = await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(
+			branchRef,
+		);
+		expect(branchAfter).toEqual(branchBefore);
 	});
 
 	test("enforces createBranch and recordConversion conflict rules", async () => {
