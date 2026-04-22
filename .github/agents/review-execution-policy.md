@@ -6,10 +6,65 @@ This file defines how Cerulia review agents should receive context and how the o
 
 This file is the single source of truth for shared Cerulia review policy.
 
-- define shared review rules here: reduction-first judgment, review kinds, context discipline, repeat-review classification, and normalized output contract
+- define shared review rules here: pre-review interpretation, reduction-first judgment, review kinds, context discipline, repeat-review classification, and normalized output contract
 - define orchestration procedure in `.github/agents/review-orchestrator.agent.md`: reviewer selection, reviewer-specific briefing, execution flow, dedupe, and aggregation
 - define only boundary-specific judgment criteria in individual reviewer `.agent.md` files
 - do not duplicate or redefine shared policy in orchestrator or reviewer prompts except to tell the agent to read this file first and follow it
+
+## Pre-Review Interpretation
+
+Every reviewer must interpret the review request before generating findings.
+
+**Finding generation must not begin until the scope decomposition output is complete.**
+
+### Step 1: So What
+
+Identify the single So What for this review: what product or design invariant would remain undetected if this reviewer's lens were skipped?
+
+> So What is answered by: "When this review is complete, what specific class of problem will the team know is absent or present?"
+
+### Step 2: Scope Decomposition
+
+Read the target at a structural level to identify distinct reviewable surfaces. Then decompose them into a tree of scopes.
+
+Each scope is a node with the following fields:
+
+| Field | Content |
+|---|---|
+| ID | `SW1` for So What; `S1`, `S1.1` etc. for scopes, reflecting hierarchy |
+| Parent | Immediate parent node ID. `SW1` uses `なし` |
+| Depends on | `なし` / `all(S1, S2)` / `any(S1, S2)` — these three forms only |
+| Premise | What must be true for this scope to be reviewable |
+| Why | Why this scope must be checked to satisfy the So What |
+| What | The artifact, surface, or behavior under review |
+| How | How to evaluate correctness or risk |
+| How Much | Depth required: signature-level / behavioral / full trace |
+| If Premise Fails | `stop` / `confirm` / `narrow scope` |
+
+Dependency rules:
+
+- `Depends on` represents prior conditions, not containment. Do not conflate with `Parent`.
+- Write nodes so that each node's `Depends on` targets appear before it in the tree.
+- `all(...)` means every listed scope must hold. `any(...)` means at least one must hold.
+- If AND and OR must be combined within one node, split the scope instead.
+
+### Step 3: Danger Signal Check
+
+Verify the decomposition does not contain any of the following before proceeding:
+
+| Signal | Action |
+|---|---|
+| Only one node with no sub-scopes | Re-examine whether the target has distinct areas. A single scope is valid only for genuinely atomic targets. |
+| `Parent` and `Depends on` used for the same relationship | Separate structural containment from temporal dependency. |
+| One scope whose `Why` carries two unrelated reasons | Split into two scopes. |
+| `Premise` is conditional but `If Premise Fails` is absent | Add the boundary condition before proceeding. |
+
+### Output Timing
+
+1. Read the target artifact at a structural level to identify reviewable surfaces.
+2. Complete Steps 1–3.
+3. **Present the full scope decomposition as the first section of reviewer output**, before any finding.
+4. Anchor each finding to its scope ID using `scope: S1` notation inside the finding.
 
 ## Reduction-First Policy
 
@@ -138,6 +193,7 @@ Rules:
 
 Every reviewer result and every orchestrated aggregate result must use the same core section names:
 
+- review scope
 - findings
 - coverage gaps
 - evidence used
