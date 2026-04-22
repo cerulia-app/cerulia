@@ -156,4 +156,55 @@ describe("createWorkerApp", () => {
 		const response = await app.request("/_health");
 		expect(response.status).toBe(200);
 	});
+
+	test("serves cached catalog without injected source and keeps ingest disabled", async () => {
+		const db = new Database(":memory:");
+		await applyTestMigrations(db);
+		const source = new MemoryCanonicalRecordSource();
+		source.seedScenario("cached", {
+			$type: COLLECTIONS.scenario,
+			title: "Cached Scenario",
+			rulesetNsid: "app.cerulia.rules.coc7",
+			recommendedSheetSchemaRef: undefined,
+			sourceCitationUri: "https://example.com/scenario/cached",
+			summary: "Served from cached catalog.",
+			ownerDid: "did:plc:alice",
+			createdAt: "2026-04-23T00:00:00.000Z",
+			updatedAt: "2026-04-23T00:00:00.000Z",
+		});
+		const d1Database = new SqliteD1Database(db);
+
+		await createWorkerApp(
+			{
+				DB: d1Database,
+				CERULIA_PROJECTION_REPOS: "did:plc:alice",
+				CERULIA_PROJECTION_INTERNAL_INGEST_TOKEN: "projection-test-token",
+			},
+			{ source },
+		);
+
+		const app = await createWorkerApp({
+			DB: d1Database,
+			CERULIA_PROJECTION_REPOS: "did:plc:alice",
+			CERULIA_PROJECTION_INTERNAL_INGEST_TOKEN: "projection-test-token",
+		});
+
+		const response = await app.request(
+			`${XRPC_PREFIX}/app.cerulia.scenario.list?rulesetNsid=${encodeURIComponent("app.cerulia.rules.coc7")}`,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.items).toHaveLength(1);
+		expect(payload.items[0].title).toBe("Cached Scenario");
+
+		const ingestResponse = await app.request("/internal/ingest/repo", {
+			method: "POST",
+			headers: {
+				authorization: "Bearer projection-test-token",
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({ repoDid: "did:plc:alice" }),
+		});
+		expect(ingestResponse.status).toBe(404);
+	});
 });
