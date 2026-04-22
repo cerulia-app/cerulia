@@ -13,6 +13,7 @@ import type { ServiceRuntime } from "./runtime.js";
 import {
 	assertCredentialFreeUriList,
 	createTypedRecord,
+	getOptionalRecord,
 	hasSameOwner,
 	requireRecord,
 	resolveScenarioLabel,
@@ -190,6 +191,39 @@ export function createSessionService(runtime: ServiceRuntime) {
 				return rejected(
 					"forbidden-owner-mismatch",
 					"characterBranchRef must belong to the caller",
+				);
+			}
+
+			if (
+				record.value.scenarioRef &&
+				input.scenarioRef === undefined &&
+				input.scenarioLabel === undefined &&
+				!(await getOptionalRecord(
+					runtime,
+					record.value.scenarioRef,
+					COLLECTIONS.scenario,
+					"scenarioRef",
+				))
+			) {
+				return rejected(
+					"repair-needed",
+					"current scenarioRef is stale; replace it or switch to scenarioLabel before updating",
+				);
+			}
+
+			if (
+				record.value.campaignRef &&
+				input.campaignRef === undefined &&
+				!(await getOptionalRecord(
+					runtime,
+					record.value.campaignRef,
+					COLLECTIONS.campaign,
+					"campaignRef",
+				))
+			) {
+				return rejected(
+					"repair-needed",
+					"current campaignRef is stale; replace it before updating",
 				);
 			}
 

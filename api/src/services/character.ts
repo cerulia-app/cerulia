@@ -180,7 +180,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			COLLECTIONS.characterBranch,
 			"characterBranchRef",
 		);
-		const sheet = await loadSheet(runtime, branch.value.sheetRef);
+		const sheet = await loadOptionalSheet(runtime, branch.value.sheetRef);
+		if (!sheet) {
+			return null;
+		}
 		const advancements = (
 			await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
 				COLLECTIONS.characterAdvancement,
@@ -218,6 +221,9 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			MATERIALIZATION_COLLECTIONS,
 		);
 		const latestState = await loadMaterializationState(branchRef);
+		if (!latestState) {
+			return null;
+		}
 		const scopeStateAfter = await runtime.store.getScopeStateToken(
 			repoDid,
 			MATERIALIZATION_COLLECTIONS,
@@ -538,16 +544,32 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			const sourceSheet = await loadSheet(runtime, sourceBranch.value.sheetRef);
+				const sourceSheet = await loadOptionalSheet(
+					runtime,
+					sourceBranch.value.sheetRef,
+				);
+				if (!sourceSheet) {
+					return rejected(
+						"repair-needed",
+						"source branch head sheet is missing; repair the branch before branching",
+					);
+				}
 			if (sourceSheet.repoDid !== callerDid) {
 				return rejected(
 					"forbidden-owner-mismatch",
 					"source branch sheet must belong to the caller",
 				);
 			}
-			const sourceSchema = sourceSheet.value.sheetSchemaRef
-				? await loadSchema(runtime, sourceSheet.value.sheetSchemaRef)
-				: null;
+				const sourceSchema = await loadOptionalSchema(
+					runtime,
+					sourceSheet.value.sheetSchemaRef,
+				);
+				if (sourceSheet.value.sheetSchemaRef && !sourceSchema) {
+					return rejected(
+						"repair-needed",
+						"source sheet schema is missing; repair the branch before branching",
+					);
+				}
 
 			const advancements = (
 				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
@@ -825,6 +847,26 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
+			const currentSheet = await loadOptionalSheet(
+				runtime,
+				branch.value.sheetRef,
+			);
+			if (!currentSheet) {
+				return rejected(
+					"repair-needed",
+					"current branch head sheet is missing; repair the branch before recording advancements",
+				);
+			}
+			if (
+				currentSheet.value.sheetSchemaRef &&
+				!(await loadOptionalSchema(runtime, currentSheet.value.sheetSchemaRef))
+			) {
+				return rejected(
+					"repair-needed",
+					"current branch sheet schema is missing; repair the branch before recording advancements",
+				);
+			}
+
 			const createdAt = runtime.now();
 			const rkey = runtime.nextTid();
 			const advancementRef = `at://${callerDid}/${COLLECTIONS.characterAdvancement}/${rkey}`;
@@ -919,7 +961,13 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				return rebaseNeeded("characterBranch revision is stale");
 			}
 
-			const sourceSheet = await loadSheet(runtime, branch.value.sheetRef);
+			const sourceSheet = await loadOptionalSheet(runtime, branch.value.sheetRef);
+			if (!sourceSheet) {
+				return rejected(
+					"repair-needed",
+					"current branch head sheet is missing; repair the branch before recording conversions",
+				);
+			}
 			if (sourceSheet.repoDid !== callerDid) {
 				return rejected(
 					"forbidden-owner-mismatch",

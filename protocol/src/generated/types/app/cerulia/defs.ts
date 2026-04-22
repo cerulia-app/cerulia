@@ -24,6 +24,7 @@ export interface MutationAck {
     | 'invalid-exactly-one'
     | 'invalid-schema-link'
     | 'invalid-public-uri'
+    | 'repair-needed'
     | 'rebase-required'
     | 'terminal-state-readonly'
     | (string & {})
