@@ -1061,10 +1061,6 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			if (branch.value.revision !== input.expectedRevision) {
-				return rebaseNeeded("characterBranch revision is stale");
-			}
-
 			const sourceSheet = await loadOptionalSheet(runtime, branch.value.sheetRef);
 			if (!sourceSheet) {
 				return rejected(
@@ -1077,6 +1073,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					"forbidden-owner-mismatch",
 					"branch sheet must belong to the caller",
 				);
+			}
+
+			if (branch.value.revision !== input.expectedRevision) {
+				return rebaseNeeded("characterBranch revision is stale");
 			}
 
 			if (input.targetRulesetNsid === sourceSheet.value.rulesetNsid) {

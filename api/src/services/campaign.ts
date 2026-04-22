@@ -176,7 +176,9 @@ export function createCampaignService(runtime: ServiceRuntime) {
 					input.houseRef !== undefined ||
 					input.rulesetNsid !== undefined ||
 					input.sharedRuleProfileRefs !== undefined ||
-					input.visibility !== undefined)
+					input.visibility !== undefined ||
+					(input.archivedAt !== undefined &&
+						input.archivedAt !== record.value.archivedAt))
 			) {
 				return rejected(
 					"terminal-state-readonly",

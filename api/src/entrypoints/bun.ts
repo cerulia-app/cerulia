@@ -35,6 +35,9 @@ const publicAgentProvider = createPublicAgentProvider({
 const publicBaseUrl = process.env.CERULIA_PUBLIC_BASE_URL;
 const privateJwkJson = process.env.CERULIA_OAUTH_PRIVATE_JWK;
 const allowHeaderShim = process.env.CERULIA_ENABLE_HEADER_AUTH_SHIM === "1";
+const listenHostname = allowHeaderShim
+	? "127.0.0.1"
+	: process.env.HOST;
 const projectionBaseUrl = process.env.CERULIA_PROJECTION_INTERNAL_BASE_URL;
 const projectionIngestToken = process.env.CERULIA_PROJECTION_INTERNAL_INGEST_TOKEN;
 
@@ -107,8 +110,11 @@ const app = createApiApp({
 });
 
 Bun.serve({
+	hostname: listenHostname,
 	port,
 	fetch: app.fetch,
 });
 
-console.log(`cerulia-api listening on http://localhost:${port}`);
+console.log(
+	`cerulia-api listening on http://${listenHostname ?? "localhost"}:${port}`,
+);

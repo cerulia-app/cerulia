@@ -1895,6 +1895,47 @@ describe("createApiApp", () => {
 		expect(payload.reasonCode).toBe("repair-needed");
 	});
 
+	test("returns repair-needed for recordConversion on a broken-head branch even when expectedRevision is stale", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const branchRef = `at://${DID}/${COLLECTIONS.characterBranch}/broken-head-conversion`;
+
+		store.seedRecord(
+			branchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				sheetRef: `at://${DID}/${COLLECTIONS.characterSheet}/missing-sheet`,
+				branchKind: "main",
+				branchLabel: "Broken Head Conversion",
+				visibility: "draft",
+				revision: 3,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+			{
+				characterBranchRef: branchRef,
+				expectedRevision: 2,
+				targetRulesetNsid: "app.cerulia.rules.emoclo",
+				targetSheetSchemaRef:
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/target-schema`,
+				convertedAt: "2026-04-22T12:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("rejected");
+		expect(payload.reasonCode).toBe("repair-needed");
+	});
+
 	test("keeps session.list ordering stable for equal playedAt timestamps", async () => {
 		const { app, store } = createTestApp();
 		const writerHeaders = authHeaders();
@@ -3594,6 +3635,42 @@ describe("createApiApp", () => {
 			resultKind: "rejected",
 			reasonCode: "terminal-state-readonly",
 		});
+	});
+
+	test("keeps archived campaigns fully read-only, including archivedAt", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const campaignRef = `at://${DID}/${COLLECTIONS.campaign}/archived-campaign`;
+
+		store.seedRecord(
+			campaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "archived-campaign",
+				title: "Archived Campaign",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "public",
+				archivedAt: "2026-04-20T00:00:00.000Z",
+				createdAt: "2026-04-20T00:00:00.000Z",
+				updatedAt: "2026-04-20T00:00:00.000Z",
+			},
+			"2026-04-20T00:00:00.000Z",
+			"2026-04-20T00:00:00.000Z",
+		);
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.update`,
+			{
+				campaignRef,
+				archivedAt: "2026-04-21T00:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("rejected");
+		expect(payload.reasonCode).toBe("terminal-state-readonly");
 	});
 
 	test("supports scenario, house, campaign, and rule profile flows", async () => {

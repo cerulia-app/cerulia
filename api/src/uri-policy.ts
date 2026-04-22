@@ -15,5 +15,5 @@ export function isCredentialFreeUri(value: string): boolean {
 		return false;
 	}
 
-	return url.search.length === 0;
+	return url.search.length === 0 && url.hash.length === 0;
 }
