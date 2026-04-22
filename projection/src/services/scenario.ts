@@ -49,6 +49,28 @@ async function toCatalogEntry(
 	};
 }
 
+async function resolveCurrentSchemaAvailability(
+	runtime: ScenarioCatalogRuntime,
+	scenarioRef: string,
+): Promise<boolean> {
+	try {
+		const scenario = await runtime.source.getRecord<AppCeruliaCoreScenario.Main>(
+			scenarioRef,
+		);
+		if (!scenario?.value.recommendedSheetSchemaRef) {
+			return false;
+		}
+
+		return Boolean(
+			await runtime.source.getRecord(
+				scenario.value.recommendedSheetSchemaRef,
+			),
+		);
+	} catch {
+		return false;
+	}
+}
+
 export interface ScenarioCatalogRuntime {
 	source: CanonicalRecordSource;
 	catalog: SqlScenarioCatalogStore;
@@ -121,14 +143,19 @@ export function createScenarioCatalogService(runtime: ScenarioCatalogRuntime) {
 			cursor: string | undefined,
 		): Promise<AppCeruliaScenarioList.OutputSchema> {
 			const page = await runtime.catalog.list(rulesetNsid, limit, cursor);
+			const availability = await Promise.all(
+				page.items.map((entry) =>
+					resolveCurrentSchemaAvailability(runtime, entry.scenarioRef),
+				),
+			);
 
 			return {
-				items: page.items.map((entry) => ({
+				items: page.items.map((entry, index) => ({
 					$type: "app.cerulia.scenario.list#scenarioListItem",
 					scenarioRef: entry.scenarioRef,
 					title: entry.title,
 					rulesetNsid: entry.rulesetNsid,
-					hasRecommendedSheetSchema: entry.hasRecommendedSheetSchema,
+					hasRecommendedSheetSchema: availability[index] ?? false,
 					summary: entry.summary,
 				})),
 				cursor: page.cursor,

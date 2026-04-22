@@ -52,9 +52,32 @@ class RefreshingScenarioSource implements CanonicalRecordSource {
 }
 
 class SchemaResolutionScenarioSource implements CanonicalRecordSource {
-	constructor(private readonly schemaRecord: StoredRecord<unknown> | null) {}
+	constructor(public schemaRecord: StoredRecord<unknown> | null) {}
 
 	async getRecord<T>(uri: string): Promise<StoredRecord<T> | null> {
+		if (uri.endsWith("/scenario-1")) {
+			return {
+				uri,
+				repoDid: DID,
+				collection: COLLECTIONS.scenario,
+				rkey: "scenario-1",
+				value: {
+					$type: COLLECTIONS.scenario,
+					title: "Schema Resolution Mission",
+					rulesetNsid: "app.cerulia.rules.coc7",
+					recommendedSheetSchemaRef:
+						`at://${DID}/app.cerulia.core.characterSheetSchema/schema-1`,
+					sourceCitationUri: "https://example.com/scenario/test",
+					summary: "Scenario with optional schema resolution.",
+					ownerDid: DID,
+					createdAt: "2026-04-22T00:00:00.000Z",
+					updatedAt: "2026-04-22T00:00:00.000Z",
+				} as T,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			};
+		}
+
 		return (this.schemaRecord as StoredRecord<T> | null) ?? null;
 	}
 
@@ -133,5 +156,39 @@ describe("createScenarioCatalogService", () => {
 		await service.ingestRepo(DID);
 
 		expect(catalog.lastEntries[0]?.hasRecommendedSheetSchema).toBe(false);
+	});
+
+	test("refreshes recommended schema availability from the live source during list reads", async () => {
+		const catalog = new ConflictThenSuccessCatalogStore();
+		const source = new SchemaResolutionScenarioSource(null);
+		const service = createScenarioCatalogService({
+			source,
+			catalog: catalog as unknown as SqlScenarioCatalogStore,
+		});
+
+		await service.ingestRepo(DID);
+		let page = await service.list(undefined, undefined, undefined);
+		expect(page.items[0]?.hasRecommendedSheetSchema).toBe(false);
+
+		source.schemaRecord = {
+			uri: `at://${DID}/app.cerulia.core.characterSheetSchema/schema-1`,
+			repoDid: DID,
+			collection: "app.cerulia.core.characterSheetSchema",
+			rkey: "schema-1",
+			value: {
+				$type: "app.cerulia.core.characterSheetSchema",
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Resolved Schema",
+				fieldDefs: [],
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			createdAt: "2026-04-22T00:00:00.000Z",
+			updatedAt: "2026-04-22T00:00:00.000Z",
+		};
+
+		page = await service.list(undefined, undefined, undefined);
+		expect(page.items[0]?.hasRecommendedSheetSchema).toBe(true);
 	});
 });

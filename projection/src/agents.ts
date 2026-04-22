@@ -3,6 +3,7 @@ import { createIdentityResolver } from "@atproto-labs/identity-resolver";
 import { getPdsEndpoint, isValidDidDoc } from "@atproto/common-web";
 import { Agent } from "@atproto/api";
 import { isPubliclyRoutableIpLiteral, parseIpLiteral } from "@cerulia/protocol";
+import { createVerifiedWorkerFetch } from "./public-agent-worker.js";
 import type { KnownRepoCatalog } from "./store/known-repos.js";
 
 type FetchLike = (
@@ -15,6 +16,12 @@ export function assertSafePublicServiceUrl(rawUrl: string): URL {
 	const hostname = url.hostname.toLowerCase();
 	if (url.protocol !== "https:") {
 		throw new Error("PDS endpoint must use https");
+	}
+	if (url.username || url.password) {
+		throw new Error("PDS endpoint must not include credentials");
+	}
+	if (url.pathname !== "/" && url.pathname !== "") {
+		throw new Error("PDS endpoint must not include a path");
 	}
 
 	if (
@@ -29,6 +36,10 @@ export function assertSafePublicServiceUrl(rawUrl: string): URL {
 	if (parseIpLiteral(hostname) && !isPubliclyRoutableIpLiteral(hostname)) {
 		throw new Error("PDS endpoint must not target a private or loopback host");
 	}
+
+	url.pathname = "";
+	url.search = "";
+	url.hash = "";
 
 	return url;
 }
@@ -103,7 +114,7 @@ function createPublicAgentLookup(
 	dohEndpoint?: string,
 ): PublicAgentProvider["getPublicAgent"] {
 	const timedFetch = createTimeoutFetch(
-		fetchImpl,
+		createVerifiedWorkerFetch(fetchImpl, dohEndpoint),
 		1500,
 	) as typeof globalThis.fetch;
 	const identityResolver = createIdentityResolver({
@@ -141,8 +152,9 @@ export function createPublicAgentProvider(options: {
 	knownRepoCatalog: KnownRepoCatalog;
 	dohEndpoint?: string;
 	resolveDidDoc?: (repoDid: string) => Promise<unknown | null>;
+	fetchImpl?: FetchLike;
 }): PublicAgentProvider {
-	const fetchImpl = globalThis.fetch.bind(globalThis) as FetchLike;
+	const fetchImpl = (options.fetchImpl ?? globalThis.fetch.bind(globalThis)) as FetchLike;
 	return {
 		listRepoDids() {
 			return options.knownRepoCatalog.listRepoDids();

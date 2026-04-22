@@ -210,6 +210,25 @@ export function createSessionService(runtime: ServiceRuntime) {
 			const nextRole = input.role ?? record.value.role;
 			const nextCharacterBranchRef =
 				input.characterBranchRef ?? record.value.characterBranchRef;
+			const nextCampaignRef = input.campaignRef ?? record.value.campaignRef;
+			const currentScenarioRefIsStale = Boolean(
+				record.value.scenarioRef &&
+					!(await getOptionalRecord(
+						runtime,
+						record.value.scenarioRef,
+						COLLECTIONS.scenario,
+						"scenarioRef",
+					)),
+			);
+			const currentCampaignRefIsStale = Boolean(
+				record.value.campaignRef &&
+					!(await getOptionalRecord(
+						runtime,
+						record.value.campaignRef,
+						COLLECTIONS.campaign,
+						"campaignRef",
+					)),
+			);
 
 			if (Boolean(nextScenarioRef) === Boolean(nextScenarioLabel)) {
 				return rejected(
@@ -236,15 +255,8 @@ export function createSessionService(runtime: ServiceRuntime) {
 			}
 
 			if (
-				record.value.scenarioRef &&
-				input.scenarioRef === undefined &&
-				input.scenarioLabel === undefined &&
-				!(await getOptionalRecord(
-					runtime,
-					record.value.scenarioRef,
-					COLLECTIONS.scenario,
-					"scenarioRef",
-				))
+				currentScenarioRefIsStale &&
+				nextScenarioRef === record.value.scenarioRef
 			) {
 				return rejected(
 					"repair-needed",
@@ -253,14 +265,8 @@ export function createSessionService(runtime: ServiceRuntime) {
 			}
 
 			if (
-				record.value.campaignRef &&
-				input.campaignRef === undefined &&
-				!(await getOptionalRecord(
-					runtime,
-					record.value.campaignRef,
-					COLLECTIONS.campaign,
-					"campaignRef",
-				))
+				currentCampaignRefIsStale &&
+				nextCampaignRef === record.value.campaignRef
 			) {
 				return rejected(
 					"repair-needed",
@@ -308,7 +314,6 @@ export function createSessionService(runtime: ServiceRuntime) {
 				}
 			}
 
-			const nextCampaignRef = input.campaignRef ?? record.value.campaignRef;
 			if (nextCampaignRef) {
 				let campaign;
 				try {

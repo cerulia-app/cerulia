@@ -944,6 +944,35 @@ describe("createApiApp", () => {
 		expect(actorView.publicBranches).toHaveLength(1);
 		expect(actorView.publicBranches[0].characterBranchRef).toBe(branchRef);
 
+		store.seedRecord(
+			`at://${DID}/${COLLECTIONS.playerProfile}/${SELF_RKEY}`,
+			{
+				$type: COLLECTIONS.playerProfile,
+				ownerDid: DID,
+				blueskyProfileRef: `at://${DID}/${COLLECTIONS.blueskyProfile}/other-record`,
+				createdAt: "2026-04-20T08:30:00.000Z",
+				updatedAt: "2026-04-20T08:30:00.000Z",
+			},
+			"2026-04-20T08:30:00.000Z",
+			"2026-04-20T08:30:00.000Z",
+		);
+		store.seedRecord(
+			`at://${DID}/${COLLECTIONS.blueskyProfile}/other-record`,
+			{
+				displayName: "Wrong Fallback",
+			},
+			"2026-04-20T08:31:00.000Z",
+			"2026-04-20T08:31:00.000Z",
+		);
+
+		const canonicalFallbackResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.actor.getProfileView?did=${encodeURIComponent(DID)}`,
+		);
+		expect(canonicalFallbackResponse.status).toBe(200);
+		const canonicalFallbackPayload = await canonicalFallbackResponse.json();
+		expect(canonicalFallbackPayload.profileSummary.displayName).toBeUndefined();
+
 		const createBranchResponse = await postJson(
 			app,
 			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
@@ -1637,6 +1666,21 @@ describe("createApiApp", () => {
 		const payload = await response.json();
 		expect(payload.resultKind).toBe("rejected");
 		expect(payload.reasonCode).toBe("repair-needed");
+
+		const echoedResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.update`,
+			{
+				sessionRef,
+				scenarioRef: `at://${DID}/${COLLECTIONS.scenario}/missing-scenario`,
+				outcomeSummary: "Still stale, but echoed",
+			},
+			writerHeaders,
+		);
+		expect(echoedResponse.status).toBe(200);
+		const echoedPayload = await echoedResponse.json();
+		expect(echoedPayload.resultKind).toBe("rejected");
+		expect(echoedPayload.reasonCode).toBe("repair-needed");
 	});
 
 	test("allows session.update to repair stale refs in a single request", async () => {

@@ -59,7 +59,8 @@ export function createActorService(runtime: ServiceRuntime) {
 				const parsed = parseAtUri(input.blueskyProfileRef);
 				if (
 					parsed.repoDid !== callerDid ||
-					parsed.collection !== COLLECTIONS.blueskyProfile
+					parsed.collection !== COLLECTIONS.blueskyProfile ||
+					parsed.rkey !== SELF_RKEY
 				) {
 					return rejected(
 						"forbidden-owner-mismatch",

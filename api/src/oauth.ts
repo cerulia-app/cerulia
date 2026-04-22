@@ -11,6 +11,7 @@ import {
 import { JoseKey } from "@atproto/jwk-jose";
 import { WebcryptoKey } from "@atproto/jwk-webcrypto";
 import { NodeOAuthClient } from "@atproto/oauth-client-node";
+import { createVerifiedWorkerFetch } from "./public-agent-worker.js";
 import type { ApiOAuthFeature } from "./app.js";
 import { OAUTH_SCOPE } from "./constants.js";
 import { ApiError } from "./errors.js";
@@ -35,6 +36,11 @@ interface SessionLike {
 	};
 	scope?: string;
 }
+
+type FetchLike = (
+	input: URL | RequestInfo,
+	init?: RequestInit,
+) => Promise<Response>;
 
 interface BaseOAuthRuntimeOptions {
 	publicBaseUrl: string;
@@ -129,6 +135,25 @@ function assertSafePublicServiceUrl(rawUrl: string): URL {
 	url.search = "";
 	url.hash = "";
 	return url;
+}
+
+function createTimeoutFetch(
+	fetchImpl: FetchLike,
+	timeoutMs: number,
+): FetchLike {
+	return async (input, init) => {
+		const abortController = new AbortController();
+		const timeout = setTimeout(() => abortController.abort(), timeoutMs);
+		try {
+			return await fetchImpl(input, {
+				...init,
+				redirect: init?.redirect ?? "error",
+				signal: abortController.signal,
+			});
+		} finally {
+			clearTimeout(timeout);
+		}
+	};
 }
 
 function extractGrantedScope(session: SessionLike): string {
@@ -254,17 +279,21 @@ function createOAuthRuntimeBundle(
 }
 
 function createPublicAgentLookup(
-	fetchImpl: typeof globalThis.fetch,
+	fetchImpl: FetchLike,
 	resolveDidDoc:
 		| ((repoDid: string) => Promise<unknown | null>)
 		| undefined,
 	dohEndpoint?: string,
 ): NonNullable<AgentProvider["getPublicAgent"]> {
+	const timedFetch = createTimeoutFetch(
+		createVerifiedWorkerFetch(fetchImpl, dohEndpoint),
+		1500,
+	) as typeof globalThis.fetch;
 	const identityResolver = createIdentityResolver({
-		fetch: fetchImpl,
+		fetch: timedFetch,
 		handleResolver: new AtprotoDohHandleResolver({
 			dohEndpoint: dohEndpoint ?? "https://cloudflare-dns.com/dns-query",
-			fetch: fetchImpl,
+			fetch: timedFetch,
 		}),
 	});
 
@@ -286,7 +315,7 @@ function createPublicAgentLookup(
 
 		return new Agent({
 			service: service.toString(),
-			fetch: fetchImpl,
+			fetch: timedFetch,
 		});
 	};
 }
@@ -294,7 +323,7 @@ function createPublicAgentLookup(
 export function createPublicAgentProvider(options: {
 	knownRepoCatalog: KnownRepoCatalog;
 	dohEndpoint?: string;
-	fetchImpl?: typeof globalThis.fetch;
+	fetchImpl?: FetchLike;
 	resolveDidDoc?: (repoDid: string) => Promise<unknown | null>;
 }): AgentProvider {
 	const fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);

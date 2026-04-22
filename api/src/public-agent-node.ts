@@ -96,11 +96,12 @@ function responseHeaders(
 }
 
 async function resolvePinnedAddress(hostname: string): Promise<string> {
-	if (isPubliclyRoutableIpLiteral(hostname)) {
+	if (parseIpLiteral(hostname)) {
+		if (!isPubliclyRoutableIpLiteral(hostname)) {
+			throw new Error("PDS endpoint host must resolve only to public IP addresses");
+		}
+
 		return hostname;
-	}
-	if (/^[\d.:\[\]%a-f]+$/i.test(hostname)) {
-		throw new Error("PDS endpoint host must resolve only to public IP addresses");
 	}
 
 	const [ipv4, ipv6] = await Promise.all([

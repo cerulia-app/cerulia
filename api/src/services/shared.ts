@@ -240,7 +240,10 @@ export async function loadBlueskyProfile(
 	}
 
 	const parsed = parseAtUri(profileRef);
-	if (parsed.collection !== COLLECTIONS.blueskyProfile) {
+	if (
+		parsed.collection !== COLLECTIONS.blueskyProfile ||
+		parsed.rkey !== SELF_RKEY
+	) {
 		return null;
 	}
 
