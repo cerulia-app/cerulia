@@ -1,14 +1,14 @@
 import { createOpaqueId, createTidLikeId } from "../ids.js";
-import type { RecordStore } from "../store/types.js";
+import type { AtomicRecordStore } from "../store/types.js";
 
 export interface ServiceRuntime {
-	store: RecordStore;
+	store: AtomicRecordStore;
 	now: () => string;
 	nextTid: (previousTid?: string) => string;
 	nextOpaque: () => string;
 }
 
-export function createServiceRuntime(store: RecordStore): ServiceRuntime {
+export function createServiceRuntime(store: AtomicRecordStore): ServiceRuntime {
 	return {
 		store,
 		now: () => new Date().toISOString(),

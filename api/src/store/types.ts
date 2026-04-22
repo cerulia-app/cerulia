@@ -83,6 +83,10 @@ export interface RecordStore {
 	): Promise<void>;
 }
 
+export type AtomicRecordStore = RecordStore & {
+	applyWrites: NonNullable<RecordStore["applyWrites"]>;
+};
+
 export function toStoredRecord<T>(draft: RecordDraft<T>): StoredRecord<T> {
 	return {
 		...draft,

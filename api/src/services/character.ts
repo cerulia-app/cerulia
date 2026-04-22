@@ -234,43 +234,6 @@ export function createCharacterService(runtime: ServiceRuntime) {
 		};
 	}
 
-	async function readStableMaterializationStateAfterWrite(
-		repoDid: string,
-		branchRef: string,
-		expectedSignature: string,
-		cleanupUris: string[],
-	) {
-		try {
-			const stableState = await readStableMaterializationState(
-				repoDid,
-				branchRef,
-				expectedSignature,
-			);
-			if (stableState) {
-				return stableState;
-			}
-		} catch (error) {
-			for (const uri of cleanupUris) {
-				await runtime.store.deleteRecord(uri);
-			}
-
-			if (
-				error instanceof ApiError &&
-				error.status === 404
-			) {
-				return null;
-			}
-
-			throw error;
-		}
-
-		for (const uri of cleanupUris) {
-			await runtime.store.deleteRecord(uri);
-		}
-
-		return null;
-	}
-
 	async function resolvedBranchStats(
 		sheet: AppCeruliaCoreCharacterSheet.Main,
 		advancements: StoredRecord<AppCeruliaCoreCharacterAdvancement.Main>[],
@@ -600,7 +563,6 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			const branchRkey = runtime.nextTid();
 			const sheetRef = `at://${callerDid}/${COLLECTIONS.characterSheet}/${sheetRkey}`;
 			const branchRef = `at://${callerDid}/${COLLECTIONS.characterBranch}/${branchRkey}`;
-			const sourceStateGuards = [sourceBranch, sourceSheet] as StoredRecord<unknown>[];
 			const sheet = {
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: callerDid,
@@ -627,88 +589,36 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				updatedAt: createdAt,
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
-			if (runtime.store.applyWrites) {
-				try {
-					await applyTypedWrites(
-						runtime,
-						[
-							{
-								kind: "create",
-								draft: {
-									repoDid: callerDid,
-									collection: COLLECTIONS.characterSheet,
-									rkey: sheetRkey,
-									value: sheet,
-									createdAt,
-									updatedAt: createdAt,
-								},
-							},
-							{
-								kind: "create",
-								draft: {
-									repoDid: callerDid,
-									collection: COLLECTIONS.characterBranch,
-									rkey: branchRkey,
-									value: record,
-									createdAt,
-									updatedAt: createdAt,
-								},
-							},
-						],
-						{ expectedScopeState: stableSourceState.scopeState },
-					);
-				} catch (error) {
-					if (isRecordConflictError(error)) {
-						return rebaseNeeded("source branch state changed during materialization");
-					}
-					throw error;
-				}
-
-				return accepted([sheetRef, branchRef]);
-			}
-
 			try {
-				await createTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterSheet,
-					rkey: sheetRkey,
-					value: sheet,
-					createdAt,
-					updatedAt: createdAt,
-				}, {
-					guardUnchanged: sourceStateGuards,
-					expectedScopeState: stableSourceState.scopeState,
-				});
+				await applyTypedWrites(
+					runtime,
+					[
+						{
+							kind: "create",
+							draft: {
+								repoDid: callerDid,
+								collection: COLLECTIONS.characterSheet,
+								rkey: sheetRkey,
+								value: sheet,
+								createdAt,
+								updatedAt: createdAt,
+							},
+						},
+						{
+							kind: "create",
+							draft: {
+								repoDid: callerDid,
+								collection: COLLECTIONS.characterBranch,
+								rkey: branchRkey,
+								value: record,
+								createdAt,
+								updatedAt: createdAt,
+							},
+						},
+					],
+					{ expectedScopeState: stableSourceState.scopeState },
+				);
 			} catch (error) {
-				if (isRecordConflictError(error)) {
-					return rebaseNeeded("source branch state changed during materialization");
-				}
-				throw error;
-			}
-			const postSheetSourceState = await readStableMaterializationStateAfterWrite(
-				callerDid,
-				input.sourceBranchRef,
-				sourceStateSignature,
-				[sheetRef],
-			);
-			if (!postSheetSourceState) {
-				return rebaseNeeded("source branch state changed during materialization");
-			}
-
-			try {
-				await createTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterBranch,
-					rkey: branchRkey,
-					value: record,
-					createdAt,
-					updatedAt: createdAt,
-				}, {
-					guardUnchanged: sourceStateGuards,
-					expectedScopeState: postSheetSourceState.scopeState,
-				});
-			} catch (error) {
-				await runtime.store.deleteRecord(sheetRef);
 				if (isRecordConflictError(error)) {
 					return rebaseNeeded("source branch state changed during materialization");
 				}
@@ -1124,151 +1034,50 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				updatedAt: createdAt,
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
-			if (runtime.store.applyWrites) {
-				try {
-					await applyTypedWrites(
-						runtime,
-						[
-							{
-								kind: "create",
-								draft: {
-									repoDid: callerDid,
-									collection: COLLECTIONS.characterSheet,
-									rkey: sheetRkey,
-									value: targetSheet,
-									createdAt,
-									updatedAt: createdAt,
-								},
-							},
-							{
-								kind: "create",
-								draft: {
-									repoDid: callerDid,
-									collection: COLLECTIONS.characterConversion,
-									rkey: conversionRkey,
-									value: record,
-									createdAt,
-									updatedAt: createdAt,
-								},
-							},
-							{
-								kind: "update",
-								draft: {
-									repoDid: callerDid,
-									collection: COLLECTIONS.characterBranch,
-									rkey: parseAtUri(input.characterBranchRef).rkey,
-									value: nextBranch,
-									createdAt: branch.createdAt,
-									updatedAt: createdAt,
-								},
-							},
-						],
-						{ expectedScopeState: stableSourceState.scopeState },
-					);
-				} catch (error) {
-					if (isRecordConflictError(error)) {
-						return rebaseNeeded("source branch state changed during materialization");
-					}
-					throw error;
-				}
-
-				return accepted([targetSheetRef, input.characterBranchRef, conversionRef]);
-			}
-
 			try {
-				await createTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterSheet,
-					rkey: sheetRkey,
-					value: targetSheet,
-					createdAt,
-					updatedAt: createdAt,
-				}, {
-					guardUnchanged: sourceStateGuards,
-					expectedScopeState: stableSourceState.scopeState,
-				});
+				await applyTypedWrites(
+					runtime,
+					[
+						{
+							kind: "create",
+							draft: {
+								repoDid: callerDid,
+								collection: COLLECTIONS.characterSheet,
+								rkey: sheetRkey,
+								value: targetSheet,
+								createdAt,
+								updatedAt: createdAt,
+							},
+						},
+						{
+							kind: "create",
+							draft: {
+								repoDid: callerDid,
+								collection: COLLECTIONS.characterConversion,
+								rkey: conversionRkey,
+								value: record,
+								createdAt,
+								updatedAt: createdAt,
+							},
+						},
+						{
+							kind: "update",
+							draft: {
+								repoDid: callerDid,
+								collection: COLLECTIONS.characterBranch,
+								rkey: parseAtUri(input.characterBranchRef).rkey,
+								value: nextBranch,
+								createdAt: branch.createdAt,
+								updatedAt: createdAt,
+							},
+						},
+					],
+					{ expectedScopeState: stableSourceState.scopeState },
+				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
 					return rebaseNeeded("source branch state changed during materialization");
 				}
-				throw error;
-			}
-			const postSheetSourceState = await readStableMaterializationStateAfterWrite(
-				callerDid,
-				input.characterBranchRef,
-				sourceStateSignature,
-				[targetSheetRef],
-			);
-			if (!postSheetSourceState) {
-				return rebaseNeeded("source branch state changed during materialization");
-			}
-
-			try {
-				await createTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterConversion,
-					rkey: conversionRkey,
-					value: record,
-					createdAt,
-					updatedAt: createdAt,
-				}, {
-					guardUnchanged: sourceStateGuards,
-					expectedScopeState: postSheetSourceState.scopeState,
-				});
-			} catch (error) {
-				await runtime.store.deleteRecord(targetSheetRef);
-				if (isRecordConflictError(error)) {
-					return rebaseNeeded("source branch state changed during materialization");
-				}
-				throw error;
-			}
-			const postConversionStateSignature = materializationStateSignature(
-				branch,
-				sourceSheet,
-				advancements,
-				[
-					...conversions,
-					{
-						uri: conversionRef,
-						repoDid: callerDid,
-						collection: COLLECTIONS.characterConversion,
-						rkey: conversionRkey,
-						value: record,
-						createdAt,
-						updatedAt: createdAt,
-					} satisfies StoredRecord<AppCeruliaCoreCharacterConversion.Main>,
-				],
-			);
-			const postConversionSourceState = await readStableMaterializationStateAfterWrite(
-				callerDid,
-				input.characterBranchRef,
-				postConversionStateSignature,
-				[conversionRef, targetSheetRef],
-			);
-			if (!postConversionSourceState) {
-				return rebaseNeeded("source branch state changed during materialization");
-			}
-
-			try {
-				await updateTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterBranch,
-					rkey: parseAtUri(input.characterBranchRef).rkey,
-					value: nextBranch,
-					createdAt: branch.createdAt,
-					updatedAt: createdAt,
-				}, {
-					expectedCurrent: branch,
-					expectedScopeState: postConversionSourceState.scopeState,
-				});
-			} catch (error) {
-				if (isRecordConflictError(error)) {
-					await runtime.store.deleteRecord(conversionRef);
-					await runtime.store.deleteRecord(targetSheetRef);
-					return rebaseNeeded("source branch state changed during materialization");
-				}
-				await runtime.store.deleteRecord(conversionRef);
-				await runtime.store.deleteRecord(targetSheetRef);
 				throw error;
 			}
 

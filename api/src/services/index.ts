@@ -6,9 +6,9 @@ import { createRuleService } from "./rule.js";
 import { createScenarioService } from "./scenario.js";
 import { createSessionService } from "./session.js";
 import { createServiceRuntime } from "./runtime.js";
-import type { RecordStore } from "../store/types.js";
+import type { AtomicRecordStore } from "../store/types.js";
 
-export function createServices(store: RecordStore) {
+export function createServices(store: AtomicRecordStore) {
 	const runtime = createServiceRuntime(store);
 
 	return {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { AppCeruliaCoreCharacterBranch } from "@cerulia/protocol";
+import { lexicons, type AppCeruliaCoreCharacterBranch } from "@cerulia/protocol";
 import { createApiApp, type ApiAppStore } from "./app.js";
 import {
 	createSessionAuthResolver,
@@ -170,6 +170,10 @@ function expectAccepted(data: {
 	expect(data.emittedRecordRefs?.length).toBeGreaterThan(0);
 }
 
+function expectValidXrpcOutput(lexiconId: string, payload: unknown) {
+	expect(() => lexicons.assertValidXrpcOutput(lexiconId, payload)).not.toThrow();
+}
+
 describe("createApiApp", () => {
 	test("returns a health response", async () => {
 		const { app } = createTestApp();
@@ -177,6 +181,15 @@ describe("createApiApp", () => {
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ status: "ok" });
+	});
+
+	test("rejects stores without applyWrites at app composition time", () => {
+		expect(() =>
+			createApiApp({
+				store: new MemoryRecordStore() as unknown as ApiAppStore,
+				authResolver: resolveHeaderAuthContext,
+			}),
+		).toThrow("applyWrites");
 	});
 
 	test("rejects malformed AT URIs", () => {
@@ -408,6 +421,100 @@ describe("createApiApp", () => {
 			did: null,
 			scopes: [],
 		});
+	});
+
+	test("returns lexicon-valid outputs for representative owner and public routes", async () => {
+		const { app } = createTestApp();
+
+		const createSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Output Contract Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+		);
+		const createSchemaAck = await createSchemaResponse.json();
+		expectValidXrpcOutput(
+			"app.cerulia.rule.createSheetSchema",
+			createSchemaAck,
+		);
+		const [schemaRef] = createSchemaAck.emittedRecordRefs;
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Output Contract Character",
+				stats: {
+					power: 70,
+				},
+				initialBranchVisibility: "public",
+			},
+		);
+		const createSheetAck = await createSheetResponse.json();
+		expectValidXrpcOutput(
+			"app.cerulia.character.createSheet",
+			createSheetAck,
+		);
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+
+		const getHomeResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getHome`,
+			authHeaders(DID, [AUTH_SCOPES.reader]),
+		);
+		const homePayload = await getHomeResponse.json();
+		expectValidXrpcOutput("app.cerulia.character.getHome", homePayload);
+
+		const publicBranchResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+		);
+		const publicBranchPayload = await publicBranchResponse.json();
+		expectValidXrpcOutput(
+			"app.cerulia.character.getBranchView",
+			publicBranchPayload,
+		);
+
+		const createSessionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.create`,
+			{
+				role: "pl",
+				playedAt: "2026-04-18T00:00:00.000Z",
+				scenarioLabel: "Output Contract Scenario",
+				characterBranchRef: branchRef,
+				visibility: "public",
+			},
+		);
+		const createSessionAck = await createSessionResponse.json();
+		expectValidXrpcOutput(
+			"app.cerulia.session.create",
+			createSessionAck,
+		);
+		const [sessionRef] = createSessionAck.emittedRecordRefs;
+
+		const publicSessionResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.getView?sessionRef=${encodeURIComponent(sessionRef)}`,
+		);
+		const publicSessionPayload = await publicSessionResponse.json();
+		expectValidXrpcOutput(
+			"app.cerulia.session.getView",
+			publicSessionPayload,
+		);
 	});
 
 	test("supports the core character, session, and public profile flows", async () => {

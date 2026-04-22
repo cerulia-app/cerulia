@@ -33,7 +33,7 @@ import { ApiError } from "./errors.js";
 import { requireReaderDid, requireWriterDid } from "./auth.js";
 import { SESSION_COOKIE_NAME, XRPC_PREFIX } from "./constants.js";
 import { createServices } from "./services/index.js";
-import type { RecordStore } from "./store/types.js";
+import type { AtomicRecordStore, RecordStore } from "./store/types.js";
 
 export interface ApiOAuthFeature {
 	clientMetadata: Record<string, unknown>;
@@ -110,6 +110,15 @@ async function readJsonBody<T>(
 	return payload as T;
 }
 
+function jsonXrpcOutput(
+	context: { json: (payload: unknown) => Response },
+	lexiconId: string,
+	payload: unknown,
+): Response {
+	lexicons.assertValidXrpcOutput(lexiconId, payload);
+	return context.json(payload);
+}
+
 export interface ApiAppBindings {
 	Variables: {
 		auth: AuthContext;
@@ -117,9 +126,7 @@ export interface ApiAppBindings {
 	};
 }
 
-export type ApiAppStore = RecordStore & {
-	applyWrites: NonNullable<RecordStore["applyWrites"]>;
-};
+export type ApiAppStore = AtomicRecordStore;
 
 export interface ApiAppOptions {
 	store: ApiAppStore;
@@ -128,6 +135,10 @@ export interface ApiAppOptions {
 }
 
 export function createApiApp(options: ApiAppOptions) {
+	if (!options.store.applyWrites) {
+		throw new Error("createApiApp requires a store with applyWrites");
+	}
+
 	const app = new Hono<ApiAppBindings>();
 	const store = options.store;
 	const authResolver =
@@ -213,7 +224,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.rule.createSheetSchema",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.rule.createSheetSchema",
 				await services.rule.createSheetSchema(callerDid, input),
 			);
 		},
@@ -235,7 +248,9 @@ export function createApiApp(options: ApiAppOptions) {
 	app.get(
 		`${XRPC_PREFIX}/app.cerulia.rule.listSheetSchemas`,
 		async (context) => {
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.rule.listSheetSchemas",
 				await services.rule.listSheetSchemas(
 					context.req.query("rulesetNsid"),
 					context.req.query("limit"),
@@ -251,7 +266,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.rule.createProfile",
 		);
-		return context.json(await services.rule.createProfile(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.rule.createProfile",
+			await services.rule.createProfile(callerDid, input),
+		);
 	});
 
 	app.post(`${XRPC_PREFIX}/app.cerulia.rule.updateProfile`, async (context) => {
@@ -260,7 +279,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.rule.updateProfile",
 		);
-		return context.json(await services.rule.updateProfile(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.rule.updateProfile",
+			await services.rule.updateProfile(callerDid, input),
+		);
 	});
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.rule.getProfile`, async (context) => {
@@ -277,7 +300,9 @@ export function createApiApp(options: ApiAppOptions) {
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.rule.listProfiles`, async (context) => {
 		const callerDid = requireReaderDid(context.get("auth"));
-		return context.json(
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.rule.listProfiles",
 			await services.rule.listProfiles(
 				callerDid,
 				context.req.query("scopeRef"),
@@ -297,7 +322,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.createSheet",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.createSheet",
 				await services.character.createSheet(callerDid, input),
 			);
 		},
@@ -312,7 +339,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.updateSheet",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.updateSheet",
 				await services.character.updateSheet(callerDid, input),
 			);
 		},
@@ -327,7 +356,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.rebaseSheet",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.rebaseSheet",
 				await services.character.rebaseSheet(callerDid, input),
 			);
 		},
@@ -342,7 +373,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.createBranch",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.createBranch",
 				await services.character.createBranch(callerDid, input),
 			);
 		},
@@ -357,7 +390,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.updateBranch",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.updateBranch",
 				await services.character.updateBranch(callerDid, input),
 			);
 		},
@@ -372,7 +407,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.retireBranch",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.retireBranch",
 				await services.character.retireBranch(callerDid, input),
 			);
 		},
@@ -387,7 +424,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.recordAdvancement",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.recordAdvancement",
 				await services.character.recordAdvancement(callerDid, input),
 			);
 		},
@@ -402,7 +441,9 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.character.recordConversion",
 				);
-			return context.json(
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.character.recordConversion",
 				await services.character.recordConversion(callerDid, input),
 			);
 		},
@@ -410,7 +451,11 @@ export function createApiApp(options: ApiAppOptions) {
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.character.getHome`, async (context) => {
 		const callerDid = requireReaderDid(context.get("auth"));
-		return context.json(await services.character.getHome(callerDid));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.character.getHome",
+			await services.character.getHome(callerDid),
+		);
 	});
 
 	app.get(
@@ -437,7 +482,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.session.create",
 		);
-		return context.json(await services.session.create(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.session.create",
+			await services.session.create(callerDid, input),
+		);
 	});
 
 	app.post(`${XRPC_PREFIX}/app.cerulia.session.update`, async (context) => {
@@ -446,12 +495,18 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.session.update",
 		);
-		return context.json(await services.session.update(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.session.update",
+			await services.session.update(callerDid, input),
+		);
 	});
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.session.list`, async (context) => {
 		const callerDid = requireReaderDid(context.get("auth"));
-		return context.json(
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.session.list",
 			await services.session.list(
 				callerDid,
 				context.req.query("limit"),
@@ -477,7 +532,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.scenario.create",
 		);
-		return context.json(await services.scenario.create(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.scenario.create",
+			await services.scenario.create(callerDid, input),
+		);
 	});
 
 	app.post(`${XRPC_PREFIX}/app.cerulia.scenario.update`, async (context) => {
@@ -486,7 +545,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.scenario.update",
 		);
-		return context.json(await services.scenario.update(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.scenario.update",
+			await services.scenario.update(callerDid, input),
+		);
 	});
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.scenario.getView`, async (context) => {
@@ -501,7 +564,9 @@ export function createApiApp(options: ApiAppOptions) {
 	});
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.scenario.list`, async (context) => {
-		return context.json(
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.scenario.list",
 			await services.scenario.list(
 				context.req.query("rulesetNsid"),
 				context.req.query("limit"),
@@ -516,7 +581,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.campaign.create",
 		);
-		return context.json(await services.campaign.create(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.campaign.create",
+			await services.campaign.create(callerDid, input),
+		);
 	});
 
 	app.post(`${XRPC_PREFIX}/app.cerulia.campaign.update`, async (context) => {
@@ -525,7 +594,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.campaign.update",
 		);
-		return context.json(await services.campaign.update(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.campaign.update",
+			await services.campaign.update(callerDid, input),
+		);
 	});
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.campaign.getView`, async (context) => {
@@ -545,7 +618,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.house.create",
 		);
-		return context.json(await services.house.create(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.house.create",
+			await services.house.create(callerDid, input),
+		);
 	});
 
 	app.post(`${XRPC_PREFIX}/app.cerulia.house.update`, async (context) => {
@@ -554,7 +631,11 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.house.update",
 		);
-		return context.json(await services.house.update(callerDid, input));
+		return jsonXrpcOutput(
+			context,
+			"app.cerulia.house.update",
+			await services.house.update(callerDid, input),
+		);
 	});
 
 	app.get(`${XRPC_PREFIX}/app.cerulia.house.getView`, async (context) => {
@@ -577,7 +658,11 @@ export function createApiApp(options: ApiAppOptions) {
 					context.req.raw,
 					"app.cerulia.actor.updateProfile",
 				);
-			return context.json(await services.actor.updateProfile(callerDid, input));
+			return jsonXrpcOutput(
+				context,
+				"app.cerulia.actor.updateProfile",
+				await services.actor.updateProfile(callerDid, input),
+			);
 		},
 	);
 
