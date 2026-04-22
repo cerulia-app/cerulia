@@ -60,4 +60,34 @@ describe("createProjectionIngestFeature", () => {
 
 		expect(notifiedRepoDids).toEqual(["did:plc:alice", "did:plc:bob"]);
 	});
+
+	test("continues replay after one repo ingest fails", async () => {
+		const knownRepoCatalog = createMemoryKnownRepoCatalog([
+			"did:plc:bob",
+			"did:plc:alice",
+		]);
+		const notifiedRepoDids: string[] = [];
+		const feature = createProjectionIngestFeature({
+			baseUrl: "http://localhost:8788",
+			knownRepoCatalog,
+			token: "projection-test-token",
+			fetchImpl: async (_input, init) => {
+				const body = JSON.parse(String(init?.body ?? "{}")) as {
+					repoDid?: string;
+				};
+				if (body.repoDid === "did:plc:alice") {
+					throw new Error("projection unavailable");
+				}
+
+				notifiedRepoDids.push(body.repoDid ?? "");
+				return new Response(null, { status: 200 });
+			},
+			timeoutMs: 50,
+		});
+
+		await expect(feature.replayKnownRepoDids()).rejects.toThrow(
+			"did:plc:alice",
+		);
+		expect(notifiedRepoDids).toEqual(["did:plc:bob"]);
+	});
 });

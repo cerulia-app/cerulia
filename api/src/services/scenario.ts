@@ -130,7 +130,12 @@ export function createScenarioService(runtime: ServiceRuntime) {
 				);
 			}
 
-			if (nextRecommended && nextRulesetNsid) {
+			if (
+				nextRecommended &&
+				nextRulesetNsid &&
+				(input.recommendedSheetSchemaRef !== undefined ||
+					input.rulesetNsid !== undefined)
+			) {
 				const schema = await loadSchema(runtime, nextRecommended);
 				if (schema.value.baseRulesetNsid !== nextRulesetNsid) {
 					return rejected(

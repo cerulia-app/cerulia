@@ -123,8 +123,20 @@ export function createProjectionIngestFeature(options: {
 		},
 
 		async replayKnownRepoDids() {
+			const failedRepoDids: string[] = [];
+
 			for (const repoDid of await options.knownRepoCatalog.listRepoDids()) {
-				await this.noteRepoDid(repoDid);
+				try {
+					await this.noteRepoDid(repoDid);
+				} catch {
+					failedRepoDids.push(repoDid);
+				}
+			}
+
+			if (failedRepoDids.length > 0) {
+				throw new Error(
+					`projection replay failed for ${failedRepoDids.join(", ")}`,
+				);
 			}
 		},
 	};

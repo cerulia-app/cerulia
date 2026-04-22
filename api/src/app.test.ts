@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	lexicons,
 	type AppCeruliaCoreCharacterBranch,
+	type AppCeruliaCoreScenario,
 	type AppCeruliaCoreSession,
 } from "@cerulia/protocol";
 import { createApiApp, type ApiAppStore } from "./app.js";
@@ -1292,6 +1293,50 @@ describe("createApiApp", () => {
 		const payload = await response.json();
 		expect(payload.scenarioSummary.title).toBe("Browse Only Scenario");
 		expect(payload.scenarioSummary.hasRecommendedSheetSchema).toBe(false);
+	});
+
+	test("allows unrelated scenario updates when the recommended schema ref is stale", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const scenarioRef = `at://${DID}/${COLLECTIONS.scenario}/stale-schema-update`;
+
+		store.seedRecord(
+			scenarioRef,
+			{
+				$type: COLLECTIONS.scenario,
+				title: "Stale Schema Scenario",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				recommendedSheetSchemaRef:
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				sourceCitationUri: "https://example.com/scenario/stale-schema",
+				summary: "Old summary",
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.update`,
+			{
+				scenarioRef,
+				summary: "Updated summary while schema stays stale.",
+			},
+			writerHeaders,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("accepted");
+
+		const updated = await store.getRecord<AppCeruliaCoreScenario.Main>(
+			scenarioRef,
+		);
+		expect(updated?.value.summary).toBe(
+			"Updated summary while schema stays stale.",
+		);
 	});
 
 	test("returns repair-needed when session.update keeps a stale scenario ref", async () => {
