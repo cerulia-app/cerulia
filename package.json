@@ -9,13 +9,15 @@
 		"projection"
 	],
 	"scripts": {
-		"check": "bun run --sequential --filter '@cerulia/protocol' --filter '@cerulia/api' check && bun run --filter '@cerulia/appview' verify",
+		"check": "bun run --sequential --filter '@cerulia/protocol' --filter '@cerulia/api' --filter '@cerulia/projection' check && bun run --filter '@cerulia/appview' verify",
 		"build": "bun run --sequential --workspaces --if-present build",
 		"test": "bun run --sequential --workspaces --if-present test",
-		"typecheck": "bun run --sequential --filter '@cerulia/protocol' --filter '@cerulia/api' build && bun run --filter '@cerulia/appview' check",
+		"typecheck": "bun run --sequential --filter '@cerulia/protocol' --filter '@cerulia/api' --filter '@cerulia/projection' build && bun run --filter '@cerulia/appview' check",
 		"dev:appview": "bun run --cwd=appview dev",
 		"dev:api": "bun run --cwd=api dev",
 		"dev:api:worker": "bun run --cwd=api dev:worker",
+		"dev:projection": "bun run --cwd=projection dev",
+		"dev:projection:worker": "bun run --cwd=projection dev:worker",
 		"lint": "biome lint .",
 		"format": "biome format --write ."
 	},
