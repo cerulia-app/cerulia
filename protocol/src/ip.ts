@@ -102,6 +102,7 @@ function parseIpv6(input: string): Uint8Array | null {
 function isPrivateIpv4(bytes: Uint8Array): boolean {
 	const first = bytes[0] ?? 0;
 	const second = bytes[1] ?? 0;
+	const third = bytes[2] ?? 0;
 
 	return (
 		first === 0 ||
@@ -110,7 +111,7 @@ function isPrivateIpv4(bytes: Uint8Array): boolean {
 		first === 127 ||
 		(first === 169 && second === 254) ||
 		(first === 172 && second >= 16 && second <= 31) ||
-		(first === 192 && second === 0) ||
+		(first === 192 && second === 0 && third === 0) ||
 		(first === 192 && second === 88 && (bytes[2] ?? 0) === 99) ||
 		(first === 192 && second === 168) ||
 		(first === 198 && second >= 18 && second <= 19) ||

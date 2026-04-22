@@ -1,5 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { assertSafePublicServiceUrl } from "./agents.js";
+import { assertSafePublicServiceUrl, createPublicAgentProvider } from "./agents.js";
+
+const didWebDoc = {
+	"@context": ["https://www.w3.org/ns/did/v1"],
+	id: "did:web:example.com",
+	service: [
+		{
+			id: "#atproto_pds",
+			type: "AtprotoPersonalDataServer",
+			serviceEndpoint: "https://pds.example.com",
+		},
+	],
+};
 
 describe("assertSafePublicServiceUrl", () => {
 	test("rejects loopback and private hosts", () => {
@@ -20,5 +32,19 @@ describe("assertSafePublicServiceUrl", () => {
 			.toThrow("PDS endpoint must use https");
 		expect(assertSafePublicServiceUrl("https://pds.example.com").toString())
 			.toBe("https://pds.example.com/");
+	});
+
+	test("accepts hostname-based public PDS endpoints for non-PLC dids", async () => {
+		const provider = createPublicAgentProvider({
+			knownRepoCatalog: {
+				listRepoDids: async () => [],
+				rememberRepoDid: async () => {},
+			},
+			resolveDidDoc: async (repoDid) =>
+				repoDid === "did:web:example.com" ? didWebDoc : null,
+		});
+
+		const agent = await provider.getPublicAgent("did:web:example.com");
+		expect(agent).not.toBeNull();
 	});
 });

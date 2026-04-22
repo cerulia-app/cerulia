@@ -255,6 +255,9 @@ function createOAuthRuntimeBundle(
 
 function createPublicAgentLookup(
 	fetchImpl: typeof globalThis.fetch,
+	resolveDidDoc:
+		| ((repoDid: string) => Promise<unknown | null>)
+		| undefined,
 	dohEndpoint?: string,
 ): NonNullable<AgentProvider["getPublicAgent"]> {
 	const identityResolver = createIdentityResolver({
@@ -266,27 +269,20 @@ function createPublicAgentLookup(
 	});
 
 	return async (repoDid: string) => {
-		if (!repoDid.startsWith("did:plc:")) {
+		const didDoc =
+			(await resolveDidDoc?.(repoDid)) ??
+			(await identityResolver.resolve(repoDid).catch(() => null))?.didDoc ??
+			null;
+		if (!didDoc || !isValidDidDoc(didDoc)) {
 			return null;
 		}
 
-		const identity = await identityResolver.resolve(repoDid).catch(() => null);
-		if (!identity || !isValidDidDoc(identity.didDoc)) {
-			return null;
-		}
-
-		const pdsEndpoint = getPdsEndpoint(identity.didDoc);
+		const pdsEndpoint = getPdsEndpoint(didDoc);
 		if (!pdsEndpoint) {
 			return null;
 		}
 
 		const service = assertSafePublicServiceUrl(pdsEndpoint);
-		if (
-			service.protocol !== "https:" ||
-			!isPubliclyRoutableIpLiteral(service.hostname)
-		) {
-			return null;
-		}
 
 		return new Agent({
 			service: service.toString(),
@@ -298,8 +294,10 @@ function createPublicAgentLookup(
 export function createPublicAgentProvider(options: {
 	knownRepoCatalog: KnownRepoCatalog;
 	dohEndpoint?: string;
+	fetchImpl?: typeof globalThis.fetch;
+	resolveDidDoc?: (repoDid: string) => Promise<unknown | null>;
 }): AgentProvider {
-	const fetchImpl = globalThis.fetch.bind(globalThis);
+	const fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
 	return {
 		async getAgent() {
 			return null;
@@ -307,7 +305,11 @@ export function createPublicAgentProvider(options: {
 		listRepoDids() {
 			return options.knownRepoCatalog.listRepoDids();
 		},
-		getPublicAgent: createPublicAgentLookup(fetchImpl, options.dohEndpoint),
+		getPublicAgent: createPublicAgentLookup(
+			fetchImpl,
+			options.resolveDidDoc,
+			options.dohEndpoint,
+		),
 		rememberRepoDid(repoDid: string) {
 			return options.knownRepoCatalog.rememberRepoDid(repoDid);
 		},
@@ -345,7 +347,7 @@ export async function createBunOAuthRuntime(
 		options.sessionStore,
 		options.knownRepoCatalog,
 		options.publicAgentLookup ??
-			createPublicAgentLookup(fetchImpl, options.dohEndpoint),
+			createPublicAgentLookup(fetchImpl, undefined, options.dohEndpoint),
 	);
 }
 
@@ -386,6 +388,6 @@ export async function createWorkerOAuthRuntime(
 		options.browserSessionStore,
 		options.sessionStore,
 		options.knownRepoCatalog,
-		createPublicAgentLookup(fetchImpl, options.dohEndpoint),
+		createPublicAgentLookup(fetchImpl, undefined, options.dohEndpoint),
 	);
 }

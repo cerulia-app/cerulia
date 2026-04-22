@@ -9,6 +9,7 @@ import { accepted, rejected } from "../ack.js";
 import { COLLECTIONS } from "../constants.js";
 import type { AuthContext } from "../auth.js";
 import { isOwnerReader } from "../auth.js";
+import { ApiError } from "../errors.js";
 import type { ServiceRuntime } from "./runtime.js";
 import {
 	assertCredentialFreeUriList,
@@ -75,30 +76,64 @@ export function createSessionService(runtime: ServiceRuntime) {
 			}
 
 			if (input.scenarioRef) {
-				await requireRecord(
-					runtime,
-					input.scenarioRef,
-					COLLECTIONS.scenario,
-					"scenarioRef",
-				);
+				try {
+					await requireRecord(
+						runtime,
+						input.scenarioRef,
+						COLLECTIONS.scenario,
+						"scenarioRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"scenarioRef must reference an existing scenario",
+						);
+					}
+
+					throw error;
+				}
 			}
 
 			if (input.characterBranchRef) {
-				await requireRecord(
-					runtime,
-					input.characterBranchRef,
-					COLLECTIONS.characterBranch,
-					"characterBranchRef",
-				);
+				try {
+					await requireRecord(
+						runtime,
+						input.characterBranchRef,
+						COLLECTIONS.characterBranch,
+						"characterBranchRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"characterBranchRef must reference an existing characterBranch",
+						);
+					}
+
+					throw error;
+				}
 			}
 
 			if (input.campaignRef) {
-				const campaign = await requireRecord(
-					runtime,
-					input.campaignRef,
-					COLLECTIONS.campaign,
-					"campaignRef",
-				);
+				let campaign;
+				try {
+					campaign = await requireRecord(
+						runtime,
+						input.campaignRef,
+						COLLECTIONS.campaign,
+						"campaignRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"campaignRef must reference an existing campaign",
+						);
+					}
+
+					throw error;
+				}
 				if (campaign.repoDid !== callerDid) {
 					return rejected(
 						"forbidden-owner-mismatch",
@@ -234,31 +269,65 @@ export function createSessionService(runtime: ServiceRuntime) {
 			}
 
 			if (nextScenarioRef) {
-				await requireRecord(
-					runtime,
-					nextScenarioRef,
-					COLLECTIONS.scenario,
-					"scenarioRef",
-				);
+				try {
+					await requireRecord(
+						runtime,
+						nextScenarioRef,
+						COLLECTIONS.scenario,
+						"scenarioRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"scenarioRef must reference an existing scenario",
+						);
+					}
+
+					throw error;
+				}
 			}
 
 			if (nextCharacterBranchRef) {
-				await requireRecord(
-					runtime,
-					nextCharacterBranchRef,
-					COLLECTIONS.characterBranch,
-					"characterBranchRef",
-				);
+				try {
+					await requireRecord(
+						runtime,
+						nextCharacterBranchRef,
+						COLLECTIONS.characterBranch,
+						"characterBranchRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"characterBranchRef must reference an existing characterBranch",
+						);
+					}
+
+					throw error;
+				}
 			}
 
 			const nextCampaignRef = input.campaignRef ?? record.value.campaignRef;
 			if (nextCampaignRef) {
-				const campaign = await requireRecord(
-					runtime,
-					nextCampaignRef,
-					COLLECTIONS.campaign,
-					"campaignRef",
-				);
+				let campaign;
+				try {
+					campaign = await requireRecord(
+						runtime,
+						nextCampaignRef,
+						COLLECTIONS.campaign,
+						"campaignRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"campaignRef must reference an existing campaign",
+						);
+					}
+
+					throw error;
+				}
 				if (campaign.repoDid !== callerDid) {
 					return rejected(
 						"forbidden-owner-mismatch",

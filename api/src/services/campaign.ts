@@ -82,9 +82,23 @@ export function createCampaignService(runtime: ServiceRuntime) {
 		) {
 			let seededRuleProfiles = input.sharedRuleProfileRefs;
 			if (input.houseRef) {
-				const house = await requireRecord<{
+				let house: StoredRecord<{
 					defaultRuleProfileRefs?: string[];
-				}>(runtime, input.houseRef, COLLECTIONS.house, "houseRef");
+				}>;
+				try {
+					house = await requireRecord<{
+						defaultRuleProfileRefs?: string[];
+					}>(runtime, input.houseRef, COLLECTIONS.house, "houseRef");
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"houseRef must reference an existing house",
+						);
+					}
+
+					throw error;
+				}
 				if (house.repoDid !== callerDid) {
 					return rejected(
 						"forbidden-owner-mismatch",
@@ -172,12 +186,24 @@ export function createCampaignService(runtime: ServiceRuntime) {
 
 			const nextHouseRef = input.houseRef ?? record.value.houseRef;
 			if (nextHouseRef) {
-				const house = await requireRecord(
-					runtime,
-					nextHouseRef,
-					COLLECTIONS.house,
-					"houseRef",
-				);
+				let house;
+				try {
+					house = await requireRecord(
+						runtime,
+						nextHouseRef,
+						COLLECTIONS.house,
+						"houseRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"houseRef must reference an existing house",
+						);
+					}
+
+					throw error;
+				}
 				if (house.repoDid !== callerDid) {
 					return rejected(
 						"forbidden-owner-mismatch",

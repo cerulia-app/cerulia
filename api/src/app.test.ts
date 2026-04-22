@@ -1406,6 +1406,66 @@ describe("createApiApp", () => {
 		expect(updatePayload.reasonCode).toBe("forbidden-owner-mismatch");
 	});
 
+	test("returns mutationAck rejects for missing linked refs on session and scenario writes", async () => {
+		const { app } = createTestApp();
+		const writerHeaders = authHeaders();
+
+		const sessionCreateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.create`,
+			{
+				role: "gm",
+				playedAt: "2026-04-22T11:00:00.000Z",
+				scenarioRef: `at://${DID}/${COLLECTIONS.scenario}/missing-scenario`,
+			},
+			writerHeaders,
+		);
+		expect(sessionCreateResponse.status).toBe(200);
+		const sessionCreatePayload = await sessionCreateResponse.json();
+		expect(sessionCreatePayload.resultKind).toBe("rejected");
+		expect(sessionCreatePayload.reasonCode).toBe("invalid-required-field");
+
+		const scenarioCreateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.create`,
+			{
+				title: "Missing Schema Scenario",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				recommendedSheetSchemaRef:
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				sourceCitationUri: "https://example.com/scenario/missing-schema",
+			},
+			writerHeaders,
+		);
+		expect(scenarioCreateResponse.status).toBe(200);
+		const scenarioCreatePayload = await scenarioCreateResponse.json();
+		expect(scenarioCreatePayload.resultKind).toBe("rejected");
+		expect(scenarioCreatePayload.reasonCode).toBe("invalid-schema-link");
+	});
+
+	test("returns mutationAck rejects for missing source branches", async () => {
+		const { app } = createTestApp();
+		const writerHeaders = authHeaders();
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
+			{
+				sourceBranchRef:
+					`at://${DID}/${COLLECTIONS.characterBranch}/missing-branch`,
+				targetSheetSchemaRef:
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				branchLabel: "Missing Source Branch",
+				branchKind: "parallel",
+			},
+			writerHeaders,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("rejected");
+		expect(payload.reasonCode).toBe("invalid-required-field");
+	});
+
 	test("returns mutationAck rejects instead of 404 for stale rule profile refs", async () => {
 		const { app } = createTestApp();
 		const writerHeaders = authHeaders();

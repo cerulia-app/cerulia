@@ -97,6 +97,9 @@ export interface PublicAgentProvider {
 
 function createPublicAgentLookup(
 	fetchImpl: FetchLike,
+	resolveDidDoc:
+		| ((repoDid: string) => Promise<unknown | null>)
+		| undefined,
 	dohEndpoint?: string,
 ): PublicAgentProvider["getPublicAgent"] {
 	const timedFetch = createTimeoutFetch(
@@ -112,24 +115,20 @@ function createPublicAgentLookup(
 	});
 
 	return async (repoDid: string) => {
-		if (!repoDid.startsWith("did:plc:")) {
+		const didDoc =
+			(await resolveDidDoc?.(repoDid)) ??
+			(await identityResolver.resolve(repoDid).catch(() => null))?.didDoc ??
+			null;
+		if (!didDoc || !isValidDidDoc(didDoc)) {
 			return null;
 		}
 
-		const identity = await identityResolver.resolve(repoDid).catch(() => null);
-		if (!identity || !isValidDidDoc(identity.didDoc)) {
-			return null;
-		}
-
-		const pdsEndpoint = getPdsEndpoint(identity.didDoc);
+		const pdsEndpoint = getPdsEndpoint(didDoc);
 		if (!pdsEndpoint) {
 			return null;
 		}
 
 		const safePdsEndpoint = assertSafePublicServiceUrl(pdsEndpoint);
-		if (!isPubliclyRoutableIpLiteral(safePdsEndpoint.hostname)) {
-			return null;
-		}
 
 		return new Agent({
 			service: safePdsEndpoint.toString(),
@@ -141,13 +140,18 @@ function createPublicAgentLookup(
 export function createPublicAgentProvider(options: {
 	knownRepoCatalog: KnownRepoCatalog;
 	dohEndpoint?: string;
+	resolveDidDoc?: (repoDid: string) => Promise<unknown | null>;
 }): PublicAgentProvider {
 	const fetchImpl = globalThis.fetch.bind(globalThis) as FetchLike;
 	return {
 		listRepoDids() {
 			return options.knownRepoCatalog.listRepoDids();
 		},
-		getPublicAgent: createPublicAgentLookup(fetchImpl, options.dohEndpoint),
+		getPublicAgent: createPublicAgentLookup(
+			fetchImpl,
+			options.resolveDidDoc,
+			options.dohEndpoint,
+		),
 		rememberRepoDid(repoDid: string) {
 			return options.knownRepoCatalog.rememberRepoDid(repoDid);
 		},

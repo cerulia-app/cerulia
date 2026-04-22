@@ -281,7 +281,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			callerDid: string,
 			input: AppCeruliaCharacterCreateSheet.InputSchema,
 		) {
-			const schema = await loadSchema(runtime, input.sheetSchemaRef);
+			let schema: Awaited<ReturnType<typeof loadSchema>>;
+			try {
+				schema = await loadSchema(runtime, input.sheetSchemaRef);
+			} catch (error) {
+				if (error instanceof ApiError && error.status === 404) {
+					return rejected(
+						"invalid-schema-link",
+						"sheetSchemaRef must reference an existing characterSheetSchema",
+					);
+				}
+
+				throw error;
+			}
 			if (schema.value.baseRulesetNsid !== input.rulesetNsid) {
 				return rejected(
 					"invalid-schema-link",
@@ -443,7 +455,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			}
 
 			if (record.value.sheetSchemaRef && input.stats !== undefined) {
-				const schema = await loadSchema(runtime, record.value.sheetSchemaRef);
+				let schema: Awaited<ReturnType<typeof loadSchema>>;
+				try {
+					schema = await loadSchema(runtime, record.value.sheetSchemaRef);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"repair-needed",
+							"current branch sheet schema is missing; repair the branch before updating stats",
+						);
+					}
+
+					throw error;
+				}
 				const err = validateStatsAgainstSchema(
 					input.stats,
 					schema.value.fieldDefs,
@@ -515,7 +539,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			const schema = await loadSchema(runtime, input.targetSheetSchemaRef);
+			let schema: Awaited<ReturnType<typeof loadSchema>>;
+			try {
+				schema = await loadSchema(runtime, input.targetSheetSchemaRef);
+			} catch (error) {
+				if (error instanceof ApiError && error.status === 404) {
+					return rejected(
+						"invalid-schema-link",
+						"targetSheetSchemaRef must reference an existing characterSheetSchema",
+					);
+				}
+
+				throw error;
+			}
 			if (schema.value.baseRulesetNsid !== record.value.rulesetNsid) {
 				return rejected(
 					"invalid-schema-link",
@@ -568,13 +604,25 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			callerDid: string,
 			input: AppCeruliaCharacterCreateBranch.InputSchema,
 		) {
-			const sourceBranch =
-				await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
-					runtime,
-					input.sourceBranchRef,
-					COLLECTIONS.characterBranch,
-					"sourceBranchRef",
-				);
+			let sourceBranch: StoredRecord<AppCeruliaCoreCharacterBranch.Main>;
+			try {
+				sourceBranch =
+					await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
+						runtime,
+						input.sourceBranchRef,
+						COLLECTIONS.characterBranch,
+						"sourceBranchRef",
+					);
+			} catch (error) {
+				if (error instanceof ApiError && error.status === 404) {
+					return rejected(
+						"invalid-required-field",
+						"sourceBranchRef must reference an existing characterBranch",
+					);
+				}
+
+				throw error;
+			}
 			if (sourceBranch.repoDid !== callerDid) {
 				return rejected(
 					"forbidden-owner-mismatch",
@@ -884,12 +932,23 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					);
 				}
 
-				await requireRecord(
-					runtime,
-					input.sessionRef,
-					COLLECTIONS.session,
-					"sessionRef",
-				);
+				try {
+					await requireRecord(
+						runtime,
+						input.sessionRef,
+						COLLECTIONS.session,
+						"sessionRef",
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-required-field",
+							"sessionRef must reference an existing session",
+						);
+					}
+
+					throw error;
+				}
 			}
 
 			const currentSheet = await loadOptionalSheet(
@@ -1027,7 +1086,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			const targetSchema = await loadSchema(runtime, input.targetSheetSchemaRef);
+			let targetSchema: Awaited<ReturnType<typeof loadSchema>>;
+			try {
+				targetSchema = await loadSchema(runtime, input.targetSheetSchemaRef);
+			} catch (error) {
+				if (error instanceof ApiError && error.status === 404) {
+					return rejected(
+						"invalid-schema-link",
+						"targetSheetSchemaRef must reference an existing characterSheetSchema",
+					);
+				}
+
+				throw error;
+			}
 			if (targetSchema.value.baseRulesetNsid !== input.targetRulesetNsid) {
 				return rejected(
 					"invalid-schema-link",

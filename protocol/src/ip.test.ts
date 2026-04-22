@@ -10,7 +10,9 @@ describe("ip helpers", () => {
 		expect(isPubliclyRoutableIpLiteral("127.0.0.1")).toBe(false);
 		expect(isPubliclyRoutableIpLiteral("10.0.0.8")).toBe(false);
 		expect(isPubliclyRoutableIpLiteral("192.168.1.1")).toBe(false);
+		expect(isPubliclyRoutableIpLiteral("192.0.2.1")).toBe(false);
 		expect(isPubliclyRoutableIpLiteral("198.51.100.10")).toBe(false);
+		expect(isPubliclyRoutableIpLiteral("192.0.4.1")).toBe(true);
 		expect(isPubliclyRoutableIpLiteral("8.8.8.8")).toBe(true);
 	});
 

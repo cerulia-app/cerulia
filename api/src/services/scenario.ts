@@ -8,6 +8,7 @@ import { accepted, rejected } from "../ack.js";
 import type { AuthContext } from "../auth.js";
 import { isOwnerReader } from "../auth.js";
 import { COLLECTIONS } from "../constants.js";
+import { ApiError } from "../errors.js";
 import { parseAtUri } from "../refs.js";
 import type { ServiceRuntime } from "./runtime.js";
 import {
@@ -49,10 +50,22 @@ export function createScenarioService(runtime: ServiceRuntime) {
 			}
 
 			if (input.recommendedSheetSchemaRef && input.rulesetNsid) {
-				const schema = await loadSchema(
-					runtime,
-					input.recommendedSheetSchemaRef,
-				);
+				let schema: Awaited<ReturnType<typeof loadSchema>>;
+				try {
+					schema = await loadSchema(
+						runtime,
+						input.recommendedSheetSchemaRef,
+					);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-schema-link",
+							"recommendedSheetSchemaRef must reference an existing characterSheetSchema",
+						);
+					}
+
+					throw error;
+				}
 				if (schema.value.baseRulesetNsid !== input.rulesetNsid) {
 					return rejected(
 						"invalid-schema-link",
@@ -136,7 +149,19 @@ export function createScenarioService(runtime: ServiceRuntime) {
 				(input.recommendedSheetSchemaRef !== undefined ||
 					input.rulesetNsid !== undefined)
 			) {
-				const schema = await loadSchema(runtime, nextRecommended);
+				let schema: Awaited<ReturnType<typeof loadSchema>>;
+				try {
+					schema = await loadSchema(runtime, nextRecommended);
+				} catch (error) {
+					if (error instanceof ApiError && error.status === 404) {
+						return rejected(
+							"invalid-schema-link",
+							"recommendedSheetSchemaRef must reference an existing characterSheetSchema",
+						);
+					}
+
+					throw error;
+				}
 				if (schema.value.baseRulesetNsid !== nextRulesetNsid) {
 					return rejected(
 						"invalid-schema-link",
