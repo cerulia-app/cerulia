@@ -1,5 +1,15 @@
 {
 	"name": "@cerulia/projection",
 	"private": true,
-	"type": "module"
+	"type": "module",
+	"scripts": {
+		"build": "tsc --noEmit",
+		"test": "bun test",
+		"check": "tsc --noEmit && bun test"
+	},
+	"dependencies": {
+		"@atproto/lexicon": "^0.6.2",
+		"@cerulia/protocol": "workspace:*",
+		"hono": "^4.10.0"
+	}
 }

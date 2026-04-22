@@ -568,18 +568,6 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.scenario.list`, async (context) => {
-		return jsonXrpcOutput(
-			context,
-			"app.cerulia.scenario.list",
-			await services.scenario.list(
-				context.req.query("rulesetNsid"),
-				context.req.query("limit"),
-				context.req.query("cursor"),
-			),
-		);
-	});
-
 	app.post(`${XRPC_PREFIX}/app.cerulia.campaign.create`, async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaCampaignCreate.InputSchema>(

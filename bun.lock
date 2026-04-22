@@ -68,6 +68,11 @@
     },
     "projection": {
       "name": "@cerulia/projection",
+      "dependencies": {
+        "@atproto/lexicon": "^0.6.2",
+        "@cerulia/protocol": "workspace:*",
+        "hono": "^4.10.0",
+      },
     },
     "protocol": {
       "name": "@cerulia/protocol",

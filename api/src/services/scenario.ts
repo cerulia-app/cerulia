@@ -2,7 +2,6 @@ import type {
 	AppCeruliaCoreScenario,
 	AppCeruliaScenarioCreate,
 	AppCeruliaScenarioGetView,
-	AppCeruliaScenarioList,
 	AppCeruliaScenarioUpdate,
 } from "@cerulia/protocol";
 import { accepted, rejected } from "../ack.js";
@@ -10,7 +9,6 @@ import type { AuthContext } from "../auth.js";
 import { isOwnerReader } from "../auth.js";
 import { COLLECTIONS } from "../constants.js";
 import { parseAtUri } from "../refs.js";
-import { paginate } from "../pagination.js";
 import type { ServiceRuntime } from "./runtime.js";
 import {
 	assertCredentialFreeUri,
@@ -187,39 +185,6 @@ export function createScenarioService(runtime: ServiceRuntime) {
 					summary: record.value.summary,
 					sourceCitationUri: record.value.sourceCitationUri,
 				},
-			};
-		},
-
-		async list(
-			rulesetNsid: string | undefined,
-			limit: string | undefined,
-			cursor: string | undefined,
-		): Promise<AppCeruliaScenarioList.OutputSchema> {
-			const records =
-				await runtime.store.listRecords<AppCeruliaCoreScenario.Main>(
-					COLLECTIONS.scenario,
-				);
-			const filtered = records
-				.filter(
-					(record) => !rulesetNsid || record.value.rulesetNsid === rulesetNsid,
-				)
-				.sort((left, right) =>
-					left.value.title.localeCompare(right.value.title),
-				);
-			const page = paginate(filtered, limit, cursor);
-
-			return {
-				items: page.items.map((record) => ({
-					$type: "app.cerulia.scenario.list#scenarioListItem",
-					scenarioRef: record.uri,
-					title: record.value.title,
-					rulesetNsid: record.value.rulesetNsid,
-					hasRecommendedSheetSchema: Boolean(
-						record.value.recommendedSheetSchemaRef,
-					),
-					summary: record.value.summary,
-				})),
-				cursor: page.cursor,
 			};
 		},
 	};

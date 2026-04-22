@@ -1,3 +1,5 @@
+/// <reference path="./types/multiformats-cid.d.ts" />
+
 export * from "./codec/lexicon.js";
 export * from "./codec/parser.js";
 export * from "./codec/validator.js";

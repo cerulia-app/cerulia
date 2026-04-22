@@ -2865,10 +2865,7 @@ describe("createApiApp", () => {
 			app,
 			`${XRPC_PREFIX}/app.cerulia.scenario.list?rulesetNsid=${encodeURIComponent("app.cerulia.rules.coc7")}`,
 		);
-		const scenarioList = await scenarioListResponse.json();
-		expect(scenarioList.items).toHaveLength(1);
-		expect(scenarioList.items[0].scenarioRef).toBe(scenarioRef);
-		expect(scenarioList.items[0].hasRecommendedSheetSchema).toBe(true);
+		expect(scenarioListResponse.status).toBe(404);
 
 		const scenarioViewResponse = await getJson(
 			app,
