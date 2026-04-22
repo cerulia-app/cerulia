@@ -16,6 +16,7 @@ import {
 	assertCredentialFreeUri,
 	blobBelongsToCaller,
 	createTypedRecord,
+	loadOptionalSheet,
 	loadBlueskyProfile,
 	requireRecord,
 	updateTypedRecord,
@@ -185,20 +186,20 @@ export function createActorService(runtime: ServiceRuntime) {
 					COLLECTIONS.characterBranch,
 					did,
 				);
-			const publicBranches = await Promise.all(
+			const publicBranches = (await Promise.all(
 				branches
 					.filter((branch) => branch.value.visibility === "public")
 					.map(
 						async (
 							branch,
-						): Promise<AppCeruliaActorGetProfileView.BranchLink> => {
-							const sheet =
-								await requireRecord<AppCeruliaCoreCharacterSheet.Main>(
-									runtime,
-									branch.value.sheetRef,
-									COLLECTIONS.characterSheet,
-									"sheetRef",
-								);
+						): Promise<AppCeruliaActorGetProfileView.BranchLink | null> => {
+							const sheet = await loadOptionalSheet(
+								runtime,
+								branch.value.sheetRef,
+							);
+							if (!sheet) {
+								return null;
+							}
 
 							return {
 								$type: "app.cerulia.actor.getProfileView#branchLink",
@@ -209,6 +210,9 @@ export function createActorService(runtime: ServiceRuntime) {
 							};
 						},
 					),
+			)).filter(
+				(branch): branch is AppCeruliaActorGetProfileView.BranchLink =>
+					branch !== null,
 			);
 
 			if (isOwnerReader(auth, did)) {

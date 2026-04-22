@@ -148,6 +148,28 @@ export async function loadSchema(
 	);
 }
 
+export async function loadOptionalSchema(
+	runtime: ServiceRuntime,
+	schemaRef: string | undefined,
+): Promise<StoredRecord<AppCeruliaCoreCharacterSheetSchema.Main> | null> {
+	if (!schemaRef) {
+		return null;
+	}
+
+	const parsed = parseAtUri(schemaRef);
+	if (parsed.collection !== COLLECTIONS.characterSheetSchema) {
+		throw new ApiError(
+			"InvalidRequest",
+			"characterSheetSchemaRef must reference app.cerulia.core.character-sheet-schema",
+			400,
+		);
+	}
+
+	return runtime.store.getRecord<AppCeruliaCoreCharacterSheetSchema.Main>(
+		schemaRef,
+	);
+}
+
 export async function loadSheet(
 	runtime: ServiceRuntime,
 	sheetRef: string,
@@ -158,6 +180,22 @@ export async function loadSheet(
 		COLLECTIONS.characterSheet,
 		"characterSheetRef",
 	);
+}
+
+export async function loadOptionalSheet(
+	runtime: ServiceRuntime,
+	sheetRef: string,
+): Promise<StoredRecord<AppCeruliaCoreCharacterSheet.Main> | null> {
+	const parsed = parseAtUri(sheetRef);
+	if (parsed.collection !== COLLECTIONS.characterSheet) {
+		throw new ApiError(
+			"InvalidRequest",
+			"characterSheetRef must reference app.cerulia.core.character-sheet",
+			400,
+		);
+	}
+
+	return runtime.store.getRecord<AppCeruliaCoreCharacterSheet.Main>(sheetRef);
 }
 
 export async function resolveScenarioLabel(

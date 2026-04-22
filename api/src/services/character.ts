@@ -38,6 +38,8 @@ import {
 	blobBelongsToCaller,
 	createTypedRecord,
 	hasSameOwner,
+	loadOptionalSchema,
+	loadOptionalSheet,
 	loadSchema,
 	loadSheet,
 	requireRecord,
@@ -1182,7 +1184,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				COLLECTIONS.characterBranch,
 				"characterBranchRef",
 			);
-			const sheet = await loadSheet(runtime, branch.value.sheetRef);
+			const sheet = await loadOptionalSheet(runtime, branch.value.sheetRef);
 			const advancements = (
 				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
 					COLLECTIONS.characterAdvancement,
@@ -1205,7 +1207,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			if (isOwnerReader(auth, branch.repoDid)) {
 				return {
 					branch: branch.value,
-					sheet: sheet.value,
+					sheet: sheet?.value,
 					advancements: sortStoredRecordsDescending(
 						advancements,
 						(record) => record.value.effectiveAt,
@@ -1234,14 +1236,90 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				};
 			}
 
+			if (!sheet) {
+				return {
+					branchSummary: {
+						$type: "app.cerulia.character.getBranchView#branchSummary",
+						branchRef,
+						branchLabel: branch.value.branchLabel,
+						branchKind: branch.value.branchKind,
+						visibility: branch.value.visibility,
+						revision: branch.value.revision,
+						updatedAt: branch.value.updatedAt,
+					},
+					recentSessionSummaries: await Promise.all(
+						sortStoredRecordsDescending(
+							sessions.filter(
+								(record) => record.value.visibility === "public",
+							),
+							(record) => record.value.playedAt,
+						).map(async (record) => ({
+							$type: "app.cerulia.character.getBranchView#sessionSummary",
+							sessionRef: record.uri,
+							role: record.value.role,
+							playedAt: record.value.playedAt,
+							scenarioLabel: await resolveScenarioLabel(runtime, record.value),
+							hoLabel: record.value.hoLabel,
+							hoSummary: record.value.hoSummary,
+							outcomeSummary: record.value.outcomeSummary,
+							externalArchiveUris: record.value.externalArchiveUris,
+						})),
+					),
+					advancementSummaries: await Promise.all(
+						sortStoredRecordsDescending(
+							advancements,
+							(record) => record.value.effectiveAt,
+						).map(async (record) => ({
+							$type: "app.cerulia.character.getBranchView#advancementSummary",
+							advancementRef: record.uri,
+							advancementKind: record.value.advancementKind,
+							effectiveAt: record.value.effectiveAt,
+							sessionSummary: record.value.sessionRef
+								? await (async () => {
+										const session = sessions.find(
+											(sessionRecord) =>
+												sessionRecord.uri === record.value.sessionRef,
+										);
+										if (!session || session.value.visibility !== "public") {
+											return undefined;
+										}
+
+										return {
+											$type:
+												"app.cerulia.character.getBranchView#advancementSessionSummary",
+											sessionRef: session.uri,
+											role: session.value.role,
+											playedAt: session.value.playedAt,
+											scenarioLabel: await resolveScenarioLabel(
+												runtime,
+												session.value,
+											),
+										};
+									})()
+								: undefined,
+						})),
+					),
+					conversionSummaries: sortStoredRecordsDescending(
+						conversions,
+						(record) => record.value.convertedAt,
+					).map((record) => ({
+						$type: "app.cerulia.character.getBranchView#conversionSummary",
+						sourceRulesetNsid: record.value.sourceRulesetNsid,
+						targetRulesetNsid: record.value.targetRulesetNsid,
+						convertedAt: record.value.convertedAt,
+					})),
+				};
+			}
+
 			const resolvedStats = await resolvedBranchStats(
 				sheet.value,
 				advancements,
 				conversions,
 			);
-			const schema = sheet.value.sheetSchemaRef
-				? await loadSchema(runtime, sheet.value.sheetSchemaRef)
-				: null;
+			const schema = await loadOptionalSchema(
+				runtime,
+				sheet.value.sheetSchemaRef,
+			);
 			const structuredStats = schema
 				? flattenStructuredStats(schema.value.fieldDefs, resolvedStats)
 				: undefined;
