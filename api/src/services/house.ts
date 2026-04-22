@@ -201,7 +201,11 @@ export function createHouseService(runtime: ServiceRuntime) {
 				await runtime.store.listRecords<AppCeruliaCoreCampaign.Main>(
 					COLLECTIONS.campaign,
 				)
-			).filter((campaign) => campaign.value.houseRef === houseRef);
+			).filter(
+				(campaign) =>
+					campaign.repoDid === record.repoDid &&
+					campaign.value.houseRef === houseRef,
+			);
 			const publicCampaigns = campaigns.filter(
 				(campaign) => campaign.value.visibility === "public",
 			);
@@ -215,6 +219,7 @@ export function createHouseService(runtime: ServiceRuntime) {
 				)
 			).filter(
 				(session) =>
+					session.repoDid === record.repoDid &&
 					session.value.campaignRef &&
 					campaignRefs.has(session.value.campaignRef),
 			);

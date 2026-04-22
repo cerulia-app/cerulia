@@ -263,7 +263,11 @@ export function createCampaignService(runtime: ServiceRuntime) {
 				await runtime.store.listRecords<AppCeruliaCoreSession.Main>(
 					COLLECTIONS.session,
 				)
-			).filter((session) => session.value.campaignRef === campaignRef);
+			).filter(
+				(session) =>
+					session.repoDid === record.repoDid &&
+					session.value.campaignRef === campaignRef,
+			);
 			const ruleOverlay = (await Promise.all(
 				(record.value.sharedRuleProfileRefs ?? []).map((ref) =>
 					getOptionalRecord<AppCeruliaCoreRuleProfile.Main>(

@@ -1,7 +1,7 @@
 const DID_PATTERN = /^did:[a-z](?:[a-z0-9]*):[A-Za-z0-9._:%-]+$/;
 const NSID_PATTERN =
 	/^[a-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[a-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/;
-const RKEY_PATTERN = /^[A-Za-z0-9._:~-]+$/;
+const RKEY_PATTERN = /^[a-z0-9._:~-]+$/;
 
 export class AtUriParseError extends Error {
 	constructor(message: string) {

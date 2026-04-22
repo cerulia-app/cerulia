@@ -1435,6 +1435,113 @@ describe("createApiApp", () => {
 		expect(updatePayload.reasonCode).toBe("forbidden-owner-mismatch");
 	});
 
+	test("ignores foreign backlink rows in campaign and house views", async () => {
+		const { app, store } = createTestApp();
+		const readerHeaders = authHeaders(DID, [AUTH_SCOPES.reader]);
+		const foreignDid = "did:plc:foreign-backlink-owner";
+		const houseRef = `at://${DID}/${COLLECTIONS.house}/local-house`;
+		const campaignRef = `at://${DID}/${COLLECTIONS.campaign}/local-campaign`;
+		const localSessionRef = `at://${DID}/${COLLECTIONS.session}/local-session`;
+		const foreignCampaignRef = `at://${foreignDid}/${COLLECTIONS.campaign}/foreign-campaign`;
+		const foreignSessionRef = `at://${foreignDid}/${COLLECTIONS.session}/foreign-session`;
+
+		store.seedRecord(
+			houseRef,
+			{
+				$type: COLLECTIONS.house,
+				houseId: "local-house",
+				title: "Local House",
+				visibility: "public",
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			campaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "local-campaign",
+				title: "Local Campaign",
+				houseRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "public",
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			localSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				campaignRef,
+				scenarioLabel: "Local Session",
+				role: "gm",
+				playedAt: "2026-04-22T12:00:00.000Z",
+				visibility: "public",
+				createdAt: "2026-04-22T12:00:00.000Z",
+				updatedAt: "2026-04-22T12:00:00.000Z",
+			},
+			"2026-04-22T12:00:00.000Z",
+			"2026-04-22T12:00:00.000Z",
+		);
+		store.seedRecord(
+			foreignCampaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "foreign-campaign",
+				title: "Foreign Campaign",
+				houseRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "public",
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			foreignSessionRef,
+			{
+				$type: COLLECTIONS.session,
+				campaignRef,
+				scenarioLabel: "Foreign Session",
+				role: "gm",
+				playedAt: "2026-04-22T13:00:00.000Z",
+				visibility: "public",
+				createdAt: "2026-04-22T13:00:00.000Z",
+				updatedAt: "2026-04-22T13:00:00.000Z",
+			},
+			"2026-04-22T13:00:00.000Z",
+			"2026-04-22T13:00:00.000Z",
+		);
+
+		const campaignResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
+			readerHeaders,
+		);
+		expect(campaignResponse.status).toBe(200);
+		const campaignPayload = await campaignResponse.json();
+		expect(campaignPayload.sessions).toHaveLength(1);
+		expect(campaignPayload.sessions[0].sessionRef).toBe(localSessionRef);
+
+		const houseResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
+			readerHeaders,
+		);
+		expect(houseResponse.status).toBe(200);
+		const housePayload = await houseResponse.json();
+		expect(housePayload.campaigns).toHaveLength(1);
+		expect(housePayload.campaigns[0].campaignRef).toBe(campaignRef);
+		expect(housePayload.sessions).toHaveLength(1);
+		expect(housePayload.sessions[0].sessionRef).toBe(localSessionRef);
+	});
+
 	test("returns mutationAck rejects for missing linked refs on session and scenario writes", async () => {
 		const { app } = createTestApp();
 		const writerHeaders = authHeaders();

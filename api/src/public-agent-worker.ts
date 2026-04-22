@@ -29,6 +29,7 @@ interface WorkerSocket {
 	writable: WritableStream<Uint8Array<ArrayBufferLike>>;
 	opened: Promise<WorkerSocketInfo>;
 	close(): Promise<void>;
+	startTls(): WorkerSocket;
 }
 
 type WorkerSocketConnect = (address: {
@@ -310,14 +311,15 @@ export function createVerifiedWorkerFetch(
 			resolverEndpoint,
 		);
 		const connect = await loadWorkerSocketConnect();
-		const socket = connect(
+		const rawSocket = connect(
 			{
 				hostname,
 				port: url.port.length > 0 ? Number.parseInt(url.port, 10) : 443,
 			},
-			{ secureTransport: "on" },
+			{ secureTransport: "starttls" },
 		);
 
+		let socket = rawSocket;
 		const abortRequest = () => socket.close().catch(() => undefined);
 		if (request.signal?.aborted) {
 			await abortRequest();
@@ -330,7 +332,7 @@ export function createVerifiedWorkerFetch(
 		request.signal?.addEventListener("abort", onAbort, { once: true });
 
 		try {
-			const socketInfo = await socket.opened;
+			const socketInfo = await rawSocket.opened;
 			const remoteAddress = socketInfo.remoteAddress;
 			if (
 				!remoteAddress ||
@@ -338,6 +340,8 @@ export function createVerifiedWorkerFetch(
 			) {
 				throw new Error("Pinned public fetch remote address mismatch");
 			}
+			socket = rawSocket.startTls();
+			await socket.opened;
 
 			const writer = socket.writable.getWriter();
 			try {

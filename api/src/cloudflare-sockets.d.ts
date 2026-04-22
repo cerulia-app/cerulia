@@ -10,6 +10,7 @@ declare module "cloudflare:sockets" {
 		opened: Promise<SocketInfo>;
 		closed: Promise<void>;
 		close(): Promise<void>;
+		startTls(): Socket;
 	}
 
 	export function connect(

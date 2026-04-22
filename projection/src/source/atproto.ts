@@ -61,6 +61,7 @@ function toStoredRecord<T>(
 	value: T,
 	expectedRepoDid: string,
 	expectedCollection: string,
+	expectedRkey?: string,
 ): StoredRecord<T> {
 	const { repoDid, collection, rkey } = parseAtUri(uri);
 	if (repoDid !== expectedRepoDid) {
@@ -69,6 +70,9 @@ function toStoredRecord<T>(
 
 	if (collection !== expectedCollection) {
 		throw new Error(`Unexpected collection in AT URI: ${uri}`);
+	}
+	if (expectedRkey !== undefined && rkey !== expectedRkey) {
+		throw new Error(`Unexpected rkey in AT URI: ${uri}`);
 	}
 
 	const timestampSource =
@@ -114,6 +118,7 @@ export class AtprotoPublicRecordSource implements CanonicalRecordSource {
 				response.data.value as T,
 				repoDid,
 				collection,
+				rkey,
 			);
 		} catch (error) {
 			if (isNotFoundError(error)) {

@@ -192,4 +192,39 @@ describe("AtprotoPublicRecordSource", () => {
 			source.listRecords(SCENARIO_COLLECTION, "did:plc:alice"),
 		).rejects.toThrow("Unexpected repoDid in AT URI");
 	});
+
+	test("rejects exact record reads whose returned rkey does not match the request", async () => {
+		const provider: PublicAgentProvider = {
+			async listRepoDids() {
+				return ["did:plc:alice"];
+			},
+			async getPublicAgent() {
+				return {
+					com: {
+						atproto: {
+							repo: {
+								getRecord: async () => ({
+									data: {
+										uri: scenarioUri("did:plc:alice", "wrong-rkey"),
+										value: {
+											title: "Wrong Rkey",
+											createdAt: "2026-04-22T00:00:00.000Z",
+											updatedAt: "2026-04-22T00:00:00.000Z",
+										},
+									},
+								}),
+								listRecords: async () => ({ data: { records: [] } }),
+							},
+						},
+					},
+				} satisfies PublicRepoAgent;
+			},
+			async rememberRepoDid() {},
+		};
+
+		const source = new AtprotoPublicRecordSource(provider);
+		await expect(
+			source.getRecord(scenarioUri("did:plc:alice", "expected-rkey")),
+		).rejects.toThrow("Unexpected rkey in AT URI");
+	});
 });
