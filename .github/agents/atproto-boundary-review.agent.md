@@ -1,7 +1,8 @@
 ---
 name: "AT Protocol Boundary Review"
 description: "Do not use this directly. This agent must be used via the Review Orchestrator."
-tools: [read, search, web]
+tools: [read, search, web, agent]
+agents: ["Explore"]
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

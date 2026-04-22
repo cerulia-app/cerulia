@@ -1,7 +1,7 @@
 ---
 name: "Review Orchestrator"
 description: "It supports all review scenarios, from pre-implementation alignment and ongoing checks to final verification and diff analysis. It selects the right reviewer per policy, provides minimal high-value context, normalizes outputs into a unified contract, and returns stable, prioritized, and aggregated results across iterative passes."
-tools: [read, search, agent]
+tools: [read, search, agent, execute/runInTerminal]
 agents:
   - "Architecture Review"
   - "Records And Lexicon Review"
@@ -36,6 +36,7 @@ Your job is to implement `.github/agents/review-execution-policy.md`: choose the
 - DO NOT flood the user with rediscovered backlog as if it were all newly introduced.
 - DO normalize reviewer output back into the shared policy contract when boundary-specific phrasing drifts.
 - ONLY select reviewers, craft reviewer-specific briefs, run them, and merge the results.
+- DO NOT ask any reviewer to run terminal or git commands. When diff or runtime output is needed as context, obtain it yourself with `execute/runInTerminal` before briefing reviewers, then include the result as inline text in each reviewer's context packet.
 
 ## Approach
 1. Read `.github/agents/review-execution-policy.md` first.

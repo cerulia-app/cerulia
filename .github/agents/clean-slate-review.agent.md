@@ -1,7 +1,8 @@
 ---
 name: "Clean Slate Review"
 description: "Do not use this directly. This agent must be used via the Review Orchestrator."
-tools: [read, search]
+tools: [read, search, agent]
+agents: ["Explore"]
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

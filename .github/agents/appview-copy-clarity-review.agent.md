@@ -1,7 +1,8 @@
 ---
 name: "AppView Copy Clarity Review"
 description: "Do not use this directly. This agent must be used via the Review Orchestrator."
-tools: [read, search]
+tools: [read, search, agent]
+agents: ["Explore"]
 user-invocable: false
 model: Gemini 3 Flash (Preview) (copilot)
 ---
