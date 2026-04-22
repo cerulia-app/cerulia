@@ -102,6 +102,7 @@ export interface FallbackProfile {
   avatar?: BlobRef
   banner?: BlobRef
   website?: string
+  pronouns?: string
 }
 
 const hashFallbackProfile = 'fallbackProfile'

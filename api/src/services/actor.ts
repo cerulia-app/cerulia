@@ -227,6 +227,7 @@ export function createActorService(runtime: ServiceRuntime) {
 								avatar: fallback.avatar,
 								banner: fallback.banner,
 								website: fallback.website,
+								pronouns: fallback.pronouns,
 							}
 						: undefined,
 					publicBranches,

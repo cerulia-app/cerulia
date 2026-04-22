@@ -14,7 +14,7 @@ const didWebDoc = {
 };
 
 describe("createPublicAgentProvider", () => {
-	test("accepts hostname-based public PDS endpoints for non-PLC dids", async () => {
+	test("fails closed for worker public-agent lookup until a pre-connect-pinned transport exists", async () => {
 		const provider = createPublicAgentProvider({
 			knownRepoCatalog: {
 				listRepoDids: async () => [],
@@ -29,6 +29,6 @@ describe("createPublicAgentProvider", () => {
 			throw new Error("public agent lookup must be configured");
 		}
 		const agent = await getPublicAgent("did:web:example.com");
-		expect(agent).not.toBeNull();
+		expect(agent).toBeNull();
 	});
 });

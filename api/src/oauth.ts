@@ -11,7 +11,6 @@ import {
 import { JoseKey } from "@atproto/jwk-jose";
 import { WebcryptoKey } from "@atproto/jwk-webcrypto";
 import { NodeOAuthClient } from "@atproto/oauth-client-node";
-import { createVerifiedWorkerFetch } from "./public-agent-worker.js";
 import type { ApiOAuthFeature } from "./app.js";
 import { OAUTH_SCOPE } from "./constants.js";
 import { ApiError } from "./errors.js";
@@ -279,45 +278,14 @@ function createOAuthRuntimeBundle(
 }
 
 function createPublicAgentLookup(
-	fetchImpl: FetchLike,
+	_fetchImpl: FetchLike,
 	resolveDidDoc:
 		| ((repoDid: string) => Promise<unknown | null>)
 		| undefined,
-	dohEndpoint?: string,
+	_dohEndpoint?: string,
 ): NonNullable<AgentProvider["getPublicAgent"]> {
-	const timedFetch = createTimeoutFetch(
-		createVerifiedWorkerFetch(fetchImpl, dohEndpoint),
-		1500,
-	) as typeof globalThis.fetch;
-	const identityResolver = createIdentityResolver({
-		fetch: timedFetch,
-		handleResolver: new AtprotoDohHandleResolver({
-			dohEndpoint: dohEndpoint ?? "https://cloudflare-dns.com/dns-query",
-			fetch: timedFetch,
-		}),
-	});
-
-	return async (repoDid: string) => {
-		const didDoc =
-			(await resolveDidDoc?.(repoDid)) ??
-			(await identityResolver.resolve(repoDid).catch(() => null))?.didDoc ??
-			null;
-		if (!didDoc || !isValidDidDoc(didDoc)) {
-			return null;
-		}
-
-		const pdsEndpoint = getPdsEndpoint(didDoc);
-		if (!pdsEndpoint) {
-			return null;
-		}
-
-		const service = assertSafePublicServiceUrl(pdsEndpoint);
-
-		return new Agent({
-			service: service.toString(),
-			fetch: timedFetch,
-		});
-	};
+	void resolveDidDoc;
+	return async () => null;
 }
 
 export function createPublicAgentProvider(options: {

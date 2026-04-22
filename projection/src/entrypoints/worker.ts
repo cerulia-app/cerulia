@@ -36,14 +36,13 @@ export async function createWorkerApp(
 		parseSeedRepoDids(env.CERULIA_PROJECTION_REPOS),
 	);
 
-	const source =
-		overrides?.source ??
-		new AtprotoPublicRecordSource(
-			createPublicAgentProvider({
-				knownRepoCatalog,
-				dohEndpoint: env.CERULIA_DOH_ENDPOINT,
-			}),
+	if (!overrides?.source) {
+		throw new Error(
+			"Workers projection adapter requires an injected canonical source until a pre-connect-pinned public agent transport is available",
 		);
+	}
+
+	const source = overrides.source;
  	const catalogStore = new SqlScenarioCatalogStore(driver);
  	const scenarioCatalog = createScenarioCatalogService({
 		source,

@@ -34,7 +34,7 @@ describe("assertSafePublicServiceUrl", () => {
 			.toBe("https://pds.example.com/");
 	});
 
-	test("accepts hostname-based public PDS endpoints for non-PLC dids", async () => {
+	test("fails closed for worker public-agent lookup until a pre-connect-pinned transport exists", async () => {
 		const provider = createPublicAgentProvider({
 			knownRepoCatalog: {
 				listRepoDids: async () => [],
@@ -45,6 +45,6 @@ describe("assertSafePublicServiceUrl", () => {
 		});
 
 		const agent = await provider.getPublicAgent("did:web:example.com");
-		expect(agent).not.toBeNull();
+		expect(agent).toBeNull();
 	});
 });

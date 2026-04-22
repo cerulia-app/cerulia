@@ -235,6 +235,7 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 - Workers 依存 API は service composition と adapter 層に閉じ込める
 - core domain、validation、contract、projection rule は Workers 非依存に保つ
 - canonical runtime/authority は Workers ではなく service boundary 側にある
+- public-agent の live fetch は pre-connect pin できる runtime に限定する。Workers adapter は live public-agent lookup を canonical path に使わない
 
 ## storage 方針
 

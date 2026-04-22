@@ -1,9 +1,4 @@
-import { AtprotoDohHandleResolver } from "@atproto-labs/handle-resolver";
-import { createIdentityResolver } from "@atproto-labs/identity-resolver";
-import { getPdsEndpoint, isValidDidDoc } from "@atproto/common-web";
-import { Agent } from "@atproto/api";
 import { isPubliclyRoutableIpLiteral, parseIpLiteral } from "@cerulia/protocol";
-import { createVerifiedWorkerFetch } from "./public-agent-worker.js";
 import type { KnownRepoCatalog } from "./store/known-repos.js";
 
 type FetchLike = (
@@ -107,45 +102,14 @@ export interface PublicAgentProvider {
 }
 
 function createPublicAgentLookup(
-	fetchImpl: FetchLike,
+	_fetchImpl: FetchLike,
 	resolveDidDoc:
 		| ((repoDid: string) => Promise<unknown | null>)
 		| undefined,
-	dohEndpoint?: string,
+	_dohEndpoint?: string,
 ): PublicAgentProvider["getPublicAgent"] {
-	const timedFetch = createTimeoutFetch(
-		createVerifiedWorkerFetch(fetchImpl, dohEndpoint),
-		1500,
-	) as typeof globalThis.fetch;
-	const identityResolver = createIdentityResolver({
-		fetch: timedFetch,
-		handleResolver: new AtprotoDohHandleResolver({
-			dohEndpoint: dohEndpoint ?? "https://cloudflare-dns.com/dns-query",
-			fetch: timedFetch,
-		}),
-	});
-
-	return async (repoDid: string) => {
-		const didDoc =
-			(await resolveDidDoc?.(repoDid)) ??
-			(await identityResolver.resolve(repoDid).catch(() => null))?.didDoc ??
-			null;
-		if (!didDoc || !isValidDidDoc(didDoc)) {
-			return null;
-		}
-
-		const pdsEndpoint = getPdsEndpoint(didDoc);
-		if (!pdsEndpoint) {
-			return null;
-		}
-
-		const safePdsEndpoint = assertSafePublicServiceUrl(pdsEndpoint);
-
-		return new Agent({
-			service: safePdsEndpoint.toString(),
-			fetch: timedFetch,
-		});
-	};
+	void resolveDidDoc;
+	return async () => null;
 }
 
 export function createPublicAgentProvider(options: {

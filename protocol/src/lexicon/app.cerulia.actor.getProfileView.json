@@ -100,7 +100,8 @@
 				"description": { "type": "string", "maxLength": 3000 },
 				"avatar": { "type": "blob" },
 				"banner": { "type": "blob" },
-				"website": { "type": "string", "format": "uri" }
+				"website": { "type": "string", "format": "uri" },
+				"pronouns": { "type": "string", "maxLength": 100 }
 			}
 		}
 	}

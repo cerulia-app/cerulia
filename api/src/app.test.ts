@@ -889,6 +889,7 @@ describe("createApiApp", () => {
 			{
 				displayName: "Alice",
 				website: "https://example.com/?token=secret",
+				pronouns: "they/them",
 			},
 			"2026-04-20T08:00:00.000Z",
 			"2026-04-20T08:00:00.000Z",
@@ -943,6 +944,15 @@ describe("createApiApp", () => {
 		expect(actorView.profileSummary.website).toBeUndefined();
 		expect(actorView.publicBranches).toHaveLength(1);
 		expect(actorView.publicBranches[0].characterBranchRef).toBe(branchRef);
+
+		const ownerActorViewResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.actor.getProfileView?did=${encodeURIComponent(DID)}`,
+			readerHeaders,
+		);
+		expect(ownerActorViewResponse.status).toBe(200);
+		const ownerActorView = await ownerActorViewResponse.json();
+		expect(ownerActorView.blueskyFallbackProfile.pronouns).toBe("they/them");
 
 		store.seedRecord(
 			`at://${DID}/${COLLECTIONS.playerProfile}/${SELF_RKEY}`,
