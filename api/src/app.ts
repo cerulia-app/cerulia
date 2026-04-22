@@ -33,6 +33,7 @@ import { toErrorResponse } from "./errors.js";
 import { ApiError } from "./errors.js";
 import { requireReaderDid, requireWriterDid } from "./auth.js";
 import { SESSION_COOKIE_NAME, XRPC_PREFIX } from "./constants.js";
+import type { ProjectionIngestFeature } from "./projection.js";
 import { createServices } from "./services/index.js";
 import type { AtomicRecordStore, RecordStore } from "./store/types.js";
 import { jsonXrpcOutput } from "./xrpc-output.js";
@@ -125,6 +126,32 @@ export interface ApiAppOptions {
 	store: ApiAppStore;
 	authResolver?: AuthResolver;
 	oauthFeature?: ApiOAuthFeature;
+	projectionIngestFeature?: ProjectionIngestFeature;
+}
+
+function isAcceptedMutationAck(
+	payload: unknown,
+): payload is { resultKind: "accepted" } {
+	return (
+		typeof payload === "object" &&
+		payload !== null &&
+		"resultKind" in payload &&
+		(payload as { resultKind?: unknown }).resultKind === "accepted"
+	);
+}
+
+function maybeNotifyProjectionRepo(
+	feature: ProjectionIngestFeature | undefined,
+	repoDid: string,
+	payload: unknown,
+): void {
+	if (!feature || !isAcceptedMutationAck(payload)) {
+		return;
+	}
+
+	void feature.noteRepoDid(repoDid).catch(() => {
+		// Projection is optional. Notification failures must not reject canonical writes.
+	});
 }
 
 export function createApiApp(options: ApiAppOptions) {
@@ -137,6 +164,7 @@ export function createApiApp(options: ApiAppOptions) {
 	const authResolver =
 		options.authResolver ?? (() => createAnonymousAuthContext());
 	const oauthFeature = options.oauthFeature;
+	const projectionIngestFeature = options.projectionIngestFeature;
 	const services = createServices(store);
 
 	app.onError((error) => {
@@ -535,10 +563,16 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.scenario.create",
 		);
+		const output = await services.scenario.create(callerDid, input);
+		maybeNotifyProjectionRepo(
+			projectionIngestFeature,
+			callerDid,
+			output,
+		);
 		return jsonXrpcOutput(
 			context,
 			"app.cerulia.scenario.create",
-			await services.scenario.create(callerDid, input),
+			output,
 		);
 	});
 
@@ -548,10 +582,16 @@ export function createApiApp(options: ApiAppOptions) {
 			context.req.raw,
 			"app.cerulia.scenario.update",
 		);
+		const output = await services.scenario.update(callerDid, input);
+		maybeNotifyProjectionRepo(
+			projectionIngestFeature,
+			callerDid,
+			output,
+		);
 		return jsonXrpcOutput(
 			context,
 			"app.cerulia.scenario.update",
-			await services.scenario.update(callerDid, input),
+			output,
 		);
 	});
 
