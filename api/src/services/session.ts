@@ -93,12 +93,18 @@ export function createSessionService(runtime: ServiceRuntime) {
 			}
 
 			if (input.campaignRef) {
-				await requireRecord(
+				const campaign = await requireRecord(
 					runtime,
 					input.campaignRef,
 					COLLECTIONS.campaign,
 					"campaignRef",
 				);
+				if (campaign.repoDid !== callerDid) {
+					return rejected(
+						"forbidden-owner-mismatch",
+						"campaignRef must belong to the caller",
+					);
+				}
 			}
 
 			const uriError = assertCredentialFreeUriList(
@@ -245,13 +251,20 @@ export function createSessionService(runtime: ServiceRuntime) {
 				);
 			}
 
-			if (input.campaignRef ?? record.value.campaignRef) {
-				await requireRecord(
+			const nextCampaignRef = input.campaignRef ?? record.value.campaignRef;
+			if (nextCampaignRef) {
+				const campaign = await requireRecord(
 					runtime,
-					(input.campaignRef ?? record.value.campaignRef)!,
+					nextCampaignRef,
 					COLLECTIONS.campaign,
 					"campaignRef",
 				);
+				if (campaign.repoDid !== callerDid) {
+					return rejected(
+						"forbidden-owner-mismatch",
+						"campaignRef must belong to the caller",
+					);
+				}
 			}
 
 			const uriError = assertCredentialFreeUriList(

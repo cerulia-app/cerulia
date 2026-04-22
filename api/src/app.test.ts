@@ -1339,6 +1339,211 @@ describe("createApiApp", () => {
 		);
 	});
 
+	test("rejects foreign campaign refs for session create and update", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const foreignDid = "did:plc:foreign-campaign-owner";
+		const foreignCampaignRef = `at://${foreignDid}/${COLLECTIONS.campaign}/foreign-campaign`;
+		const sessionRef = `at://${DID}/${COLLECTIONS.session}/foreign-campaign-session`;
+
+		store.seedRecord(
+			foreignCampaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "foreign-campaign",
+				title: "Foreign Campaign",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "draft",
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			sessionRef,
+			{
+				$type: COLLECTIONS.session,
+				scenarioLabel: "Existing Session",
+				role: "gm",
+				playedAt: "2026-04-22T10:00:00.000Z",
+				visibility: "draft",
+				createdAt: "2026-04-22T10:00:00.000Z",
+				updatedAt: "2026-04-22T10:00:00.000Z",
+			},
+			"2026-04-22T10:00:00.000Z",
+			"2026-04-22T10:00:00.000Z",
+		);
+
+		const createResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.create`,
+			{
+				role: "gm",
+				playedAt: "2026-04-22T11:00:00.000Z",
+				scenarioLabel: "Foreign Campaign Attempt",
+				campaignRef: foreignCampaignRef,
+			},
+			writerHeaders,
+		);
+		expect(createResponse.status).toBe(200);
+		const createPayload = await createResponse.json();
+		expect(createPayload.resultKind).toBe("rejected");
+		expect(createPayload.reasonCode).toBe("forbidden-owner-mismatch");
+
+		const updateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.update`,
+			{
+				sessionRef,
+				campaignRef: foreignCampaignRef,
+			},
+			writerHeaders,
+		);
+		expect(updateResponse.status).toBe(200);
+		const updatePayload = await updateResponse.json();
+		expect(updatePayload.resultKind).toBe("rejected");
+		expect(updatePayload.reasonCode).toBe("forbidden-owner-mismatch");
+	});
+
+	test("returns mutationAck rejects instead of 404 for stale rule profile refs", async () => {
+		const { app } = createTestApp();
+		const writerHeaders = authHeaders();
+
+		const houseCreateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.house.create`,
+			{
+				title: "Broken Default Profiles House",
+				defaultRuleProfileRefs: [
+					`at://${DID}/${COLLECTIONS.ruleProfile}/missing-default-profile`,
+				],
+			},
+			writerHeaders,
+		);
+		expect(houseCreateResponse.status).toBe(200);
+		const houseCreatePayload = await houseCreateResponse.json();
+		expect(houseCreatePayload.resultKind).toBe("rejected");
+		expect(houseCreatePayload.reasonCode).toBe("invalid-schema-link");
+
+		const campaignCreateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.create`,
+			{
+				title: "Broken Overlay Campaign",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sharedRuleProfileRefs: [
+					`at://${DID}/${COLLECTIONS.ruleProfile}/missing-overlay-profile`,
+				],
+			},
+			writerHeaders,
+		);
+		expect(campaignCreateResponse.status).toBe(200);
+		const campaignCreatePayload = await campaignCreateResponse.json();
+		expect(campaignCreatePayload.resultKind).toBe("rejected");
+		expect(campaignCreatePayload.reasonCode).toBe("invalid-schema-link");
+	});
+
+	test("rejects detached characterSheet refs for sheet update and rebase", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const branchRef = `at://${DID}/${COLLECTIONS.characterBranch}/current-head-branch`;
+		const detachedSheetRef = `at://${DID}/${COLLECTIONS.characterSheet}/detached-sheet`;
+		const currentSheetRef = `at://${DID}/${COLLECTIONS.characterSheet}/current-sheet`;
+		const schemaRef = `at://${DID}/${COLLECTIONS.characterSheetSchema}/current-schema`;
+
+		store.seedRecord(
+			schemaRef,
+			{
+				$type: COLLECTIONS.characterSheetSchema,
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Current Schema",
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				fieldDefs: [],
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			detachedSheetRef,
+			{
+				$type: COLLECTIONS.characterSheet,
+				ownerDid: DID,
+				sheetSchemaRef: schemaRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				displayName: "Detached Sheet",
+				stats: { power: 1 },
+				version: 1,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			currentSheetRef,
+			{
+				$type: COLLECTIONS.characterSheet,
+				ownerDid: DID,
+				sheetSchemaRef: schemaRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				displayName: "Current Sheet",
+				stats: { power: 2 },
+				version: 1,
+				createdAt: "2026-04-22T00:00:01.000Z",
+				updatedAt: "2026-04-22T00:00:01.000Z",
+			},
+			"2026-04-22T00:00:01.000Z",
+			"2026-04-22T00:00:01.000Z",
+		);
+		store.seedRecord(
+			branchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				ownerDid: DID,
+				sheetRef: currentSheetRef,
+				branchKind: "main",
+				branchLabel: "Current Head Branch",
+				visibility: "draft",
+				revision: 2,
+				createdAt: "2026-04-22T00:00:01.000Z",
+				updatedAt: "2026-04-22T00:00:01.000Z",
+			},
+			"2026-04-22T00:00:01.000Z",
+			"2026-04-22T00:00:01.000Z",
+		);
+
+		const updateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.updateSheet`,
+			{
+				characterSheetRef: detachedSheetRef,
+				expectedVersion: 1,
+				displayName: "Detached Sheet Updated",
+			},
+			writerHeaders,
+		);
+		expect(updateResponse.status).toBe(200);
+		const updatePayload = await updateResponse.json();
+		expect(updatePayload.resultKind).toBe("rebase-needed");
+
+		const rebaseResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.rebaseSheet`,
+			{
+				characterSheetRef: detachedSheetRef,
+				expectedVersion: 1,
+				targetSheetSchemaRef: schemaRef,
+			},
+			writerHeaders,
+		);
+		expect(rebaseResponse.status).toBe(200);
+		const rebasePayload = await rebaseResponse.json();
+		expect(rebasePayload.resultKind).toBe("rebase-needed");
+	});
+
 	test("returns repair-needed when session.update keeps a stale scenario ref", async () => {
 		const { app, store } = createTestApp();
 		const writerHeaders = authHeaders();

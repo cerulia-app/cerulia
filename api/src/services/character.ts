@@ -242,6 +242,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 		};
 	}
 
+	async function loadCurrentHeadBranchForSheet(
+		callerDid: string,
+		sheetRef: string,
+	): Promise<StoredRecord<AppCeruliaCoreCharacterBranch.Main> | null> {
+		const branches =
+			await runtime.store.listRecords<AppCeruliaCoreCharacterBranch.Main>(
+				COLLECTIONS.characterBranch,
+				callerDid,
+			);
+
+		return branches.find((branch) => branch.value.sheetRef === sheetRef) ?? null;
+	}
+
 	async function resolvedBranchStats(
 		sheet: AppCeruliaCoreCharacterSheet.Main,
 		advancements: StoredRecord<AppCeruliaCoreCharacterAdvancement.Main>[],
@@ -404,6 +417,22 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				return rebaseNeeded("characterSheet version is stale");
 			}
 
+			const currentHeadBranch = await loadCurrentHeadBranchForSheet(
+				callerDid,
+				input.characterSheetRef,
+			);
+			if (!currentHeadBranch) {
+				return rebaseNeeded(
+					"characterSheetRef is no longer the current head for any branch",
+				);
+			}
+			if (currentHeadBranch.value.retiredAt) {
+				return rejected(
+					"terminal-state-readonly",
+					"retired branches are read-only",
+				);
+			}
+
 			if (
 				!(await blobBelongsToCaller(runtime, callerDid, input.portraitBlob))
 			) {
@@ -468,6 +497,22 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 			if (record.value.version !== input.expectedVersion) {
 				return rebaseNeeded("characterSheet version is stale");
+			}
+
+			const currentHeadBranch = await loadCurrentHeadBranchForSheet(
+				callerDid,
+				input.characterSheetRef,
+			);
+			if (!currentHeadBranch) {
+				return rebaseNeeded(
+					"characterSheetRef is no longer the current head for any branch",
+				);
+			}
+			if (currentHeadBranch.value.retiredAt) {
+				return rejected(
+					"terminal-state-readonly",
+					"retired branches are read-only",
+				);
 			}
 
 			const schema = await loadSchema(runtime, input.targetSheetSchemaRef);

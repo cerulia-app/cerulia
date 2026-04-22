@@ -10,6 +10,7 @@ import { accepted, rejected } from "../ack.js";
 import type { AuthContext } from "../auth.js";
 import { isOwnerReader } from "../auth.js";
 import { COLLECTIONS } from "../constants.js";
+import { ApiError } from "../errors.js";
 import { parseAtUri } from "../refs.js";
 import type { StoredRecord } from "../store/types.js";
 import type { ServiceRuntime } from "./runtime.js";
@@ -45,12 +46,21 @@ async function validateRuleProfileRefs(
 	}
 
 	for (const ref of refs) {
-		const record = await requireRecord<AppCeruliaCoreRuleProfile.Main>(
-			runtime,
-			ref,
-			COLLECTIONS.ruleProfile,
-			"ruleProfileRef",
-		);
+		let record: StoredRecord<AppCeruliaCoreRuleProfile.Main>;
+		try {
+			record = await requireRecord<AppCeruliaCoreRuleProfile.Main>(
+				runtime,
+				ref,
+				COLLECTIONS.ruleProfile,
+				"ruleProfileRef",
+			);
+		} catch (error) {
+			if (error instanceof ApiError && error.status === 404) {
+				return "sharedRuleProfileRefs must reference existing rule profiles";
+			}
+
+			throw error;
+		}
 
 		if (record.repoDid !== callerDid) {
 			return "sharedRuleProfileRefs must belong to the caller";
