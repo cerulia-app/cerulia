@@ -1,8 +1,6 @@
 ---
 name: "AppView Boundary Review"
-description: "Use when: Cerulia AppView が API や projection の truth を作り直していないか、draft や visibility や permission の意味をにじませていないかレビューしたいとき。"
 tools: [read, search]
-disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

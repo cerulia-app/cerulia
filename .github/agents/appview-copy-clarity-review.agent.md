@@ -1,8 +1,6 @@
 ---
 name: "AppView Copy Clarity Review"
-description: "Use when: Cerulia AppView の文章が専門的すぎないか、馴染みやすく分かりやすい表現か、ただし致命的な誤解を生まないかをレビューしたいとき。"
 tools: [read, search]
-disable-model-invocation: true
 user-invocable: false
 model: Gemini 3 Flash (Preview) (copilot)
 ---

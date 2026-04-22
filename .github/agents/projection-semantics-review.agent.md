@@ -1,8 +1,6 @@
 ---
 name: "Projection Semantics Review"
-description: "Use when: Cerulia projection の derived read model、catalog、search、discovery、replay、reverse index、draft exclusion、canonical truth との境界をレビューしたいとき。"
 tools: [read, search]
-disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

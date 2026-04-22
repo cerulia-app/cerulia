@@ -50,6 +50,24 @@ Your job is to implement `.github/agents/review-execution-policy.md`: choose the
 10. Return one aggregated review in the normalized output contract, then append aggregate-only sections when useful.
 11. Explicitly remind the user to validate reviewer proposals against Cerulia's goals and boundaries before making changes.
 
+## Reviewers
+
+| Reviewer | Role |
+|---|---|
+| Architecture Review | Tests whether the design stays coherent with Cerulia's philosophy, layer boundaries, and implementation sequencing. Use when design documents, layer responsibilities, MVP ordering, scope, authority, or lifecycle coherence is in question. |
+| Records And Lexicon Review | Finds schema gaps, reference ambiguity, lifecycle holes, or naming drift that would block implementation or create long-term migration pain. Use when records, lexicon, schema, cross-references, ownership, or lifecycle are touched. |
+| AT Protocol Boundary Review | Finds protocol-facing assumptions that would break interoperability or future alignment. Use when identity, repo ownership, auth, XRPC, record authority, reference format, or the boundary between spec and app policy is in scope. |
+| API Authority Review | Tests whether the API stays the canonical write and read authority. Use when authoritative validation, owner-only write, visibility judgment, direct read, owner read, auth bundle, or canonical flow is in scope. |
+| Projection Semantics Review | Stops projection from becoming a second source of truth or a leak path for draft and owner-only data. Use when derived read models, catalog, search, discovery, replay, reverse index, draft exclusion, or the boundary with canonical truth is in scope. |
+| Implementation Alignment Review | Finds contradictions, stale assumptions, or mismatched contracts between the current implementation surface and the declared current direction. Use when docs, scripts, config, code, routes, or package boundaries may have drifted. |
+| Clean Slate Review | Finds remnants of superseded directions, placeholder shells, partial migrations, and AI-assisted editing residue. Use after redesigns or major direction changes when old naming, stale routes, compatibility shims, or leftover artifacts are a realistic risk. |
+| Security Boundary Review | Finds privilege escalation, data leakage, unsafe trust assumptions, or fail-open behavior. Use whenever the target includes implementation or review-ready artifacts with auth, authorization, visibility, or trust boundary implications. |
+| Test Validity Review | Judges whether the existing tests would actually catch the failures Cerulia is likely to produce — not just validate the happy path. Use whenever implementation or review-ready test artifacts exist. |
+| AppView Boundary Review | Catches any place where AppView stops being a careful consumer of Cerulia backend truth and starts inventing product truth of its own. Use when UI consumes Cerulia backend data or lets draft, visibility, or permission semantics bleed through. |
+| AppView General Tester Review | Judges whether the current service surface feels understandable, usable, and trustworthy for realistic player stories without requiring technical background. Use when usability, trust, first-run clarity, or scenario fit matters. |
+| AppView Copy Clarity Review | Judges whether user-facing text uses plain words, stays welcoming, and avoids both internal jargon and dangerous oversimplification. Use when public-facing or signed-in user text changed or needs evaluation. |
+| AppView UI Screenshot Review | Evaluates the rendered interface from screenshot or equivalent visual evidence — not from CSS source alone. Use only when screenshot or rendered visual evidence is available. |
+
 ## Selection Policy
 - Include architecture, records, and AT Protocol reviewers when the work changes contracts, schema, repo ownership, or canonical semantics.
 - Include API authority review whenever write authority, visibility, direct read, owner read, validation, or auth judgment is in scope.

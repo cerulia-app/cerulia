@@ -1,8 +1,6 @@
 ---
 name: "Test Validity Review"
-description: "Use when: Cerulia の tests が本当に壊れ方を検出できるか、happy path だけで false confidence を作っていないかをレビューしたいとき。"
 tools: [read, search, execute]
-disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---

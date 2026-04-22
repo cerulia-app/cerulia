@@ -1,8 +1,6 @@
 ---
 name: "AppView General Tester Review"
-description: "Use when: Cerulia を完全にユーザー目線で使ったときの使いやすさ、安心感、導線、複数の利用ストーリーへの適合をレビューしたいとき。"
 tools: [read, search]
-disable-model-invocation: true
 user-invocable: false
 model: Gemini 3 Flash (Preview) (copilot)
 ---

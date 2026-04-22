@@ -1,8 +1,6 @@
 ---
 name: "Architecture Review"
-description: "Use when: Cerulia の設計文書、境界、責務、MVP 順序、scope、authority、lifecycle の整合性をレビューしたいとき。"
 tools: [read, search]
-disable-model-invocation: true
 user-invocable: false
 model: GPT-5.4 mini (copilot)
 ---
