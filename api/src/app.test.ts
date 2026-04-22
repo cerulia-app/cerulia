@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { lexicons, type AppCeruliaCoreCharacterBranch } from "@cerulia/protocol";
+import {
+	lexicons,
+	type AppCeruliaCoreCharacterBranch,
+	type AppCeruliaCoreSession,
+} from "@cerulia/protocol";
 import { createApiApp, type ApiAppStore } from "./app.js";
 import {
 	createSessionAuthResolver,
@@ -228,6 +232,32 @@ function createTestApp<TStore extends ApiAppStore = SupportedMemoryRecordStore>(
 	const app = createApiApp({
 		store: resolvedStore,
 		authResolver: resolveHeaderAuthContext,
+	});
+
+	return {
+		app,
+		store: resolvedStore,
+	};
+}
+
+function createTestAppWithProjectionFeature(options: {
+	store?: ApiAppStore;
+	projectionIngestFeature: {
+		noteRepoDid(repoDid: string): Promise<void>;
+		replayKnownRepoDids?(): Promise<void>;
+	};
+}) {
+	const resolvedStore =
+		(options.store ?? new SupportedMemoryRecordStore()) as ApiAppStore;
+	const app = createApiApp({
+		store: resolvedStore,
+		authResolver: resolveHeaderAuthContext,
+		projectionIngestFeature: {
+			noteRepoDid: options.projectionIngestFeature.noteRepoDid,
+			replayKnownRepoDids:
+				options.projectionIngestFeature.replayKnownRepoDids ??
+				(async () => undefined),
+		},
 	});
 
 	return {
@@ -1008,6 +1038,390 @@ describe("createApiApp", () => {
 			await actorViewAfterConversionResponse.json();
 		expect(actorViewAfterConversion.publicBranches).toHaveLength(2);
 		expect(actorViewAfterConversion.publicBranches[0].rulesetNsid).toBeDefined();
+	});
+
+	test("omits structured stats when the pinned schema is missing", async () => {
+		const { app, store } = createTestApp();
+		const branchRef = `at://${DID}/${COLLECTIONS.characterBranch}/schema-missing`;
+		const sheetRef = `at://${DID}/${COLLECTIONS.characterSheet}/schema-missing`;
+
+		store.seedRecord(
+			sheetRef,
+			{
+				$type: COLLECTIONS.characterSheet,
+				displayName: "Schema Missing Investigator",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef:
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				stats: { power: 3 },
+				version: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			branchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				sheetRef,
+				branchKind: "main",
+				branchLabel: "Schema Missing Branch",
+				visibility: "public",
+				revision: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+
+		const response = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.sheetSummary.displayName).toBe(
+			"Schema Missing Investigator",
+		);
+		expect(payload.sheetSummary.structuredStats).toBeUndefined();
+	});
+
+	test("keeps branch view available for owners when the current head sheet is missing", async () => {
+		const { app, store } = createTestApp();
+		const readerHeaders = authHeaders(DID, [AUTH_SCOPES.reader]);
+		const branchRef = `at://${DID}/${COLLECTIONS.characterBranch}/broken-head`;
+
+		store.seedRecord(
+			branchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				sheetRef: `at://${DID}/${COLLECTIONS.characterSheet}/missing-head`,
+				branchKind: "main",
+				branchLabel: "Broken Head Branch",
+				visibility: "public",
+				revision: 3,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+
+		const ownerResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+			readerHeaders,
+		);
+		expect(ownerResponse.status).toBe(200);
+		const ownerPayload = await ownerResponse.json();
+		expect(ownerPayload.branch.sheetRef).toBe(
+			`at://${DID}/${COLLECTIONS.characterSheet}/missing-head`,
+		);
+		expect(ownerPayload.sheet).toBeUndefined();
+
+		const publicResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+		);
+		expect(publicResponse.status).toBe(200);
+		const publicPayload = await publicResponse.json();
+		expect(publicPayload.branchSummary.branchRef).toBe(branchRef);
+		expect(publicPayload.sheetSummary).toBeUndefined();
+	});
+
+	test("omits unresolved public branch rows from actor profile view", async () => {
+		const { app, store } = createTestApp();
+		const validSheetRef = `at://${DID}/${COLLECTIONS.characterSheet}/valid-sheet`;
+		const validBranchRef = `at://${DID}/${COLLECTIONS.characterBranch}/valid-branch`;
+		const brokenBranchRef = `at://${DID}/${COLLECTIONS.characterBranch}/broken-branch`;
+
+		store.seedRecord(
+			validSheetRef,
+			{
+				$type: COLLECTIONS.characterSheet,
+				displayName: "Visible Investigator",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				stats: { power: 2 },
+				version: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			validBranchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				sheetRef: validSheetRef,
+				branchKind: "main",
+				branchLabel: "Visible Branch",
+				visibility: "public",
+				revision: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			brokenBranchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				sheetRef: `at://${DID}/${COLLECTIONS.characterSheet}/missing-sheet`,
+				branchKind: "campaign-fork",
+				branchLabel: "Broken Branch",
+				visibility: "public",
+				revision: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:01.000Z",
+				updatedAt: "2026-04-22T00:00:01.000Z",
+			},
+			"2026-04-22T00:00:01.000Z",
+			"2026-04-22T00:00:01.000Z",
+		);
+
+		const response = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.actor.getProfileView?did=${encodeURIComponent(DID)}`,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.publicBranches).toHaveLength(1);
+		expect(payload.publicBranches[0].characterBranchRef).toBe(validBranchRef);
+	});
+
+	test("omits missing overlay rows instead of failing campaign views", async () => {
+		const { app, store } = createTestApp();
+		const readerHeaders = authHeaders(DID, [AUTH_SCOPES.reader]);
+		const campaignRef = `at://${DID}/${COLLECTIONS.campaign}/overlay-filter`;
+		const validRuleProfileRef = `at://${DID}/${COLLECTIONS.ruleProfile}/overlay-valid`;
+
+		store.seedRecord(
+			validRuleProfileRef,
+			{
+				$type: COLLECTIONS.ruleProfile,
+				profileTitle: "Visible Overlay",
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				scopeKind: "campaign-shared",
+				scopeRef: `at://${DID}/${COLLECTIONS.house}/overlay-house`,
+				rulesPatchUri: "https://example.com/rules/visible-overlay",
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			campaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "overlay-filter",
+				title: "Overlay Filter Campaign",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sharedRuleProfileRefs: [
+					validRuleProfileRef,
+					`at://${DID}/${COLLECTIONS.ruleProfile}/overlay-missing`,
+				],
+				visibility: "public",
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+
+		const ownerResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
+			readerHeaders,
+		);
+		expect(ownerResponse.status).toBe(200);
+		const ownerPayload = await ownerResponse.json();
+		expect(ownerPayload.ruleOverlay).toHaveLength(1);
+		expect(ownerPayload.ruleOverlay[0].profileTitle).toBe("Visible Overlay");
+
+		const publicResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
+		);
+		expect(publicResponse.status).toBe(200);
+		const publicPayload = await publicResponse.json();
+		expect(publicPayload.ruleOverlaySummary.ruleProfiles).toHaveLength(1);
+		expect(publicPayload.ruleOverlaySummary.ruleProfiles[0].profileTitle).toBe(
+			"Visible Overlay",
+		);
+	});
+
+	test("treats unresolved recommended schema refs as browse-only in scenario detail", async () => {
+		const { app, store } = createTestApp();
+		const scenarioRef = `at://${DID}/${COLLECTIONS.scenario}/browse-only`;
+
+		store.seedRecord(
+			scenarioRef,
+			{
+				$type: COLLECTIONS.scenario,
+				title: "Browse Only Scenario",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				recommendedSheetSchemaRef:
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				sourceCitationUri: "https://example.com/scenario/browse-only",
+				summary: "Schema resolution failed, but the route should stay readable.",
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+
+		const response = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.getView?scenarioRef=${encodeURIComponent(scenarioRef)}`,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.scenarioSummary.title).toBe("Browse Only Scenario");
+		expect(payload.scenarioSummary.hasRecommendedSheetSchema).toBe(false);
+	});
+
+	test("returns repair-needed when session.update keeps a stale scenario ref", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const sessionRef = `at://${DID}/${COLLECTIONS.session}/repair-needed-session`;
+
+		store.seedRecord(
+			sessionRef,
+			{
+				$type: COLLECTIONS.session,
+				scenarioRef: `at://${DID}/${COLLECTIONS.scenario}/missing-scenario`,
+				role: "gm",
+				playedAt: "2026-04-22T10:00:00.000Z",
+				visibility: "draft",
+				createdAt: "2026-04-22T10:00:00.000Z",
+				updatedAt: "2026-04-22T10:00:00.000Z",
+			},
+			"2026-04-22T10:00:00.000Z",
+			"2026-04-22T10:00:00.000Z",
+		);
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.update`,
+			{
+				sessionRef,
+				outcomeSummary: "Still stale",
+			},
+			writerHeaders,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("rejected");
+		expect(payload.reasonCode).toBe("repair-needed");
+	});
+
+	test("allows session.update to repair stale refs in a single request", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const sessionRef = `at://${DID}/${COLLECTIONS.session}/repair-session`;
+		const campaignRef = `at://${DID}/${COLLECTIONS.campaign}/repair-campaign`;
+
+		store.seedRecord(
+			campaignRef,
+			{
+				$type: COLLECTIONS.campaign,
+				campaignId: "repair-campaign",
+				title: "Repair Campaign",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				visibility: "draft",
+				createdAt: "2026-04-22T10:00:00.000Z",
+				updatedAt: "2026-04-22T10:00:00.000Z",
+			},
+			"2026-04-22T10:00:00.000Z",
+			"2026-04-22T10:00:00.000Z",
+		);
+		store.seedRecord(
+			sessionRef,
+			{
+				$type: COLLECTIONS.session,
+				scenarioRef: `at://${DID}/${COLLECTIONS.scenario}/missing-scenario`,
+				campaignRef: `at://${DID}/${COLLECTIONS.campaign}/missing-campaign`,
+				role: "gm",
+				playedAt: "2026-04-22T10:00:00.000Z",
+				visibility: "draft",
+				createdAt: "2026-04-22T10:00:00.000Z",
+				updatedAt: "2026-04-22T10:00:00.000Z",
+			},
+			"2026-04-22T10:00:00.000Z",
+			"2026-04-22T10:00:00.000Z",
+		);
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.update`,
+			{
+				sessionRef,
+				scenarioLabel: "Repaired Label",
+				campaignRef,
+			},
+			writerHeaders,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("accepted");
+
+		const updated = await store.getRecord<AppCeruliaCoreSession.Main>(sessionRef);
+		expect(updated?.value.scenarioRef).toBeUndefined();
+		expect(updated?.value.scenarioLabel).toBe("Repaired Label");
+		expect(updated?.value.campaignRef).toBe(campaignRef);
+	});
+
+	test("returns repair-needed when recording an advancement on a broken-head branch", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const branchRef = `at://${DID}/${COLLECTIONS.characterBranch}/broken-head-write`;
+
+		store.seedRecord(
+			branchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				sheetRef: `at://${DID}/${COLLECTIONS.characterSheet}/missing-write-head`,
+				branchKind: "main",
+				branchLabel: "Broken Write Branch",
+				visibility: "draft",
+				revision: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T10:00:00.000Z",
+				updatedAt: "2026-04-22T10:00:00.000Z",
+			},
+			"2026-04-22T10:00:00.000Z",
+			"2026-04-22T10:00:00.000Z",
+		);
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.recordAdvancement`,
+			{
+				characterBranchRef: branchRef,
+				advancementKind: "milestone",
+				deltaPayload: { power: 1 },
+				effectiveAt: "2026-04-22T11:00:00.000Z",
+			},
+			writerHeaders,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("rejected");
+		expect(payload.reasonCode).toBe("repair-needed");
 	});
 
 	test("keeps session.list ordering stable for equal playedAt timestamps", async () => {
@@ -2926,6 +3340,102 @@ describe("createApiApp", () => {
 		expect(houseView.sessionSummaries).toHaveLength(1);
 		expect(houseView.sessionSummaries[0].sessionRef).toBe(publicSessionRef);
 		expect(houseView.sessionSummaries[0].externalArchiveUris).toBeUndefined();
+	});
+
+	test("does not wait for optional projection ingest on accepted scenario writes", async () => {
+		const { app } = createTestAppWithProjectionFeature({
+			projectionIngestFeature: {
+				async noteRepoDid() {
+					await new Promise(() => undefined);
+				},
+			},
+		});
+
+		const response = await Promise.race([
+			postJson(
+				app,
+				`${XRPC_PREFIX}/app.cerulia.scenario.create`,
+				{
+					title: "Projection Timeout Scenario",
+					rulesetNsid: "app.cerulia.rules.coc7",
+					sourceCitationUri:
+						"https://example.com/scenario/projection-timeout",
+					summary: "Projection should not block this write.",
+				},
+			),
+			new Promise<Response>((_, reject) => {
+				setTimeout(
+					() => reject(new Error("projection ingest blocked response")),
+					200,
+				);
+			}),
+		]);
+
+		expect(response.status).toBe(200);
+		const ack = await response.json();
+		expect(ack.resultKind).toBe("accepted");
+	});
+
+	test("notifies optional projection ingest for accepted scenario create and update", async () => {
+		const notifiedRepoDids: string[] = [];
+		const { app } = createTestAppWithProjectionFeature({
+			projectionIngestFeature: {
+				async noteRepoDid(repoDid: string) {
+					notifiedRepoDids.push(repoDid);
+				},
+			},
+		});
+
+		const createResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.create`,
+			{
+				title: "Projection Notify Scenario",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sourceCitationUri: "https://example.com/scenario/projection-notify",
+				summary: "Projection notification should fire.",
+			},
+		);
+		const createAck = await createResponse.json();
+		expect(createAck.resultKind).toBe("accepted");
+
+		const scenarioRef = createAck.emittedRecordRefs[0];
+		const updateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.update`,
+			{
+				scenarioRef,
+				summary: "Projection notification should also fire on update.",
+			},
+		);
+		const updateAck = await updateResponse.json();
+		expect(updateAck.resultKind).toBe("accepted");
+		expect(notifiedRepoDids).toEqual([DID, DID]);
+	});
+
+	test("does not notify optional projection ingest for rejected scenario writes", async () => {
+		const notifiedRepoDids: string[] = [];
+		const { app } = createTestAppWithProjectionFeature({
+			projectionIngestFeature: {
+				async noteRepoDid(repoDid: string) {
+					notifiedRepoDids.push(repoDid);
+				},
+			},
+		});
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.create`,
+			{
+				title: "Rejected Projection Scenario",
+				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/schema`,
+				sourceCitationUri: "https://example.com/scenario/rejected-projection",
+				summary: "This write should be rejected before notification.",
+			},
+		);
+		const payload = await response.json();
+		expect(payload.resultKind).toBe("rejected");
+		expect(notifiedRepoDids).toEqual([]);
 	});
 
 	test("omits public sessions whose parent campaign is draft from public house view", async () => {
