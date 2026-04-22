@@ -115,6 +115,16 @@ describe("createWorkerApp", () => {
 		);
 	});
 
+	test("rejects credential-bearing public base URLs", async () => {
+		const credentialWorkerEnv = await createWorkerEnv();
+		credentialWorkerEnv.env.CERULIA_PUBLIC_BASE_URL =
+			"https://user:secret@cerulia.example.com";
+
+		await expect(createWorkerApp(credentialWorkerEnv.env)).rejects.toThrow(
+			"CERULIA_PUBLIC_BASE_URL must not include credentials",
+		);
+	});
+
 	test("reads browser session auth from D1-backed worker stores", async () => {
 		workerEnv.rawDb
 			.query(

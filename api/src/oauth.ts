@@ -91,6 +91,13 @@ function normalizeBaseUrl(value: string): URL {
 			500,
 		);
 	}
+	if (url.username || url.password) {
+		throw new ApiError(
+			"InvalidRequest",
+			"CERULIA_PUBLIC_BASE_URL must not include credentials",
+			500,
+		);
+	}
 
 	if (url.pathname !== "/" && url.pathname !== "") {
 		throw new ApiError(
