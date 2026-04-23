@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
 	lexicons,
+	toCurrentCeruliaNsid,
 	type AppCeruliaCoreCharacterBranch,
 	type AppCeruliaCoreScenario,
 	type AppCeruliaCoreSession,
@@ -300,7 +301,9 @@ function expectAccepted(data: {
 }
 
 function expectValidXrpcOutput(lexiconId: string, payload: unknown) {
-	expect(() => lexicons.assertValidXrpcOutput(lexiconId, payload)).not.toThrow();
+	expect(() =>
+		lexicons.assertValidXrpcOutput(toCurrentCeruliaNsid(lexiconId), payload),
+	).not.toThrow();
 }
 
 describe("createApiApp", () => {
@@ -671,7 +674,7 @@ describe("createApiApp", () => {
 
 		const createSchemaResponse = await postJson(
 			app,
-			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			`${XRPC_PREFIX}/app.cerulia.dev.rule.createSheetSchema`,
 			{
 				baseRulesetNsid: "app.cerulia.rules.coc7",
 				schemaVersion: "1.0.0",
@@ -715,7 +718,7 @@ describe("createApiApp", () => {
 
 		const getHomeResponse = await getJson(
 			app,
-			`${XRPC_PREFIX}/app.cerulia.character.getHome`,
+			`${XRPC_PREFIX}/app.cerulia.dev.character.getHome`,
 			authHeaders(DID, [AUTH_SCOPES.reader]),
 		);
 		const homePayload = await getHomeResponse.json();
@@ -758,6 +761,230 @@ describe("createApiApp", () => {
 			"app.cerulia.session.getView",
 			publicSessionPayload,
 		);
+	});
+
+	test("accepts mixed rules and ruleset spellings for schema-linked writes", async () => {
+		const { app } = createTestApp();
+
+		const createSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Mixed Ruleset Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+		);
+		const createSchemaAck = await createSchemaResponse.json();
+		expectAccepted(createSchemaAck);
+		const [schemaRef] = createSchemaAck.emittedRecordRefs;
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.ruleset.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Mixed Ruleset Character",
+				stats: { power: 60 },
+			},
+		);
+		expectAccepted(await createSheetResponse.json());
+
+		const createScenarioResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.create`,
+			{
+				title: "Mixed Ruleset Scenario",
+				rulesetNsid: "app.cerulia.ruleset.coc7",
+				recommendedSheetSchemaRef: schemaRef,
+				sourceCitationUri: "https://example.com/scenarios/mixed-ruleset",
+			},
+		);
+		expectAccepted(await createScenarioResponse.json());
+	});
+
+	test("accepts bare auth scope names in the header shim", async () => {
+		const { app } = createTestApp();
+
+		const createSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.dev.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Header Shim Alias Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			authHeaders(DID, ["app.cerulia.authCoreWriter"]),
+		);
+		expect(createSchemaResponse.status).toBe(200);
+		expectAccepted(await createSchemaResponse.json());
+
+		const homeResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.dev.character.getHome`,
+			authHeaders(DID, ["app.cerulia.authCoreReader"]),
+		);
+		expect(homeResponse.status).toBe(200);
+	});
+
+	test("treats mixed scopeRef variants as the same rule-profile scope", async () => {
+		const { app } = createTestApp();
+
+		const campaignResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.campaign.create`,
+			{
+				title: "Mixed Scope Campaign",
+				rulesetNsid: "app.cerulia.rules.coc7",
+			},
+		);
+		const campaignAck = await campaignResponse.json();
+		expectAccepted(campaignAck);
+		const [campaignRef] = campaignAck.emittedRecordRefs;
+		const bareCampaignRef = campaignRef.replace(
+			"/app.cerulia.dev.core.campaign/",
+			"/app.cerulia.core.campaign/",
+		);
+
+		const createProfileResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createProfile`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				profileTitle: "Mixed Scope Profile",
+				scopeKind: "campaign-shared",
+				scopeRef: bareCampaignRef,
+				rulesPatchUri: "https://example.com/rules/mixed-scope.json",
+			},
+		);
+		expectAccepted(await createProfileResponse.json());
+
+		const listProfilesResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.listProfiles?scopeRef=${encodeURIComponent(campaignRef)}`,
+			authHeaders(DID, [AUTH_SCOPES.reader]),
+		);
+		expect(listProfilesResponse.status).toBe(200);
+		const listProfilesPayload = await listProfilesResponse.json();
+		expect(listProfilesPayload.items).toHaveLength(1);
+	});
+
+	test("treats mixed branchRef variants as the same branch for branch views", async () => {
+		const { app, store } = createTestApp();
+
+		const createSchemaResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+			{
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Branch Alias Schema",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+		);
+		const createSchemaAck = await createSchemaResponse.json();
+		expectAccepted(createSchemaAck);
+		const [schemaRef] = createSchemaAck.emittedRecordRefs;
+
+		const createSheetResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaRef: schemaRef,
+				displayName: "Branch Alias Character",
+				stats: { power: 55 },
+				initialBranchVisibility: "public",
+			},
+		);
+		const createSheetAck = await createSheetResponse.json();
+		expectAccepted(createSheetAck);
+		const [, branchRef] = createSheetAck.emittedRecordRefs;
+		const bareBranchRef = branchRef.replace(
+			"/app.cerulia.dev.core.characterBranch/",
+			"/app.cerulia.core.characterBranch/",
+		);
+
+		const createSessionResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.session.create`,
+			{
+				role: "pl",
+				playedAt: "2026-04-18T00:00:00.000Z",
+				scenarioLabel: "Branch Alias Session",
+				characterBranchRef: bareBranchRef,
+				visibility: "public",
+			},
+		);
+		const createSessionAck = await createSessionResponse.json();
+		expectAccepted(createSessionAck);
+		const [sessionRef] = createSessionAck.emittedRecordRefs;
+
+		store.seedRecord(
+			`at://${DID}/${COLLECTIONS.characterAdvancement}/adv-bare-alias`,
+			{
+				$type: COLLECTIONS.characterAdvancement,
+				characterBranchRef: bareBranchRef,
+				advancementKind: "milestone",
+				deltaPayload: { power: 56 },
+				sessionRef,
+				effectiveAt: "2026-04-18T01:00:00.000Z",
+				createdAt: "2026-04-18T01:00:00.000Z",
+			},
+			"2026-04-18T01:00:00.000Z",
+			"2026-04-18T01:00:00.000Z",
+		);
+		store.seedRecord(
+			`at://${DID}/${COLLECTIONS.characterConversion}/conv-bare-alias`,
+			{
+				$type: COLLECTIONS.characterConversion,
+				characterBranchRef: bareBranchRef,
+				sourceSheetRef: createSheetAck.emittedRecordRefs[0],
+				sourceSheetVersion: 1,
+				sourceRulesetNsid: "app.cerulia.rules.coc7",
+				targetSheetRef: createSheetAck.emittedRecordRefs[0],
+				targetSheetVersion: 1,
+				targetRulesetNsid: "app.cerulia.rules.coc7",
+				convertedAt: "2026-04-18T02:00:00.000Z",
+			},
+			"2026-04-18T02:00:00.000Z",
+			"2026-04-18T02:00:00.000Z",
+		);
+
+		const branchViewResponse = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+			authHeaders(DID, [AUTH_SCOPES.reader]),
+		);
+		expect(branchViewResponse.status).toBe(200);
+		const branchViewPayload = await branchViewResponse.json();
+		expect(branchViewPayload.recentSessions).toHaveLength(1);
+		expect(branchViewPayload.advancements).toHaveLength(1);
+		expect(branchViewPayload.conversions).toHaveLength(1);
 	});
 
 	test("supports the core character, session, and public profile flows", async () => {
@@ -1667,7 +1894,14 @@ describe("createApiApp", () => {
 				title: "Current Schema",
 				ownerDid: DID,
 				createdAt: "2026-04-22T00:00:00.000Z",
-				fieldDefs: [],
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
 			},
 			"2026-04-22T00:00:00.000Z",
 			"2026-04-22T00:00:00.000Z",
@@ -1748,6 +1982,98 @@ describe("createApiApp", () => {
 		expect(rebaseResponse.status).toBe(200);
 		const rebasePayload = await rebaseResponse.json();
 		expect(rebasePayload.resultKind).toBe("rebase-needed");
+	});
+
+	test("accepts bare/current sheetRef variants for current-head updates and rebases", async () => {
+		const { app, store } = createTestApp();
+		const writerHeaders = authHeaders();
+		const branchRef = `at://${DID}/${COLLECTIONS.characterBranch}/current-head-branch`;
+		const currentSheetRef = `at://${DID}/${COLLECTIONS.characterSheet}/current-sheet`;
+		const bareCurrentSheetRef = currentSheetRef.replace(
+			"/app.cerulia.dev.core.characterSheet/",
+			"/app.cerulia.core.characterSheet/",
+		);
+		const schemaRef = `at://${DID}/${COLLECTIONS.characterSheetSchema}/current-schema`;
+
+		store.seedRecord(
+			schemaRef,
+			{
+				$type: COLLECTIONS.characterSheetSchema,
+				baseRulesetNsid: "app.cerulia.rules.coc7",
+				schemaVersion: "1.0.0",
+				title: "Current Schema",
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				fieldDefs: [
+					{
+						fieldId: "power",
+						label: "POW",
+						fieldType: "integer",
+						required: true,
+					},
+				],
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			currentSheetRef,
+			{
+				$type: COLLECTIONS.characterSheet,
+				ownerDid: DID,
+				sheetSchemaRef: schemaRef,
+				rulesetNsid: "app.cerulia.rules.coc7",
+				displayName: "Current Sheet",
+				stats: { power: 2 },
+				version: 1,
+				createdAt: "2026-04-22T00:00:01.000Z",
+				updatedAt: "2026-04-22T00:00:01.000Z",
+			},
+			"2026-04-22T00:00:01.000Z",
+			"2026-04-22T00:00:01.000Z",
+		);
+		store.seedRecord(
+			branchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				ownerDid: DID,
+				sheetRef: currentSheetRef,
+				branchKind: "main",
+				branchLabel: "Current Head Branch",
+				visibility: "draft",
+				revision: 2,
+				createdAt: "2026-04-22T00:00:01.000Z",
+				updatedAt: "2026-04-22T00:00:01.000Z",
+			},
+			"2026-04-22T00:00:01.000Z",
+			"2026-04-22T00:00:01.000Z",
+		);
+
+		const updateResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.updateSheet`,
+			{
+				characterSheetRef: bareCurrentSheetRef,
+				expectedVersion: 1,
+				displayName: "Current Sheet Updated",
+			},
+			writerHeaders,
+		);
+		expect(updateResponse.status).toBe(200);
+		expect((await updateResponse.json()).resultKind).toBe("accepted");
+
+		const rebaseResponse = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.rebaseSheet`,
+			{
+				characterSheetRef: bareCurrentSheetRef,
+				expectedVersion: 2,
+				targetSheetSchemaRef: schemaRef,
+			},
+			writerHeaders,
+		);
+		expect(rebaseResponse.status).toBe(200);
+		expect((await rebaseResponse.json()).resultKind).toBe("accepted");
 	});
 
 	test("returns repair-needed when session.update keeps a stale scenario ref", async () => {

@@ -150,8 +150,8 @@ describe("createWorkerApp", () => {
 		expect(await response.json()).toEqual({
 			did: "did:plc:alice",
 			scopes: [
-				"app.cerulia.authCoreReader",
-				"app.cerulia.authCoreWriter",
+				"app.cerulia.dev.authCoreReader",
+				"app.cerulia.dev.authCoreWriter",
 			],
 		});
 	});

@@ -13,9 +13,11 @@ import { ApiError } from "../errors.js";
 import type { ServiceRuntime } from "./runtime.js";
 import {
 	assertCredentialFreeUriList,
+	areEquivalentRecordUris,
 	createTypedRecord,
 	getOptionalRecord,
 	hasSameOwner,
+	listRecordsByCollectionAlias,
 	requireRecord,
 	resolveScenarioLabel,
 	updateTypedRecord,
@@ -29,7 +31,7 @@ function sessionSummary(
 	scenarioLabel?: string,
 ): AppCeruliaSessionGetView.SessionSummary {
 	return {
-		$type: "app.cerulia.session.getView#sessionSummary",
+		$type: "app.cerulia.dev.session.getView#sessionSummary",
 		sessionRef,
 		role: session.role,
 		playedAt: session.playedAt,
@@ -256,7 +258,7 @@ export function createSessionService(runtime: ServiceRuntime) {
 
 			if (
 				currentScenarioRefIsStale &&
-				nextScenarioRef === record.value.scenarioRef
+				areEquivalentRecordUris(nextScenarioRef, record.value.scenarioRef)
 			) {
 				return rejected(
 					"repair-needed",
@@ -266,7 +268,7 @@ export function createSessionService(runtime: ServiceRuntime) {
 
 			if (
 				currentCampaignRefIsStale &&
-				nextCampaignRef === record.value.campaignRef
+				areEquivalentRecordUris(nextCampaignRef, record.value.campaignRef)
 			) {
 				return rejected(
 					"repair-needed",
@@ -386,7 +388,8 @@ export function createSessionService(runtime: ServiceRuntime) {
 			cursor: string | undefined,
 		): Promise<AppCeruliaSessionList.OutputSchema> {
 			const records =
-				await runtime.store.listRecords<AppCeruliaCoreSession.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreSession.Main>(
+					runtime,
 					COLLECTIONS.session,
 					callerDid,
 				);
@@ -402,7 +405,7 @@ export function createSessionService(runtime: ServiceRuntime) {
 			const items = await Promise.all(
 				page.items.map(
 					async (record): Promise<AppCeruliaSessionList.SessionListItem> => ({
-						$type: "app.cerulia.session.list#sessionListItem",
+						$type: "app.cerulia.dev.session.list#sessionListItem",
 						sessionRef: record.uri,
 						role: record.value.role,
 						playedAt: record.value.playedAt,

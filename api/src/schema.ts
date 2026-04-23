@@ -232,7 +232,7 @@ function toStatValue(
 		case "integer":
 			return typeof value === "number"
 				? {
-						$type: "app.cerulia.character.getBranchView#statValue",
+						$type: "app.cerulia.dev.character.getBranchView#statValue",
 						valueKind: "integer",
 						numberValue: value,
 					}
@@ -241,7 +241,7 @@ function toStatValue(
 		case "string":
 			return typeof value === "string"
 				? {
-						$type: "app.cerulia.character.getBranchView#statValue",
+						$type: "app.cerulia.dev.character.getBranchView#statValue",
 						valueKind: "string",
 						textValue: value,
 					}
@@ -250,7 +250,7 @@ function toStatValue(
 		case "boolean":
 			return typeof value === "boolean"
 				? {
-						$type: "app.cerulia.character.getBranchView#statValue",
+						$type: "app.cerulia.dev.character.getBranchView#statValue",
 						valueKind: "boolean",
 						boolValue: value,
 					}
@@ -259,7 +259,7 @@ function toStatValue(
 		case "enum":
 			return typeof value === "string"
 				? {
-						$type: "app.cerulia.character.getBranchView#statValue",
+						$type: "app.cerulia.dev.character.getBranchView#statValue",
 						valueKind: "enum",
 						enumValue: value,
 					}
@@ -325,7 +325,7 @@ function flattenField(
 			}
 
 			entries.push({
-				$type: "app.cerulia.character.getBranchView#statEntry",
+				$type: "app.cerulia.dev.character.getBranchView#statEntry",
 				fieldId: path,
 				label: field.label,
 				value: statValue,

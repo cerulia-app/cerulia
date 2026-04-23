@@ -38,7 +38,19 @@ describe("Cerulia NSID compatibility", () => {
 		const current = parseCeruliaNsid("app.cerulia.dev.ruleset.coc7");
 
 		expect(bare?.currentNsid).toBe("app.cerulia.dev.rules.coc7");
-		expect(current?.bareNsid).toBe("app.cerulia.ruleset.coc7");
+		expect(current?.bareNsid).toBe("app.cerulia.rules.coc7");
+		expect(
+			areEquivalentCeruliaNsids(
+				"app.cerulia.rules.coc7",
+				"app.cerulia.dev.ruleset.coc7",
+			),
+		).toBe(true);
+		expect(getCeruliaNsidAliases("app.cerulia.dev.ruleset.coc7")).toEqual([
+			"app.cerulia.dev.rules.coc7",
+			"app.cerulia.rules.coc7",
+			"app.cerulia.dev.ruleset.coc7",
+			"app.cerulia.ruleset.coc7",
+		]);
 	});
 
 	test("leaves external NSIDs untouched", () => {

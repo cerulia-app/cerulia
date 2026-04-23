@@ -1,6 +1,9 @@
 import {
 	AppCeruliaCoreScenario,
 	AppCeruliaScenarioList,
+	buildAtUri,
+	getCeruliaNsidAliases,
+	toCurrentCeruliaNsid,
  	validateById,
 } from "@cerulia/protocol";
 import { COLLECTIONS } from "../constants.js";
@@ -33,7 +36,10 @@ async function toCatalogEntry(
 	if (record.value.recommendedSheetSchemaRef) {
 		try {
 			hasRecommendedSheetSchema = Boolean(
-				await runtime.source.getRecord(record.value.recommendedSheetSchemaRef),
+				await getSourceRecordByUriAlias(
+					runtime,
+					record.value.recommendedSheetSchemaRef,
+				),
 			);
 		} catch {
 			hasRecommendedSheetSchema = false;
@@ -43,10 +49,57 @@ async function toCatalogEntry(
 	return {
 		scenarioRef: record.uri,
 		title: record.value.title,
-		rulesetNsid: record.value.rulesetNsid,
+		rulesetNsid: record.value.rulesetNsid
+			? toCurrentCeruliaNsid(record.value.rulesetNsid)
+			: undefined,
 		hasRecommendedSheetSchema,
 		summary: record.value.summary,
 	};
+}
+
+async function getSourceRecordByUriAlias<T>(
+	runtime: ScenarioCatalogRuntime,
+	uri: string,
+): Promise<StoredRecord<T> | null> {
+	const [prefix, rest] = uri.split("://");
+	if (prefix !== "at" || !rest) {
+		return runtime.source.getRecord<T>(uri);
+	}
+
+	const [repoDid, collection, rkey, ...extra] = rest.split("/");
+	if (!repoDid || !collection || !rkey || extra.length > 0) {
+		return runtime.source.getRecord<T>(uri);
+	}
+
+	for (const alias of getCeruliaNsidAliases(collection)) {
+		const record = await runtime.source.getRecord<T>(
+			buildAtUri(repoDid, alias, rkey),
+		);
+		if (record) {
+			return record;
+		}
+	}
+
+	return null;
+}
+
+async function listScenarioRecordsByCollectionAlias(
+	runtime: ScenarioCatalogRuntime,
+	repoDid: string,
+): Promise<StoredRecord<AppCeruliaCoreScenario.Main>[]> {
+	const merged = new Map<string, StoredRecord<AppCeruliaCoreScenario.Main>>();
+	for (const alias of getCeruliaNsidAliases(COLLECTIONS.scenario)) {
+		for (const record of await runtime.source.listRecords<AppCeruliaCoreScenario.Main>(
+			alias,
+			repoDid,
+		)) {
+			if (!merged.has(record.uri)) {
+				merged.set(record.uri, record);
+			}
+		}
+	}
+
+	return [...merged.values()];
 }
 
 async function resolveCurrentSchemaAvailability(
@@ -54,7 +107,8 @@ async function resolveCurrentSchemaAvailability(
 	scenarioRef: string,
 ): Promise<boolean> {
 	try {
-		const scenario = await runtime.source.getRecord<AppCeruliaCoreScenario.Main>(
+		const scenario = await getSourceRecordByUriAlias<AppCeruliaCoreScenario.Main>(
+			runtime,
 			scenarioRef,
 		);
 		if (!scenario?.value.recommendedSheetSchemaRef) {
@@ -62,7 +116,8 @@ async function resolveCurrentSchemaAvailability(
 		}
 
 		return Boolean(
-			await runtime.source.getRecord(
+			await getSourceRecordByUriAlias(
+				runtime,
 				scenario.value.recommendedSheetSchemaRef,
 			),
 		);
@@ -79,11 +134,7 @@ export interface ScenarioCatalogRuntime {
 export function createScenarioCatalogService(runtime: ScenarioCatalogRuntime) {
 	async function ingestRepo(repoDid: string): Promise<void> {
 		for (let attempt = 0; attempt < 3; attempt += 1) {
-			const records =
-				await runtime.source.listRecords<AppCeruliaCoreScenario.Main>(
-					COLLECTIONS.scenario,
-					repoDid,
-				);
+			const records = await listScenarioRecordsByCollectionAlias(runtime, repoDid);
 			const sorted = [...records]
 				.map((record) => {
 					const validation = validateById(
@@ -142,7 +193,11 @@ export function createScenarioCatalogService(runtime: ScenarioCatalogRuntime) {
 			limit: string | undefined,
 			cursor: string | undefined,
 		): Promise<AppCeruliaScenarioList.OutputSchema> {
-			const page = await runtime.catalog.list(rulesetNsid, limit, cursor);
+			const page = await runtime.catalog.list(
+				rulesetNsid ? toCurrentCeruliaNsid(rulesetNsid) : undefined,
+				limit,
+				cursor,
+			);
 			const availability = await Promise.all(
 				page.items.map((entry) =>
 					resolveCurrentSchemaAvailability(runtime, entry.scenarioRef),
@@ -151,7 +206,7 @@ export function createScenarioCatalogService(runtime: ScenarioCatalogRuntime) {
 
 			return {
 				items: page.items.map((entry, index) => ({
-					$type: "app.cerulia.scenario.list#scenarioListItem",
+					$type: "app.cerulia.dev.scenario.list#scenarioListItem",
 					scenarioRef: entry.scenarioRef,
 					title: entry.title,
 					rulesetNsid: entry.rulesetNsid,

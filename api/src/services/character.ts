@@ -1,3 +1,7 @@
+import {
+	areEquivalentCeruliaNsids,
+	getCeruliaNsidAliases,
+} from "@cerulia/protocol";
 import type {
 	AppCeruliaCharacterCreateBranch,
 	AppCeruliaCharacterCreateSheet,
@@ -35,9 +39,11 @@ import {
 import {
 	applyTypedWrites,
 	assertCredentialFreeUri,
+	areEquivalentRecordUris,
 	blobBelongsToCaller,
 	createTypedRecord,
 	hasSameOwner,
+	listRecordsByCollectionAlias,
 	loadOptionalSchema,
 	loadOptionalSheet,
 	loadSchema,
@@ -53,7 +59,7 @@ function buildSessionListItem(
 	scenarioLabel?: string,
 ): AppCeruliaCharacterGetHome.SessionListItem {
 	return {
-		$type: "app.cerulia.character.getHome#sessionListItem",
+		$type: "app.cerulia.dev.character.getHome#sessionListItem",
 		sessionRef,
 		role: session.role,
 		playedAt: session.playedAt,
@@ -115,6 +121,12 @@ const MATERIALIZATION_COLLECTIONS = [
 	COLLECTIONS.characterAdvancement,
 	COLLECTIONS.characterConversion,
 ];
+
+const MATERIALIZATION_SCOPE_COLLECTIONS = [...new Set(
+	MATERIALIZATION_COLLECTIONS.flatMap((collection) =>
+		getCeruliaNsidAliases(collection),
+	),
+)];
 
 export function createCharacterService(runtime: ServiceRuntime) {
 	function activeAdvancementsForCurrentEpoch(
@@ -185,17 +197,23 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			return null;
 		}
 		const advancements = (
-			await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
+			await listRecordsByCollectionAlias<AppCeruliaCoreCharacterAdvancement.Main>(
+				runtime,
 				COLLECTIONS.characterAdvancement,
 				branch.repoDid,
 			)
-		).filter((record) => record.value.characterBranchRef === branchRef);
+		).filter((record) =>
+			areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+		);
 		const conversions = (
-			await runtime.store.listRecords<AppCeruliaCoreCharacterConversion.Main>(
+			await listRecordsByCollectionAlias<AppCeruliaCoreCharacterConversion.Main>(
+				runtime,
 				COLLECTIONS.characterConversion,
 				branch.repoDid,
 			)
-		).filter((record) => record.value.characterBranchRef === branchRef);
+		).filter((record) =>
+			areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+		);
 
 		return {
 			branch,
@@ -218,7 +236,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 	) {
 		const scopeStateBefore = await runtime.store.getScopeStateToken(
 			repoDid,
-			MATERIALIZATION_COLLECTIONS,
+			MATERIALIZATION_SCOPE_COLLECTIONS,
 		);
 		const latestState = await loadMaterializationState(branchRef);
 		if (!latestState) {
@@ -226,7 +244,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 		}
 		const scopeStateAfter = await runtime.store.getScopeStateToken(
 			repoDid,
-			MATERIALIZATION_COLLECTIONS,
+			MATERIALIZATION_SCOPE_COLLECTIONS,
 		);
 
 		if (
@@ -247,12 +265,17 @@ export function createCharacterService(runtime: ServiceRuntime) {
 		sheetRef: string,
 	): Promise<StoredRecord<AppCeruliaCoreCharacterBranch.Main> | null> {
 		const branches =
-			await runtime.store.listRecords<AppCeruliaCoreCharacterBranch.Main>(
+			await listRecordsByCollectionAlias<AppCeruliaCoreCharacterBranch.Main>(
+				runtime,
 				COLLECTIONS.characterBranch,
 				callerDid,
 			);
 
-		return branches.find((branch) => branch.value.sheetRef === sheetRef) ?? null;
+		return (
+			branches.find((branch) =>
+				areEquivalentRecordUris(branch.value.sheetRef, sheetRef),
+			) ?? null
+		);
 	}
 
 	async function resolvedBranchStats(
@@ -294,7 +317,12 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 				throw error;
 			}
-			if (schema.value.baseRulesetNsid !== input.rulesetNsid) {
+			if (
+				!areEquivalentCeruliaNsids(
+					schema.value.baseRulesetNsid,
+					input.rulesetNsid,
+				)
+			) {
 				return rejected(
 					"invalid-schema-link",
 					"sheetSchemaRef baseRulesetNsid must match rulesetNsid",
@@ -552,7 +580,12 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 				throw error;
 			}
-			if (schema.value.baseRulesetNsid !== record.value.rulesetNsid) {
+			if (
+				!areEquivalentCeruliaNsids(
+					schema.value.baseRulesetNsid,
+					record.value.rulesetNsid,
+				)
+			) {
 				return rejected(
 					"invalid-schema-link",
 					"targetSheetSchemaRef must match the sheet ruleset",
@@ -665,17 +698,29 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				}
 
 			const advancements = (
-				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterAdvancement.Main>(
+					runtime,
 					COLLECTIONS.characterAdvancement,
 					callerDid,
 				)
-			).filter((record) => record.value.characterBranchRef === input.sourceBranchRef);
+			).filter((record) =>
+				areEquivalentRecordUris(
+					record.value.characterBranchRef,
+					input.sourceBranchRef,
+				),
+			);
 			const conversions = (
-				await runtime.store.listRecords<AppCeruliaCoreCharacterConversion.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterConversion.Main>(
+					runtime,
 					COLLECTIONS.characterConversion,
 					callerDid,
 				)
-			).filter((record) => record.value.characterBranchRef === input.sourceBranchRef);
+			).filter((record) =>
+				areEquivalentRecordUris(
+					record.value.characterBranchRef,
+					input.sourceBranchRef,
+				),
+			);
 			const materializedStats = await resolvedBranchStats(
 				sourceSheet.value,
 				advancements,
@@ -1079,7 +1124,12 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				return rebaseNeeded("characterBranch revision is stale");
 			}
 
-			if (input.targetRulesetNsid === sourceSheet.value.rulesetNsid) {
+			if (
+				areEquivalentCeruliaNsids(
+					input.targetRulesetNsid,
+					sourceSheet.value.rulesetNsid,
+				)
+			) {
 				return rejected(
 					"invalid-schema-link",
 					"targetRulesetNsid must differ from the current sheet ruleset",
@@ -1099,7 +1149,12 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 				throw error;
 			}
-			if (targetSchema.value.baseRulesetNsid !== input.targetRulesetNsid) {
+			if (
+				!areEquivalentCeruliaNsids(
+					targetSchema.value.baseRulesetNsid,
+					input.targetRulesetNsid,
+				)
+			) {
 				return rejected(
 					"invalid-schema-link",
 					"targetSheetSchemaRef must match targetRulesetNsid",
@@ -1107,20 +1162,28 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			}
 
 			const advancements = (
-				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterAdvancement.Main>(
+					runtime,
 					COLLECTIONS.characterAdvancement,
 					callerDid,
 				)
-			).filter(
-				(record) => record.value.characterBranchRef === input.characterBranchRef,
+			).filter((record) =>
+				areEquivalentRecordUris(
+					record.value.characterBranchRef,
+					input.characterBranchRef,
+				),
 			);
 			const conversions = (
-				await runtime.store.listRecords<AppCeruliaCoreCharacterConversion.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterConversion.Main>(
+					runtime,
 					COLLECTIONS.characterConversion,
 					callerDid,
 				)
-			).filter(
-				(record) => record.value.characterBranchRef === input.characterBranchRef,
+			).filter((record) =>
+				areEquivalentRecordUris(
+					record.value.characterBranchRef,
+					input.characterBranchRef,
+				),
 			);
 			const latestConversion = sortStoredRecordsAscending(
 				conversions,
@@ -1295,12 +1358,14 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			callerDid: string,
 		): Promise<AppCeruliaCharacterGetHome.OutputSchema> {
 			const branches =
-				await runtime.store.listRecords<AppCeruliaCoreCharacterBranch.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterBranch.Main>(
+					runtime,
 					COLLECTIONS.characterBranch,
 					callerDid,
 				);
 			const sessions =
-				await runtime.store.listRecords<AppCeruliaCoreSession.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreSession.Main>(
+					runtime,
 					COLLECTIONS.session,
 					callerDid,
 				);
@@ -1325,7 +1390,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					branches,
 					(record) => record.value.updatedAt,
 				).map((record) => ({
-					$type: "app.cerulia.character.getHome#branchListItem",
+					$type: "app.cerulia.dev.character.getHome#branchListItem",
 					branchRef: record.uri,
 					branchLabel: record.value.branchLabel,
 					sheetRef: record.value.sheetRef,
@@ -1350,23 +1415,32 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			);
 			const sheet = await loadOptionalSheet(runtime, branch.value.sheetRef);
 			const advancements = (
-				await runtime.store.listRecords<AppCeruliaCoreCharacterAdvancement.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterAdvancement.Main>(
+					runtime,
 					COLLECTIONS.characterAdvancement,
 					branch.repoDid,
 				)
-			).filter((record) => record.value.characterBranchRef === branchRef);
+				).filter((record) =>
+					areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+				);
 			const conversions = (
-				await runtime.store.listRecords<AppCeruliaCoreCharacterConversion.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterConversion.Main>(
+					runtime,
 					COLLECTIONS.characterConversion,
 					branch.repoDid,
 				)
-			).filter((record) => record.value.characterBranchRef === branchRef);
+				).filter((record) =>
+					areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+				);
 			const sessions = (
-				await runtime.store.listRecords<AppCeruliaCoreSession.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreSession.Main>(
+					runtime,
 					COLLECTIONS.session,
 					branch.repoDid,
 				)
-			).filter((record) => record.value.characterBranchRef === branchRef);
+				).filter((record) =>
+					areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+				);
 
 			if (isOwnerReader(auth, branch.repoDid)) {
 				return {
@@ -1386,7 +1460,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 							(record) => record.value.playedAt,
 						)
 							.map(async (record) => ({
-								$type: "app.cerulia.character.getBranchView#sessionListItem",
+								$type: "app.cerulia.dev.character.getBranchView#sessionListItem",
 								sessionRef: record.uri,
 								role: record.value.role,
 								playedAt: record.value.playedAt,
@@ -1403,7 +1477,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			if (!sheet) {
 				return {
 					branchSummary: {
-						$type: "app.cerulia.character.getBranchView#branchSummary",
+						$type: "app.cerulia.dev.character.getBranchView#branchSummary",
 						branchRef,
 						branchLabel: branch.value.branchLabel,
 						branchKind: branch.value.branchKind,
@@ -1418,7 +1492,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 							),
 							(record) => record.value.playedAt,
 						).map(async (record) => ({
-							$type: "app.cerulia.character.getBranchView#sessionSummary",
+							$type: "app.cerulia.dev.character.getBranchView#sessionSummary",
 							sessionRef: record.uri,
 							role: record.value.role,
 							playedAt: record.value.playedAt,
@@ -1434,7 +1508,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 							advancements,
 							(record) => record.value.effectiveAt,
 						).map(async (record) => ({
-							$type: "app.cerulia.character.getBranchView#advancementSummary",
+							$type: "app.cerulia.dev.character.getBranchView#advancementSummary",
 							advancementRef: record.uri,
 							advancementKind: record.value.advancementKind,
 							effectiveAt: record.value.effectiveAt,
@@ -1442,7 +1516,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 								? await (async () => {
 										const session = sessions.find(
 											(sessionRecord) =>
-												sessionRecord.uri === record.value.sessionRef,
+												areEquivalentRecordUris(
+													sessionRecord.uri,
+													record.value.sessionRef,
+												),
 										);
 										if (!session || session.value.visibility !== "public") {
 											return undefined;
@@ -1450,7 +1527,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 										return {
 											$type:
-												"app.cerulia.character.getBranchView#advancementSessionSummary",
+												"app.cerulia.dev.character.getBranchView#advancementSessionSummary",
 											sessionRef: session.uri,
 											role: session.value.role,
 											playedAt: session.value.playedAt,
@@ -1467,7 +1544,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 						conversions,
 						(record) => record.value.convertedAt,
 					).map((record) => ({
-						$type: "app.cerulia.character.getBranchView#conversionSummary",
+						$type: "app.cerulia.dev.character.getBranchView#conversionSummary",
 						sourceRulesetNsid: record.value.sourceRulesetNsid,
 						targetRulesetNsid: record.value.targetRulesetNsid,
 						convertedAt: record.value.convertedAt,
@@ -1490,7 +1567,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 			return {
 				branchSummary: {
-					$type: "app.cerulia.character.getBranchView#branchSummary",
+					$type: "app.cerulia.dev.character.getBranchView#branchSummary",
 					branchRef,
 					branchLabel: branch.value.branchLabel,
 					branchKind: branch.value.branchKind,
@@ -1499,7 +1576,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					updatedAt: branch.value.updatedAt,
 				},
 				sheetSummary: {
-					$type: "app.cerulia.character.getBranchView#sheetSummary",
+					$type: "app.cerulia.dev.character.getBranchView#sheetSummary",
 					sheetRef: branch.value.sheetRef,
 					displayName: sheet.value.displayName,
 					rulesetNsid: sheet.value.rulesetNsid,
@@ -1513,7 +1590,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 						(record) => record.value.playedAt,
 					)
 						.map(async (record) => ({
-							$type: "app.cerulia.character.getBranchView#sessionSummary",
+							$type: "app.cerulia.dev.character.getBranchView#sessionSummary",
 							sessionRef: record.uri,
 							role: record.value.role,
 							playedAt: record.value.playedAt,
@@ -1529,7 +1606,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 						advancements,
 						(record) => record.value.effectiveAt,
 					).map(async (record) => ({
-						$type: "app.cerulia.character.getBranchView#advancementSummary",
+						$type: "app.cerulia.dev.character.getBranchView#advancementSummary",
 						advancementRef: record.uri,
 						advancementKind: record.value.advancementKind,
 						effectiveAt: record.value.effectiveAt,
@@ -1537,7 +1614,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 							? await (async () => {
 									const session = sessions.find(
 										(sessionRecord) =>
-											sessionRecord.uri === record.value.sessionRef,
+											areEquivalentRecordUris(
+												sessionRecord.uri,
+												record.value.sessionRef,
+											),
 									);
 									if (!session || session.value.visibility !== "public") {
 										return undefined;
@@ -1545,7 +1625,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 									return {
 										$type:
-											"app.cerulia.character.getBranchView#advancementSessionSummary",
+											"app.cerulia.dev.character.getBranchView#advancementSessionSummary",
 										sessionRef: session.uri,
 										role: session.value.role,
 										playedAt: session.value.playedAt,
@@ -1562,7 +1642,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					conversions,
 					(record) => record.value.convertedAt,
 				).map((record) => ({
-					$type: "app.cerulia.character.getBranchView#conversionSummary",
+					$type: "app.cerulia.dev.character.getBranchView#conversionSummary",
 					sourceRulesetNsid: record.value.sourceRulesetNsid,
 					targetRulesetNsid: record.value.targetRulesetNsid,
 					convertedAt: record.value.convertedAt,

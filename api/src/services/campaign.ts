@@ -1,3 +1,6 @@
+import {
+	areEquivalentCeruliaNsids,
+} from "@cerulia/protocol";
 import type {
 	AppCeruliaCampaignCreate,
 	AppCeruliaCampaignGetView,
@@ -15,9 +18,11 @@ import { parseAtUri } from "../refs.js";
 import type { StoredRecord } from "../store/types.js";
 import type { ServiceRuntime } from "./runtime.js";
 import {
+	areEquivalentRecordUris,
 	createTypedRecord,
 	createUniqueSlugRkey,
 	getOptionalRecord,
+	listRecordsByCollectionAlias,
 	requireRecord,
 	resolveScenarioLabel,
 	updateTypedRecord,
@@ -66,7 +71,7 @@ async function validateRuleProfileRefs(
 			return "sharedRuleProfileRefs must belong to the caller";
 		}
 
-		if (record.value.baseRulesetNsid !== rulesetNsid) {
+		if (!areEquivalentCeruliaNsids(record.value.baseRulesetNsid, rulesetNsid)) {
 			return "sharedRuleProfileRefs must match campaign.rulesetNsid";
 		}
 	}
@@ -262,13 +267,14 @@ export function createCampaignService(runtime: ServiceRuntime) {
 				"campaignRef",
 			);
 			const sessions = (
-				await runtime.store.listRecords<AppCeruliaCoreSession.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreSession.Main>(
+					runtime,
 					COLLECTIONS.session,
 				)
 			).filter(
 				(session) =>
 					session.repoDid === record.repoDid &&
-					session.value.campaignRef === campaignRef,
+					areEquivalentRecordUris(session.value.campaignRef, campaignRef),
 			);
 			const ruleOverlay = (await Promise.all(
 				(record.value.sharedRuleProfileRefs ?? []).map((ref) =>
@@ -289,7 +295,7 @@ export function createCampaignService(runtime: ServiceRuntime) {
 					campaign: record.value,
 					sessions: await Promise.all(
 						sortSessionsByPlayedAt(sessions).map(async (session) => ({
-							$type: "app.cerulia.campaign.getView#sessionListItem",
+							$type: "app.cerulia.dev.campaign.getView#sessionListItem",
 							sessionRef: session.uri,
 							role: session.value.role,
 							playedAt: session.value.playedAt,
@@ -304,7 +310,7 @@ export function createCampaignService(runtime: ServiceRuntime) {
 
 			return {
 				campaignSummary: {
-					$type: "app.cerulia.campaign.getView#campaignSummary",
+					$type: "app.cerulia.dev.campaign.getView#campaignSummary",
 					campaignRef,
 					title: record.value.title,
 					rulesetNsid: record.value.rulesetNsid,
@@ -315,7 +321,7 @@ export function createCampaignService(runtime: ServiceRuntime) {
 					sortSessionsByPlayedAt(sessions)
 						.filter((session) => session.value.visibility === "public")
 						.map(async (session) => ({
-							$type: "app.cerulia.campaign.getView#sessionSummary",
+							$type: "app.cerulia.dev.campaign.getView#sessionSummary",
 							sessionRef: session.uri,
 							role: session.value.role,
 							playedAt: session.value.playedAt,
@@ -326,9 +332,9 @@ export function createCampaignService(runtime: ServiceRuntime) {
 						})),
 				),
 				ruleOverlaySummary: {
-					$type: "app.cerulia.campaign.getView#ruleOverlaySummary",
+					$type: "app.cerulia.dev.campaign.getView#ruleOverlaySummary",
 					ruleProfiles: ruleOverlay.map((entry) => ({
-						$type: "app.cerulia.campaign.getView#ruleProfileLink",
+						$type: "app.cerulia.dev.campaign.getView#ruleProfileLink",
 						ruleProfileRef: entry.uri,
 						profileTitle: entry.value.profileTitle,
 					})),

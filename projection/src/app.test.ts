@@ -209,12 +209,12 @@ describe("createProjectionApp", () => {
 
 		const firstResponse = await getJson(
 			app,
-			`${XRPC_PREFIX}/app.cerulia.scenario.list?rulesetNsid=${encodeURIComponent("app.cerulia.rules.coc7")}`,
+			`${XRPC_PREFIX}/app.cerulia.dev.scenario.list?rulesetNsid=${encodeURIComponent("app.cerulia.rules.coc7")}`,
 		);
 		expect(firstResponse.status).toBe(200);
 		const firstPayload = await firstResponse.json();
 		expect(() =>
-			lexicons.assertValidXrpcOutput("app.cerulia.scenario.list", firstPayload),
+			lexicons.assertValidXrpcOutput("app.cerulia.dev.scenario.list", firstPayload),
 		).not.toThrow();
 		expect(firstPayload.items).toHaveLength(1);
 		expect(firstPayload.items[0].title).toBe("Zeta Mission");

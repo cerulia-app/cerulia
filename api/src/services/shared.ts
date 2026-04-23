@@ -3,12 +3,14 @@ import {
 	AppCeruliaCoreCharacterSheetSchema,
 	AppCeruliaCorePlayerProfile,
 	AppCeruliaCoreScenario,
+	areEquivalentCeruliaNsids,
+	getCeruliaNsidAliases,
 	validateById,
 } from "@cerulia/protocol";
 import { COLLECTIONS, SELF_RKEY } from "../constants.js";
 import { ApiError } from "../errors.js";
 import { slugify } from "../ids.js";
-import { parseAtUri } from "../refs.js";
+import { buildAtUri, parseAtUri } from "../refs.js";
 import type {
 	ApplyWritesOptions,
 	BlobRefLike,
@@ -35,6 +37,68 @@ function ensureValidation(value: unknown, lexiconId: string): void {
 	if (!result.success) {
 		throw result.error;
 	}
+}
+
+export function matchesCollectionAlias(
+	actualCollection: string,
+	expectedCollection: string,
+): boolean {
+	return areEquivalentCeruliaNsids(actualCollection, expectedCollection);
+}
+
+export async function listRecordsByCollectionAlias<T>(
+	runtime: ServiceRuntime,
+	collection: string,
+	repoDid?: string,
+): Promise<StoredRecord<T>[]> {
+	const merged = new Map<string, StoredRecord<T>>();
+	for (const alias of getCeruliaNsidAliases(collection)) {
+		for (const record of await runtime.store.listRecords<T>(alias, repoDid)) {
+			if (!merged.has(record.uri)) {
+				merged.set(record.uri, record);
+			}
+		}
+	}
+
+	return [...merged.values()];
+}
+
+export function areEquivalentRecordUris(
+	left: string | undefined,
+	right: string | undefined,
+): boolean {
+	if (left === undefined || right === undefined) {
+		return left === right;
+	}
+
+	try {
+		const parsedLeft = parseAtUri(left);
+		const parsedRight = parseAtUri(right);
+		return (
+			parsedLeft.repoDid === parsedRight.repoDid &&
+			parsedLeft.rkey === parsedRight.rkey &&
+			matchesCollectionAlias(parsedLeft.collection, parsedRight.collection)
+		);
+	} catch {
+		return left === right;
+	}
+}
+
+export async function getRecordByUriAlias<T>(
+	runtime: ServiceRuntime,
+	uri: string,
+): Promise<StoredRecord<T> | null> {
+	const parsed = parseAtUri(uri);
+	for (const collection of getCeruliaNsidAliases(parsed.collection)) {
+		const record = await runtime.store.getRecord<T>(
+			buildAtUri(parsed.repoDid, collection, parsed.rkey),
+		);
+		if (record) {
+			return record;
+		}
+	}
+
+	return null;
 }
 
 export async function createTypedRecord<T extends { $type: string }>(
@@ -74,7 +138,7 @@ export async function requireRecord<T>(
 	label: string,
 ): Promise<StoredRecord<T>> {
 	const parsed = parseAtUri(uri);
-	if (parsed.collection !== collection) {
+	if (!matchesCollectionAlias(parsed.collection, collection)) {
 		throw new ApiError(
 			"InvalidRequest",
 			`${label} must reference ${collection}`,
@@ -82,7 +146,7 @@ export async function requireRecord<T>(
 		);
 	}
 
-	const record = await runtime.store.getRecord<T>(uri);
+	const record = await getRecordByUriAlias<T>(runtime, uri);
 	if (!record) {
 		throw new ApiError("NotFound", `${label} was not found`, 404);
 	}
@@ -97,7 +161,7 @@ export async function getOptionalRecord<T>(
 	label: string,
 ): Promise<StoredRecord<T> | null> {
 	const parsed = parseAtUri(uri);
-	if (parsed.collection !== collection) {
+	if (!matchesCollectionAlias(parsed.collection, collection)) {
 		throw new ApiError(
 			"InvalidRequest",
 			`${label} must reference ${collection}`,
@@ -105,7 +169,7 @@ export async function getOptionalRecord<T>(
 		);
 	}
 
-	return runtime.store.getRecord<T>(uri);
+	return getRecordByUriAlias<T>(runtime, uri);
 }
 
 export function hasSameOwner(uri: string, did: string): boolean {
@@ -221,7 +285,8 @@ export async function resolveScenarioLabel(
 		return undefined;
 	}
 
-	const scenario = await runtime.store.getRecord<AppCeruliaCoreScenario.Main>(
+	const scenario = await getRecordByUriAlias<AppCeruliaCoreScenario.Main>(
+		runtime,
 		session.scenarioRef,
 	);
 	return scenario?.value.title;
@@ -241,13 +306,13 @@ export async function loadBlueskyProfile(
 
 	const parsed = parseAtUri(profileRef);
 	if (
-		parsed.collection !== COLLECTIONS.blueskyProfile ||
+		!matchesCollectionAlias(parsed.collection, COLLECTIONS.blueskyProfile) ||
 		parsed.rkey !== SELF_RKEY
 	) {
 		return null;
 	}
 
-	const record = await runtime.store.getRecord<BlueskyProfile>(profileRef);
+	const record = await getRecordByUriAlias<BlueskyProfile>(runtime, profileRef);
 	return record?.value ?? null;
 }
 
@@ -258,7 +323,11 @@ export async function createUniqueSlugRkey(
 	title: string,
 ): Promise<string> {
 	const baseSlug = slugify(title);
-	const records = await runtime.store.listRecords<unknown>(collection, repoDid);
+	const records = await listRecordsByCollectionAlias<unknown>(
+		runtime,
+		collection,
+		repoDid,
+	);
 	const used = new Set(records.map((record) => record.rkey));
 
 	if (!used.has(baseSlug)) {

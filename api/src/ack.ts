@@ -8,7 +8,7 @@ export function accepted(
 	correlationId?: string,
 ): MutationAck {
 	return {
-		$type: "app.cerulia.defs#mutationAck",
+		$type: "app.cerulia.dev.defs#mutationAck",
 		resultKind: "accepted",
 		emittedRecordRefs,
 		message,
@@ -22,7 +22,7 @@ export function rejected(
 	correlationId?: string,
 ): MutationAck {
 	return {
-		$type: "app.cerulia.defs#mutationAck",
+		$type: "app.cerulia.dev.defs#mutationAck",
 		resultKind: "rejected",
 		reasonCode,
 		message,
@@ -35,7 +35,7 @@ export function rebaseNeeded(
 	correlationId?: string,
 ): MutationAck {
 	return {
-		$type: "app.cerulia.defs#mutationAck",
+		$type: "app.cerulia.dev.defs#mutationAck",
 		resultKind: "rebase-needed",
 		reasonCode: "rebase-required",
 		message,

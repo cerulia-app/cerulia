@@ -1,4 +1,4 @@
-import { lexicons, validateById } from "@cerulia/protocol";
+import { lexicons, toCurrentCeruliaNsid, validateById } from "@cerulia/protocol";
 
 function isPlainObject(
 	value: unknown,
@@ -121,14 +121,15 @@ function assertFallbackXrpcOutputShape(
 	lexiconId: string,
 	payload: unknown,
 ): void {
+	const canonicalLexiconId = toCurrentCeruliaNsid(lexiconId);
 	if (!isPlainObject(payload)) {
-		throw new Error(`XRPC output for ${lexiconId} must be a JSON object`);
+		throw new Error(`XRPC output for ${canonicalLexiconId} must be a JSON object`);
 	}
 
-	const definition = lexicons.getDefOrThrow(lexiconId, ["query", "procedure"]);
+	const definition = lexicons.getDefOrThrow(canonicalLexiconId, ["query", "procedure"]);
 	const outputSchema = definition.output?.schema;
 	if (!isObjectOutputSchema(outputSchema)) {
-		throw new Error(`XRPC output for ${lexiconId} must use an object schema`);
+		throw new Error(`XRPC output for ${canonicalLexiconId} must use an object schema`);
 	}
 
 	const allowedProperties = new Set(Object.keys(outputSchema.properties ?? {}));
@@ -137,7 +138,7 @@ function assertFallbackXrpcOutputShape(
 	for (const requiredProperty of requiredProperties) {
 		if (!(requiredProperty in payload)) {
 			throw new Error(
-				`XRPC output for ${lexiconId} is missing required property ${requiredProperty}`,
+				`XRPC output for ${canonicalLexiconId} is missing required property ${requiredProperty}`,
 			);
 		}
 	}
@@ -145,7 +146,7 @@ function assertFallbackXrpcOutputShape(
 	for (const property of Object.keys(payload)) {
 		if (!allowedProperties.has(property)) {
 			throw new Error(
-				`XRPC output for ${lexiconId} contains unexpected property ${property}`,
+				`XRPC output for ${canonicalLexiconId} contains unexpected property ${property}`,
 			);
 		}
 	}
@@ -153,7 +154,7 @@ function assertFallbackXrpcOutputShape(
 	for (const [property, propertySchema] of Object.entries(
 		outputSchema.properties ?? {},
 	)) {
-		assertSchemaValueMatches(lexiconId, propertySchema, payload[property]);
+		assertSchemaValueMatches(canonicalLexiconId, propertySchema, payload[property]);
 	}
 
 	assertTypedValuesAreValid(payload);
@@ -163,14 +164,15 @@ export function assertValidXrpcOutputPayload(
 	lexiconId: string,
 	payload: unknown,
 ): void {
+	const canonicalLexiconId = toCurrentCeruliaNsid(lexiconId);
 	try {
-		lexicons.assertValidXrpcOutput(lexiconId, payload);
+		lexicons.assertValidXrpcOutput(canonicalLexiconId, payload);
 	} catch (error) {
 		if (
 			error instanceof Error &&
 			error.message.includes("Unexpected lexicon type: record")
 		) {
-			assertFallbackXrpcOutputShape(lexiconId, payload);
+			assertFallbackXrpcOutputShape(canonicalLexiconId, payload);
 			return;
 		}
 

@@ -386,10 +386,34 @@ describe("SqlScenarioCatalogStore", () => {
 		expect(page.items[0]).toEqual({
 			scenarioRef: "at://did:plc:alice/app.cerulia.core.scenario/alpha",
 			title: "Legacy Alpha Mission",
-			rulesetNsid: "app.cerulia.rules.coc7",
+			rulesetNsid: "app.cerulia.dev.rules.coc7",
 			hasRecommendedSheetSchema: true,
 			summary: "Backfilled from the legacy table.",
 		});
+	});
+
+	test("matches alternate ruleset spelling when filtering catalog rows", async () => {
+		const store = await createSqliteStore({
+			legacyEntries: [
+				{
+					scenarioRef:
+						"at://did:plc:alice/app.cerulia.core.scenario/alpha",
+					title: "Legacy Alpha Mission",
+					rulesetNsid: "app.cerulia.ruleset.coc7",
+					hasRecommendedSheetSchema: true,
+					summary: "Backfilled from the legacy table.",
+				},
+			],
+		});
+
+		const page = await store.list(
+			"app.cerulia.ruleset.coc7",
+			undefined,
+			undefined,
+		);
+		expect(page.items).toHaveLength(1);
+		expect(page.items[0]?.title).toBe("Legacy Alpha Mission");
+		expect(page.items[0]?.rulesetNsid).toBe("app.cerulia.dev.rules.coc7");
 	});
 
 	test("removes matching legacy snapshot rows when a repo is ingested", async () => {

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { getCeruliaNsidAliases } from "@cerulia/protocol";
 import { XRPC_PREFIX } from "./constants.js";
 import { toErrorResponse } from "./errors.js";
 import { ProjectionError } from "./errors.js";
@@ -19,6 +20,14 @@ export function createProjectionApp(options: ProjectionAppOptions) {
 		source: options.source,
 		catalog: options.catalogStore,
 	});
+	const registerCeruliaGet = (
+		lexiconId: string,
+		handler: (context: any) => Response | Promise<Response>,
+	) => {
+		for (const alias of getCeruliaNsidAliases(lexiconId)) {
+			app.get(`${XRPC_PREFIX}/${alias}`, handler);
+		}
+	};
 
 	app.onError((error) => {
 		return toErrorResponse(error);
@@ -63,10 +72,10 @@ export function createProjectionApp(options: ProjectionAppOptions) {
 		});
 	}
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.scenario.list`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.scenario.list", async (context) => {
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.scenario.list",
+			"app.cerulia.dev.scenario.list",
 			await scenarioCatalog.list(
 				context.req.query("rulesetNsid"),
 				context.req.query("limit"),

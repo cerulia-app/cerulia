@@ -7,17 +7,17 @@ export const OAUTH_SCOPE = "atproto transition:generic";
 export const AUTH_SCOPES = AUTH_SCOPE_IDS;
 
 export const COLLECTIONS = {
-	characterSheet: "app.cerulia.core.characterSheet",
-	characterBranch: "app.cerulia.core.characterBranch",
-	characterAdvancement: "app.cerulia.core.characterAdvancement",
-	characterConversion: "app.cerulia.core.characterConversion",
-	playerProfile: "app.cerulia.core.playerProfile",
-	session: "app.cerulia.core.session",
-	campaign: "app.cerulia.core.campaign",
-	house: "app.cerulia.core.house",
-	scenario: "app.cerulia.core.scenario",
-	ruleProfile: "app.cerulia.core.ruleProfile",
-	characterSheetSchema: "app.cerulia.core.characterSheetSchema",
+	characterSheet: "app.cerulia.dev.core.characterSheet",
+	characterBranch: "app.cerulia.dev.core.characterBranch",
+	characterAdvancement: "app.cerulia.dev.core.characterAdvancement",
+	characterConversion: "app.cerulia.dev.core.characterConversion",
+	playerProfile: "app.cerulia.dev.core.playerProfile",
+	session: "app.cerulia.dev.core.session",
+	campaign: "app.cerulia.dev.core.campaign",
+	house: "app.cerulia.dev.core.house",
+	scenario: "app.cerulia.dev.core.scenario",
+	ruleProfile: "app.cerulia.dev.core.ruleProfile",
+	characterSheetSchema: "app.cerulia.dev.core.characterSheetSchema",
 	blueskyProfile: "app.bsky.actor.profile",
 } as const;
 

@@ -16,6 +16,8 @@ import {
 	assertCredentialFreeUri,
 	blobBelongsToCaller,
 	createTypedRecord,
+	getRecordByUriAlias,
+	listRecordsByCollectionAlias,
 	loadOptionalSheet,
 	loadBlueskyProfile,
 	requireRecord,
@@ -29,7 +31,7 @@ function composeProfileSummary(
 ): AppCeruliaActorGetProfileView.ProfileSummary {
 	const website = profile?.websiteOverride ?? fallback?.website;
 	return {
-		$type: "app.cerulia.actor.getProfileView#profileSummary",
+		$type: "app.cerulia.dev.actor.getProfileView#profileSummary",
 		did,
 		displayName: profile?.displayNameOverride ?? fallback?.displayName,
 		description: profile?.descriptionOverride ?? fallback?.description,
@@ -105,7 +107,8 @@ export function createActorService(runtime: ServiceRuntime) {
 
 			const profileRef = `at://${callerDid}/${COLLECTIONS.playerProfile}/${SELF_RKEY}`;
 			const existing =
-				await runtime.store.getRecord<AppCeruliaCorePlayerProfile.Main>(
+				await getRecordByUriAlias<AppCeruliaCorePlayerProfile.Main>(
+					runtime,
 					profileRef,
 				);
 			const createdAt = existing?.createdAt ?? runtime.now();
@@ -173,7 +176,8 @@ export function createActorService(runtime: ServiceRuntime) {
 		): Promise<AppCeruliaActorGetProfileView.OutputSchema> {
 			const profileRef = `at://${did}/${COLLECTIONS.playerProfile}/${SELF_RKEY}`;
 			const profileRecord =
-				await runtime.store.getRecord<AppCeruliaCorePlayerProfile.Main>(
+				await getRecordByUriAlias<AppCeruliaCorePlayerProfile.Main>(
+					runtime,
 					profileRef,
 				);
 			const fallback = await loadBlueskyProfile(
@@ -183,7 +187,8 @@ export function createActorService(runtime: ServiceRuntime) {
 			);
 
 			const branches =
-				await runtime.store.listRecords<AppCeruliaCoreCharacterBranch.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterBranch.Main>(
+					runtime,
 					COLLECTIONS.characterBranch,
 					did,
 				);
@@ -203,7 +208,7 @@ export function createActorService(runtime: ServiceRuntime) {
 							}
 
 							return {
-								$type: "app.cerulia.actor.getProfileView#branchLink",
+								$type: "app.cerulia.dev.actor.getProfileView#branchLink",
 								characterBranchRef: branch.uri,
 								displayName: sheet.value.displayName,
 								branchLabel: branch.value.branchLabel,
@@ -221,7 +226,7 @@ export function createActorService(runtime: ServiceRuntime) {
 					profile: profileRecord?.value,
 					blueskyFallbackProfile: fallback
 						? {
-								$type: "app.cerulia.actor.getProfileView#fallbackProfile",
+								$type: "app.cerulia.dev.actor.getProfileView#fallbackProfile",
 								displayName: fallback.displayName,
 								description: fallback.description,
 								avatar: fallback.avatar,

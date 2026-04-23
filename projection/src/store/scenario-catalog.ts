@@ -1,3 +1,4 @@
+import { getCeruliaNsidAliases, toCurrentCeruliaNsid } from "@cerulia/protocol";
 import { paginate, type Page } from "../pagination.js";
 import type { SqlDriver } from "./sql.js";
 
@@ -41,7 +42,9 @@ function fromRow(row: ScenarioCatalogRow): ScenarioCatalogEntry {
 	return {
 		scenarioRef: row.scenario_ref,
 		title: row.title,
-		rulesetNsid: row.ruleset_nsid ?? undefined,
+		rulesetNsid: row.ruleset_nsid
+			? toCurrentCeruliaNsid(row.ruleset_nsid)
+			: undefined,
 		hasRecommendedSheetSchema: row.has_recommended_sheet_schema === 1,
 		summary: row.summary ?? undefined,
 	};
@@ -82,7 +85,7 @@ export class SqlScenarioCatalogStore {
 					repoDid,
 					nextGeneration,
 					entry.title,
-					entry.rulesetNsid ?? null,
+					entry.rulesetNsid ? toCurrentCeruliaNsid(entry.rulesetNsid) : null,
 					entry.hasRecommendedSheetSchema ? 1 : 0,
 					entry.summary ?? null,
 				],
@@ -134,6 +137,12 @@ export class SqlScenarioCatalogStore {
 		limit: string | undefined,
 		cursor: string | undefined,
 	): Promise<Page<ScenarioCatalogEntry>> {
+		const rulesetAliases = rulesetNsid
+			? [...new Set(getCeruliaNsidAliases(rulesetNsid))]
+			: [];
+		const rulesetFilterClause = rulesetAliases.length
+			? `WHERE ruleset_nsid IN (${rulesetAliases.map(() => "?").join(", ")})`
+			: "";
 		const rows = await this.driver.all<ScenarioCatalogRow>(
 			`WITH active_entries AS (
 				 SELECT entries.scenario_ref, entries.repo_did, entries.title, entries.ruleset_nsid, entries.has_recommended_sheet_schema, entries.summary
@@ -154,14 +163,14 @@ export class SqlScenarioCatalogStore {
 						 ORDER BY CASE WHEN repo_did = ? THEN 1 ELSE 0 END ASC, repo_did ASC
 					 ) AS row_priority
 				 FROM active_entries
-				 ${rulesetNsid ? "WHERE ruleset_nsid = ?" : ""}
+				 ${rulesetFilterClause}
 			 )
 			 SELECT scenario_ref, title, ruleset_nsid, has_recommended_sheet_schema, summary
 				 FROM ranked_entries
 				WHERE row_priority = 1
 				ORDER BY title COLLATE NOCASE ASC, scenario_ref ASC`,
-			rulesetNsid
-				? [LEGACY_SCENARIO_CATALOG_REPO_DID, rulesetNsid]
+			rulesetAliases.length
+				? [LEGACY_SCENARIO_CATALOG_REPO_DID, ...rulesetAliases]
 				: [LEGACY_SCENARIO_CATALOG_REPO_DID],
 		);
 

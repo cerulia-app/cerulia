@@ -141,7 +141,7 @@ describe("createScenarioCatalogService", () => {
 
 		await service.ingestRepo(DID);
 
-		expect(source.callCount).toBe(2);
+		expect(source.callCount).toBe(4);
 		expect(catalog.replaceCallCount).toBe(2);
 		expect(catalog.lastEntries[0]?.title).toBe("Beta Mission");
 	});

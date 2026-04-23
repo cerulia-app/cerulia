@@ -20,6 +20,7 @@ import {
 	AppCeruliaScenarioUpdate,
 	AppCeruliaSessionCreate,
 	AppCeruliaSessionUpdate,
+	getCeruliaNsidAliases,
 	lexicons,
 	validateById,
 } from "@cerulia/protocol";
@@ -166,6 +167,22 @@ export function createApiApp(options: ApiAppOptions) {
 	const oauthFeature = options.oauthFeature;
 	const projectionIngestFeature = options.projectionIngestFeature;
 	const services = createServices(store);
+	const registerCeruliaGet = (
+		lexiconId: string,
+		handler: (context: any) => Response | Promise<Response>,
+	) => {
+		for (const alias of getCeruliaNsidAliases(lexiconId)) {
+			app.get(`${XRPC_PREFIX}/${alias}`, handler);
+		}
+	};
+	const registerCeruliaPost = (
+		lexiconId: string,
+		handler: (context: any) => Response | Promise<Response>,
+	) => {
+		for (const alias of getCeruliaNsidAliases(lexiconId)) {
+			app.post(`${XRPC_PREFIX}/${alias}`, handler);
+		}
+	};
 
 	app.onError((error) => {
 		return toErrorResponse(error);
@@ -236,24 +253,23 @@ export function createApiApp(options: ApiAppOptions) {
 		});
 	}
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
+	registerCeruliaPost("app.cerulia.dev.rule.createSheetSchema",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaRuleCreateSheetSchema.InputSchema>(
 					context.req.raw,
-					"app.cerulia.rule.createSheetSchema",
+					"app.cerulia.dev.rule.createSheetSchema",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.rule.createSheetSchema",
+				"app.cerulia.dev.rule.createSheetSchema",
 				await services.rule.createSheetSchema(callerDid, input),
 			);
 		},
 	);
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.rule.getSheetSchema`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.rule.getSheetSchema", async (context) => {
 		const schemaRef = context.req.query("characterSheetSchemaRef");
 		if (!schemaRef) {
 			throw new ApiError(
@@ -265,17 +281,16 @@ export function createApiApp(options: ApiAppOptions) {
 
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.rule.getSheetSchema",
+			"app.cerulia.dev.rule.getSheetSchema",
 			await services.rule.getSheetSchema(schemaRef),
 		);
 	});
 
-	app.get(
-		`${XRPC_PREFIX}/app.cerulia.rule.listSheetSchemas`,
+	registerCeruliaGet("app.cerulia.dev.rule.listSheetSchemas",
 		async (context) => {
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.rule.listSheetSchemas",
+				"app.cerulia.dev.rule.listSheetSchemas",
 				await services.rule.listSheetSchemas(
 					context.req.query("rulesetNsid"),
 					context.req.query("limit"),
@@ -285,33 +300,33 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.rule.createProfile`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.rule.createProfile", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaRuleCreateProfile.InputSchema>(
 			context.req.raw,
-			"app.cerulia.rule.createProfile",
+			"app.cerulia.dev.rule.createProfile",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.rule.createProfile",
+			"app.cerulia.dev.rule.createProfile",
 			await services.rule.createProfile(callerDid, input),
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.rule.updateProfile`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.rule.updateProfile", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaRuleUpdateProfile.InputSchema>(
 			context.req.raw,
-			"app.cerulia.rule.updateProfile",
+			"app.cerulia.dev.rule.updateProfile",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.rule.updateProfile",
+			"app.cerulia.dev.rule.updateProfile",
 			await services.rule.updateProfile(callerDid, input),
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.rule.getProfile`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.rule.getProfile", async (context) => {
 		const callerDid = requireReaderDid(context.get("auth"));
 		const ruleProfileRef = context.req.query("ruleProfileRef");
 		if (!ruleProfileRef) {
@@ -320,16 +335,16 @@ export function createApiApp(options: ApiAppOptions) {
 
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.rule.getProfile",
+			"app.cerulia.dev.rule.getProfile",
 			await services.rule.getProfile(callerDid, ruleProfileRef),
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.rule.listProfiles`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.rule.listProfiles", async (context) => {
 		const callerDid = requireReaderDid(context.get("auth"));
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.rule.listProfiles",
+			"app.cerulia.dev.rule.listProfiles",
 			await services.rule.listProfiles(
 				callerDid,
 				context.req.query("scopeRef"),
@@ -340,153 +355,144 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 	});
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+	registerCeruliaPost("app.cerulia.dev.character.createSheet",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterCreateSheet.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.createSheet",
+					"app.cerulia.dev.character.createSheet",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.createSheet",
+				"app.cerulia.dev.character.createSheet",
 				await services.character.createSheet(callerDid, input),
 			);
 		},
 	);
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.updateSheet`,
+	registerCeruliaPost("app.cerulia.dev.character.updateSheet",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterUpdateSheet.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.updateSheet",
+					"app.cerulia.dev.character.updateSheet",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.updateSheet",
+				"app.cerulia.dev.character.updateSheet",
 				await services.character.updateSheet(callerDid, input),
 			);
 		},
 	);
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.rebaseSheet`,
+	registerCeruliaPost("app.cerulia.dev.character.rebaseSheet",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterRebaseSheet.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.rebaseSheet",
+					"app.cerulia.dev.character.rebaseSheet",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.rebaseSheet",
+				"app.cerulia.dev.character.rebaseSheet",
 				await services.character.rebaseSheet(callerDid, input),
 			);
 		},
 	);
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
+	registerCeruliaPost("app.cerulia.dev.character.createBranch",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterCreateBranch.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.createBranch",
+					"app.cerulia.dev.character.createBranch",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.createBranch",
+				"app.cerulia.dev.character.createBranch",
 				await services.character.createBranch(callerDid, input),
 			);
 		},
 	);
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.updateBranch`,
+	registerCeruliaPost("app.cerulia.dev.character.updateBranch",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterUpdateBranch.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.updateBranch",
+					"app.cerulia.dev.character.updateBranch",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.updateBranch",
+				"app.cerulia.dev.character.updateBranch",
 				await services.character.updateBranch(callerDid, input),
 			);
 		},
 	);
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.retireBranch`,
+	registerCeruliaPost("app.cerulia.dev.character.retireBranch",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterRetireBranch.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.retireBranch",
+					"app.cerulia.dev.character.retireBranch",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.retireBranch",
+				"app.cerulia.dev.character.retireBranch",
 				await services.character.retireBranch(callerDid, input),
 			);
 		},
 	);
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.recordAdvancement`,
+	registerCeruliaPost("app.cerulia.dev.character.recordAdvancement",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterRecordAdvancement.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.recordAdvancement",
+					"app.cerulia.dev.character.recordAdvancement",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.recordAdvancement",
+				"app.cerulia.dev.character.recordAdvancement",
 				await services.character.recordAdvancement(callerDid, input),
 			);
 		},
 	);
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.character.recordConversion`,
+	registerCeruliaPost("app.cerulia.dev.character.recordConversion",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaCharacterRecordConversion.InputSchema>(
 					context.req.raw,
-					"app.cerulia.character.recordConversion",
+					"app.cerulia.dev.character.recordConversion",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.recordConversion",
+				"app.cerulia.dev.character.recordConversion",
 				await services.character.recordConversion(callerDid, input),
 			);
 		},
 	);
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.character.getHome`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.character.getHome", async (context) => {
 		const callerDid = requireReaderDid(context.get("auth"));
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.character.getHome",
+			"app.cerulia.dev.character.getHome",
 			await services.character.getHome(callerDid),
 		);
 	});
 
-	app.get(
-		`${XRPC_PREFIX}/app.cerulia.character.getBranchView`,
+	registerCeruliaGet("app.cerulia.dev.character.getBranchView",
 		async (context) => {
 			const branchRef = context.req.query("characterBranchRef");
 			if (!branchRef) {
@@ -499,43 +505,43 @@ export function createApiApp(options: ApiAppOptions) {
 
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.character.getBranchView",
+				"app.cerulia.dev.character.getBranchView",
 				await services.character.getBranchView(context.get("auth"), branchRef),
 			);
 		},
 	);
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.session.create`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.session.create", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaSessionCreate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.session.create",
+			"app.cerulia.dev.session.create",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.session.create",
+			"app.cerulia.dev.session.create",
 			await services.session.create(callerDid, input),
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.session.update`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.session.update", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaSessionUpdate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.session.update",
+			"app.cerulia.dev.session.update",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.session.update",
+			"app.cerulia.dev.session.update",
 			await services.session.update(callerDid, input),
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.session.list`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.session.list", async (context) => {
 		const callerDid = requireReaderDid(context.get("auth"));
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.session.list",
+			"app.cerulia.dev.session.list",
 			await services.session.list(
 				callerDid,
 				context.req.query("limit"),
@@ -544,7 +550,7 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.session.getView`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.session.getView", async (context) => {
 		const sessionRef = context.req.query("sessionRef");
 		if (!sessionRef) {
 			throw new ApiError("InvalidRequest", "sessionRef is required", 400);
@@ -552,16 +558,16 @@ export function createApiApp(options: ApiAppOptions) {
 
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.session.getView",
+			"app.cerulia.dev.session.getView",
 			await services.session.getView(context.get("auth"), sessionRef),
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.scenario.create`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.scenario.create", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaScenarioCreate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.scenario.create",
+			"app.cerulia.dev.scenario.create",
 		);
 		const output = await services.scenario.create(callerDid, input);
 		maybeNotifyProjectionRepo(
@@ -571,16 +577,16 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.scenario.create",
+			"app.cerulia.dev.scenario.create",
 			output,
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.scenario.update`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.scenario.update", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaScenarioUpdate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.scenario.update",
+			"app.cerulia.dev.scenario.update",
 		);
 		const output = await services.scenario.update(callerDid, input);
 		maybeNotifyProjectionRepo(
@@ -590,12 +596,12 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.scenario.update",
+			"app.cerulia.dev.scenario.update",
 			output,
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.scenario.getView`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.scenario.getView", async (context) => {
 		const scenarioRef = context.req.query("scenarioRef");
 		if (!scenarioRef) {
 			throw new ApiError("InvalidRequest", "scenarioRef is required", 400);
@@ -603,38 +609,38 @@ export function createApiApp(options: ApiAppOptions) {
 
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.scenario.getView",
+			"app.cerulia.dev.scenario.getView",
 			await services.scenario.getView(context.get("auth"), scenarioRef),
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.campaign.create`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.campaign.create", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaCampaignCreate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.campaign.create",
+			"app.cerulia.dev.campaign.create",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.campaign.create",
+			"app.cerulia.dev.campaign.create",
 			await services.campaign.create(callerDid, input),
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.campaign.update`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.campaign.update", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaCampaignUpdate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.campaign.update",
+			"app.cerulia.dev.campaign.update",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.campaign.update",
+			"app.cerulia.dev.campaign.update",
 			await services.campaign.update(callerDid, input),
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.campaign.getView`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.campaign.getView", async (context) => {
 		const campaignRef = context.req.query("campaignRef");
 		if (!campaignRef) {
 			throw new ApiError("InvalidRequest", "campaignRef is required", 400);
@@ -642,38 +648,38 @@ export function createApiApp(options: ApiAppOptions) {
 
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.campaign.getView",
+			"app.cerulia.dev.campaign.getView",
 			await services.campaign.getView(context.get("auth"), campaignRef),
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.house.create`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.house.create", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaHouseCreate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.house.create",
+			"app.cerulia.dev.house.create",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.house.create",
+			"app.cerulia.dev.house.create",
 			await services.house.create(callerDid, input),
 		);
 	});
 
-	app.post(`${XRPC_PREFIX}/app.cerulia.house.update`, async (context) => {
+	registerCeruliaPost("app.cerulia.dev.house.update", async (context) => {
 		const callerDid = requireWriterDid(context.get("auth"));
 		const input = await readJsonBody<AppCeruliaHouseUpdate.InputSchema>(
 			context.req.raw,
-			"app.cerulia.house.update",
+			"app.cerulia.dev.house.update",
 		);
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.house.update",
+			"app.cerulia.dev.house.update",
 			await services.house.update(callerDid, input),
 		);
 	});
 
-	app.get(`${XRPC_PREFIX}/app.cerulia.house.getView`, async (context) => {
+	registerCeruliaGet("app.cerulia.dev.house.getView", async (context) => {
 		const houseRef = context.req.query("houseRef");
 		if (!houseRef) {
 			throw new ApiError("InvalidRequest", "houseRef is required", 400);
@@ -681,30 +687,28 @@ export function createApiApp(options: ApiAppOptions) {
 
 		return jsonXrpcOutput(
 			context,
-			"app.cerulia.house.getView",
+			"app.cerulia.dev.house.getView",
 			await services.house.getView(context.get("auth"), houseRef),
 		);
 	});
 
-	app.post(
-		`${XRPC_PREFIX}/app.cerulia.actor.updateProfile`,
+	registerCeruliaPost("app.cerulia.dev.actor.updateProfile",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
 				await readJsonBody<AppCeruliaActorUpdateProfile.InputSchema>(
 					context.req.raw,
-					"app.cerulia.actor.updateProfile",
+					"app.cerulia.dev.actor.updateProfile",
 				);
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.actor.updateProfile",
+				"app.cerulia.dev.actor.updateProfile",
 				await services.actor.updateProfile(callerDid, input),
 			);
 		},
 	);
 
-	app.get(
-		`${XRPC_PREFIX}/app.cerulia.actor.getProfileView`,
+	registerCeruliaGet("app.cerulia.dev.actor.getProfileView",
 		async (context) => {
 			const did = context.req.query("did");
 			if (!did) {
@@ -713,7 +717,7 @@ export function createApiApp(options: ApiAppOptions) {
 
 			return jsonXrpcOutput(
 				context,
-				"app.cerulia.actor.getProfileView",
+				"app.cerulia.dev.actor.getProfileView",
 				await services.actor.getProfileView(context.get("auth"), did),
 			);
 		},

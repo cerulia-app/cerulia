@@ -1,3 +1,6 @@
+import {
+	areEquivalentCeruliaNsids,
+} from "@cerulia/protocol";
 import type {
 	AppCeruliaCoreScenario,
 	AppCeruliaScenarioCreate,
@@ -66,7 +69,12 @@ export function createScenarioService(runtime: ServiceRuntime) {
 
 					throw error;
 				}
-				if (schema.value.baseRulesetNsid !== input.rulesetNsid) {
+				if (
+					!areEquivalentCeruliaNsids(
+						schema.value.baseRulesetNsid,
+						input.rulesetNsid,
+					)
+				) {
 					return rejected(
 						"invalid-schema-link",
 						"recommendedSheetSchemaRef must match rulesetNsid",
@@ -162,7 +170,12 @@ export function createScenarioService(runtime: ServiceRuntime) {
 
 					throw error;
 				}
-				if (schema.value.baseRulesetNsid !== nextRulesetNsid) {
+				if (
+					!areEquivalentCeruliaNsids(
+						schema.value.baseRulesetNsid,
+						nextRulesetNsid,
+					)
+				) {
 					return rejected(
 						"invalid-schema-link",
 						"recommendedSheetSchemaRef must match rulesetNsid",
@@ -221,7 +234,7 @@ export function createScenarioService(runtime: ServiceRuntime) {
 
 			return {
 				scenarioSummary: {
-					$type: "app.cerulia.scenario.getView#scenarioSummary",
+					$type: "app.cerulia.dev.scenario.getView#scenarioSummary",
 					scenarioRef,
 					title: record.value.title,
 					rulesetNsid: record.value.rulesetNsid,

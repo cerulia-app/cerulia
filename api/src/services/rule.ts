@@ -1,3 +1,6 @@
+import {
+	areEquivalentCeruliaNsids,
+} from "@cerulia/protocol";
 import type {
 	AppCeruliaCoreRuleProfile,
 	AppCeruliaRuleCreateProfile,
@@ -15,8 +18,10 @@ import { ApiError } from "../errors.js";
 import { parseAtUri } from "../refs.js";
 import { paginate } from "../pagination.js";
 import {
+	areEquivalentRecordUris,
 	assertCredentialFreeUri,
 	createTypedRecord,
+	listRecordsByCollectionAlias,
 	loadSchema,
 	requireRecord,
 	updateTypedRecord,
@@ -69,13 +74,18 @@ export function createRuleService(runtime: ServiceRuntime) {
 			cursor: string | undefined,
 		): Promise<AppCeruliaRuleListSheetSchemas.OutputSchema> {
 			const records =
-				await runtime.store.listRecords<AppCeruliaCoreCharacterSheetSchema.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterSheetSchema.Main>(
+					runtime,
 					COLLECTIONS.characterSheetSchema,
 				);
 			const filtered = records
 				.filter(
 					(record) =>
-						!rulesetNsid || record.value.baseRulesetNsid === rulesetNsid,
+						!rulesetNsid ||
+						areEquivalentCeruliaNsids(
+							record.value.baseRulesetNsid,
+							rulesetNsid,
+						),
 				)
 				.sort((left, right) =>
 					left.value.title.localeCompare(right.value.title),
@@ -84,7 +94,7 @@ export function createRuleService(runtime: ServiceRuntime) {
 			const page = paginate(filtered, limit, cursor);
 			return {
 				items: page.items.map((record) => ({
-					$type: "app.cerulia.rule.listSheetSchemas#sheetSchemaListItem",
+					$type: "app.cerulia.dev.rule.listSheetSchemas#sheetSchemaListItem",
 					schemaRef: record.uri,
 					baseRulesetNsid: record.value.baseRulesetNsid,
 					schemaVersion: record.value.schemaVersion,
@@ -230,21 +240,27 @@ export function createRuleService(runtime: ServiceRuntime) {
 			cursor: string | undefined,
 		): Promise<AppCeruliaRuleListProfiles.OutputSchema> {
 			const records =
-				await runtime.store.listRecords<AppCeruliaCoreRuleProfile.Main>(
+				await listRecordsByCollectionAlias<AppCeruliaCoreRuleProfile.Main>(
+					runtime,
 					COLLECTIONS.ruleProfile,
 					callerDid,
 				);
 			const filtered = records.filter((record) => {
 				return (
-					(!scopeRef || record.value.scopeRef === scopeRef) &&
-					(!baseRulesetNsid || record.value.baseRulesetNsid === baseRulesetNsid)
+					(!scopeRef ||
+						areEquivalentRecordUris(record.value.scopeRef, scopeRef)) &&
+					(!baseRulesetNsid ||
+						areEquivalentCeruliaNsids(
+							record.value.baseRulesetNsid,
+							baseRulesetNsid,
+						))
 				);
 			});
 			const page = paginate(filtered, limit, cursor);
 
 			return {
 				items: page.items.map((record) => ({
-					$type: "app.cerulia.rule.listProfiles#ruleProfileListItem",
+					$type: "app.cerulia.dev.rule.listProfiles#ruleProfileListItem",
 					ruleProfileRef: record.uri,
 					baseRulesetNsid: record.value.baseRulesetNsid,
 					profileTitle: record.value.profileTitle,

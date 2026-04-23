@@ -23,6 +23,10 @@ const CERULIA_NSID_FAMILY_ROOT_SEGMENTS = new Set([
 	"session",
 ]);
 
+const CERULIA_NSID_CANONICAL_FAMILY_ROOT_SEGMENTS = new Map<string, string>([
+	["ruleset", "rules"],
+]);
+
 const CERULIA_NSID_ROOT_SEGMENTS = new Set([
 	...CERULIA_NSID_SINGLE_NAME_ROOT_SEGMENTS,
 	...CERULIA_NSID_FAMILY_ROOT_SEGMENTS,
@@ -69,6 +73,23 @@ function buildVariantKey(
 
 const lexiconTransforms = new Map<string, CeruliaLexiconTransform<unknown>>();
 
+function canonicalizeCeruliaFamilyRootSegment(rootSegment: string): string {
+	return CERULIA_NSID_CANONICAL_FAMILY_ROOT_SEGMENTS.get(rootSegment) ?? rootSegment;
+}
+
+function buildRulesetSpellingAliases(parsed: ParsedCeruliaNsid): string[] {
+	if (parsed.rootSegment !== "rules") {
+		return [];
+	}
+
+	const suffixTail = parsed.suffix.split(".").slice(1);
+	const alternateSuffix = ["ruleset", ...suffixTail].join(".");
+	return [
+		buildCeruliaNsidFromSuffix(alternateSuffix, CERULIA_NSID_ACTIVE_VARIANT),
+		buildCeruliaNsidFromSuffix(alternateSuffix, CERULIA_NSID_IMPLICIT_VARIANT),
+	];
+}
+
 function isExpectedCeruliaShape(
 	segments: string[],
 	rootSegment: string,
@@ -101,7 +122,10 @@ export function parseCeruliaNsid(nsid: string): ParsedCeruliaNsid | null {
 			return null;
 		}
 
-		const suffix = segments.slice(2).join(".");
+		const canonicalRootSegment = canonicalizeCeruliaFamilyRootSegment(
+			thirdSegment,
+		);
+		const suffix = [canonicalRootSegment, ...segments.slice(3)].join(".");
 		const bareNsid = `${CERULIA_NSID_PREFIX}.${suffix}`;
 		return {
 			originalNsid: nsid,
@@ -110,7 +134,7 @@ export function parseCeruliaNsid(nsid: string): ParsedCeruliaNsid | null {
 				suffix,
 				CERULIA_NSID_ACTIVE_VARIANT,
 			),
-			rootSegment: thirdSegment,
+			rootSegment: canonicalRootSegment,
 			suffix,
 			variant: CERULIA_NSID_IMPLICIT_VARIANT,
 			explicitVariant: null,
@@ -125,7 +149,8 @@ export function parseCeruliaNsid(nsid: string): ParsedCeruliaNsid | null {
 		return null;
 	}
 
-	const suffix = segments.slice(3).join(".");
+	const canonicalRootSegment = canonicalizeCeruliaFamilyRootSegment(rootSegment);
+	const suffix = [canonicalRootSegment, ...segments.slice(4)].join(".");
 	const bareNsid = `${CERULIA_NSID_PREFIX}.${suffix}`;
 	return {
 		originalNsid: nsid,
@@ -134,7 +159,7 @@ export function parseCeruliaNsid(nsid: string): ParsedCeruliaNsid | null {
 			suffix,
 			CERULIA_NSID_ACTIVE_VARIANT,
 		),
-		rootSegment,
+		rootSegment: canonicalRootSegment,
 		suffix,
 		variant: thirdSegment,
 		explicitVariant: thirdSegment,
@@ -185,11 +210,12 @@ export function getCeruliaNsidAliases(nsid: string): readonly string[] {
 		return [nsid];
 	}
 
-	if (parsed.currentNsid === parsed.bareNsid) {
-		return [parsed.bareNsid];
+	const aliases = new Set<string>([parsed.currentNsid, parsed.bareNsid]);
+	for (const alias of buildRulesetSpellingAliases(parsed)) {
+		aliases.add(alias);
 	}
 
-	return [parsed.currentNsid, parsed.bareNsid];
+	return [...aliases];
 }
 
 export function normalizeCeruliaTypedValues<T>(value: T): T {

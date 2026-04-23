@@ -1,3 +1,4 @@
+import { toCurrentCeruliaNsid } from "@cerulia/protocol";
 import { AUTH_SCOPES } from "./constants.js";
 import { ApiError } from "./errors.js";
 
@@ -39,7 +40,7 @@ export function resolveHeaderAuthContext(request: Request): AuthContext {
 	const scopes = new Set(
 		rawScopes
 			?.split(",")
-			.map((scope) => scope.trim())
+			.map((scope) => toCurrentCeruliaNsid(scope.trim()))
 			.filter((scope) => scope.length > 0) ?? [],
 	);
 
