@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { decodeById, decodeTyped, tryDecodeById } from "./parser.js";
-import { validateById } from "./validator.js";
+import { validateById, validateTyped } from "./validator.js";
 
 describe("codec parser/validator", () => {
 	test("validateById succeeds for a valid character sheet record", () => {
@@ -100,6 +100,15 @@ describe("codec parser/validator", () => {
 		const result = tryDecodeById({}, "app.cerulia.defs", "mutationAck", false);
 
 		expect(result.success).toBe(false);
+	});
+
+	test("validateTyped accepts fragment-qualified legacy defs payloads", () => {
+		const result = validateTyped({
+			$type: "app.cerulia.defs#mutationAck",
+			resultKind: "accepted",
+		});
+
+		expect(result.success).toBe(true);
 	});
 
 	test("validateById rejects character-sheet-schema array-of-array fieldDefs", () => {

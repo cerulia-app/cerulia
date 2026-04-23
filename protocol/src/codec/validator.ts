@@ -2,6 +2,7 @@ import { ValidationError, type ValidationResult } from "@atproto/lexicon";
 import { validate } from "../generated/lexicons.js";
 import {
 	normalizeCeruliaTypedValues,
+	toCurrentCeruliaLexiconRef,
 	toCurrentCeruliaNsid,
 	transformCeruliaLexiconValueToCurrent,
 } from "../nsid.js";
@@ -226,14 +227,17 @@ function normalizeValueForValidation<T>(value: T, lexiconId: string): T {
 export function validateTyped<T extends { $type: string }>(
 	value: T,
 ): ValidationResult {
-	const lexiconId = toCurrentCeruliaNsid(value.$type);
+	const canonicalTypeRef = toCurrentCeruliaLexiconRef(value.$type);
+	const typeParts = canonicalTypeRef.split("#");
+	const lexiconId = typeParts[0] ?? canonicalTypeRef;
+	const defId = typeParts[1] ?? "main";
 	const normalizedValue = normalizeValueForValidation(value, value.$type);
-	const result = validate(normalizedValue, lexiconId, "main", true);
+	const result = validate(normalizedValue, lexiconId, defId, true);
 	if (!result.success) {
 		return result;
 	}
 
-	return applyExtraValidation(normalizedValue, lexiconId, "main") ?? result;
+	return applyExtraValidation(normalizedValue, lexiconId, defId) ?? result;
 }
 
 export function validateById(

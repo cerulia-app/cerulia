@@ -119,6 +119,16 @@ describe("Cerulia NSID compatibility", () => {
 		});
 	});
 
+	test("normalizes fragment-qualified legacy typed values to the current variant", () => {
+		const normalized = normalizeCeruliaTypedValues({
+			$type: "app.cerulia.defs#mutationAck",
+		});
+
+		expect(normalized).toEqual({
+			$type: "app.cerulia.dev.defs#mutationAck",
+		});
+	});
+
 	test("uses registered transform when upgrading legacy payloads to current", () => {
 		const unregister = registerCeruliaLexiconTransform<{ migrated: boolean }>({
 			lexiconId: "app.cerulia.core.characterSheet",

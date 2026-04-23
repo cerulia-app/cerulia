@@ -218,6 +218,27 @@ export function getCeruliaNsidAliases(nsid: string): readonly string[] {
 	return [...aliases];
 }
 
+function splitCeruliaLexiconRef(value: string): {
+	nsid: string;
+	fragment: string | null;
+} {
+	const [nsid, fragment, ...rest] = value.split("#");
+	if (!nsid || rest.length > 0) {
+		return { nsid: value, fragment: null };
+	}
+
+	return {
+		nsid,
+		fragment: fragment ?? null,
+	};
+}
+
+export function toCurrentCeruliaLexiconRef(value: string): string {
+	const { nsid, fragment } = splitCeruliaLexiconRef(value);
+	const currentNsid = toCurrentCeruliaNsid(nsid);
+	return fragment ? `${currentNsid}#${fragment}` : currentNsid;
+}
+
 export function normalizeCeruliaTypedValues<T>(value: T): T {
 	if (Array.isArray(value)) {
 		return value.map((entry) => normalizeCeruliaTypedValues(entry)) as T;
@@ -230,7 +251,7 @@ export function normalizeCeruliaTypedValues<T>(value: T): T {
 	const entries = Object.entries(value as Record<string, unknown>).map(
 		([key, nested]) => {
 			if (key === "$type" && typeof nested === "string") {
-				return [key, toCurrentCeruliaNsid(nested)];
+				return [key, toCurrentCeruliaLexiconRef(nested)];
 			}
 
 			return [key, normalizeCeruliaTypedValues(nested)];
