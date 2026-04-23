@@ -84,16 +84,6 @@ Your job is to implement `.github/agents/review-execution-policy.md`: choose the
 ## Output Format
 Follow the normalized output contract in `.github/agents/review-execution-policy.md`.
 
-## Findings
-- [blocker|non-blocker] Short title
-- Area at risk
-- Why this is a problem now (5W1H)
-- What should be done instead (5W1H)
-- Evidence
-- Recommended next step
-- Addition necessity proof (5W1H, only if the recommendation adds behavior, surface area, abstraction, configuration, or workflow)
-- Status: new | unresolved | regressed | newly visible, only when supportable
-
 ## Coverage Gaps
 - What could not be judged confidently
 
