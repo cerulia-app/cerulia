@@ -1,6 +1,8 @@
 # 共通定義
 
-shared scalar、enum、object は app.cerulia.defs に集約する。
+shared scalar、enum、object は app.cerulia.dev.defs に集約する。
+
+`app.cerulia.defs` の bare namespace は互換 alias として受け入れるが、文書上の canonical source-of-truth は `app.cerulia.dev.defs` に固定する。
 
 ## 実装固定ルール
 
@@ -16,17 +18,17 @@ shared scalar、enum、object は app.cerulia.defs に集約する。
 
 | def | format | semantic invariant |
 | --- | --- | --- |
-| campaignRef | at-uri | app.cerulia.core.campaign record を指す |
-| houseRef | at-uri | app.cerulia.core.house record を指す |
-| ruleProfileRef | at-uri | app.cerulia.core.ruleProfile record を指す |
-| characterSheetRef | at-uri | app.cerulia.core.characterSheet record を指す |
-| characterBranchRef | at-uri | app.cerulia.core.characterBranch record を指す |
-| characterAdvancementRef | at-uri | app.cerulia.core.characterAdvancement record を指す |
-| characterConversionRef | at-uri | app.cerulia.core.characterConversion record を指す |
-| sessionRef | at-uri | app.cerulia.core.session record を指す |
-| playerProfileRef | at-uri | app.cerulia.core.playerProfile record を指す |
-| scenarioRef | at-uri | app.cerulia.core.scenario record を指す |
-| characterSheetSchemaRef | at-uri | app.cerulia.core.characterSheetSchema record を指す |
+| campaignRef | at-uri | app.cerulia.dev.core.campaign record を指す |
+| houseRef | at-uri | app.cerulia.dev.core.house record を指す |
+| ruleProfileRef | at-uri | app.cerulia.dev.core.ruleProfile record を指す |
+| characterSheetRef | at-uri | app.cerulia.dev.core.characterSheet record を指す |
+| characterBranchRef | at-uri | app.cerulia.dev.core.characterBranch record を指す |
+| characterAdvancementRef | at-uri | app.cerulia.dev.core.characterAdvancement record を指す |
+| characterConversionRef | at-uri | app.cerulia.dev.core.characterConversion record を指す |
+| sessionRef | at-uri | app.cerulia.dev.core.session record を指す |
+| playerProfileRef | at-uri | app.cerulia.dev.core.playerProfile record を指す |
+| scenarioRef | at-uri | app.cerulia.dev.core.scenario record を指す |
+| characterSheetSchemaRef | at-uri | app.cerulia.dev.core.characterSheetSchema record を指す |
 | scopeRef | at-uri | house / campaign の scope record を指す |
 | documentUri | uri | credential-free な公開外部 URI を指す |
 | did | did | actor 識別子 |

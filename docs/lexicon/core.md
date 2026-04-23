@@ -1,22 +1,24 @@
 # コア namespace
 
-Cerulia の product-core に含める record 群を app.cerulia.core.* に整理する。
+Cerulia の product-core に含める record 群を app.cerulia.dev.core.* に整理する。
+
+`app.cerulia.core.*` の bare namespace は互換 alias として受け入れるが、文書上の canonical source-of-truth は `app.cerulia.dev.core.*` に固定する。
 
 ## NSID 一覧
 
 | NSID | primary type | record-key | 用途 |
 | --- | --- | --- | --- |
-| app.cerulia.core.house | record | any: lower-case slug | コミュニティの anchor |
-| app.cerulia.core.campaign | record | any: lower-case slug | 長期卓のセッションシリーズ |
-| app.cerulia.core.ruleProfile | record | any: lower-case opaque token | house / campaign のハウスルール overlay |
-| app.cerulia.core.characterSheetSchema | record | any: lower-case opaque token | キャラクターシートの型定義 |
-| app.cerulia.core.characterSheet | record | any: lower-case opaque token | branch が現在参照する sheet snapshot |
-| app.cerulia.core.characterBranch | record | any: lower-case opaque token | stable な継続線と shared root |
-| app.cerulia.core.characterConversion | record | tid | branch 上の ruleset 切り替え provenance |
-| app.cerulia.core.characterAdvancement | record | tid | 成長・変更の履歴 |
-| app.cerulia.core.session | record | tid | PL のセッション経験記録 |
-| app.cerulia.core.playerProfile | record | literal:self | PL 自己紹介プロフィール |
-| app.cerulia.core.scenario | record | any: lower-case slug | シナリオの公開台帳 |
+| app.cerulia.dev.core.house | record | any: lower-case slug | コミュニティの anchor |
+| app.cerulia.dev.core.campaign | record | any: lower-case slug | 長期卓のセッションシリーズ |
+| app.cerulia.dev.core.ruleProfile | record | any: lower-case opaque token | house / campaign のハウスルール overlay |
+| app.cerulia.dev.core.characterSheetSchema | record | any: lower-case opaque token | キャラクターシートの型定義 |
+| app.cerulia.dev.core.characterSheet | record | any: lower-case opaque token | branch が現在参照する sheet snapshot |
+| app.cerulia.dev.core.characterBranch | record | any: lower-case opaque token | stable な継続線と shared root |
+| app.cerulia.dev.core.characterConversion | record | tid | branch 上の ruleset 切り替え provenance |
+| app.cerulia.dev.core.characterAdvancement | record | tid | 成長・変更の履歴 |
+| app.cerulia.dev.core.session | record | tid | PL のセッション経験記録 |
+| app.cerulia.dev.core.playerProfile | record | literal:self | PL 自己紹介プロフィール |
+| app.cerulia.dev.core.scenario | record | any: lower-case slug | シナリオの公開台帳 |
 
 ## core に入れるもの
 

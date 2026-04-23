@@ -37,8 +37,10 @@ OAuth を設定しないローカル開発、または `CERULIA_ENABLE_HEADER_AU
 
 有効な scope 名:
 
-- `app.cerulia.authCoreReader`
-- `app.cerulia.authCoreWriter`
+- `app.cerulia.dev.authCoreReader`
+- `app.cerulia.dev.authCoreWriter`
+
+bare な `app.cerulia.auth*` scope 名は互換入力として受け入れるが、運用上の canonical source-of-truth は `app.cerulia.dev.auth*` とする。
 
 ## OAuth Setup
 
