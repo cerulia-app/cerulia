@@ -10,9 +10,9 @@ import {
 import { type $Typed, is$typed, maybe$typed } from './util.js'
 
 export const schemaDict = {
-  AppCeruliaActorGetProfileView: {
+  AppCeruliaDevActorGetProfileView: {
     lexicon: 1,
-    id: 'app.cerulia.actor.getProfileView',
+    id: 'app.cerulia.dev.actor.getProfileView',
     defs: {
       main: {
         type: 'query',
@@ -35,19 +35,19 @@ export const schemaDict = {
             properties: {
               profile: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.playerProfile',
+                ref: 'lex:app.cerulia.dev.core.playerProfile',
                 description:
                   'Full player profile record. Present in owner mode only.',
               },
               blueskyFallbackProfile: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.actor.getProfileView#fallbackProfile',
+                ref: 'lex:app.cerulia.dev.actor.getProfileView#fallbackProfile',
                 description:
                   'Bluesky fallback profile fields for owner-side comparison. Present in owner mode only.',
               },
               profileSummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.actor.getProfileView#profileSummary',
+                ref: 'lex:app.cerulia.dev.actor.getProfileView#profileSummary',
                 description:
                   'Composed public-safe profile summary. Present in public/anonymous mode only.',
               },
@@ -55,7 +55,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.actor.getProfileView#branchLink',
+                  ref: 'lex:app.cerulia.dev.actor.getProfileView#branchLink',
                 },
                 description:
                   'Link-only branch rows for public character detail navigation. Present in public/anonymous mode only.',
@@ -200,13 +200,17 @@ export const schemaDict = {
             type: 'string',
             format: 'uri',
           },
+          pronouns: {
+            type: 'string',
+            maxLength: 100,
+          },
         },
       },
     },
   },
-  AppCeruliaActorUpdateProfile: {
+  AppCeruliaDevActorUpdateProfile: {
     lexicon: 1,
-    id: 'app.cerulia.actor.updateProfile',
+    id: 'app.cerulia.dev.actor.updateProfile',
     defs: {
       main: {
         type: 'procedure',
@@ -299,15 +303,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaAuthCoreReader: {
+  AppCeruliaDevAuthCoreReader: {
     lexicon: 1,
-    id: 'app.cerulia.authCoreReader',
+    id: 'app.cerulia.dev.authCoreReader',
     defs: {
       main: {
         type: 'token',
@@ -316,9 +320,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaAuthCoreWriter: {
+  AppCeruliaDevAuthCoreWriter: {
     lexicon: 1,
-    id: 'app.cerulia.authCoreWriter',
+    id: 'app.cerulia.dev.authCoreWriter',
     defs: {
       main: {
         type: 'token',
@@ -327,9 +331,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCampaignCreate: {
+  AppCeruliaDevCampaignCreate: {
     lexicon: 1,
-    id: 'app.cerulia.campaign.create',
+    id: 'app.cerulia.dev.campaign.create',
     defs: {
       main: {
         type: 'procedure',
@@ -370,15 +374,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCampaignGetView: {
+  AppCeruliaDevCampaignGetView: {
     lexicon: 1,
-    id: 'app.cerulia.campaign.getView',
+    id: 'app.cerulia.dev.campaign.getView',
     defs: {
       main: {
         type: 'query',
@@ -401,7 +405,7 @@ export const schemaDict = {
             properties: {
               campaign: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.campaign',
+                ref: 'lex:app.cerulia.dev.core.campaign',
                 description:
                   'Full campaign record. Present in owner mode only.',
               },
@@ -409,7 +413,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.campaign.getView#sessionListItem',
+                  ref: 'lex:app.cerulia.dev.campaign.getView#sessionListItem',
                 },
                 description: 'Session list items. Present in owner mode only.',
               },
@@ -417,14 +421,14 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.core.ruleProfile',
+                  ref: 'lex:app.cerulia.dev.core.ruleProfile',
                 },
                 description:
                   'Full rule profile records. Present in owner mode only.',
               },
               campaignSummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.campaign.getView#campaignSummary',
+                ref: 'lex:app.cerulia.dev.campaign.getView#campaignSummary',
                 description:
                   'Public-safe campaign summary. Present in public/anonymous mode only.',
               },
@@ -432,14 +436,14 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.campaign.getView#sessionSummary',
+                  ref: 'lex:app.cerulia.dev.campaign.getView#sessionSummary',
                 },
                 description:
                   'Public-safe session summaries. Present in public/anonymous mode only.',
               },
               ruleOverlaySummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.campaign.getView#ruleOverlaySummary',
+                ref: 'lex:app.cerulia.dev.campaign.getView#ruleOverlaySummary',
                 description:
                   'Public-safe rule overlay summary. Present in public/anonymous mode only.',
               },
@@ -549,7 +553,7 @@ export const schemaDict = {
             type: 'array',
             items: {
               type: 'ref',
-              ref: 'lex:app.cerulia.campaign.getView#ruleProfileLink',
+              ref: 'lex:app.cerulia.dev.campaign.getView#ruleProfileLink',
             },
           },
         },
@@ -570,9 +574,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCampaignUpdate: {
+  AppCeruliaDevCampaignUpdate: {
     lexicon: 1,
-    id: 'app.cerulia.campaign.update',
+    id: 'app.cerulia.dev.campaign.update',
     defs: {
       main: {
         type: 'procedure',
@@ -621,15 +625,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterCreateBranch: {
+  AppCeruliaDevCharacterCreateBranch: {
     lexicon: 1,
-    id: 'app.cerulia.character.createBranch',
+    id: 'app.cerulia.dev.character.createBranch',
     defs: {
       main: {
         type: 'procedure',
@@ -663,15 +667,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterCreateSheet: {
+  AppCeruliaDevCharacterCreateSheet: {
     lexicon: 1,
-    id: 'app.cerulia.character.createSheet',
+    id: 'app.cerulia.dev.character.createSheet',
     defs: {
       main: {
         type: 'procedure',
@@ -715,15 +719,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterGetBranchView: {
+  AppCeruliaDevCharacterGetBranchView: {
     lexicon: 1,
-    id: 'app.cerulia.character.getBranchView',
+    id: 'app.cerulia.dev.character.getBranchView',
     defs: {
       main: {
         type: 'query',
@@ -746,19 +750,19 @@ export const schemaDict = {
             properties: {
               branch: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.characterBranch',
+                ref: 'lex:app.cerulia.dev.core.characterBranch',
                 description: 'Full branch record. Present in owner mode only.',
               },
               sheet: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.characterSheet',
+                ref: 'lex:app.cerulia.dev.core.characterSheet',
                 description: 'Full sheet record. Present in owner mode only.',
               },
               advancements: {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.core.characterAdvancement',
+                  ref: 'lex:app.cerulia.dev.core.characterAdvancement',
                 },
                 description:
                   'Full advancement records. Present in owner mode only.',
@@ -767,7 +771,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.core.characterConversion',
+                  ref: 'lex:app.cerulia.dev.core.characterConversion',
                 },
                 description:
                   'Full conversion records. Present in owner mode only.',
@@ -776,19 +780,19 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.character.getBranchView#sessionListItem',
+                  ref: 'lex:app.cerulia.dev.character.getBranchView#sessionListItem',
                 },
                 description: 'Session list items. Present in owner mode only.',
               },
               branchSummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.character.getBranchView#branchSummary',
+                ref: 'lex:app.cerulia.dev.character.getBranchView#branchSummary',
                 description:
                   'Public-safe branch summary. Present in public/anonymous mode only.',
               },
               sheetSummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.character.getBranchView#sheetSummary',
+                ref: 'lex:app.cerulia.dev.character.getBranchView#sheetSummary',
                 description:
                   'Public-safe sheet summary. Present in public/anonymous mode only.',
               },
@@ -796,7 +800,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.character.getBranchView#sessionSummary',
+                  ref: 'lex:app.cerulia.dev.character.getBranchView#sessionSummary',
                 },
                 description:
                   'Public-safe session summaries. Present in public/anonymous mode only.',
@@ -805,7 +809,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.character.getBranchView#advancementSummary',
+                  ref: 'lex:app.cerulia.dev.character.getBranchView#advancementSummary',
                 },
                 description:
                   'Public-safe advancement summaries. Present in public/anonymous mode only.',
@@ -814,7 +818,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.character.getBranchView#conversionSummary',
+                  ref: 'lex:app.cerulia.dev.character.getBranchView#conversionSummary',
                 },
                 description:
                   'Public-safe conversion summaries. Present in public/anonymous mode only.',
@@ -882,7 +886,7 @@ export const schemaDict = {
             type: 'array',
             items: {
               type: 'ref',
-              ref: 'lex:app.cerulia.character.getBranchView#statEntry',
+              ref: 'lex:app.cerulia.dev.character.getBranchView#statEntry',
             },
             description:
               'Schema-backed public stats only. Omitted when sheetSchemaRef is absent.',
@@ -965,7 +969,7 @@ export const schemaDict = {
           },
           sessionSummary: {
             type: 'ref',
-            ref: 'lex:app.cerulia.character.getBranchView#advancementSessionSummary',
+            ref: 'lex:app.cerulia.dev.character.getBranchView#advancementSessionSummary',
           },
         },
       },
@@ -1050,7 +1054,7 @@ export const schemaDict = {
           },
           value: {
             type: 'ref',
-            ref: 'lex:app.cerulia.character.getBranchView#statValue',
+            ref: 'lex:app.cerulia.dev.character.getBranchView#statValue',
           },
         },
       },
@@ -1081,9 +1085,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCharacterGetHome: {
+  AppCeruliaDevCharacterGetHome: {
     lexicon: 1,
-    id: 'app.cerulia.character.getHome',
+    id: 'app.cerulia.dev.character.getHome',
     defs: {
       main: {
         type: 'query',
@@ -1106,14 +1110,14 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.character.getHome#branchListItem',
+                  ref: 'lex:app.cerulia.dev.character.getHome#branchListItem',
                 },
               },
               recentSessions: {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.character.getHome#sessionListItem',
+                  ref: 'lex:app.cerulia.dev.character.getHome#sessionListItem',
                 },
               },
             },
@@ -1193,9 +1197,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCharacterRebaseSheet: {
+  AppCeruliaDevCharacterRebaseSheet: {
     lexicon: 1,
-    id: 'app.cerulia.character.rebaseSheet',
+    id: 'app.cerulia.dev.character.rebaseSheet',
     defs: {
       main: {
         type: 'procedure',
@@ -1238,15 +1242,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterRecordAdvancement: {
+  AppCeruliaDevCharacterRecordAdvancement: {
     lexicon: 1,
-    id: 'app.cerulia.character.recordAdvancement',
+    id: 'app.cerulia.dev.character.recordAdvancement',
     defs: {
       main: {
         type: 'procedure',
@@ -1301,15 +1305,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterRecordConversion: {
+  AppCeruliaDevCharacterRecordConversion: {
     lexicon: 1,
-    id: 'app.cerulia.character.recordConversion',
+    id: 'app.cerulia.dev.character.recordConversion',
     defs: {
       main: {
         type: 'procedure',
@@ -1361,15 +1365,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterRetireBranch: {
+  AppCeruliaDevCharacterRetireBranch: {
     lexicon: 1,
-    id: 'app.cerulia.character.retireBranch',
+    id: 'app.cerulia.dev.character.retireBranch',
     defs: {
       main: {
         type: 'procedure',
@@ -1397,15 +1401,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterUpdateBranch: {
+  AppCeruliaDevCharacterUpdateBranch: {
     lexicon: 1,
-    id: 'app.cerulia.character.updateBranch',
+    id: 'app.cerulia.dev.character.updateBranch',
     defs: {
       main: {
         type: 'procedure',
@@ -1441,15 +1445,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCharacterUpdateSheet: {
+  AppCeruliaDevCharacterUpdateSheet: {
     lexicon: 1,
-    id: 'app.cerulia.character.updateSheet',
+    id: 'app.cerulia.dev.character.updateSheet',
     defs: {
       main: {
         type: 'procedure',
@@ -1491,15 +1495,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaCoreCampaign: {
+  AppCeruliaDevCoreCampaign: {
     lexicon: 1,
-    id: 'app.cerulia.core.campaign',
+    id: 'app.cerulia.dev.core.campaign',
     defs: {
       main: {
         type: 'record',
@@ -1558,9 +1562,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreCharacterAdvancement: {
+  AppCeruliaDevCoreCharacterAdvancement: {
     lexicon: 1,
-    id: 'app.cerulia.core.characterAdvancement',
+    id: 'app.cerulia.dev.core.characterAdvancement',
     defs: {
       main: {
         type: 'record',
@@ -1584,7 +1588,7 @@ export const schemaDict = {
             },
             deltaPayload: {
               type: 'ref',
-              ref: 'lex:app.cerulia.core.characterAdvancement#deltaPayload',
+              ref: 'lex:app.cerulia.dev.core.characterAdvancement#deltaPayload',
             },
             sessionRef: {
               type: 'string',
@@ -1592,7 +1596,7 @@ export const schemaDict = {
             },
             previousValues: {
               type: 'ref',
-              ref: 'lex:app.cerulia.core.characterAdvancement#previousValues',
+              ref: 'lex:app.cerulia.dev.core.characterAdvancement#previousValues',
             },
             effectiveAt: {
               type: 'string',
@@ -1630,9 +1634,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreCharacterBranch: {
+  AppCeruliaDevCoreCharacterBranch: {
     lexicon: 1,
-    id: 'app.cerulia.core.characterBranch',
+    id: 'app.cerulia.dev.core.characterBranch',
     defs: {
       main: {
         type: 'record',
@@ -1695,9 +1699,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreCharacterConversion: {
+  AppCeruliaDevCoreCharacterConversion: {
     lexicon: 1,
-    id: 'app.cerulia.core.characterConversion',
+    id: 'app.cerulia.dev.core.characterConversion',
     defs: {
       main: {
         type: 'record',
@@ -1760,9 +1764,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreCharacterSheet: {
+  AppCeruliaDevCoreCharacterSheet: {
     lexicon: 1,
-    id: 'app.cerulia.core.characterSheet',
+    id: 'app.cerulia.dev.core.characterSheet',
     defs: {
       main: {
         type: 'record',
@@ -1837,9 +1841,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreCharacterSheetSchema: {
+  AppCeruliaDevCoreCharacterSheetSchema: {
     lexicon: 1,
-    id: 'app.cerulia.core.characterSheetSchema',
+    id: 'app.cerulia.dev.core.characterSheetSchema',
     defs: {
       main: {
         type: 'record',
@@ -1870,7 +1874,7 @@ export const schemaDict = {
               type: 'array',
               items: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefRoot',
+                ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefRoot',
               },
             },
           },
@@ -1900,7 +1904,7 @@ export const schemaDict = {
           },
           valueRange: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#valueRange',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#valueRange',
           },
           required: {
             type: 'boolean',
@@ -1936,16 +1940,16 @@ export const schemaDict = {
             type: 'array',
             items: {
               type: 'ref',
-              ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefNode',
+              ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefNode',
             },
           },
           itemDef: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefNode',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefNode',
           },
           valueRange: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#valueRange',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#valueRange',
           },
           required: {
             type: 'boolean',
@@ -1958,7 +1962,7 @@ export const schemaDict = {
           },
           additionalFieldDef: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefAdditional',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefAdditional',
           },
         },
         required: ['fieldId', 'label', 'fieldType', 'required'],
@@ -1988,16 +1992,16 @@ export const schemaDict = {
             type: 'array',
             items: {
               type: 'ref',
-              ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefNode',
+              ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefNode',
             },
           },
           itemDef: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefNode',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefNode',
           },
           valueRange: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#valueRange',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#valueRange',
           },
           required: {
             type: 'boolean',
@@ -2010,7 +2014,7 @@ export const schemaDict = {
           },
           additionalFieldDef: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefAdditional',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefAdditional',
           },
         },
         required: ['fieldId', 'label', 'fieldType', 'required'],
@@ -2041,16 +2045,16 @@ export const schemaDict = {
             type: 'array',
             items: {
               type: 'ref',
-              ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefNode',
+              ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefNode',
             },
           },
           itemDef: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefNode',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefNode',
           },
           valueRange: {
             type: 'ref',
-            ref: 'lex:app.cerulia.core.characterSheetSchema#valueRange',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#valueRange',
           },
           required: {
             type: 'boolean',
@@ -2080,9 +2084,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreHouse: {
+  AppCeruliaDevCoreHouse: {
     lexicon: 1,
-    id: 'app.cerulia.core.house',
+    id: 'app.cerulia.dev.core.house',
     defs: {
       main: {
         type: 'record',
@@ -2140,9 +2144,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCorePlayerProfile: {
+  AppCeruliaDevCorePlayerProfile: {
     lexicon: 1,
-    id: 'app.cerulia.core.playerProfile',
+    id: 'app.cerulia.dev.core.playerProfile',
     defs: {
       main: {
         type: 'record',
@@ -2244,9 +2248,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreRuleProfile: {
+  AppCeruliaDevCoreRuleProfile: {
     lexicon: 1,
-    id: 'app.cerulia.core.ruleProfile',
+    id: 'app.cerulia.dev.core.ruleProfile',
     defs: {
       main: {
         type: 'record',
@@ -2301,9 +2305,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreScenario: {
+  AppCeruliaDevCoreScenario: {
     lexicon: 1,
-    id: 'app.cerulia.core.scenario',
+    id: 'app.cerulia.dev.core.scenario',
     defs: {
       main: {
         type: 'record',
@@ -2349,9 +2353,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaCoreSession: {
+  AppCeruliaDevCoreSession: {
     lexicon: 1,
-    id: 'app.cerulia.core.session',
+    id: 'app.cerulia.dev.core.session',
     defs: {
       main: {
         type: 'record',
@@ -2430,9 +2434,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaDefs: {
+  AppCeruliaDevDefs: {
     lexicon: 1,
-    id: 'app.cerulia.defs',
+    id: 'app.cerulia.dev.defs',
     defs: {
       mutationAck: {
         type: 'object',
@@ -2480,9 +2484,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaHouseCreate: {
+  AppCeruliaDevHouseCreate: {
     lexicon: 1,
-    id: 'app.cerulia.house.create',
+    id: 'app.cerulia.dev.house.create',
     defs: {
       main: {
         type: 'procedure',
@@ -2527,15 +2531,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaHouseGetView: {
+  AppCeruliaDevHouseGetView: {
     lexicon: 1,
-    id: 'app.cerulia.house.getView',
+    id: 'app.cerulia.dev.house.getView',
     defs: {
       main: {
         type: 'query',
@@ -2558,14 +2562,14 @@ export const schemaDict = {
             properties: {
               house: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.house',
+                ref: 'lex:app.cerulia.dev.core.house',
                 description: 'Full house record. Present in owner mode only.',
               },
               campaigns: {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.house.getView#campaignListItem',
+                  ref: 'lex:app.cerulia.dev.house.getView#campaignListItem',
                 },
                 description: 'Campaign list items. Present in owner mode only.',
               },
@@ -2573,13 +2577,13 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.house.getView#sessionListItem',
+                  ref: 'lex:app.cerulia.dev.house.getView#sessionListItem',
                 },
                 description: 'Session list items. Present in owner mode only.',
               },
               houseSummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.house.getView#houseSummary',
+                ref: 'lex:app.cerulia.dev.house.getView#houseSummary',
                 description:
                   'Public-safe house summary. Present in public/anonymous mode only.',
               },
@@ -2587,7 +2591,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.house.getView#campaignSummary',
+                  ref: 'lex:app.cerulia.dev.house.getView#campaignSummary',
                 },
                 description:
                   'Public-safe campaign summaries. Present in public/anonymous mode only.',
@@ -2596,7 +2600,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.house.getView#sessionSummary',
+                  ref: 'lex:app.cerulia.dev.house.getView#sessionSummary',
                 },
                 description:
                   'Public-safe session summaries. Present in public/anonymous mode only.',
@@ -2749,9 +2753,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaHouseUpdate: {
+  AppCeruliaDevHouseUpdate: {
     lexicon: 1,
-    id: 'app.cerulia.house.update',
+    id: 'app.cerulia.dev.house.update',
     defs: {
       main: {
         type: 'procedure',
@@ -2800,15 +2804,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaRuleCreateProfile: {
+  AppCeruliaDevRuleCreateProfile: {
     lexicon: 1,
-    id: 'app.cerulia.rule.createProfile',
+    id: 'app.cerulia.dev.rule.createProfile',
     defs: {
       main: {
         type: 'procedure',
@@ -2852,15 +2856,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaRuleCreateSheetSchema: {
+  AppCeruliaDevRuleCreateSheetSchema: {
     lexicon: 1,
-    id: 'app.cerulia.rule.createSheetSchema',
+    id: 'app.cerulia.dev.rule.createSheetSchema',
     defs: {
       main: {
         type: 'procedure',
@@ -2891,7 +2895,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.core.characterSheetSchema#fieldDefRoot',
+                  ref: 'lex:app.cerulia.dev.core.characterSheetSchema#fieldDefRoot',
                 },
               },
             },
@@ -2901,15 +2905,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaRuleGetProfile: {
+  AppCeruliaDevRuleGetProfile: {
     lexicon: 1,
-    id: 'app.cerulia.rule.getProfile',
+    id: 'app.cerulia.dev.rule.getProfile',
     defs: {
       main: {
         type: 'query',
@@ -2932,7 +2936,7 @@ export const schemaDict = {
             properties: {
               ruleProfile: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.ruleProfile',
+                ref: 'lex:app.cerulia.dev.core.ruleProfile',
               },
             },
           },
@@ -2940,9 +2944,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaRuleGetSheetSchema: {
+  AppCeruliaDevRuleGetSheetSchema: {
     lexicon: 1,
-    id: 'app.cerulia.rule.getSheetSchema',
+    id: 'app.cerulia.dev.rule.getSheetSchema',
     defs: {
       main: {
         type: 'query',
@@ -2965,7 +2969,7 @@ export const schemaDict = {
             properties: {
               characterSheetSchema: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.characterSheetSchema',
+                ref: 'lex:app.cerulia.dev.core.characterSheetSchema',
               },
             },
           },
@@ -2973,9 +2977,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaRuleListProfiles: {
+  AppCeruliaDevRuleListProfiles: {
     lexicon: 1,
-    id: 'app.cerulia.rule.listProfiles',
+    id: 'app.cerulia.dev.rule.listProfiles',
     defs: {
       main: {
         type: 'query',
@@ -3012,7 +3016,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.rule.listProfiles#ruleProfileListItem',
+                  ref: 'lex:app.cerulia.dev.rule.listProfiles#ruleProfileListItem',
                 },
               },
               cursor: {
@@ -3056,9 +3060,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaRuleListSheetSchemas: {
+  AppCeruliaDevRuleListSheetSchemas: {
     lexicon: 1,
-    id: 'app.cerulia.rule.listSheetSchemas',
+    id: 'app.cerulia.dev.rule.listSheetSchemas',
     defs: {
       main: {
         type: 'query',
@@ -3091,7 +3095,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.rule.listSheetSchemas#sheetSchemaListItem',
+                  ref: 'lex:app.cerulia.dev.rule.listSheetSchemas#sheetSchemaListItem',
                 },
               },
               cursor: {
@@ -3124,9 +3128,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaRuleUpdateProfile: {
+  AppCeruliaDevRuleUpdateProfile: {
     lexicon: 1,
-    id: 'app.cerulia.rule.updateProfile',
+    id: 'app.cerulia.dev.rule.updateProfile',
     defs: {
       main: {
         type: 'procedure',
@@ -3156,15 +3160,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaScenarioCreate: {
+  AppCeruliaDevScenarioCreate: {
     lexicon: 1,
-    id: 'app.cerulia.scenario.create',
+    id: 'app.cerulia.dev.scenario.create',
     defs: {
       main: {
         type: 'procedure',
@@ -3202,15 +3206,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaScenarioGetView: {
+  AppCeruliaDevScenarioGetView: {
     lexicon: 1,
-    id: 'app.cerulia.scenario.getView',
+    id: 'app.cerulia.dev.scenario.getView',
     defs: {
       main: {
         type: 'query',
@@ -3233,13 +3237,13 @@ export const schemaDict = {
             properties: {
               scenario: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.scenario',
+                ref: 'lex:app.cerulia.dev.core.scenario',
                 description:
                   'Full scenario record. Present in owner mode only.',
               },
               scenarioSummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.scenario.getView#scenarioSummary',
+                ref: 'lex:app.cerulia.dev.scenario.getView#scenarioSummary',
                 description:
                   'Public-safe scenario summary. Present in public/anonymous mode only.',
               },
@@ -3278,9 +3282,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaScenarioList: {
+  AppCeruliaDevScenarioList: {
     lexicon: 1,
-    id: 'app.cerulia.scenario.list',
+    id: 'app.cerulia.dev.scenario.list',
     defs: {
       main: {
         type: 'query',
@@ -3313,7 +3317,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.scenario.list#scenarioListItem',
+                  ref: 'lex:app.cerulia.dev.scenario.list#scenarioListItem',
                 },
               },
               cursor: {
@@ -3350,9 +3354,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaScenarioUpdate: {
+  AppCeruliaDevScenarioUpdate: {
     lexicon: 1,
-    id: 'app.cerulia.scenario.update',
+    id: 'app.cerulia.dev.scenario.update',
     defs: {
       main: {
         type: 'procedure',
@@ -3394,15 +3398,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaSessionCreate: {
+  AppCeruliaDevSessionCreate: {
     lexicon: 1,
-    id: 'app.cerulia.session.create',
+    id: 'app.cerulia.dev.session.create',
     defs: {
       main: {
         type: 'procedure',
@@ -3471,15 +3475,15 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
     },
   },
-  AppCeruliaSessionGetView: {
+  AppCeruliaDevSessionGetView: {
     lexicon: 1,
-    id: 'app.cerulia.session.getView',
+    id: 'app.cerulia.dev.session.getView',
     defs: {
       main: {
         type: 'query',
@@ -3502,12 +3506,12 @@ export const schemaDict = {
             properties: {
               session: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.core.session',
+                ref: 'lex:app.cerulia.dev.core.session',
                 description: 'Full session record. Present in owner mode only.',
               },
               sessionSummary: {
                 type: 'ref',
-                ref: 'lex:app.cerulia.session.getView#sessionSummary',
+                ref: 'lex:app.cerulia.dev.session.getView#sessionSummary',
                 description:
                   'Public-safe session summary. Present in public/anonymous mode only.',
               },
@@ -3564,9 +3568,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaSessionList: {
+  AppCeruliaDevSessionList: {
     lexicon: 1,
-    id: 'app.cerulia.session.list',
+    id: 'app.cerulia.dev.session.list',
     defs: {
       main: {
         type: 'query',
@@ -3595,7 +3599,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:app.cerulia.session.list#sessionListItem',
+                  ref: 'lex:app.cerulia.dev.session.list#sessionListItem',
                 },
               },
               cursor: {
@@ -3637,9 +3641,9 @@ export const schemaDict = {
       },
     },
   },
-  AppCeruliaSessionUpdate: {
+  AppCeruliaDevSessionUpdate: {
     lexicon: 1,
-    id: 'app.cerulia.session.update',
+    id: 'app.cerulia.dev.session.update',
     defs: {
       main: {
         type: 'procedure',
@@ -3712,7 +3716,7 @@ export const schemaDict = {
           encoding: 'application/json',
           schema: {
             type: 'ref',
-            ref: 'lex:app.cerulia.defs#mutationAck',
+            ref: 'lex:app.cerulia.dev.defs#mutationAck',
           },
         },
       },
@@ -3751,52 +3755,57 @@ export function validate(
 }
 
 export const ids = {
-  AppCeruliaActorGetProfileView: 'app.cerulia.actor.getProfileView',
-  AppCeruliaActorUpdateProfile: 'app.cerulia.actor.updateProfile',
-  AppCeruliaAuthCoreReader: 'app.cerulia.authCoreReader',
-  AppCeruliaAuthCoreWriter: 'app.cerulia.authCoreWriter',
-  AppCeruliaCampaignCreate: 'app.cerulia.campaign.create',
-  AppCeruliaCampaignGetView: 'app.cerulia.campaign.getView',
-  AppCeruliaCampaignUpdate: 'app.cerulia.campaign.update',
-  AppCeruliaCharacterCreateBranch: 'app.cerulia.character.createBranch',
-  AppCeruliaCharacterCreateSheet: 'app.cerulia.character.createSheet',
-  AppCeruliaCharacterGetBranchView: 'app.cerulia.character.getBranchView',
-  AppCeruliaCharacterGetHome: 'app.cerulia.character.getHome',
-  AppCeruliaCharacterRebaseSheet: 'app.cerulia.character.rebaseSheet',
-  AppCeruliaCharacterRecordAdvancement:
-    'app.cerulia.character.recordAdvancement',
-  AppCeruliaCharacterRecordConversion: 'app.cerulia.character.recordConversion',
-  AppCeruliaCharacterRetireBranch: 'app.cerulia.character.retireBranch',
-  AppCeruliaCharacterUpdateBranch: 'app.cerulia.character.updateBranch',
-  AppCeruliaCharacterUpdateSheet: 'app.cerulia.character.updateSheet',
-  AppCeruliaCoreCampaign: 'app.cerulia.core.campaign',
-  AppCeruliaCoreCharacterAdvancement: 'app.cerulia.core.characterAdvancement',
-  AppCeruliaCoreCharacterBranch: 'app.cerulia.core.characterBranch',
-  AppCeruliaCoreCharacterConversion: 'app.cerulia.core.characterConversion',
-  AppCeruliaCoreCharacterSheet: 'app.cerulia.core.characterSheet',
-  AppCeruliaCoreCharacterSheetSchema: 'app.cerulia.core.characterSheetSchema',
-  AppCeruliaCoreHouse: 'app.cerulia.core.house',
-  AppCeruliaCorePlayerProfile: 'app.cerulia.core.playerProfile',
-  AppCeruliaCoreRuleProfile: 'app.cerulia.core.ruleProfile',
-  AppCeruliaCoreScenario: 'app.cerulia.core.scenario',
-  AppCeruliaCoreSession: 'app.cerulia.core.session',
-  AppCeruliaDefs: 'app.cerulia.defs',
-  AppCeruliaHouseCreate: 'app.cerulia.house.create',
-  AppCeruliaHouseGetView: 'app.cerulia.house.getView',
-  AppCeruliaHouseUpdate: 'app.cerulia.house.update',
-  AppCeruliaRuleCreateProfile: 'app.cerulia.rule.createProfile',
-  AppCeruliaRuleCreateSheetSchema: 'app.cerulia.rule.createSheetSchema',
-  AppCeruliaRuleGetProfile: 'app.cerulia.rule.getProfile',
-  AppCeruliaRuleGetSheetSchema: 'app.cerulia.rule.getSheetSchema',
-  AppCeruliaRuleListProfiles: 'app.cerulia.rule.listProfiles',
-  AppCeruliaRuleListSheetSchemas: 'app.cerulia.rule.listSheetSchemas',
-  AppCeruliaRuleUpdateProfile: 'app.cerulia.rule.updateProfile',
-  AppCeruliaScenarioCreate: 'app.cerulia.scenario.create',
-  AppCeruliaScenarioGetView: 'app.cerulia.scenario.getView',
-  AppCeruliaScenarioList: 'app.cerulia.scenario.list',
-  AppCeruliaScenarioUpdate: 'app.cerulia.scenario.update',
-  AppCeruliaSessionCreate: 'app.cerulia.session.create',
-  AppCeruliaSessionGetView: 'app.cerulia.session.getView',
-  AppCeruliaSessionList: 'app.cerulia.session.list',
-  AppCeruliaSessionUpdate: 'app.cerulia.session.update',
+  AppCeruliaDevActorGetProfileView: 'app.cerulia.dev.actor.getProfileView',
+  AppCeruliaDevActorUpdateProfile: 'app.cerulia.dev.actor.updateProfile',
+  AppCeruliaDevAuthCoreReader: 'app.cerulia.dev.authCoreReader',
+  AppCeruliaDevAuthCoreWriter: 'app.cerulia.dev.authCoreWriter',
+  AppCeruliaDevCampaignCreate: 'app.cerulia.dev.campaign.create',
+  AppCeruliaDevCampaignGetView: 'app.cerulia.dev.campaign.getView',
+  AppCeruliaDevCampaignUpdate: 'app.cerulia.dev.campaign.update',
+  AppCeruliaDevCharacterCreateBranch: 'app.cerulia.dev.character.createBranch',
+  AppCeruliaDevCharacterCreateSheet: 'app.cerulia.dev.character.createSheet',
+  AppCeruliaDevCharacterGetBranchView:
+    'app.cerulia.dev.character.getBranchView',
+  AppCeruliaDevCharacterGetHome: 'app.cerulia.dev.character.getHome',
+  AppCeruliaDevCharacterRebaseSheet: 'app.cerulia.dev.character.rebaseSheet',
+  AppCeruliaDevCharacterRecordAdvancement:
+    'app.cerulia.dev.character.recordAdvancement',
+  AppCeruliaDevCharacterRecordConversion:
+    'app.cerulia.dev.character.recordConversion',
+  AppCeruliaDevCharacterRetireBranch: 'app.cerulia.dev.character.retireBranch',
+  AppCeruliaDevCharacterUpdateBranch: 'app.cerulia.dev.character.updateBranch',
+  AppCeruliaDevCharacterUpdateSheet: 'app.cerulia.dev.character.updateSheet',
+  AppCeruliaDevCoreCampaign: 'app.cerulia.dev.core.campaign',
+  AppCeruliaDevCoreCharacterAdvancement:
+    'app.cerulia.dev.core.characterAdvancement',
+  AppCeruliaDevCoreCharacterBranch: 'app.cerulia.dev.core.characterBranch',
+  AppCeruliaDevCoreCharacterConversion:
+    'app.cerulia.dev.core.characterConversion',
+  AppCeruliaDevCoreCharacterSheet: 'app.cerulia.dev.core.characterSheet',
+  AppCeruliaDevCoreCharacterSheetSchema:
+    'app.cerulia.dev.core.characterSheetSchema',
+  AppCeruliaDevCoreHouse: 'app.cerulia.dev.core.house',
+  AppCeruliaDevCorePlayerProfile: 'app.cerulia.dev.core.playerProfile',
+  AppCeruliaDevCoreRuleProfile: 'app.cerulia.dev.core.ruleProfile',
+  AppCeruliaDevCoreScenario: 'app.cerulia.dev.core.scenario',
+  AppCeruliaDevCoreSession: 'app.cerulia.dev.core.session',
+  AppCeruliaDevDefs: 'app.cerulia.dev.defs',
+  AppCeruliaDevHouseCreate: 'app.cerulia.dev.house.create',
+  AppCeruliaDevHouseGetView: 'app.cerulia.dev.house.getView',
+  AppCeruliaDevHouseUpdate: 'app.cerulia.dev.house.update',
+  AppCeruliaDevRuleCreateProfile: 'app.cerulia.dev.rule.createProfile',
+  AppCeruliaDevRuleCreateSheetSchema: 'app.cerulia.dev.rule.createSheetSchema',
+  AppCeruliaDevRuleGetProfile: 'app.cerulia.dev.rule.getProfile',
+  AppCeruliaDevRuleGetSheetSchema: 'app.cerulia.dev.rule.getSheetSchema',
+  AppCeruliaDevRuleListProfiles: 'app.cerulia.dev.rule.listProfiles',
+  AppCeruliaDevRuleListSheetSchemas: 'app.cerulia.dev.rule.listSheetSchemas',
+  AppCeruliaDevRuleUpdateProfile: 'app.cerulia.dev.rule.updateProfile',
+  AppCeruliaDevScenarioCreate: 'app.cerulia.dev.scenario.create',
+  AppCeruliaDevScenarioGetView: 'app.cerulia.dev.scenario.getView',
+  AppCeruliaDevScenarioList: 'app.cerulia.dev.scenario.list',
+  AppCeruliaDevScenarioUpdate: 'app.cerulia.dev.scenario.update',
+  AppCeruliaDevSessionCreate: 'app.cerulia.dev.session.create',
+  AppCeruliaDevSessionGetView: 'app.cerulia.dev.session.getView',
+  AppCeruliaDevSessionList: 'app.cerulia.dev.session.list',
+  AppCeruliaDevSessionUpdate: 'app.cerulia.dev.session.update',
 } as const

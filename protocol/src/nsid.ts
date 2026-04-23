@@ -16,6 +16,8 @@ const CERULIA_NSID_FAMILY_ROOT_SEGMENTS = new Set([
 	"character",
 	"core",
 	"house",
+	"rules",
+	"ruleset",
 	"rule",
 	"scenario",
 	"session",

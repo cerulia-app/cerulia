@@ -1,0 +1,49 @@
+{
+	"lexicon": 1,
+	"id": "app.cerulia.dev.rule.createSheetSchema",
+	"defs": {
+		"main": {
+			"type": "procedure",
+			"description": "Create character sheet schema.",
+			"input": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "object",
+					"required": [
+						"baseRulesetNsid",
+						"schemaVersion",
+						"title",
+						"fieldDefs"
+					],
+					"properties": {
+						"baseRulesetNsid": {
+							"type": "string",
+							"format": "nsid"
+						},
+						"schemaVersion": {
+							"type": "string"
+						},
+						"title": {
+							"type": "string",
+							"maxLength": 640
+						},
+						"fieldDefs": {
+							"type": "array",
+							"items": {
+								"type": "ref",
+								"ref": "app.cerulia.dev.core.characterSheetSchema#fieldDefRoot"
+							}
+						}
+					}
+				}
+			},
+			"output": {
+				"encoding": "application/json",
+				"schema": {
+					"type": "ref",
+					"ref": "app.cerulia.dev.defs#mutationAck"
+				}
+			}
+		}
+	}
+}

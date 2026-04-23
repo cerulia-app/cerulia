@@ -33,6 +33,14 @@ describe("Cerulia NSID compatibility", () => {
 		expect(parsed?.bareNsid).toBe("app.cerulia.rule.createSheetSchema");
 	});
 
+	test("parses Cerulia ruleset identifiers as managed NSIDs", () => {
+		const bare = parseCeruliaNsid("app.cerulia.rules.coc7");
+		const current = parseCeruliaNsid("app.cerulia.dev.ruleset.coc7");
+
+		expect(bare?.currentNsid).toBe("app.cerulia.dev.rules.coc7");
+		expect(current?.bareNsid).toBe("app.cerulia.ruleset.coc7");
+	});
+
 	test("leaves external NSIDs untouched", () => {
 		expect(parseCeruliaNsid("app.bsky.actor.profile")).toBeNull();
 		expect(toCurrentCeruliaNsid("app.bsky.actor.profile")).toBe(

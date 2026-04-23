@@ -24,6 +24,48 @@ describe("codec parser/validator", () => {
 		expect(result.success).toBe(true);
 	});
 
+	test("decodeTyped normalizes a legacy bare record type to the current dev variant", () => {
+		const decoded = decodeTyped<{
+			$type: string;
+			ownerDid: string;
+			rulesetNsid: string;
+			displayName: string;
+			version: number;
+			createdAt: string;
+			updatedAt: string;
+		}>({
+			$type: "app.cerulia.core.characterSheet",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			rulesetNsid: "app.cerulia.ruleset.coc7",
+			displayName: "Kurosawa Reiji",
+			version: 1,
+			createdAt: "2026-04-18T00:00:00.000Z",
+			updatedAt: "2026-04-18T00:00:00.000Z",
+		});
+
+		expect(decoded.$type).toBe("app.cerulia.dev.core.characterSheet");
+	});
+
+	test("validateById accepts the current dev lexicon id for a legacy bare payload", () => {
+		const record = {
+			$type: "app.cerulia.core.characterSheet",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			rulesetNsid: "app.cerulia.ruleset.coc7",
+			displayName: "Kurosawa Reiji",
+			version: 1,
+			createdAt: "2026-04-18T00:00:00.000Z",
+			updatedAt: "2026-04-18T00:00:00.000Z",
+		};
+
+		const result = validateById(
+			record,
+			"app.cerulia.dev.core.characterSheet",
+			"main",
+			true,
+		);
+		expect(result.success).toBe(true);
+	});
+
 	test("decodeTyped throws for invalid payload", () => {
 		const invalidRecord = {
 			$type: "app.cerulia.core.characterSheet",

@@ -1,10 +1,19 @@
 import { ValidationError, type ValidationResult } from "@atproto/lexicon";
 import { validate } from "../generated/lexicons.js";
+import {
+	normalizeCeruliaTypedValues,
+	toCurrentCeruliaNsid,
+	transformCeruliaLexiconValueToCurrent,
+} from "../nsid.js";
 
-const CHARACTER_SHEET_SCHEMA_ID = "app.cerulia.core.characterSheetSchema";
-const CREATE_SHEET_SCHEMA_ID = "app.cerulia.rule.createSheetSchema";
-const CREATE_SESSION_ID = "app.cerulia.session.create";
-const UPDATE_SESSION_ID = "app.cerulia.session.update";
+const CHARACTER_SHEET_SCHEMA_ID = toCurrentCeruliaNsid(
+	"app.cerulia.core.characterSheetSchema",
+);
+const CREATE_SHEET_SCHEMA_ID = toCurrentCeruliaNsid(
+	"app.cerulia.rule.createSheetSchema",
+);
+const CREATE_SESSION_ID = toCurrentCeruliaNsid("app.cerulia.session.create");
+const UPDATE_SESSION_ID = toCurrentCeruliaNsid("app.cerulia.session.update");
 
 type FieldDefLike = {
 	fieldType?: string;
@@ -208,15 +217,23 @@ function validateSessionInput(
 	return null;
 }
 
+function normalizeValueForValidation<T>(value: T, lexiconId: string): T {
+	return normalizeCeruliaTypedValues(
+		transformCeruliaLexiconValueToCurrent(value, lexiconId),
+	);
+}
+
 export function validateTyped<T extends { $type: string }>(
 	value: T,
 ): ValidationResult {
-	const result = validate(value, value.$type, "main", true);
+	const lexiconId = toCurrentCeruliaNsid(value.$type);
+	const normalizedValue = normalizeValueForValidation(value, value.$type);
+	const result = validate(normalizedValue, lexiconId, "main", true);
 	if (!result.success) {
 		return result;
 	}
 
-	return applyExtraValidation(value, value.$type, "main") ?? result;
+	return applyExtraValidation(normalizedValue, lexiconId, "main") ?? result;
 }
 
 export function validateById(
@@ -225,13 +242,15 @@ export function validateById(
 	defId = "main",
 	enforceLexiconType = false,
 ): ValidationResult {
+	const canonicalLexiconId = toCurrentCeruliaNsid(lexiconId);
+	const normalizedValue = normalizeValueForValidation(value, lexiconId);
 	const result = enforceLexiconType
-		? validate(value, lexiconId, defId, true)
-		: validate(value, lexiconId, defId);
+		? validate(normalizedValue, canonicalLexiconId, defId, true)
+		: validate(normalizedValue, canonicalLexiconId, defId);
 
 	if (!result.success) {
 		return result;
 	}
 
-	return applyExtraValidation(value, lexiconId, defId) ?? result;
+	return applyExtraValidation(normalizedValue, canonicalLexiconId, defId) ?? result;
 }

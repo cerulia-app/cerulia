@@ -1,5 +1,5 @@
-import * as AppCeruliaAuthCoreReader from "./generated/types/app/cerulia/authCoreReader.js";
-import * as AppCeruliaAuthCoreWriter from "./generated/types/app/cerulia/authCoreWriter.js";
+import * as AppCeruliaAuthCoreReader from "./generated/types/app/cerulia/dev/authCoreReader.js";
+import * as AppCeruliaAuthCoreWriter from "./generated/types/app/cerulia/dev/authCoreWriter.js";
 
 const MAIN_SUFFIX = "#main";
 

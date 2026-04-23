@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import * as AppCeruliaAuthCoreReader from "./generated/types/app/cerulia/authCoreReader.js";
-import * as AppCeruliaAuthCoreWriter from "./generated/types/app/cerulia/authCoreWriter.js";
+import * as AppCeruliaAuthCoreReader from "./generated/types/app/cerulia/dev/authCoreReader.js";
+import * as AppCeruliaAuthCoreWriter from "./generated/types/app/cerulia/dev/authCoreWriter.js";
 import { AUTH_SCOPE_IDS } from "./auth-scopes.js";
 
 describe("AUTH_SCOPE_IDS", () => {
@@ -16,8 +16,8 @@ describe("AUTH_SCOPE_IDS", () => {
 
 	test("keeps the documented stable scope names", () => {
 		expect(AUTH_SCOPE_IDS).toEqual({
-			reader: "app.cerulia.authCoreReader",
-			writer: "app.cerulia.authCoreWriter",
+			reader: "app.cerulia.dev.authCoreReader",
+			writer: "app.cerulia.dev.authCoreWriter",
 		});
 	});
 });
