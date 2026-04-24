@@ -57,7 +57,7 @@ export class SqlScenarioCatalogStore {
 		repoDid: string,
 		entries: ScenarioCatalogEntry[],
 	): Promise<void> {
- 		const currentState = await this.driver.get<ScenarioCatalogRepoStateRow>(
+		const currentState = await this.driver.get<ScenarioCatalogRepoStateRow>(
 			`SELECT active_generation FROM scenario_catalog_repo_state WHERE repo_did = ?`,
 			[repoDid],
 		);
@@ -80,7 +80,7 @@ export class SqlScenarioCatalogStore {
           has_recommended_sheet_schema,
           summary
         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
- 				[
+				[
 					entry.scenarioRef,
 					repoDid,
 					nextGeneration,
@@ -125,10 +125,7 @@ export class SqlScenarioCatalogStore {
 			`DELETE FROM scenario_catalog_entries
 			 WHERE repo_did = ?
 				 AND scenario_ref LIKE ?`,
-			[
-				LEGACY_SCENARIO_CATALOG_REPO_DID,
-				`at://${repoDid}/%`,
-			],
+			[LEGACY_SCENARIO_CATALOG_REPO_DID, `at://${repoDid}/%`],
 		);
 	}
 

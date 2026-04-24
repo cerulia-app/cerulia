@@ -4,7 +4,9 @@ import {
 	type ProjectionKnownRepoCatalog,
 } from "./projection.js";
 
-function createMemoryKnownRepoCatalog(seed: string[] = []): ProjectionKnownRepoCatalog {
+function createMemoryKnownRepoCatalog(
+	seed: string[] = [],
+): ProjectionKnownRepoCatalog {
 	const repoDids = new Set(seed);
 
 	return {

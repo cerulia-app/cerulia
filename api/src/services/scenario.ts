@@ -1,6 +1,4 @@
-import {
-	areEquivalentCeruliaNsids,
-} from "@cerulia/protocol";
+import { areEquivalentCeruliaNsids } from "@cerulia/protocol";
 import type {
 	AppCeruliaCoreScenario,
 	AppCeruliaScenarioCreate,
@@ -55,10 +53,7 @@ export function createScenarioService(runtime: ServiceRuntime) {
 			if (input.recommendedSheetSchemaRef && input.rulesetNsid) {
 				let schema: Awaited<ReturnType<typeof loadSchema>>;
 				try {
-					schema = await loadSchema(
-						runtime,
-						input.recommendedSheetSchemaRef,
-					);
+					schema = await loadSchema(runtime, input.recommendedSheetSchemaRef);
 				} catch (error) {
 					if (error instanceof ApiError && error.status === 404) {
 						return rejected(
@@ -238,11 +233,10 @@ export function createScenarioService(runtime: ServiceRuntime) {
 					scenarioRef,
 					title: record.value.title,
 					rulesetNsid: record.value.rulesetNsid,
-					hasRecommendedSheetSchema:
-						await hasResolvedRecommendedSheetSchema(
-							runtime,
-							record.value.recommendedSheetSchemaRef,
-						),
+					hasRecommendedSheetSchema: await hasResolvedRecommendedSheetSchema(
+						runtime,
+						record.value.recommendedSheetSchemaRef,
+					),
 					summary: record.value.summary,
 					sourceCitationUri: record.value.sourceCitationUri,
 				},

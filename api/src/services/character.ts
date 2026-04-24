@@ -122,11 +122,13 @@ const MATERIALIZATION_COLLECTIONS = [
 	COLLECTIONS.characterConversion,
 ];
 
-const MATERIALIZATION_SCOPE_COLLECTIONS = [...new Set(
-	MATERIALIZATION_COLLECTIONS.flatMap((collection) =>
-		getCeruliaNsidAliases(collection),
+const MATERIALIZATION_SCOPE_COLLECTIONS = [
+	...new Set(
+		MATERIALIZATION_COLLECTIONS.flatMap((collection) =>
+			getCeruliaNsidAliases(collection),
+		),
 	),
-)];
+];
 
 export function createCharacterService(runtime: ServiceRuntime) {
 	function activeAdvancementsForCurrentEpoch(
@@ -517,14 +519,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			} satisfies AppCeruliaCoreCharacterSheet.Main;
 
 			try {
-				await updateTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterSheet,
-					rkey: parseAtUri(input.characterSheetRef).rkey,
-					value: nextRecord,
-					createdAt: record.createdAt,
-					updatedAt,
-				}, { expectedCurrent: record });
+				await updateTypedRecord(
+					runtime,
+					{
+						repoDid: callerDid,
+						collection: COLLECTIONS.characterSheet,
+						rkey: parseAtUri(input.characterSheetRef).rkey,
+						value: nextRecord,
+						createdAt: record.createdAt,
+						updatedAt,
+					},
+					{ expectedCurrent: record },
+				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
 					return rebaseNeeded("characterSheet version is stale");
@@ -615,14 +621,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			} satisfies AppCeruliaCoreCharacterSheet.Main;
 
 			try {
-				await updateTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterSheet,
-					rkey: parseAtUri(input.characterSheetRef).rkey,
-					value: nextRecord,
-					createdAt: record.createdAt,
-					updatedAt,
-				}, { expectedCurrent: record });
+				await updateTypedRecord(
+					runtime,
+					{
+						repoDid: callerDid,
+						collection: COLLECTIONS.characterSheet,
+						rkey: parseAtUri(input.characterSheetRef).rkey,
+						value: nextRecord,
+						createdAt: record.createdAt,
+						updatedAt,
+					},
+					{ expectedCurrent: record },
+				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
 					return rebaseNeeded("characterSheet version is stale");
@@ -639,13 +649,12 @@ export function createCharacterService(runtime: ServiceRuntime) {
 		) {
 			let sourceBranch: StoredRecord<AppCeruliaCoreCharacterBranch.Main>;
 			try {
-				sourceBranch =
-					await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
-						runtime,
-						input.sourceBranchRef,
-						COLLECTIONS.characterBranch,
-						"sourceBranchRef",
-					);
+				sourceBranch = await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
+					runtime,
+					input.sourceBranchRef,
+					COLLECTIONS.characterBranch,
+					"sourceBranchRef",
+				);
 			} catch (error) {
 				if (error instanceof ApiError && error.status === 404) {
 					return rejected(
@@ -670,32 +679,32 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-				const sourceSheet = await loadOptionalSheet(
-					runtime,
-					sourceBranch.value.sheetRef,
+			const sourceSheet = await loadOptionalSheet(
+				runtime,
+				sourceBranch.value.sheetRef,
+			);
+			if (!sourceSheet) {
+				return rejected(
+					"repair-needed",
+					"source branch head sheet is missing; repair the branch before branching",
 				);
-				if (!sourceSheet) {
-					return rejected(
-						"repair-needed",
-						"source branch head sheet is missing; repair the branch before branching",
-					);
-				}
+			}
 			if (sourceSheet.repoDid !== callerDid) {
 				return rejected(
 					"forbidden-owner-mismatch",
 					"source branch sheet must belong to the caller",
 				);
 			}
-				const sourceSchema = await loadOptionalSchema(
-					runtime,
-					sourceSheet.value.sheetSchemaRef,
+			const sourceSchema = await loadOptionalSchema(
+				runtime,
+				sourceSheet.value.sheetSchemaRef,
+			);
+			if (sourceSheet.value.sheetSchemaRef && !sourceSchema) {
+				return rejected(
+					"repair-needed",
+					"source sheet schema is missing; repair the branch before branching",
 				);
-				if (sourceSheet.value.sheetSchemaRef && !sourceSchema) {
-					return rejected(
-						"repair-needed",
-						"source sheet schema is missing; repair the branch before branching",
-					);
-				}
+			}
 
 			const advancements = (
 				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterAdvancement.Main>(
@@ -738,7 +747,9 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				sourceStateSignature,
 			);
 			if (!stableSourceState) {
-				return rebaseNeeded("source branch state changed during materialization");
+				return rebaseNeeded(
+					"source branch state changed during materialization",
+				);
 			}
 
 			if (sourceSchema) {
@@ -813,7 +824,9 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
-					return rebaseNeeded("source branch state changed during materialization");
+					return rebaseNeeded(
+						"source branch state changed during materialization",
+					);
 				}
 				throw error;
 			}
@@ -860,14 +873,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
 			try {
-				await updateTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterBranch,
-					rkey: parseAtUri(input.characterBranchRef).rkey,
-					value: nextRecord,
-					createdAt: record.createdAt,
-					updatedAt,
-				}, { expectedCurrent: record });
+				await updateTypedRecord(
+					runtime,
+					{
+						repoDid: callerDid,
+						collection: COLLECTIONS.characterBranch,
+						rkey: parseAtUri(input.characterBranchRef).rkey,
+						value: nextRecord,
+						createdAt: record.createdAt,
+						updatedAt,
+					},
+					{ expectedCurrent: record },
+				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
 					return rebaseNeeded("characterBranch revision is stale");
@@ -916,14 +933,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 
 			try {
-				await updateTypedRecord(runtime, {
-					repoDid: callerDid,
-					collection: COLLECTIONS.characterBranch,
-					rkey: parseAtUri(input.characterBranchRef).rkey,
-					value: nextRecord,
-					createdAt: record.createdAt,
-					updatedAt,
-				}, { expectedCurrent: record });
+				await updateTypedRecord(
+					runtime,
+					{
+						repoDid: callerDid,
+						collection: COLLECTIONS.characterBranch,
+						rkey: parseAtUri(input.characterBranchRef).rkey,
+						value: nextRecord,
+						createdAt: record.createdAt,
+						updatedAt,
+					},
+					{ expectedCurrent: record },
+				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
 					return rebaseNeeded("characterBranch revision is stale");
@@ -1036,10 +1057,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			} satisfies AppCeruliaCoreCharacterBranch.Main;
 			const expectedScopeState = await runtime.store.getScopeStateToken(
 				callerDid,
-				[
-					COLLECTIONS.characterAdvancement,
-					COLLECTIONS.characterBranch,
-				],
+				[COLLECTIONS.characterAdvancement, COLLECTIONS.characterBranch],
 			);
 
 			try {
@@ -1073,7 +1091,9 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
-					return rebaseNeeded("characterBranch state changed during advancement");
+					return rebaseNeeded(
+						"characterBranch state changed during advancement",
+					);
 				}
 				throw error;
 			}
@@ -1085,13 +1105,12 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			callerDid: string,
 			input: AppCeruliaCharacterRecordConversion.InputSchema,
 		) {
-			const branch =
-				await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
-					runtime,
-					input.characterBranchRef,
-					COLLECTIONS.characterBranch,
-					"characterBranchRef",
-				);
+			const branch = await requireRecord<AppCeruliaCoreCharacterBranch.Main>(
+				runtime,
+				input.characterBranchRef,
+				COLLECTIONS.characterBranch,
+				"characterBranchRef",
+			);
 			if (branch.repoDid !== callerDid) {
 				return rejected(
 					"forbidden-owner-mismatch",
@@ -1106,7 +1125,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			const sourceSheet = await loadOptionalSheet(runtime, branch.value.sheetRef);
+			const sourceSheet = await loadOptionalSheet(
+				runtime,
+				branch.value.sheetRef,
+			);
 			if (!sourceSheet) {
 				return rejected(
 					"repair-needed",
@@ -1248,7 +1270,9 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				sourceStateSignature,
 			);
 			if (!stableSourceState) {
-				return rebaseNeeded("source branch state changed during materialization");
+				return rebaseNeeded(
+					"source branch state changed during materialization",
+				);
 			}
 			const validationError = validateStatsAgainstSchema(
 				convertedStats,
@@ -1270,7 +1294,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			const sheetRkey = runtime.nextTid();
 			const targetSheetRef = `at://${callerDid}/${COLLECTIONS.characterSheet}/${sheetRkey}`;
 			const conversionRef = `at://${callerDid}/${COLLECTIONS.characterConversion}/${conversionRkey}`;
-			const sourceStateGuards = [branch, sourceSheet] as StoredRecord<unknown>[];
+			const sourceStateGuards = [
+				branch,
+				sourceSheet,
+			] as StoredRecord<unknown>[];
 			const targetSheet = {
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: callerDid,
@@ -1346,12 +1373,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			} catch (error) {
 				if (isRecordConflictError(error)) {
-					return rebaseNeeded("source branch state changed during materialization");
+					return rebaseNeeded(
+						"source branch state changed during materialization",
+					);
 				}
 				throw error;
 			}
 
-			return accepted([targetSheetRef, input.characterBranchRef, conversionRef]);
+			return accepted([
+				targetSheetRef,
+				input.characterBranchRef,
+				conversionRef,
+			]);
 		},
 
 		async getHome(
@@ -1374,14 +1407,13 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				sortStoredRecordsDescending(
 					sessions,
 					(record) => record.value.playedAt,
-				)
-					.map(async (record) =>
-						buildSessionListItem(
-							record.uri,
-							record.value,
-							await resolveScenarioLabel(runtime, record.value),
-						),
+				).map(async (record) =>
+					buildSessionListItem(
+						record.uri,
+						record.value,
+						await resolveScenarioLabel(runtime, record.value),
 					),
+				),
 			);
 
 			return {
@@ -1420,27 +1452,27 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					COLLECTIONS.characterAdvancement,
 					branch.repoDid,
 				)
-				).filter((record) =>
-					areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
-				);
+			).filter((record) =>
+				areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+			);
 			const conversions = (
 				await listRecordsByCollectionAlias<AppCeruliaCoreCharacterConversion.Main>(
 					runtime,
 					COLLECTIONS.characterConversion,
 					branch.repoDid,
 				)
-				).filter((record) =>
-					areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
-				);
+			).filter((record) =>
+				areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+			);
 			const sessions = (
 				await listRecordsByCollectionAlias<AppCeruliaCoreSession.Main>(
 					runtime,
 					COLLECTIONS.session,
 					branch.repoDid,
 				)
-				).filter((record) =>
-					areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
-				);
+			).filter((record) =>
+				areEquivalentRecordUris(record.value.characterBranchRef, branchRef),
+			);
 
 			if (isOwnerReader(auth, branch.repoDid)) {
 				return {
@@ -1458,18 +1490,14 @@ export function createCharacterService(runtime: ServiceRuntime) {
 						sortStoredRecordsDescending(
 							sessions,
 							(record) => record.value.playedAt,
-						)
-							.map(async (record) => ({
-								$type: "app.cerulia.dev.character.getBranchView#sessionListItem",
-								sessionRef: record.uri,
-								role: record.value.role,
-								playedAt: record.value.playedAt,
-								scenarioLabel: await resolveScenarioLabel(
-									runtime,
-									record.value,
-								),
-								visibility: record.value.visibility,
-							})),
+						).map(async (record) => ({
+							$type: "app.cerulia.dev.character.getBranchView#sessionListItem",
+							sessionRef: record.uri,
+							role: record.value.role,
+							playedAt: record.value.playedAt,
+							scenarioLabel: await resolveScenarioLabel(runtime, record.value),
+							visibility: record.value.visibility,
+						})),
 					),
 				};
 			}
@@ -1487,9 +1515,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					},
 					recentSessionSummaries: await Promise.all(
 						sortStoredRecordsDescending(
-							sessions.filter(
-								(record) => record.value.visibility === "public",
-							),
+							sessions.filter((record) => record.value.visibility === "public"),
 							(record) => record.value.playedAt,
 						).map(async (record) => ({
 							$type: "app.cerulia.dev.character.getBranchView#sessionSummary",
@@ -1508,18 +1534,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 							advancements,
 							(record) => record.value.effectiveAt,
 						).map(async (record) => ({
-							$type: "app.cerulia.dev.character.getBranchView#advancementSummary",
+							$type:
+								"app.cerulia.dev.character.getBranchView#advancementSummary",
 							advancementRef: record.uri,
 							advancementKind: record.value.advancementKind,
 							effectiveAt: record.value.effectiveAt,
 							sessionSummary: record.value.sessionRef
 								? await (async () => {
-										const session = sessions.find(
-											(sessionRecord) =>
-												areEquivalentRecordUris(
-													sessionRecord.uri,
-													record.value.sessionRef,
-												),
+										const session = sessions.find((sessionRecord) =>
+											areEquivalentRecordUris(
+												sessionRecord.uri,
+												record.value.sessionRef,
+											),
 										);
 										if (!session || session.value.visibility !== "public") {
 											return undefined;
@@ -1588,18 +1614,17 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					sortStoredRecordsDescending(
 						sessions.filter((record) => record.value.visibility === "public"),
 						(record) => record.value.playedAt,
-					)
-						.map(async (record) => ({
-							$type: "app.cerulia.dev.character.getBranchView#sessionSummary",
-							sessionRef: record.uri,
-							role: record.value.role,
-							playedAt: record.value.playedAt,
-							scenarioLabel: await resolveScenarioLabel(runtime, record.value),
-							hoLabel: record.value.hoLabel,
-							hoSummary: record.value.hoSummary,
-							outcomeSummary: record.value.outcomeSummary,
-							externalArchiveUris: record.value.externalArchiveUris,
-						})),
+					).map(async (record) => ({
+						$type: "app.cerulia.dev.character.getBranchView#sessionSummary",
+						sessionRef: record.uri,
+						role: record.value.role,
+						playedAt: record.value.playedAt,
+						scenarioLabel: await resolveScenarioLabel(runtime, record.value),
+						hoLabel: record.value.hoLabel,
+						hoSummary: record.value.hoSummary,
+						outcomeSummary: record.value.outcomeSummary,
+						externalArchiveUris: record.value.externalArchiveUris,
+					})),
 				),
 				advancementSummaries: await Promise.all(
 					sortStoredRecordsDescending(
@@ -1612,12 +1637,11 @@ export function createCharacterService(runtime: ServiceRuntime) {
 						effectiveAt: record.value.effectiveAt,
 						sessionSummary: record.value.sessionRef
 							? await (async () => {
-									const session = sessions.find(
-										(sessionRecord) =>
-											areEquivalentRecordUris(
-												sessionRecord.uri,
-												record.value.sessionRef,
-											),
+									const session = sessions.find((sessionRecord) =>
+										areEquivalentRecordUris(
+											sessionRecord.uri,
+											record.value.sessionRef,
+										),
 									);
 									if (!session || session.value.visibility !== "public") {
 										return undefined;

@@ -17,10 +17,10 @@
  *   A suffix match is used when the exact path does not match.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
 
-const REQUESTS_FILE = resolve(process.cwd(), 'IMAGE-REQUESTS.md')
+const REQUESTS_FILE = resolve(process.cwd(), "IMAGE-REQUESTS.md");
 
 const INITIAL_HEADER = `# IMAGE-REQUESTS.md
 
@@ -31,18 +31,18 @@ appview の実装で必要な画像の制作仕様を記載しています。
 1. 各セクションの仕様に従い、外部ツール（生成 AI または手作業）で画像を制作してください。
 2. 制作した画像を「ファイルパス」欄と同じ名前に変更してください。
 3. \`appview/static/\` 内の対応するプレースホルダーファイル（現在は透明 PNG）を置き換えてください。
-4. コードの変更は不要です。ファイルを置き換えるだけで反映されます。`
+4. コードの変更は不要です。ファイルを置き換えるだけで反映されます。`;
 
 /** Matches the ファイルパス table row and captures the stored path. */
-const FILE_PATH_RE = /\*\*ファイルパス\*\*\s*\|\s*`([^`]+)`/
+const FILE_PATH_RE = /\*\*ファイルパス\*\*\s*\|\s*`([^`]+)`/;
 
 // ---------------------------------------------------------------------------
 // File I/O
 // ---------------------------------------------------------------------------
 
 function readRaw() {
-  if (!existsSync(REQUESTS_FILE)) return INITIAL_HEADER + '\n\n---\n'
-  return readFileSync(REQUESTS_FILE, 'utf8').replace(/\r\n/g, '\n')
+	if (!existsSync(REQUESTS_FILE)) return INITIAL_HEADER + "\n\n---\n";
+	return readFileSync(REQUESTS_FILE, "utf8").replace(/\r\n/g, "\n");
 }
 
 /**
@@ -51,19 +51,24 @@ function readRaw() {
  * The header is everything before the first "---".
  */
 function parseContent(raw) {
-  const parts = raw.split(/\n---\n/)
-  const header = parts[0].trimEnd()
-  const entries = parts.slice(1).map(s => s.trim()).filter(Boolean)
-  return { header, entries }
+	const parts = raw.split(/\n---\n/);
+	const header = parts[0].trimEnd();
+	const entries = parts
+		.slice(1)
+		.map((s) => s.trim())
+		.filter(Boolean);
+	return { header, entries };
 }
 
 /**
  * Serialises the header and entries back into IMAGE-REQUESTS.md content.
- * Format: HEADER \n\n---\n [\n ENTRY \n\n---\n ...] 
+ * Format: HEADER \n\n---\n [\n ENTRY \n\n---\n ...]
  */
 function serialize(header, entries) {
-  if (entries.length === 0) return header + '\n\n---\n'
-  return header + '\n\n---\n' + entries.map(e => '\n' + e + '\n\n---\n').join('')
+	if (entries.length === 0) return header + "\n\n---\n";
+	return (
+		header + "\n\n---\n" + entries.map((e) => "\n" + e + "\n\n---\n").join("")
+	);
 }
 
 // ---------------------------------------------------------------------------
@@ -71,8 +76,8 @@ function serialize(header, entries) {
 // ---------------------------------------------------------------------------
 
 function getFilePath(entry) {
-  const m = entry.match(FILE_PATH_RE)
-  return m ? m[1] : null
+	const m = entry.match(FILE_PATH_RE);
+	return m ? m[1] : null;
 }
 
 /**
@@ -80,9 +85,9 @@ function getFilePath(entry) {
  * Accepts: exact match, suffix match separated by "/", or filename-only match.
  */
 function matches(entry, key) {
-  const fp = getFilePath(entry)
-  if (!fp) return false
-  return fp === key || fp.endsWith('/' + key)
+	const fp = getFilePath(entry);
+	if (!fp) return false;
+	return fp === key || fp.endsWith("/" + key);
 }
 
 // ---------------------------------------------------------------------------
@@ -90,103 +95,135 @@ function matches(entry, key) {
 // ---------------------------------------------------------------------------
 
 async function readEntry(filePath) {
-  if (filePath === '-') {
-    const bufs = []
-    for await (const chunk of process.stdin) bufs.push(chunk)
-    return Buffer.concat(bufs).toString('utf8').trim()
-  }
-  const abs = resolve(process.cwd(), filePath)
-  if (!existsSync(abs)) {
-    console.error(`Error: entry file not found: ${abs}`)
-    process.exit(1)
-  }
-  return readFileSync(abs, 'utf8').trim()
+	if (filePath === "-") {
+		const bufs = [];
+		for await (const chunk of process.stdin) bufs.push(chunk);
+		return Buffer.concat(bufs).toString("utf8").trim();
+	}
+	const abs = resolve(process.cwd(), filePath);
+	if (!existsSync(abs)) {
+		console.error(`Error: entry file not found: ${abs}`);
+		process.exit(1);
+	}
+	return readFileSync(abs, "utf8").trim();
 }
 
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
 
-const [,, command, arg1, arg2] = process.argv
+const [, , command, arg1, arg2] = process.argv;
 
 if (!command) {
-  console.error('Usage: node manage-image-requests.mjs <add|get|delete|update|list> [args]')
-  process.exit(1)
+	console.error(
+		"Usage: node manage-image-requests.mjs <add|get|delete|update|list> [args]",
+	);
+	process.exit(1);
 }
 
 switch (command) {
-  case 'add': {
-    // add <entry-file>
-    if (!arg1) {
-      console.error('Usage: manage-image-requests.mjs add <entry-file>')
-      process.exit(1)
-    }
-    const entry = await readEntry(arg1)
-    if (!entry) { console.error('Error: entry file is empty.'); process.exit(1) }
-    const { header, entries } = parseContent(readRaw())
-    const fp = getFilePath(entry)
-    if (fp && entries.some(e => matches(e, fp))) {
-      console.error(`Error: an entry for "${fp}" already exists. Use "update" to replace it.`)
-      process.exit(1)
-    }
-    writeFileSync(REQUESTS_FILE, serialize(header, [...entries, entry]))
-    console.log(`Added entry${fp ? ': ' + fp : ''}.`)
-    break
-  }
+	case "add": {
+		// add <entry-file>
+		if (!arg1) {
+			console.error("Usage: manage-image-requests.mjs add <entry-file>");
+			process.exit(1);
+		}
+		const entry = await readEntry(arg1);
+		if (!entry) {
+			console.error("Error: entry file is empty.");
+			process.exit(1);
+		}
+		const { header, entries } = parseContent(readRaw());
+		const fp = getFilePath(entry);
+		if (fp && entries.some((e) => matches(e, fp))) {
+			console.error(
+				`Error: an entry for "${fp}" already exists. Use "update" to replace it.`,
+			);
+			process.exit(1);
+		}
+		writeFileSync(REQUESTS_FILE, serialize(header, [...entries, entry]));
+		console.log(`Added entry${fp ? ": " + fp : ""}.`);
+		break;
+	}
 
-  case 'get': {
-    // get <image-path>
-    if (!arg1) { console.error('Usage: manage-image-requests.mjs get <image-path>'); process.exit(1) }
-    const { entries } = parseContent(readRaw())
-    const found = entries.find(e => matches(e, arg1))
-    if (!found) { console.error(`Not found: ${arg1}`); process.exit(1) }
-    process.stdout.write(found + '\n')
-    break
-  }
+	case "get": {
+		// get <image-path>
+		if (!arg1) {
+			console.error("Usage: manage-image-requests.mjs get <image-path>");
+			process.exit(1);
+		}
+		const { entries } = parseContent(readRaw());
+		const found = entries.find((e) => matches(e, arg1));
+		if (!found) {
+			console.error(`Not found: ${arg1}`);
+			process.exit(1);
+		}
+		process.stdout.write(found + "\n");
+		break;
+	}
 
-  case 'delete': {
-    // delete <image-path>
-    if (!arg1) { console.error('Usage: manage-image-requests.mjs delete <image-path>'); process.exit(1) }
-    const { header, entries } = parseContent(readRaw())
-    const before = entries.length
-    const next = entries.filter(e => !matches(e, arg1))
-    if (next.length === before) { console.error(`Not found: ${arg1}`); process.exit(1) }
-    writeFileSync(REQUESTS_FILE, serialize(header, next))
-    console.log(`Deleted entry: ${arg1}`)
-    break
-  }
+	case "delete": {
+		// delete <image-path>
+		if (!arg1) {
+			console.error("Usage: manage-image-requests.mjs delete <image-path>");
+			process.exit(1);
+		}
+		const { header, entries } = parseContent(readRaw());
+		const before = entries.length;
+		const next = entries.filter((e) => !matches(e, arg1));
+		if (next.length === before) {
+			console.error(`Not found: ${arg1}`);
+			process.exit(1);
+		}
+		writeFileSync(REQUESTS_FILE, serialize(header, next));
+		console.log(`Deleted entry: ${arg1}`);
+		break;
+	}
 
-  case 'update': {
-    // update <image-path> <entry-file>
-    if (!arg1 || !arg2) {
-      console.error('Usage: manage-image-requests.mjs update <image-path> <entry-file>')
-      process.exit(1)
-    }
-    const entry = await readEntry(arg2)
-    if (!entry) { console.error('Error: entry file is empty.'); process.exit(1) }
-    const { header, entries } = parseContent(readRaw())
-    const idx = entries.findIndex(e => matches(e, arg1))
-    if (idx === -1) { console.error(`Not found: ${arg1}`); process.exit(1) }
-    entries[idx] = entry
-    writeFileSync(REQUESTS_FILE, serialize(header, entries))
-    console.log(`Updated entry: ${arg1}`)
-    break
-  }
+	case "update": {
+		// update <image-path> <entry-file>
+		if (!arg1 || !arg2) {
+			console.error(
+				"Usage: manage-image-requests.mjs update <image-path> <entry-file>",
+			);
+			process.exit(1);
+		}
+		const entry = await readEntry(arg2);
+		if (!entry) {
+			console.error("Error: entry file is empty.");
+			process.exit(1);
+		}
+		const { header, entries } = parseContent(readRaw());
+		const idx = entries.findIndex((e) => matches(e, arg1));
+		if (idx === -1) {
+			console.error(`Not found: ${arg1}`);
+			process.exit(1);
+		}
+		entries[idx] = entry;
+		writeFileSync(REQUESTS_FILE, serialize(header, entries));
+		console.log(`Updated entry: ${arg1}`);
+		break;
+	}
 
-  case 'list': {
-    const { entries } = parseContent(readRaw())
-    if (entries.length === 0) { console.log('No entries in IMAGE-REQUESTS.md.'); break }
-    for (const entry of entries) {
-      const fp = getFilePath(entry)
-      const heading = entry.match(/^##\s+(.+)/)
-      console.log(`  ${fp ?? '(no path)'}  —  ${heading ? heading[1] : '(unnamed)'}`)
-    }
-    break
-  }
+	case "list": {
+		const { entries } = parseContent(readRaw());
+		if (entries.length === 0) {
+			console.log("No entries in IMAGE-REQUESTS.md.");
+			break;
+		}
+		for (const entry of entries) {
+			const fp = getFilePath(entry);
+			const heading = entry.match(/^##\s+(.+)/);
+			console.log(
+				`  ${fp ?? "(no path)"}  —  ${heading ? heading[1] : "(unnamed)"}`,
+			);
+		}
+		break;
+	}
 
-  default: {
-    console.error(`Unknown command: ${command}`)
-    console.error('Commands: add, get, delete, update, list')
-    process.exit(1)
-  }
+	default: {
+		console.error(`Unknown command: ${command}`);
+		console.error("Commands: add, get, delete, update, list");
+		process.exit(1);
+	}
 }

@@ -44,16 +44,25 @@ class D1SqlDriver implements SqlDriver {
 	}
 
 	async get<T>(sql: string, params: unknown[] = []): Promise<T | null> {
-		return this.db.prepare(sql).bind(...params).first<T>();
+		return this.db
+			.prepare(sql)
+			.bind(...params)
+			.first<T>();
 	}
 
 	async all<T>(sql: string, params: unknown[] = []): Promise<T[]> {
-		const result = await this.db.prepare(sql).bind(...params).all<T>();
+		const result = await this.db
+			.prepare(sql)
+			.bind(...params)
+			.all<T>();
 		return result.results;
 	}
 
 	async run(sql: string, params: unknown[] = []): Promise<number | undefined> {
-		const result = await this.db.prepare(sql).bind(...params).run();
+		const result = await this.db
+			.prepare(sql)
+			.bind(...params)
+			.run();
 		return this.extractChanges(result);
 	}
 }

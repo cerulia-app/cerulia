@@ -16,7 +16,15 @@ class FakePublicRepoAgent implements PublicRepoAgent {
 	readonly com = {
 		atproto: {
 			repo: {
-				getRecord: async ({ repo, collection, rkey }: { repo: string; collection: string; rkey: string }) => {
+				getRecord: async ({
+					repo,
+					collection,
+					rkey,
+				}: {
+					repo: string;
+					collection: string;
+					rkey: string;
+				}) => {
 					for (const page of this.pages) {
 						const record = page.records.find(
 							(entry) => entry.uri === scenarioUri(repo, rkey),

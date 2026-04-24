@@ -192,31 +192,33 @@ export function createActorService(runtime: ServiceRuntime) {
 					COLLECTIONS.characterBranch,
 					did,
 				);
-			const publicBranches = (await Promise.all(
-				branches
-					.filter((branch) => branch.value.visibility === "public")
-					.map(
-						async (
-							branch,
-						): Promise<AppCeruliaActorGetProfileView.BranchLink | null> => {
-							const sheet = await loadOptionalSheet(
-								runtime,
-								branch.value.sheetRef,
-							);
-							if (!sheet) {
-								return null;
-							}
+			const publicBranches = (
+				await Promise.all(
+					branches
+						.filter((branch) => branch.value.visibility === "public")
+						.map(
+							async (
+								branch,
+							): Promise<AppCeruliaActorGetProfileView.BranchLink | null> => {
+								const sheet = await loadOptionalSheet(
+									runtime,
+									branch.value.sheetRef,
+								);
+								if (!sheet) {
+									return null;
+								}
 
-							return {
-								$type: "app.cerulia.dev.actor.getProfileView#branchLink",
-								characterBranchRef: branch.uri,
-								displayName: sheet.value.displayName,
-								branchLabel: branch.value.branchLabel,
-								rulesetNsid: sheet.value.rulesetNsid,
-							};
-						},
-					),
-			)).filter(
+								return {
+									$type: "app.cerulia.dev.actor.getProfileView#branchLink",
+									characterBranchRef: branch.uri,
+									displayName: sheet.value.displayName,
+									branchLabel: branch.value.branchLabel,
+									rulesetNsid: sheet.value.rulesetNsid,
+								};
+							},
+						),
+				)
+			).filter(
 				(branch): branch is AppCeruliaActorGetProfileView.BranchLink =>
 					branch !== null,
 			);

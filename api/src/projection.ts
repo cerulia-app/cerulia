@@ -21,7 +21,9 @@ function isPrivateIpv4(hostname: string): boolean {
 
 	const octets = match.slice(1).map((part) => Number.parseInt(part, 10));
 	const [first, second] = octets;
-	if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
+	if (
+		octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
+	) {
 		return false;
 	}
 
@@ -48,7 +50,11 @@ function isTrustedInternalHostname(hostname: string): boolean {
 
 function isLoopbackHostname(hostname: string): boolean {
 	const normalized = hostname.toLowerCase();
-	return normalized === "localhost" || normalized === "[::1]" || normalized === "127.0.0.1";
+	return (
+		normalized === "localhost" ||
+		normalized === "[::1]" ||
+		normalized === "127.0.0.1"
+	);
 }
 
 function normalizeBaseUrl(value: string): URL {

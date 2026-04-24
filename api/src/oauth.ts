@@ -22,10 +22,7 @@ import type {
 	SavedOAuthSessionStore,
 	SavedOAuthStateStore,
 } from "./store/oauth.js";
-import {
-	toOAuthSessionStore,
-	toOAuthStateStore,
-} from "./store/oauth.js";
+import { toOAuthSessionStore, toOAuthStateStore } from "./store/oauth.js";
 
 interface SessionLike {
 	did: string;
@@ -245,11 +242,10 @@ function createOAuthRuntimeBundle(
 					);
 				}
 
-				const browserSession =
-					await browserSessionStore.createBrowserSession(
-						session.did,
-						grantedScope,
-					);
+				const browserSession = await browserSessionStore.createBrowserSession(
+					session.did,
+					grantedScope,
+				);
 
 				return {
 					sessionId: browserSession.sessionId,
@@ -275,9 +271,9 @@ function createOAuthRuntimeBundle(
 				const binding = await browserSessionStore.getBrowserSession(sessionId);
 				return binding
 					? {
-						did: binding.did,
-						grantedScope: binding.grantedScope,
-					}
+							did: binding.did,
+							grantedScope: binding.grantedScope,
+						}
 					: null;
 			},
 		},
@@ -286,9 +282,7 @@ function createOAuthRuntimeBundle(
 
 function createPublicAgentLookup(
 	_fetchImpl: FetchLike,
-	resolveDidDoc:
-		| ((repoDid: string) => Promise<unknown | null>)
-		| undefined,
+	resolveDidDoc: ((repoDid: string) => Promise<unknown | null>) | undefined,
 	_dohEndpoint?: string,
 ): NonNullable<AgentProvider["getPublicAgent"]> {
 	void resolveDidDoc;
@@ -331,9 +325,7 @@ function subtleDigestName(name: "sha256" | "sha384" | "sha512") {
 	}
 }
 
-export async function createBunOAuthRuntime(
-	options: BunOAuthRuntimeOptions,
-) {
+export async function createBunOAuthRuntime(options: BunOAuthRuntimeOptions) {
 	const { clientMetadata } = buildClientMetadata(options);
 	const key = await JoseKey.fromJWK(JSON.parse(options.privateJwkJson));
 	const fetchImpl = globalThis.fetch.bind(globalThis);
@@ -375,7 +367,8 @@ export async function createWorkerOAuthRuntime(
 		runtimeImplementation: {
 			requestLock: requestLocalLock,
 			createKey: (algs) => WebcryptoKey.generate(algs),
-			getRandomValues: (length) => crypto.getRandomValues(new Uint8Array(length)),
+			getRandomValues: (length) =>
+				crypto.getRandomValues(new Uint8Array(length)),
 			digest: async (data, algorithm) =>
 				new Uint8Array(
 					await crypto.subtle.digest(

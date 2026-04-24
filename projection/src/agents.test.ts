@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { assertSafePublicServiceUrl, createPublicAgentProvider } from "./agents.js";
+import {
+	assertSafePublicServiceUrl,
+	createPublicAgentProvider,
+} from "./agents.js";
 
 const didWebDoc = {
 	"@context": ["https://www.w3.org/ns/did/v1"],
@@ -15,23 +18,30 @@ const didWebDoc = {
 
 describe("assertSafePublicServiceUrl", () => {
 	test("rejects loopback and private hosts", () => {
-		expect(() => assertSafePublicServiceUrl("https://127.0.0.1"))
-			.toThrow("PDS endpoint must not target a private or loopback host");
-		expect(() => assertSafePublicServiceUrl("https://[::1]"))
-			.toThrow("PDS endpoint must not target a private or loopback host");
-		expect(() => assertSafePublicServiceUrl("https://10.0.0.5"))
-			.toThrow("PDS endpoint must not target a private or loopback host");
-		expect(() => assertSafePublicServiceUrl("https://localhost"))
-			.toThrow("PDS endpoint must not target a private or loopback host");
-		expect(() => assertSafePublicServiceUrl("https://[fc00::1]"))
-			.toThrow("PDS endpoint must not target a private or loopback host");
+		expect(() => assertSafePublicServiceUrl("https://127.0.0.1")).toThrow(
+			"PDS endpoint must not target a private or loopback host",
+		);
+		expect(() => assertSafePublicServiceUrl("https://[::1]")).toThrow(
+			"PDS endpoint must not target a private or loopback host",
+		);
+		expect(() => assertSafePublicServiceUrl("https://10.0.0.5")).toThrow(
+			"PDS endpoint must not target a private or loopback host",
+		);
+		expect(() => assertSafePublicServiceUrl("https://localhost")).toThrow(
+			"PDS endpoint must not target a private or loopback host",
+		);
+		expect(() => assertSafePublicServiceUrl("https://[fc00::1]")).toThrow(
+			"PDS endpoint must not target a private or loopback host",
+		);
 	});
 
 	test("requires https public endpoints", () => {
-		expect(() => assertSafePublicServiceUrl("http://pds.example.com"))
-			.toThrow("PDS endpoint must use https");
-		expect(assertSafePublicServiceUrl("https://pds.example.com").toString())
-			.toBe("https://pds.example.com/");
+		expect(() => assertSafePublicServiceUrl("http://pds.example.com")).toThrow(
+			"PDS endpoint must use https",
+		);
+		expect(
+			assertSafePublicServiceUrl("https://pds.example.com").toString(),
+		).toBe("https://pds.example.com/");
 	});
 
 	test("fails closed for worker public-agent lookup until a pre-connect-pinned transport exists", async () => {

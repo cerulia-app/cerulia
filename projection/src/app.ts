@@ -60,11 +60,7 @@ export function createProjectionApp(options: ProjectionAppOptions) {
 					? (payload as { repoDid?: unknown }).repoDid
 					: undefined;
 			if (typeof repoDid !== "string" || repoDid.length === 0) {
-				throw new ProjectionError(
-					"InvalidRequest",
-					"repoDid is required",
-					400,
-				);
+				throw new ProjectionError("InvalidRequest", "repoDid is required", 400);
 			}
 
 			await scenarioCatalog.ingestRepo(repoDid);

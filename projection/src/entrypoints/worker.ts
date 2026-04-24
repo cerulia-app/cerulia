@@ -44,7 +44,7 @@ export async function createWorkerApp(
 				return [];
 			},
 		} satisfies CanonicalRecordSource);
- 	const catalogStore = new SqlScenarioCatalogStore(driver);
+	const catalogStore = new SqlScenarioCatalogStore(driver);
 	const scenarioCatalog = createScenarioCatalogService({
 		source,
 		catalog: catalogStore,

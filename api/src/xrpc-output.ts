@@ -1,14 +1,14 @@
-import { lexicons, toCurrentCeruliaNsid, validateById } from "@cerulia/protocol";
+import {
+	lexicons,
+	toCurrentCeruliaNsid,
+	validateById,
+} from "@cerulia/protocol";
 
-function isPlainObject(
-	value: unknown,
-): value is Record<string, unknown> {
+function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isObjectOutputSchema(
-	schema: unknown,
-): schema is {
+function isObjectOutputSchema(schema: unknown): schema is {
 	properties?: Record<string, unknown>;
 	required?: string[];
 } {
@@ -123,13 +123,20 @@ function assertFallbackXrpcOutputShape(
 ): void {
 	const canonicalLexiconId = toCurrentCeruliaNsid(lexiconId);
 	if (!isPlainObject(payload)) {
-		throw new Error(`XRPC output for ${canonicalLexiconId} must be a JSON object`);
+		throw new Error(
+			`XRPC output for ${canonicalLexiconId} must be a JSON object`,
+		);
 	}
 
-	const definition = lexicons.getDefOrThrow(canonicalLexiconId, ["query", "procedure"]);
+	const definition = lexicons.getDefOrThrow(canonicalLexiconId, [
+		"query",
+		"procedure",
+	]);
 	const outputSchema = definition.output?.schema;
 	if (!isObjectOutputSchema(outputSchema)) {
-		throw new Error(`XRPC output for ${canonicalLexiconId} must use an object schema`);
+		throw new Error(
+			`XRPC output for ${canonicalLexiconId} must use an object schema`,
+		);
 	}
 
 	const allowedProperties = new Set(Object.keys(outputSchema.properties ?? {}));
@@ -154,7 +161,11 @@ function assertFallbackXrpcOutputShape(
 	for (const [property, propertySchema] of Object.entries(
 		outputSchema.properties ?? {},
 	)) {
-		assertSchemaValueMatches(canonicalLexiconId, propertySchema, payload[property]);
+		assertSchemaValueMatches(
+			canonicalLexiconId,
+			propertySchema,
+			payload[property],
+		);
 	}
 
 	assertTypedValuesAreValid(payload);

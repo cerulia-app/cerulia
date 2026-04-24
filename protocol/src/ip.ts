@@ -5,9 +5,7 @@ export interface ParsedIpLiteral {
 
 function stripIpv6Decorations(input: string): string {
 	const bracketless =
-		input.startsWith("[") && input.endsWith("]")
-			? input.slice(1, -1)
-			: input;
+		input.startsWith("[") && input.endsWith("]") ? input.slice(1, -1) : input;
 	const zoneIndex = bracketless.indexOf("%");
 	return zoneIndex >= 0 ? bracketless.slice(0, zoneIndex) : bracketless;
 }
@@ -25,7 +23,9 @@ function parseIpv4(input: string): Uint8Array | null {
 
 		return Number.parseInt(part, 10);
 	});
-	if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
+	if (
+		octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
+	) {
 		return null;
 	}
 
@@ -76,11 +76,7 @@ function parseIpv6(input: string): Uint8Array | null {
 	}
 
 	const missingGroups = halves.length === 2 ? 8 - explicitGroupCount : 0;
-	const groups = [
-		...left,
-		...new Array(missingGroups).fill("0"),
-		...right,
-	];
+	const groups = [...left, ...new Array(missingGroups).fill("0"), ...right];
 	if (groups.length !== 8) {
 		return null;
 	}
@@ -153,7 +149,10 @@ function isPrivateIpv6(bytes: Uint8Array): boolean {
 		(first & 0xff00) === 0xff00 ||
 		(first === 0x2001 && second === 0x0db8) ||
 		(first === 0x2001 && second === 0x0002 && third === 0x0000) ||
-		(first === 0x0100 && second === 0x0000 && third === 0x0000 && fourth === 0x0000)
+		(first === 0x0100 &&
+			second === 0x0000 &&
+			third === 0x0000 &&
+			fourth === 0x0000)
 	);
 }
 
@@ -184,7 +183,9 @@ export function sameIpLiteral(left: string, right: string): boolean {
 		return false;
 	}
 
-	return parsedLeft.bytes.every((value, index) => value === parsedRight.bytes[index]);
+	return parsedLeft.bytes.every(
+		(value, index) => value === parsedRight.bytes[index],
+	);
 }
 
 export function isPubliclyRoutableIpLiteral(input: string): boolean {

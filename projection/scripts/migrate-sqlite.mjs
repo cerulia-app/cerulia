@@ -2,7 +2,8 @@ import { Database } from "bun:sqlite";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const dbPath = process.env.CERULIA_PROJECTION_DB ?? "./cerulia-projection.sqlite";
+const dbPath =
+	process.env.CERULIA_PROJECTION_DB ?? "./cerulia-projection.sqlite";
 const migrationsDir = join(import.meta.dir, "..", "migrations");
 
 function splitStatements(sql) {

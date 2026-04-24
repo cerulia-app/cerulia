@@ -11,7 +11,8 @@ import {
 import { SqlScenarioCatalogStore } from "../store/scenario-catalog.js";
 
 const port = Number.parseInt(process.env.PORT ?? "8788", 10);
-const dbPath = process.env.CERULIA_PROJECTION_DB ?? "./cerulia-projection.sqlite";
+const dbPath =
+	process.env.CERULIA_PROJECTION_DB ?? "./cerulia-projection.sqlite";
 
 const driver = createBunSqliteDriver(dbPath);
 const knownRepoCatalog = new SqlKnownRepoCatalog(driver);

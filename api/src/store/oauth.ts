@@ -104,9 +104,7 @@ export function toOAuthKeyStore<
 	};
 }
 
-export function toOAuthStateStore(
-	store: SavedOAuthStateStore,
-): StateStore {
+export function toOAuthStateStore(store: SavedOAuthStateStore): StateStore {
 	return toOAuthKeyStore<string, InternalStateData>(store);
 }
 
@@ -253,20 +251,19 @@ export class SqlBrowserSessionStore implements BrowserSessionStore {
 
 		return row
 			? {
-				sessionId: row.session_id,
-				did: row.did,
-				grantedScope: row.granted_scope,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			}
+					sessionId: row.session_id,
+					did: row.did,
+					grantedScope: row.granted_scope,
+					createdAt: row.created_at,
+					updatedAt: row.updated_at,
+				}
 			: null;
 	}
 
 	async deleteBrowserSession(sessionId: string): Promise<void> {
-		await this.driver.run(
-			`DELETE FROM browser_sessions WHERE session_id = ?`,
-			[sessionId],
-		);
+		await this.driver.run(`DELETE FROM browser_sessions WHERE session_id = ?`, [
+			sessionId,
+		]);
 	}
 
 	async clear(): Promise<void> {

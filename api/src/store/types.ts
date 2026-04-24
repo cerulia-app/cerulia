@@ -110,7 +110,8 @@ export function storedRecordMatchesExpected(
 		current.uri === expected.uri &&
 		current.createdAt === expected.createdAt &&
 		current.updatedAt === expected.updatedAt &&
-		storedRecordValueJson(current.value) === storedRecordValueJson(expected.value)
+		storedRecordValueJson(current.value) ===
+			storedRecordValueJson(expected.value)
 	);
 }
 

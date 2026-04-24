@@ -43,7 +43,10 @@ export class MemoryRecordStore implements RecordStore {
 
 	private bumpCollectionVersion(repoDid: string, collection: string) {
 		const key = `${repoDid}:${collection}`;
-		this.collectionVersions.set(key, (this.collectionVersions.get(key) ?? 0) + 1);
+		this.collectionVersions.set(
+			key,
+			(this.collectionVersions.get(key) ?? 0) + 1,
+		);
 	}
 
 	async createRecord<T>(
@@ -55,7 +58,9 @@ export class MemoryRecordStore implements RecordStore {
 				options.expectedScopeState.repoDid,
 				Object.keys(options.expectedScopeState.collectionVersions ?? {}),
 			);
-			if (!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)) {
+			if (
+				!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)
+			) {
 				throw new RecordConflictError();
 			}
 		}
@@ -82,7 +87,9 @@ export class MemoryRecordStore implements RecordStore {
 				options.expectedScopeState.repoDid,
 				Object.keys(options.expectedScopeState.collectionVersions ?? {}),
 			);
-			if (!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)) {
+			if (
+				!scopeStateTokenEquals(currentScopeState, options.expectedScopeState)
+			) {
 				throw new RecordConflictError();
 			}
 		}

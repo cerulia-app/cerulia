@@ -210,11 +210,7 @@ export function createApiApp(options: ApiAppOptions) {
 		app.get("/oauth/login", async (context) => {
 			const identifier = context.req.query("identifier");
 			if (!identifier) {
-				throw new ApiError(
-					"InvalidRequest",
-					"identifier is required",
-					400,
-				);
+				throw new ApiError("InvalidRequest", "identifier is required", 400);
 			}
 
 			const redirectUrl = await oauthFeature.beginLogin(
@@ -253,7 +249,8 @@ export function createApiApp(options: ApiAppOptions) {
 		});
 	}
 
-	registerCeruliaPost("app.cerulia.dev.rule.createSheetSchema",
+	registerCeruliaPost(
+		"app.cerulia.dev.rule.createSheetSchema",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -286,7 +283,8 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 	});
 
-	registerCeruliaGet("app.cerulia.dev.rule.listSheetSchemas",
+	registerCeruliaGet(
+		"app.cerulia.dev.rule.listSheetSchemas",
 		async (context) => {
 			return jsonXrpcOutput(
 				context,
@@ -355,7 +353,8 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 	});
 
-	registerCeruliaPost("app.cerulia.dev.character.createSheet",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.createSheet",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -371,7 +370,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaPost("app.cerulia.dev.character.updateSheet",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.updateSheet",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -387,7 +387,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaPost("app.cerulia.dev.character.rebaseSheet",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.rebaseSheet",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -403,7 +404,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaPost("app.cerulia.dev.character.createBranch",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.createBranch",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -419,7 +421,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaPost("app.cerulia.dev.character.updateBranch",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.updateBranch",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -435,7 +438,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaPost("app.cerulia.dev.character.retireBranch",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.retireBranch",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -451,7 +455,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaPost("app.cerulia.dev.character.recordAdvancement",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.recordAdvancement",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -467,7 +472,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaPost("app.cerulia.dev.character.recordConversion",
+	registerCeruliaPost(
+		"app.cerulia.dev.character.recordConversion",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -492,7 +498,8 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 	});
 
-	registerCeruliaGet("app.cerulia.dev.character.getBranchView",
+	registerCeruliaGet(
+		"app.cerulia.dev.character.getBranchView",
 		async (context) => {
 			const branchRef = context.req.query("characterBranchRef");
 			if (!branchRef) {
@@ -570,16 +577,8 @@ export function createApiApp(options: ApiAppOptions) {
 			"app.cerulia.dev.scenario.create",
 		);
 		const output = await services.scenario.create(callerDid, input);
-		maybeNotifyProjectionRepo(
-			projectionIngestFeature,
-			callerDid,
-			output,
-		);
-		return jsonXrpcOutput(
-			context,
-			"app.cerulia.dev.scenario.create",
-			output,
-		);
+		maybeNotifyProjectionRepo(projectionIngestFeature, callerDid, output);
+		return jsonXrpcOutput(context, "app.cerulia.dev.scenario.create", output);
 	});
 
 	registerCeruliaPost("app.cerulia.dev.scenario.update", async (context) => {
@@ -589,16 +588,8 @@ export function createApiApp(options: ApiAppOptions) {
 			"app.cerulia.dev.scenario.update",
 		);
 		const output = await services.scenario.update(callerDid, input);
-		maybeNotifyProjectionRepo(
-			projectionIngestFeature,
-			callerDid,
-			output,
-		);
-		return jsonXrpcOutput(
-			context,
-			"app.cerulia.dev.scenario.update",
-			output,
-		);
+		maybeNotifyProjectionRepo(projectionIngestFeature, callerDid, output);
+		return jsonXrpcOutput(context, "app.cerulia.dev.scenario.update", output);
 	});
 
 	registerCeruliaGet("app.cerulia.dev.scenario.getView", async (context) => {
@@ -692,7 +683,8 @@ export function createApiApp(options: ApiAppOptions) {
 		);
 	});
 
-	registerCeruliaPost("app.cerulia.dev.actor.updateProfile",
+	registerCeruliaPost(
+		"app.cerulia.dev.actor.updateProfile",
 		async (context) => {
 			const callerDid = requireWriterDid(context.get("auth"));
 			const input =
@@ -708,7 +700,8 @@ export function createApiApp(options: ApiAppOptions) {
 		},
 	);
 
-	registerCeruliaGet("app.cerulia.dev.actor.getProfileView",
+	registerCeruliaGet(
+		"app.cerulia.dev.actor.getProfileView",
 		async (context) => {
 			const did = context.req.query("did");
 			if (!did) {

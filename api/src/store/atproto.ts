@@ -59,10 +59,7 @@ function extractTimestamp(
 		: null;
 }
 
-function toStoredRecord<T>(
-	uri: string,
-	value: T,
-): StoredRecord<T> {
+function toStoredRecord<T>(uri: string, value: T): StoredRecord<T> {
 	const parsed = parseAtUri(uri);
 	const timestampSource =
 		typeof value === "object" && value !== null
@@ -72,8 +69,7 @@ function toStoredRecord<T>(
 		extractTimestamp(timestampSource, "createdAt") ??
 		extractTimestamp(timestampSource, "updatedAt") ??
 		new Date().toISOString();
-	const updatedAt =
-		extractTimestamp(timestampSource, "updatedAt") ?? createdAt;
+	const updatedAt = extractTimestamp(timestampSource, "updatedAt") ?? createdAt;
 
 	return {
 		uri,
@@ -198,7 +194,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		await bestEffortCacheSync(
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
 		);
-		await bestEffortCacheSync(this.cache.createRecord(draft).then(() => undefined));
+		await bestEffortCacheSync(
+			this.cache.createRecord(draft).then(() => undefined),
+		);
 		return {
 			uri: buildAtUri(draft.repoDid, draft.collection, draft.rkey),
 			repoDid: draft.repoDid,
@@ -262,10 +260,7 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 				swapCommit,
 			});
 		} catch (error) {
-			if (
-				error instanceof Error &&
-				error.name === "InvalidSwapError"
-			) {
+			if (error instanceof Error && error.name === "InvalidSwapError") {
 				throw new RecordConflictError();
 			}
 			throw error;
@@ -274,7 +269,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		await bestEffortCacheSync(
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
 		);
-		await bestEffortCacheSync(this.cache.updateRecord(draft).then(() => undefined));
+		await bestEffortCacheSync(
+			this.cache.updateRecord(draft).then(() => undefined),
+		);
 		return {
 			uri: buildAtUri(draft.repoDid, draft.collection, draft.rkey),
 			repoDid: draft.repoDid,
@@ -420,11 +417,12 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 
 			const records = this.agents.getPublicAgent
 				? new Map<string, StoredRecord<T>>()
-				: new Map(
-					cachedRecords.map((record) => [record.uri, record] as const),
-				);
+				: new Map(cachedRecords.map((record) => [record.uri, record] as const));
 			for (const subjectDid of repoDids) {
-				for (const record of await this.listRecords<T>(collection, subjectDid)) {
+				for (const record of await this.listRecords<T>(
+					collection,
+					subjectDid,
+				)) {
 					records.set(record.uri, record);
 				}
 			}
@@ -479,7 +477,10 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		return remoteRecords;
 	}
 
-	async hasOwnedBlob(repoDid: string, blob: Parameters<RecordStore["hasOwnedBlob"]>[1]) {
+	async hasOwnedBlob(
+		repoDid: string,
+		blob: Parameters<RecordStore["hasOwnedBlob"]>[1],
+	) {
 		return this.cache.hasOwnedBlob(repoDid, blob);
 	}
 
@@ -513,9 +514,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		const publicAgent = await this.agents.getPublicAgent?.(repoDid);
 		return publicAgent
 			? {
-				agent: publicAgent,
-				kind: "public",
-			}
+					agent: publicAgent,
+					kind: "public",
+				}
 			: null;
 	}
 

@@ -5,7 +5,9 @@ const MAIN_SUFFIX = "#main";
 
 function scopeIdFromMain(main: string): string {
 	if (!main.endsWith(MAIN_SUFFIX)) {
-		throw new Error(`OAuth scope lexicon must end with ${MAIN_SUFFIX}: ${main}`);
+		throw new Error(
+			`OAuth scope lexicon must end with ${MAIN_SUFFIX}: ${main}`,
+		);
 	}
 
 	return main.slice(0, -MAIN_SUFFIX.length);

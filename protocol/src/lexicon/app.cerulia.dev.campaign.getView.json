@@ -32,7 +32,10 @@
 						},
 						"ruleOverlay": {
 							"type": "array",
-							"items": { "type": "ref", "ref": "app.cerulia.dev.core.ruleProfile" },
+							"items": {
+								"type": "ref",
+								"ref": "app.cerulia.dev.core.ruleProfile"
+							},
 							"description": "Full rule profile records. Present in owner mode only."
 						},
 						"campaignSummary": {

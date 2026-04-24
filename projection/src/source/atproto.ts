@@ -83,8 +83,7 @@ function toStoredRecord<T>(
 		extractTimestamp(timestampSource, "createdAt") ??
 		extractTimestamp(timestampSource, "updatedAt") ??
 		new Date().toISOString();
-	const updatedAt =
-		extractTimestamp(timestampSource, "updatedAt") ?? createdAt;
+	const updatedAt = extractTimestamp(timestampSource, "updatedAt") ?? createdAt;
 
 	return {
 		uri,
@@ -138,7 +137,10 @@ export class AtprotoPublicRecordSource implements CanonicalRecordSource {
 			const failedRepoDids: string[] = [];
 			for (const subjectDid of await this.agents.listRepoDids()) {
 				try {
-					for (const record of await this.listRecords<T>(collection, subjectDid)) {
+					for (const record of await this.listRecords<T>(
+						collection,
+						subjectDid,
+					)) {
 						records.set(record.uri, record);
 					}
 				} catch {

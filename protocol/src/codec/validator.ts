@@ -256,5 +256,7 @@ export function validateById(
 		return result;
 	}
 
-	return applyExtraValidation(normalizedValue, canonicalLexiconId, defId) ?? result;
+	return (
+		applyExtraValidation(normalizedValue, canonicalLexiconId, defId) ?? result
+	);
 }

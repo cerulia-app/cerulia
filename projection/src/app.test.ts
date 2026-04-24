@@ -130,7 +130,10 @@ async function createSqlScenarioCatalogStore() {
 	});
 }
 
-async function getJson(app: ReturnType<typeof createProjectionApp>, path: string) {
+async function getJson(
+	app: ReturnType<typeof createProjectionApp>,
+	path: string,
+) {
 	return app.request(path);
 }
 
@@ -214,7 +217,10 @@ describe("createProjectionApp", () => {
 		expect(firstResponse.status).toBe(200);
 		const firstPayload = await firstResponse.json();
 		expect(() =>
-			lexicons.assertValidXrpcOutput("app.cerulia.dev.scenario.list", firstPayload),
+			lexicons.assertValidXrpcOutput(
+				"app.cerulia.dev.scenario.list",
+				firstPayload,
+			),
 		).not.toThrow();
 		expect(firstPayload.items).toHaveLength(1);
 		expect(firstPayload.items[0].title).toBe("Zeta Mission");
@@ -247,10 +253,9 @@ describe("createProjectionApp", () => {
 		expect(secondResponse.status).toBe(200);
 		const secondPayload = await secondResponse.json();
 		expect(secondPayload.items).toHaveLength(2);
-		expect(secondPayload.items.map((item: { title: string }) => item.title)).toEqual([
-			"Alpha Mission",
-			"Zeta Mission",
-		]);
+		expect(
+			secondPayload.items.map((item: { title: string }) => item.title),
+		).toEqual(["Alpha Mission", "Zeta Mission"]);
 	});
 
 	test("keeps the last ingested catalog when a repo ingest fails", async () => {

@@ -53,9 +53,9 @@ export function parseSeedRepoDids(raw: string | undefined): string[] {
 		return [];
 	}
 
-	return [...new Set(raw.split(/[\s,]+/).filter((value) => value.length > 0))].sort(
-		(left, right) => left.localeCompare(right),
-	);
+	return [
+		...new Set(raw.split(/[\s,]+/).filter((value) => value.length > 0)),
+	].sort((left, right) => left.localeCompare(right));
 }
 
 export async function seedKnownRepoCatalog(

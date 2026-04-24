@@ -2,9 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { AppCeruliaCoreScenario } from "@cerulia/protocol";
 import { COLLECTIONS } from "../constants.js";
 import type { CanonicalRecordSource, StoredRecord } from "../source.js";
-import {
-	createScenarioCatalogService,
-} from "./scenario.js";
+import { createScenarioCatalogService } from "./scenario.js";
 import {
 	ScenarioCatalogReplaceConflictError,
 	type SqlScenarioCatalogStore,
@@ -65,8 +63,7 @@ class SchemaResolutionScenarioSource implements CanonicalRecordSource {
 					$type: COLLECTIONS.scenario,
 					title: "Schema Resolution Mission",
 					rulesetNsid: "app.cerulia.rules.coc7",
-					recommendedSheetSchemaRef:
-						`at://${DID}/app.cerulia.core.characterSheetSchema/schema-1`,
+					recommendedSheetSchemaRef: `at://${DID}/app.cerulia.core.characterSheetSchema/schema-1`,
 					sourceCitationUri: "https://example.com/scenario/test",
 					summary: "Scenario with optional schema resolution.",
 					ownerDid: DID,
@@ -95,8 +92,7 @@ class SchemaResolutionScenarioSource implements CanonicalRecordSource {
 					$type: COLLECTIONS.scenario,
 					title: "Schema Resolution Mission",
 					rulesetNsid: "app.cerulia.rules.coc7",
-					recommendedSheetSchemaRef:
-						`at://${repoDid ?? DID}/app.cerulia.core.characterSheetSchema/schema-1`,
+					recommendedSheetSchemaRef: `at://${repoDid ?? DID}/app.cerulia.core.characterSheetSchema/schema-1`,
 					sourceCitationUri: "https://example.com/scenario/test",
 					summary: "Scenario with optional schema resolution.",
 					ownerDid: repoDid ?? DID,

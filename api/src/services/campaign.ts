@@ -1,6 +1,4 @@
-import {
-	areEquivalentCeruliaNsids,
-} from "@cerulia/protocol";
+import { areEquivalentCeruliaNsids } from "@cerulia/protocol";
 import type {
 	AppCeruliaCampaignCreate,
 	AppCeruliaCampaignGetView,
@@ -276,16 +274,18 @@ export function createCampaignService(runtime: ServiceRuntime) {
 					session.repoDid === record.repoDid &&
 					areEquivalentRecordUris(session.value.campaignRef, campaignRef),
 			);
-			const ruleOverlay = (await Promise.all(
-				(record.value.sharedRuleProfileRefs ?? []).map((ref) =>
-					getOptionalRecord<AppCeruliaCoreRuleProfile.Main>(
-						runtime,
-						ref,
-						COLLECTIONS.ruleProfile,
-						"ruleProfileRef",
+			const ruleOverlay = (
+				await Promise.all(
+					(record.value.sharedRuleProfileRefs ?? []).map((ref) =>
+						getOptionalRecord<AppCeruliaCoreRuleProfile.Main>(
+							runtime,
+							ref,
+							COLLECTIONS.ruleProfile,
+							"ruleProfileRef",
+						),
 					),
-				),
-			)).filter(
+				)
+			).filter(
 				(entry): entry is StoredRecord<AppCeruliaCoreRuleProfile.Main> =>
 					entry !== null,
 			);

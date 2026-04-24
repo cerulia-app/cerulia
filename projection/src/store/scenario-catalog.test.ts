@@ -22,19 +22,21 @@ class InterleavingDriver implements SqlDriver {
 		}>
 	>();
 	private failNextUpsertForRepoDid: string | null = null;
-	private interleavedCleanup:
-		| {
-			repoDid: string;
-			generation: number;
-			entryTitle: string;
-		}
-		| null = null;
+	private interleavedCleanup: {
+		repoDid: string;
+		generation: number;
+		entryTitle: string;
+	} | null = null;
 
 	setConflict(repoDid: string) {
 		this.failNextUpsertForRepoDid = repoDid;
 	}
 
-	setInterleavedCleanup(repoDid: string, generation: number, entryTitle: string) {
+	setInterleavedCleanup(
+		repoDid: string,
+		generation: number,
+		entryTitle: string,
+	) {
 		this.interleavedCleanup = {
 			repoDid,
 			generation,
@@ -56,10 +58,9 @@ class InterleavingDriver implements SqlDriver {
 
 	async all<T>(sql: string, params: unknown[] = []): Promise<T[]> {
 		if (sql.includes("FROM scenario_catalog_entries AS entries")) {
-			const rulesetNsid =
-				sql.includes("WHERE ruleset_nsid = ?")
-					? ((params[params.length - 1] as string | undefined) ?? undefined)
-					: undefined;
+			const rulesetNsid = sql.includes("WHERE ruleset_nsid = ?")
+				? ((params[params.length - 1] as string | undefined) ?? undefined)
+				: undefined;
 			const rows: T[] = [];
 			const deduped = new Map<string, T>();
 			for (const [repoDid, activeGeneration] of this.repoState.entries()) {
@@ -78,10 +79,7 @@ class InterleavingDriver implements SqlDriver {
 						summary: entry.summary,
 					} as T;
 					const existing = deduped.get(entry.scenarioRef);
-					if (
-						!existing ||
-						repoDid !== LEGACY_SCENARIO_CATALOG_REPO_DID
-					) {
+					if (!existing || repoDid !== LEGACY_SCENARIO_CATALOG_REPO_DID) {
 						deduped.set(entry.scenarioRef, row);
 					}
 				}
@@ -115,7 +113,23 @@ class InterleavingDriver implements SqlDriver {
 		}
 
 		if (sql.includes("INSERT INTO scenario_catalog_entries")) {
-			const [scenarioRef, repoDid, generation, title, rulesetNsid, hasRecommendedSheetSchema, summary] = params as [string, string, number, string, string | null, number, string | null];
+			const [
+				scenarioRef,
+				repoDid,
+				generation,
+				title,
+				rulesetNsid,
+				hasRecommendedSheetSchema,
+				summary,
+			] = params as [
+				string,
+				string,
+				number,
+				string,
+				string | null,
+				number,
+				string | null,
+			];
 			const current = this.entries.get(repoDid) ?? [];
 			current.push({
 				scenarioRef,
@@ -168,7 +182,9 @@ class InterleavingDriver implements SqlDriver {
 			sql.includes(
 				"DELETE FROM scenario_catalog_entries\n\t\t\t WHERE repo_did = ?\n\t\t\t\t AND scenario_ref LIKE ?",
 			) ||
-			sql.includes("DELETE FROM scenario_catalog_entries\n\t\t\t WHERE repo_did = ?\n\t\t\t\t AND scenario_ref LIKE ?")
+			sql.includes(
+				"DELETE FROM scenario_catalog_entries\n\t\t\t WHERE repo_did = ?\n\t\t\t\t AND scenario_ref LIKE ?",
+			)
 		) {
 			const [repoDid, scenarioRefPattern] = params as [string, string];
 			const prefix = scenarioRefPattern.slice(0, -1);
@@ -194,8 +210,7 @@ class InterleavingDriver implements SqlDriver {
 			) {
 				const current = this.entries.get(repoDid) ?? [];
 				current.push({
-					scenarioRef:
-						"at://did:plc:alice/app.cerulia.core.scenario/newer",
+					scenarioRef: "at://did:plc:alice/app.cerulia.core.scenario/newer",
 					generation: this.interleavedCleanup.generation,
 					title: this.interleavedCleanup.entryTitle,
 					rulesetNsid: "app.cerulia.rules.coc7",
@@ -207,9 +222,7 @@ class InterleavingDriver implements SqlDriver {
 				this.interleavedCleanup = null;
 			}
 
-			if (
-				this.repoState.get(stateRepoDid) !== activeGeneration
-			) {
+			if (this.repoState.get(stateRepoDid) !== activeGeneration) {
 				return 0;
 			}
 
@@ -337,11 +350,7 @@ describe("SqlScenarioCatalogStore", () => {
 
 	test("does not delete a newer generation when cleanup runs after state advances", async () => {
 		const driver = new InterleavingDriver();
-		driver.setInterleavedCleanup(
-			"did:plc:alice",
-			999001,
-			"Newer Mission",
-		);
+		driver.setInterleavedCleanup("did:plc:alice", 999001, "Newer Mission");
 		const store = new SqlScenarioCatalogStore(driver);
 
 		await store.replaceRepo("did:plc:alice", [
@@ -367,8 +376,7 @@ describe("SqlScenarioCatalogStore", () => {
 		const store = await createSqliteStore({
 			legacyEntries: [
 				{
-					scenarioRef:
-						"at://did:plc:alice/app.cerulia.core.scenario/alpha",
+					scenarioRef: "at://did:plc:alice/app.cerulia.core.scenario/alpha",
 					title: "Legacy Alpha Mission",
 					rulesetNsid: "app.cerulia.rules.coc7",
 					hasRecommendedSheetSchema: true,
@@ -396,8 +404,7 @@ describe("SqlScenarioCatalogStore", () => {
 		const store = await createSqliteStore({
 			legacyEntries: [
 				{
-					scenarioRef:
-						"at://did:plc:alice/app.cerulia.core.scenario/alpha",
+					scenarioRef: "at://did:plc:alice/app.cerulia.core.scenario/alpha",
 					title: "Legacy Alpha Mission",
 					rulesetNsid: "app.cerulia.ruleset.coc7",
 					hasRecommendedSheetSchema: true,
@@ -420,8 +427,7 @@ describe("SqlScenarioCatalogStore", () => {
 		const store = await createSqliteStore({
 			legacyEntries: [
 				{
-					scenarioRef:
-						"at://did:plc:alice/app.cerulia.core.scenario/alpha",
+					scenarioRef: "at://did:plc:alice/app.cerulia.core.scenario/alpha",
 					title: "Legacy Alpha Mission",
 					rulesetNsid: "app.cerulia.rules.coc7",
 					hasRecommendedSheetSchema: false,

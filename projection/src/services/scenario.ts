@@ -4,7 +4,7 @@ import {
 	buildAtUri,
 	getCeruliaNsidAliases,
 	toCurrentCeruliaNsid,
- 	validateById,
+	validateById,
 } from "@cerulia/protocol";
 import { COLLECTIONS } from "../constants.js";
 import type { StoredRecord } from "../source.js";
@@ -26,7 +26,6 @@ function compareScenarioRecords(
 
 	return left.uri.localeCompare(right.uri);
 }
-
 
 async function toCatalogEntry(
 	runtime: ScenarioCatalogRuntime,
@@ -107,10 +106,11 @@ async function resolveCurrentSchemaAvailability(
 	scenarioRef: string,
 ): Promise<boolean> {
 	try {
-		const scenario = await getSourceRecordByUriAlias<AppCeruliaCoreScenario.Main>(
-			runtime,
-			scenarioRef,
-		);
+		const scenario =
+			await getSourceRecordByUriAlias<AppCeruliaCoreScenario.Main>(
+				runtime,
+				scenarioRef,
+			);
 		if (!scenario?.value.recommendedSheetSchemaRef) {
 			return false;
 		}
@@ -134,7 +134,10 @@ export interface ScenarioCatalogRuntime {
 export function createScenarioCatalogService(runtime: ScenarioCatalogRuntime) {
 	async function ingestRepo(repoDid: string): Promise<void> {
 		for (let attempt = 0; attempt < 3; attempt += 1) {
-			const records = await listScenarioRecordsByCollectionAlias(runtime, repoDid);
+			const records = await listScenarioRecordsByCollectionAlias(
+				runtime,
+				repoDid,
+			);
 			const sorted = [...records]
 				.map((record) => {
 					const validation = validateById(

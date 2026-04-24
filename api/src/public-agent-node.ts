@@ -49,7 +49,10 @@ function assertSafePublicServiceUrl(rawUrl: string): URL {
 	return url;
 }
 
-function createTimeoutFetch(fetchImpl: FetchLike, timeoutMs: number): FetchLike {
+function createTimeoutFetch(
+	fetchImpl: FetchLike,
+	timeoutMs: number,
+): FetchLike {
 	return async (input, init) => {
 		const abortController = new AbortController();
 		const timeout = setTimeout(() => abortController.abort(), timeoutMs);
@@ -73,9 +76,7 @@ function requestHeaders(headers: Headers): Record<string, string> {
 	return values;
 }
 
-function responseHeaders(
-	headers: NodeJS.Dict<string | string[]>,
-): Headers {
+function responseHeaders(headers: NodeJS.Dict<string | string[]>): Headers {
 	const values = new Headers();
 	for (const [key, value] of Object.entries(headers)) {
 		if (value === undefined) {
@@ -98,7 +99,9 @@ function responseHeaders(
 async function resolvePinnedAddress(hostname: string): Promise<string> {
 	if (parseIpLiteral(hostname)) {
 		if (!isPubliclyRoutableIpLiteral(hostname)) {
-			throw new Error("PDS endpoint host must resolve only to public IP addresses");
+			throw new Error(
+				"PDS endpoint host must resolve only to public IP addresses",
+			);
 		}
 
 		return hostname;
@@ -108,10 +111,7 @@ async function resolvePinnedAddress(hostname: string): Promise<string> {
 		dnsPromises.resolve4(hostname).catch(() => []),
 		dnsPromises.resolve6(hostname).catch(() => []),
 	]);
-	return selectPinnedPublicAddress([
-		...ipv4,
-		...ipv6,
-	]);
+	return selectPinnedPublicAddress([...ipv4, ...ipv6]);
 }
 
 function createPinnedFetch(): FetchLike {
@@ -126,9 +126,10 @@ function createPinnedFetch(): FetchLike {
 			throw new Error("Pinned public fetch requires https");
 		}
 
-		const hostname = url.hostname.startsWith("[") && url.hostname.endsWith("]")
-			? url.hostname.slice(1, -1)
-			: url.hostname;
+		const hostname =
+			url.hostname.startsWith("[") && url.hostname.endsWith("]")
+				? url.hostname.slice(1, -1)
+				: url.hostname;
 		const pinnedAddress = await resolvePinnedAddress(hostname);
 		const family = pinnedAddress.includes(":") ? 6 : 4;
 
@@ -200,7 +201,10 @@ function createPinnedFetch(): FetchLike {
 export function createNodePublicAgentLookup(
 	dohEndpoint?: string,
 ): NonNullable<AgentProvider["getPublicAgent"]> {
-	const pinnedFetch = createTimeoutFetch(createPinnedFetch(), 1500) as typeof fetch;
+	const pinnedFetch = createTimeoutFetch(
+		createPinnedFetch(),
+		1500,
+	) as typeof fetch;
 	const identityResolver = createIdentityResolver({
 		fetch: pinnedFetch,
 		handleResolver: new AtprotoDohHandleResolver({

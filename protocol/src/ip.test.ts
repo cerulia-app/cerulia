@@ -26,16 +26,15 @@ describe("ip helpers", () => {
 
 	test("compares equivalent IPv6 literals across different textual forms", () => {
 		expect(sameIpLiteral("2001:db8:0:0:0:0:0:1", "2001:db8::1")).toBe(true);
-		expect(sameIpLiteral("[2606:4700:4700::1111]", "2606:4700:4700::1111")).toBe(
-			true,
-		);
+		expect(
+			sameIpLiteral("[2606:4700:4700::1111]", "2606:4700:4700::1111"),
+		).toBe(true);
 	});
 
 	test("rejects mixed DNS answers that contain a private address", () => {
-		expect(() =>
-			selectPinnedPublicAddress(["8.8.8.8", "127.0.0.1"]),
-		).toThrow("PDS endpoint host must resolve only to public IP addresses");
-		expect(selectPinnedPublicAddress(["8.8.8.8"]))
-			.toBe("8.8.8.8");
+		expect(() => selectPinnedPublicAddress(["8.8.8.8", "127.0.0.1"])).toThrow(
+			"PDS endpoint host must resolve only to public IP addresses",
+		);
+		expect(selectPinnedPublicAddress(["8.8.8.8"])).toBe("8.8.8.8");
 	});
 });

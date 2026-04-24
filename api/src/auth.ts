@@ -50,10 +50,7 @@ export function resolveHeaderAuthContext(request: Request): AuthContext {
 	};
 }
 
-export function readCookie(
-	request: Request,
-	name: string,
-): string | undefined {
+export function readCookie(request: Request, name: string): string | undefined {
 	const rawCookie = request.headers.get("cookie");
 	if (!rawCookie) {
 		return undefined;

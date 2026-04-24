@@ -146,7 +146,7 @@ describe("Cerulia NSID compatibility", () => {
 					"app.cerulia.core.characterSheet",
 				),
 			).toEqual({ migrated: true });
-			
+
 			expect(
 				transformCeruliaLexiconValueToCurrent(
 					{ migrated: false },

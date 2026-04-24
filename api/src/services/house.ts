@@ -1,6 +1,4 @@
-import {
-	areEquivalentCeruliaNsids,
-} from "@cerulia/protocol";
+import { areEquivalentCeruliaNsids } from "@cerulia/protocol";
 import type {
 	AppCeruliaCoreCampaign,
 	AppCeruliaCoreHouse,
@@ -73,7 +71,9 @@ async function validateDefaultRuleProfiles(
 		}
 
 		baseRulesetNsid ??= record.value.baseRulesetNsid;
-		if (!areEquivalentCeruliaNsids(record.value.baseRulesetNsid, baseRulesetNsid)) {
+		if (
+			!areEquivalentCeruliaNsids(record.value.baseRulesetNsid, baseRulesetNsid)
+		) {
 			return "defaultRuleProfileRefs must belong to a single ruleset family";
 		}
 	}
@@ -216,7 +216,9 @@ export function createHouseService(runtime: ServiceRuntime) {
 				(campaign) => campaign.value.visibility === "public",
 			);
 			const campaignRefs = campaigns.map((campaign) => campaign.uri);
-			const publicCampaignRefs = publicCampaigns.map((campaign) => campaign.uri);
+			const publicCampaignRefs = publicCampaigns.map(
+				(campaign) => campaign.uri,
+			);
 			const sessions = (
 				await listRecordsByCollectionAlias<AppCeruliaCoreSession.Main>(
 					runtime,
@@ -265,27 +267,25 @@ export function createHouseService(runtime: ServiceRuntime) {
 					externalCommunityUri: record.value.externalCommunityUri,
 				},
 				campaignSummaries: publicCampaigns.map((campaign) => ({
-						$type: "app.cerulia.dev.house.getView#campaignSummary",
-						campaignRef: campaign.uri,
-						title: campaign.value.title,
-						rulesetNsid: campaign.value.rulesetNsid,
-						visibility: campaign.value.visibility,
-						updatedAt: campaign.value.updatedAt,
-					})),
+					$type: "app.cerulia.dev.house.getView#campaignSummary",
+					campaignRef: campaign.uri,
+					title: campaign.value.title,
+					rulesetNsid: campaign.value.rulesetNsid,
+					visibility: campaign.value.visibility,
+					updatedAt: campaign.value.updatedAt,
+				})),
 				sessionSummaries: await Promise.all(
 					sortSessionsByPlayedAt(sessions)
-						.filter(
-							(session) => {
-								const campaignRef = session.value.campaignRef;
-								return (
-									session.value.visibility === "public" &&
-									campaignRef !== undefined &&
-									publicCampaignRefs.some((publicCampaignRef) =>
-										areEquivalentRecordUris(campaignRef, publicCampaignRef),
-									)
-								);
-							},
-						)
+						.filter((session) => {
+							const campaignRef = session.value.campaignRef;
+							return (
+								session.value.visibility === "public" &&
+								campaignRef !== undefined &&
+								publicCampaignRefs.some((publicCampaignRef) =>
+									areEquivalentRecordUris(campaignRef, publicCampaignRef),
+								)
+							);
+						})
 						.map(async (session) => ({
 							$type: "app.cerulia.dev.house.getView#sessionSummary",
 							sessionRef: session.uri,

@@ -7,10 +7,7 @@ import {
 	type AppCeruliaCoreSession,
 } from "@cerulia/protocol";
 import { createApiApp, type ApiAppStore } from "./app.js";
-import {
-	createSessionAuthResolver,
-	resolveHeaderAuthContext,
-} from "./auth.js";
+import { createSessionAuthResolver, resolveHeaderAuthContext } from "./auth.js";
 import {
 	AUTH_SCOPES,
 	COLLECTIONS,
@@ -44,7 +41,8 @@ function authHeaders(
 
 class SupportedMemoryRecordStore
 	extends MemoryRecordStore
-	implements ApiAppStore {
+	implements ApiAppStore
+{
 	async applyWrites(writes: RecordWrite[], options: ApplyWritesOptions) {
 		const currentScopeState = await super.getScopeStateToken(
 			options.expectedScopeState.repoDid,
@@ -89,20 +87,13 @@ class InterleavingMemoryRecordStore extends SupportedMemoryRecordStore {
 		this.listHooks.set(key, hooks);
 	}
 
-	onApplyWritesCall(
-		repoDid: string,
-		callNumber: number,
-		action: () => void,
-	) {
+	onApplyWritesCall(repoDid: string, callNumber: number, action: () => void) {
 		const hooks = this.applyWritesHooks.get(repoDid) ?? [];
 		hooks.push({ callNumber, fired: false, action });
 		this.applyWritesHooks.set(repoDid, hooks);
 	}
 
-	override async listRecords<T>(
-		collection: string,
-		repoDid?: string,
-	) {
+	override async listRecords<T>(collection: string, repoDid?: string) {
 		const key = `${collection}:${repoDid ?? "*"}`;
 		const nextCallNumber = (this.listCallCounts.get(key) ?? 0) + 1;
 		this.listCallCounts.set(key, nextCallNumber);
@@ -117,7 +108,10 @@ class InterleavingMemoryRecordStore extends SupportedMemoryRecordStore {
 		return super.listRecords<T>(collection, repoDid);
 	}
 
-	override async applyWrites(writes: RecordWrite[], options: ApplyWritesOptions) {
+	override async applyWrites(
+		writes: RecordWrite[],
+		options: ApplyWritesOptions,
+	) {
 		const repoDid = options.expectedScopeState.repoDid;
 		const nextCallNumber = (this.applyWritesCallCounts.get(repoDid) ?? 0) + 1;
 		this.applyWritesCallCounts.set(repoDid, nextCallNumber);
@@ -170,7 +164,10 @@ class FailingAtomicMemoryRecordStore extends SupportedMemoryRecordStore {
 		});
 	}
 
-	override async applyWrites(writes: RecordWrite[], options: ApplyWritesOptions) {
+	override async applyWrites(
+		writes: RecordWrite[],
+		options: ApplyWritesOptions,
+	) {
 		const currentScopeState = await super.getScopeStateToken(
 			options.expectedScopeState.repoDid,
 			Object.keys(options.expectedScopeState.collectionVersions ?? {}),
@@ -249,8 +246,8 @@ function createTestAppWithProjectionFeature(options: {
 		replayKnownRepoDids?(): Promise<void>;
 	};
 }) {
-	const resolvedStore =
-		(options.store ?? new SupportedMemoryRecordStore()) as ApiAppStore;
+	const resolvedStore = (options.store ??
+		new SupportedMemoryRecordStore()) as ApiAppStore;
 	const app = createApiApp({
 		store: resolvedStore,
 		authResolver: resolveHeaderAuthContext,
@@ -710,10 +707,7 @@ describe("createApiApp", () => {
 			},
 		);
 		const createSheetAck = await createSheetResponse.json();
-		expectValidXrpcOutput(
-			"app.cerulia.character.createSheet",
-			createSheetAck,
-		);
+		expectValidXrpcOutput("app.cerulia.character.createSheet", createSheetAck);
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
 
 		const getHomeResponse = await getJson(
@@ -746,10 +740,7 @@ describe("createApiApp", () => {
 			},
 		);
 		const createSessionAck = await createSessionResponse.json();
-		expectValidXrpcOutput(
-			"app.cerulia.session.create",
-			createSessionAck,
-		);
+		expectValidXrpcOutput("app.cerulia.session.create", createSessionAck);
 		const [sessionRef] = createSessionAck.emittedRecordRefs;
 
 		const publicSessionResponse = await getJson(
@@ -757,10 +748,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.session.getView?sessionRef=${encodeURIComponent(sessionRef)}`,
 		);
 		const publicSessionPayload = await publicSessionResponse.json();
-		expectValidXrpcOutput(
-			"app.cerulia.session.getView",
-			publicSessionPayload,
-		);
+		expectValidXrpcOutput("app.cerulia.session.getView", publicSessionPayload);
 	});
 
 	test("accepts mixed rules and ruleset spellings for schema-linked writes", async () => {
@@ -1272,7 +1260,9 @@ describe("createApiApp", () => {
 			convertedBranchView.sheetSummary.structuredStats[0].value.numberValue,
 		).toBe(2);
 		expect(convertedBranchView.conversionSummaries).toHaveLength(1);
-		expect(convertedBranchView.conversionSummaries[0].conversionRef).toBeUndefined();
+		expect(
+			convertedBranchView.conversionSummaries[0].conversionRef,
+		).toBeUndefined();
 
 		const postConversionAdvancementResponse = await postJson(
 			app,
@@ -1293,9 +1283,9 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
 		);
 		const finalBranchView = await finalBranchViewResponse.json();
-		expect(finalBranchView.sheetSummary.structuredStats[0].value.numberValue).toBe(
-			3,
-		);
+		expect(
+			finalBranchView.sheetSummary.structuredStats[0].value.numberValue,
+		).toBe(3);
 
 		const actorViewAfterConversionResponse = await getJson(
 			app,
@@ -1304,7 +1294,9 @@ describe("createApiApp", () => {
 		const actorViewAfterConversion =
 			await actorViewAfterConversionResponse.json();
 		expect(actorViewAfterConversion.publicBranches).toHaveLength(2);
-		expect(actorViewAfterConversion.publicBranches[0].rulesetNsid).toBeDefined();
+		expect(
+			actorViewAfterConversion.publicBranches[0].rulesetNsid,
+		).toBeDefined();
 	});
 
 	test("omits structured stats when the pinned schema is missing", async () => {
@@ -1318,8 +1310,7 @@ describe("createApiApp", () => {
 				$type: COLLECTIONS.characterSheet,
 				displayName: "Schema Missing Investigator",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef:
-					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				sheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
 				stats: { power: 3 },
 				version: 1,
 				ownerDid: DID,
@@ -1539,10 +1530,10 @@ describe("createApiApp", () => {
 				$type: COLLECTIONS.scenario,
 				title: "Browse Only Scenario",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				recommendedSheetSchemaRef:
-					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
 				sourceCitationUri: "https://example.com/scenario/browse-only",
-				summary: "Schema resolution failed, but the route should stay readable.",
+				summary:
+					"Schema resolution failed, but the route should stay readable.",
 				ownerDid: DID,
 				createdAt: "2026-04-22T00:00:00.000Z",
 				updatedAt: "2026-04-22T00:00:00.000Z",
@@ -1572,8 +1563,7 @@ describe("createApiApp", () => {
 				$type: COLLECTIONS.scenario,
 				title: "Stale Schema Scenario",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				recommendedSheetSchemaRef:
-					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
 				sourceCitationUri: "https://example.com/scenario/stale-schema",
 				summary: "Old summary",
 				ownerDid: DID,
@@ -1597,9 +1587,8 @@ describe("createApiApp", () => {
 		const payload = await response.json();
 		expect(payload.resultKind).toBe("accepted");
 
-		const updated = await store.getRecord<AppCeruliaCoreScenario.Main>(
-			scenarioRef,
-		);
+		const updated =
+			await store.getRecord<AppCeruliaCoreScenario.Main>(scenarioRef);
 		expect(updated?.value.summary).toBe(
 			"Updated summary while schema stays stale.",
 		);
@@ -1804,8 +1793,7 @@ describe("createApiApp", () => {
 			{
 				title: "Missing Schema Scenario",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				recommendedSheetSchemaRef:
-					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
 				sourceCitationUri: "https://example.com/scenario/missing-schema",
 			},
 			writerHeaders,
@@ -1824,10 +1812,8 @@ describe("createApiApp", () => {
 			app,
 			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
 			{
-				sourceBranchRef:
-					`at://${DID}/${COLLECTIONS.characterBranch}/missing-branch`,
-				targetSheetSchemaRef:
-					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				sourceBranchRef: `at://${DID}/${COLLECTIONS.characterBranch}/missing-branch`,
+				targetSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
 				branchLabel: "Missing Source Branch",
 				branchKind: "parallel",
 			},
@@ -2176,7 +2162,8 @@ describe("createApiApp", () => {
 		const payload = await response.json();
 		expect(payload.resultKind).toBe("accepted");
 
-		const updated = await store.getRecord<AppCeruliaCoreSession.Main>(sessionRef);
+		const updated =
+			await store.getRecord<AppCeruliaCoreSession.Main>(sessionRef);
 		expect(updated?.value.scenarioRef).toBeUndefined();
 		expect(updated?.value.scenarioLabel).toBe("Repaired Label");
 		expect(updated?.value.campaignRef).toBe(campaignRef);
@@ -2250,8 +2237,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 2,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef:
-					`at://${DID}/${COLLECTIONS.characterSheetSchema}/target-schema`,
+				targetSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/target-schema`,
 				convertedAt: "2026-04-22T12:00:00.000Z",
 			},
 			writerHeaders,
@@ -2312,7 +2298,9 @@ describe("createApiApp", () => {
 			readerHeaders,
 		);
 		const homeBeforeUpdate = await homeBeforeUpdateResponse.json();
-		expect(homeBeforeUpdate.recentSessions[0].sessionRef).toBe(secondSessionRef);
+		expect(homeBeforeUpdate.recentSessions[0].sessionRef).toBe(
+			secondSessionRef,
+		);
 		expect(homeBeforeUpdate.recentSessions[1].sessionRef).toBe(firstSessionRef);
 
 		const updateSessionResponse = await postJson(
@@ -2419,8 +2407,12 @@ describe("createApiApp", () => {
 			readerHeaders,
 		);
 		const campaignOwnerBeforeData = await campaignOwnerBefore.json();
-		expect(campaignOwnerBeforeData.sessions[0].sessionRef).toBe(secondSessionRef);
-		expect(campaignOwnerBeforeData.sessions[1].sessionRef).toBe(firstSessionRef);
+		expect(campaignOwnerBeforeData.sessions[0].sessionRef).toBe(
+			secondSessionRef,
+		);
+		expect(campaignOwnerBeforeData.sessions[1].sessionRef).toBe(
+			firstSessionRef,
+		);
 
 		const houseOwnerBefore = await getJson(
 			app,
@@ -2436,16 +2428,24 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
 		);
 		const campaignPublicBeforeData = await campaignPublicBefore.json();
-		expect(campaignPublicBeforeData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
-		expect(campaignPublicBeforeData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+		expect(campaignPublicBeforeData.sessionSummaries[0].sessionRef).toBe(
+			secondSessionRef,
+		);
+		expect(campaignPublicBeforeData.sessionSummaries[1].sessionRef).toBe(
+			firstSessionRef,
+		);
 
 		const housePublicBefore = await getJson(
 			app,
 			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
 		);
 		const housePublicBeforeData = await housePublicBefore.json();
-		expect(housePublicBeforeData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
-		expect(housePublicBeforeData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+		expect(housePublicBeforeData.sessionSummaries[0].sessionRef).toBe(
+			secondSessionRef,
+		);
+		expect(housePublicBeforeData.sessionSummaries[1].sessionRef).toBe(
+			firstSessionRef,
+		);
 
 		const updateSessionResponse = await postJson(
 			app,
@@ -2464,7 +2464,9 @@ describe("createApiApp", () => {
 			readerHeaders,
 		);
 		const campaignOwnerAfterData = await campaignOwnerAfter.json();
-		expect(campaignOwnerAfterData.sessions[0].sessionRef).toBe(secondSessionRef);
+		expect(campaignOwnerAfterData.sessions[0].sessionRef).toBe(
+			secondSessionRef,
+		);
 		expect(campaignOwnerAfterData.sessions[1].sessionRef).toBe(firstSessionRef);
 
 		const houseOwnerAfter = await getJson(
@@ -2481,16 +2483,24 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.campaign.getView?campaignRef=${encodeURIComponent(campaignRef)}`,
 		);
 		const campaignPublicAfterData = await campaignPublicAfter.json();
-		expect(campaignPublicAfterData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
-		expect(campaignPublicAfterData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+		expect(campaignPublicAfterData.sessionSummaries[0].sessionRef).toBe(
+			secondSessionRef,
+		);
+		expect(campaignPublicAfterData.sessionSummaries[1].sessionRef).toBe(
+			firstSessionRef,
+		);
 
 		const housePublicAfter = await getJson(
 			app,
 			`${XRPC_PREFIX}/app.cerulia.house.getView?houseRef=${encodeURIComponent(houseRef)}`,
 		);
 		const housePublicAfterData = await housePublicAfter.json();
-		expect(housePublicAfterData.sessionSummaries[0].sessionRef).toBe(secondSessionRef);
-		expect(housePublicAfterData.sessionSummaries[1].sessionRef).toBe(firstSessionRef);
+		expect(housePublicAfterData.sessionSummaries[0].sessionRef).toBe(
+			secondSessionRef,
+		);
+		expect(housePublicAfterData.sessionSummaries[1].sessionRef).toBe(
+			firstSessionRef,
+		);
 	});
 
 	test("rejects createBranch when source state changes during materialization", async () => {
@@ -2700,8 +2710,7 @@ describe("createApiApp", () => {
 		);
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
-		const advancementUri =
-			`at://${DID}/${COLLECTIONS.characterAdvancement}/stale-validation-branch`;
+		const advancementUri = `at://${DID}/${COLLECTIONS.characterAdvancement}/stale-validation-branch`;
 		store.seedRecord(
 			advancementUri,
 			{
@@ -3104,8 +3113,7 @@ describe("createApiApp", () => {
 		);
 		const createSheetAck = await createSheetResponse.json();
 		const [, branchRef] = createSheetAck.emittedRecordRefs;
-		const advancementUri =
-			`at://${DID}/${COLLECTIONS.characterAdvancement}/stale-validation-conversion`;
+		const advancementUri = `at://${DID}/${COLLECTIONS.characterAdvancement}/stale-validation-conversion`;
 		store.seedRecord(
 			advancementUri,
 			{
@@ -3345,7 +3353,8 @@ describe("createApiApp", () => {
 		expect(await conversionResponse.json()).toMatchObject({
 			resultKind: "rejected",
 			reasonCode: "invalid-required-field",
-			message: "convertedAt must be later than active advancements in the current epoch",
+			message:
+				"convertedAt must be later than active advancements in the current epoch",
 		});
 	});
 
@@ -3695,9 +3704,8 @@ describe("createApiApp", () => {
 		);
 		const createSheetAck = await createSheetResponse.json();
 		const branchRef = createSheetAck.emittedRecordRefs[1];
-		const branch = await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(
-			branchRef,
-		);
+		const branch =
+			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		if (!branch) {
 			throw new Error("expected branch record to exist");
 		}
@@ -3774,9 +3782,8 @@ describe("createApiApp", () => {
 		);
 		const createSheetAck = await createSheetResponse.json();
 		const branchRef = createSheetAck.emittedRecordRefs[1];
-		const branchBefore = await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(
-			branchRef,
-		);
+		const branchBefore =
+			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		if (!branchBefore) {
 			throw new Error("expected branch record to exist");
 		}
@@ -3804,9 +3811,8 @@ describe("createApiApp", () => {
 		expect(
 			await store.listRecords(COLLECTIONS.characterAdvancement, DID),
 		).toHaveLength(0);
-		const branchAfter = await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(
-			branchRef,
-		);
+		const branchAfter =
+			await store.getRecord<AppCeruliaCoreCharacterBranch.Main>(branchRef);
 		expect(branchAfter).toEqual(branchBefore);
 	});
 
@@ -4226,17 +4232,12 @@ describe("createApiApp", () => {
 		});
 
 		const response = await Promise.race([
-			postJson(
-				app,
-				`${XRPC_PREFIX}/app.cerulia.scenario.create`,
-				{
-					title: "Projection Timeout Scenario",
-					rulesetNsid: "app.cerulia.rules.coc7",
-					sourceCitationUri:
-						"https://example.com/scenario/projection-timeout",
-					summary: "Projection should not block this write.",
-				},
-			),
+			postJson(app, `${XRPC_PREFIX}/app.cerulia.scenario.create`, {
+				title: "Projection Timeout Scenario",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sourceCitationUri: "https://example.com/scenario/projection-timeout",
+				summary: "Projection should not block this write.",
+			}),
 			new Promise<Response>((_, reject) => {
 				setTimeout(
 					() => reject(new Error("projection ingest blocked response")),

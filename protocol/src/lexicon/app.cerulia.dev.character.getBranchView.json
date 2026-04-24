@@ -160,11 +160,7 @@
 		"conversionSummary": {
 			"type": "object",
 			"description": "Public-safe conversion provenance. Excludes version pins.",
-			"required": [
-				"sourceRulesetNsid",
-				"targetRulesetNsid",
-				"convertedAt"
-			],
+			"required": ["sourceRulesetNsid", "targetRulesetNsid", "convertedAt"],
 			"properties": {
 				"sourceRulesetNsid": { "type": "string", "format": "nsid" },
 				"targetRulesetNsid": { "type": "string", "format": "nsid" },

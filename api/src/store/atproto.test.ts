@@ -45,17 +45,17 @@ function createRemoteAgentStore() {
 						repo: string;
 						writes: Array<
 							| {
-								$type?: "com.atproto.repo.applyWrites#create";
-								collection: string;
-								rkey?: string;
-								value: { [_: string]: unknown };
-							}
+									$type?: "com.atproto.repo.applyWrites#create";
+									collection: string;
+									rkey?: string;
+									value: { [_: string]: unknown };
+							  }
 							| {
-								$type?: "com.atproto.repo.applyWrites#update";
-								collection: string;
-								rkey: string;
-								value: { [_: string]: unknown };
-							}
+									$type?: "com.atproto.repo.applyWrites#update";
+									collection: string;
+									rkey: string;
+									value: { [_: string]: unknown };
+							  }
 						>;
 						swapCommit?: string;
 					}) {
@@ -83,7 +83,9 @@ function createRemoteAgentStore() {
 									write.value.createdAt ?? "2026-04-21T00:00:00.000Z",
 								),
 								updatedAt: String(
-									write.value.updatedAt ?? write.value.createdAt ?? "2026-04-21T00:00:00.000Z",
+									write.value.updatedAt ??
+										write.value.createdAt ??
+										"2026-04-21T00:00:00.000Z",
 								),
 							});
 							cids.set(uri, cid);
@@ -127,9 +129,13 @@ function createRemoteAgentStore() {
 							collection: input.collection,
 							rkey: input.rkey ?? "generated",
 							value: input.record,
-							createdAt: String(input.record.createdAt ?? "2026-04-21T00:00:00.000Z"),
+							createdAt: String(
+								input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
+							),
 							updatedAt: String(
-								input.record.updatedAt ?? input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
+								input.record.updatedAt ??
+									input.record.createdAt ??
+									"2026-04-21T00:00:00.000Z",
 							),
 						});
 						cids.set(uri, cid);
@@ -180,9 +186,13 @@ function createRemoteAgentStore() {
 							collection: input.collection,
 							rkey: input.rkey,
 							value: input.record,
-							createdAt: String(input.record.createdAt ?? "2026-04-21T00:00:00.000Z"),
+							createdAt: String(
+								input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
+							),
 							updatedAt: String(
-								input.record.updatedAt ?? input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
+								input.record.updatedAt ??
+									input.record.createdAt ??
+									"2026-04-21T00:00:00.000Z",
 							),
 						});
 						cids.set(uri, cid);
@@ -226,10 +236,7 @@ function createRemoteAgentStore() {
 							},
 						};
 					},
-					async listRecords(input: {
-						repo: string;
-						collection: string;
-					}) {
+					async listRecords(input: { repo: string; collection: string }) {
 						return {
 							data: {
 								records: Array.from(records.values())
@@ -508,7 +515,11 @@ describe("AtprotoMirrorRecordStore", () => {
 			COLLECTIONS.characterConversion,
 		]);
 
-		const unrelatedUri = buildAtUri(DID, COLLECTIONS.scenario, "unrelated-write");
+		const unrelatedUri = buildAtUri(
+			DID,
+			COLLECTIONS.scenario,
+			"unrelated-write",
+		);
 		remote.records.set(unrelatedUri, {
 			uri: unrelatedUri,
 			repoDid: DID,
@@ -572,7 +583,9 @@ describe("AtprotoMirrorRecordStore", () => {
 			updatedAt: "2026-04-21T00:00:00.000Z",
 		});
 
-		const scopeState = await store.getScopeStateToken(DID, [COLLECTIONS.scenario]);
+		const scopeState = await store.getScopeStateToken(DID, [
+			COLLECTIONS.scenario,
+		]);
 
 		const unrelatedUri = buildAtUri(DID, COLLECTIONS.house, "unrelated-update");
 		remote.records.set(unrelatedUri, {
@@ -622,7 +635,9 @@ describe("AtprotoMirrorRecordStore", () => {
 			},
 		});
 
-		const scopeState = await store.getScopeStateToken(DID, [COLLECTIONS.scenario]);
+		const scopeState = await store.getScopeStateToken(DID, [
+			COLLECTIONS.scenario,
+		]);
 
 		remote.bumpRepoCommit(DID);
 
@@ -975,7 +990,11 @@ describe("AtprotoMirrorRecordStore", () => {
 		});
 
 		const firstUri = buildAtUri(DID, COLLECTIONS.scenario, "first-item");
-		const secondUri = buildAtUri(secondDid, COLLECTIONS.scenario, "second-item");
+		const secondUri = buildAtUri(
+			secondDid,
+			COLLECTIONS.scenario,
+			"second-item",
+		);
 		await cache.createRecord({
 			repoDid: DID,
 			collection: COLLECTIONS.scenario,
@@ -1007,10 +1026,7 @@ describe("AtprotoMirrorRecordStore", () => {
 
 		const records = await store.listRecords(COLLECTIONS.scenario);
 		expect(records).toHaveLength(2);
-		expect(records.map((record) => record.uri)).toEqual([
-			secondUri,
-			firstUri,
-		]);
+		expect(records.map((record) => record.uri)).toEqual([secondUri, firstUri]);
 	});
 
 	test("refreshes anonymous discovery lists across known repos", async () => {
@@ -1030,7 +1046,11 @@ describe("AtprotoMirrorRecordStore", () => {
 		});
 
 		const firstUri = buildAtUri(DID, COLLECTIONS.scenario, "fresh-first");
-		const secondUri = buildAtUri(secondDid, COLLECTIONS.scenario, "fresh-second");
+		const secondUri = buildAtUri(
+			secondDid,
+			COLLECTIONS.scenario,
+			"fresh-second",
+		);
 		remote.records.set(firstUri, {
 			uri: firstUri,
 			repoDid: DID,
@@ -1064,10 +1084,7 @@ describe("AtprotoMirrorRecordStore", () => {
 
 		const records = await store.listRecords(COLLECTIONS.scenario);
 		expect(records).toHaveLength(2);
-		expect(records.map((record) => record.uri)).toEqual([
-			secondUri,
-			firstUri,
-		]);
+		expect(records.map((record) => record.uri)).toEqual([secondUri, firstUri]);
 		expect(await cache.getRecord(firstUri)).not.toBeNull();
 		expect(await cache.getRecord(secondUri)).not.toBeNull();
 	});

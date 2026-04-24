@@ -209,9 +209,7 @@ export class SqlRecordStore implements RecordStore {
 			guardParams.push(draft.repoDid, collection, version);
 		}
 		if (options?.expectedCurrent !== undefined) {
-			guardClauses.push(
-				"value_json = ? AND created_at = ? AND updated_at = ?",
-			);
+			guardClauses.push("value_json = ? AND created_at = ? AND updated_at = ?");
 			guardParams.push(
 				storedRecordValueJson(options.expectedCurrent.value),
 				options.expectedCurrent.createdAt,

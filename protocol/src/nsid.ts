@@ -74,7 +74,9 @@ function buildVariantKey(
 const lexiconTransforms = new Map<string, CeruliaLexiconTransform<unknown>>();
 
 function canonicalizeCeruliaFamilyRootSegment(rootSegment: string): string {
-	return CERULIA_NSID_CANONICAL_FAMILY_ROOT_SEGMENTS.get(rootSegment) ?? rootSegment;
+	return (
+		CERULIA_NSID_CANONICAL_FAMILY_ROOT_SEGMENTS.get(rootSegment) ?? rootSegment
+	);
 }
 
 function buildRulesetSpellingAliases(parsed: ParsedCeruliaNsid): string[] {
@@ -122,9 +124,8 @@ export function parseCeruliaNsid(nsid: string): ParsedCeruliaNsid | null {
 			return null;
 		}
 
-		const canonicalRootSegment = canonicalizeCeruliaFamilyRootSegment(
-			thirdSegment,
-		);
+		const canonicalRootSegment =
+			canonicalizeCeruliaFamilyRootSegment(thirdSegment);
 		const suffix = [canonicalRootSegment, ...segments.slice(3)].join(".");
 		const bareNsid = `${CERULIA_NSID_PREFIX}.${suffix}`;
 		return {
@@ -142,14 +143,19 @@ export function parseCeruliaNsid(nsid: string): ParsedCeruliaNsid | null {
 	}
 
 	const rootSegment = segments[3];
-	if (!thirdSegment || !rootSegment || !CERULIA_NSID_ROOT_SEGMENTS.has(rootSegment)) {
+	if (
+		!thirdSegment ||
+		!rootSegment ||
+		!CERULIA_NSID_ROOT_SEGMENTS.has(rootSegment)
+	) {
 		return null;
 	}
 	if (!isExpectedCeruliaShape(segments, rootSegment, true)) {
 		return null;
 	}
 
-	const canonicalRootSegment = canonicalizeCeruliaFamilyRootSegment(rootSegment);
+	const canonicalRootSegment =
+		canonicalizeCeruliaFamilyRootSegment(rootSegment);
 	const suffix = [canonicalRootSegment, ...segments.slice(4)].join(".");
 	const bareNsid = `${CERULIA_NSID_PREFIX}.${suffix}`;
 	return {
@@ -194,7 +200,10 @@ export function toLegacyCeruliaNsid(nsid: string): string {
 	return applyCeruliaNsidVariant(nsid, CERULIA_NSID_IMPLICIT_VARIANT);
 }
 
-export function areEquivalentCeruliaNsids(left: string, right: string): boolean {
+export function areEquivalentCeruliaNsids(
+	left: string,
+	right: string,
+): boolean {
 	const parsedLeft = parseCeruliaNsid(left);
 	const parsedRight = parseCeruliaNsid(right);
 	if (parsedLeft && parsedRight) {
@@ -272,7 +281,10 @@ export function registerCeruliaLexiconTransform<T = unknown>(options: {
 		options.fromVariant,
 		CERULIA_NSID_ACTIVE_VARIANT,
 	);
-	lexiconTransforms.set(key, options.transform as CeruliaLexiconTransform<unknown>);
+	lexiconTransforms.set(
+		key,
+		options.transform as CeruliaLexiconTransform<unknown>,
+	);
 
 	return () => {
 		if (lexiconTransforms.get(key) === options.transform) {

@@ -1,6 +1,4 @@
-import {
-	areEquivalentCeruliaNsids,
-} from "@cerulia/protocol";
+import { areEquivalentCeruliaNsids } from "@cerulia/protocol";
 import type {
 	AppCeruliaCoreRuleProfile,
 	AppCeruliaRuleCreateProfile,
