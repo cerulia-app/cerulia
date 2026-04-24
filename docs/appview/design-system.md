@@ -107,35 +107,186 @@ session 履歴と advancement は別の意味を持つ。
 
 ### Tone
 
-- quiet archive
-- deep midnight を基調にした tonal layering
-- 境界は線よりも面の濃淡で出す
+- light base。白を canvas として、blue primary と gray neutral でコントラストを作る
+- Bluesky ライクなクリーンさ × モバイルファースト
 - UI 自体は静かに保ち、portrait と text が主役になる余白を確保する
 
 ### Color Use
 
-- base は暗い neutral を使い、彩度の高い色は primary action と状態の強調に限定する
-- section 区切りは 1px divider ではなく tonal shift で作る
+- base は白 (`#FFFFFF`) および Gray 100 (`#F3F4F6`)
+- primary action は Blue 600 (`#2563EB`)
+- section 区切りは Gray 100 の背景変化か 1px の Gray 200 divider で作る
+- semantic color は状態の明示にのみ使う（Success / Warning / Error / Info）
 - draft、schema 更新必須、rejected は CTA と別の意味として色を分離する
 
 ### Typography
 
-- 見出しは character の顔として少し文学性のある display serif を使う
-- 本文と UI label は可読性の高い sans を使う
-- startup 的な均質さを避け、display と body の役割差を明確にする
-- 日本語対応を前提に、display は Shippori Mincho または Zen Old Mincho 系、body は IBM Plex Sans JP 系を第一候補として検討する
-- 多言語化を前提に、日本語と Latin script をまたいでも tone と可読性が崩れにくい組み合わせを選ぶ
+- フォントは **Noto Sans JP** 一本で統一する（日本語・Latin 両対応）
+- display serif は使わない。見出しも Noto Sans JP の weight 変化で役割差を出す
+
+| スタイル | サイズ / 行高 | Weight | 用途 |
+|---|---|---|---|
+| Display | 28 / 36 | 700 | LP ヒーロー見出し |
+| H1 | 22 / 28 | 700 | ページタイトル |
+| H2 | 18 / 24 | 700 | セクション見出し |
+| H3 | 16 / 22 | 600 | カード見出し |
+| Body | 14 / 20 | 400 | 本文 |
+| Body Small | 12 / 16 | 400 | 補足テキスト |
+| Caption | 11 / 14 | 400 | キャプション・注釈 |
 
 ### Composition
 
-- hero は左右対称にしすぎず、portrait と text block の重心を少しずらす
+- mobile first。デスクトップは同じ意味順を 2 カラムに展開する
+- キャラクター詳細: モバイルは縦積み 1 カラム、デスクトップは左: キャラ情報 / 右: セッション履歴の 2 カラム
+- hero は portrait + name + meta + short text の密なまとまりとして上部に配置する
 - card を並べるより、大きな section 面を積み重ねる
-- desktop は 1 カラム基調 + 補助カラム、mobile は同じ意味順で縦積みする
 
 ### Motion
 
 - hover や reveal は section の読書体験を支える程度に留める
 - feed 的な頻繁な micro-interaction や attention grabbing motion は避ける
+
+## Color Palette
+
+### Primary
+
+| トークン | 値 | 用途 |
+|---|---|---|
+| Blue 600 | `#2563EB` | primary action（ボタン、リンク、アクティブ状態） |
+| Blue 500 | `#60A5FA` | hover / secondary emphasis |
+| Blue 400 | `#93C5FD` | disabled state / subtle accent |
+| Blue 300 | `#BFDBFE` | background tint |
+| Blue 200 | `#BFDBFE` | 最淡 tint |
+
+### Neutral
+
+| トークン | 値 | 用途 |
+|---|---|---|
+| Gray 900 | `#111827` | 主テキスト |
+| Gray 700 | `#374151` | 副テキスト |
+| Gray 500 | `#6B7280` | placeholder / caption |
+| Gray 300 | `#D1D5DB` | border / divider |
+| Gray 100 | `#F3F4F6` | section 背景 |
+| White | `#FFFFFF` | page canvas |
+
+### Semantic
+
+| トークン | 値 | 用途 |
+|---|---|---|
+| Success | `#10B981` | 完了・有効 |
+| Warning | `#F59E0B` | 注意・下書き |
+| Error | `#EF4444` | エラー・ロスト |
+| Info | `#3B82F6` | 情報・進行中 |
+
+## Spacing
+
+8px 基準のスケールを使う。
+
+| 値 | px |
+|---|---|
+| 0 | 0 |
+| 1 | 4 |
+| 2 | 8 |
+| 3 | 12 |
+| 4 | 16 |
+| 6 | 24 |
+| 8 | 32 |
+| 10 | 40 |
+| 12 | 48 |
+| 16 | 64 |
+
+## Radius
+
+| 値 | px | 用途例 |
+|---|---|---|
+| sm | 4 | input、tag |
+| md | 8 | card |
+| lg | 12 | modal |
+| xl | 16 | large card |
+| 2xl | 24 | button（pill 寄り） |
+
+## Elevation
+
+背景色の重ね合わせで深度を表現する。影は原則使わない。
+
+| レベル | 用途 |
+|---|---|
+| 0 | page canvas（White） |
+| 1 | card / section 背景（Gray 100） |
+| 2 | nested card / highlight（White on Gray 100） |
+| 3 | modal / dropdown（White + shadow） |
+
+## Components
+
+### Button
+
+| バリアント | 見た目 | 用途 |
+|---|---|---|
+| Primary | Blue 600 背景 / White テキスト | 主要アクション |
+| Secondary | White 背景 / Gray 300 border / Gray 900 テキスト | 副次アクション |
+| Tertiary | 背景なし / Blue 600 テキスト | 低優先アクション |
+| Disabled | Gray 300 背景 / Gray 500 テキスト | 非活性 |
+
+### Avatar
+
+| サイズ | px | 用途 |
+|---|---|---|
+| XS | 24 | inline 表示 |
+| S | 32 | list item |
+| M | 40 | card |
+| L | 64 | hero |
+| XL | 96 | プロフィールヘッダー |
+
+### Badge
+
+play 状態やキャラクター種別を示す小ラベル。
+
+| バッジ | 意味 |
+|---|---|
+| PL | プレイヤーキャラクター |
+| GM | GM キャラクター |
+| 完了 | セッション完了 |
+| 進行中 | セッション進行中 |
+| ロスト | キャラクターロスト |
+| 下書き | 非公開・編集中 |
+
+Neutral バッジ（メタ情報）: 20代前半、探索者、公開、非公開 など
+
+### Tag / Chip
+
+ルールシステムや属性を示す。クリック不可の情報ラベルとして使う。
+
+例: CoC、第6版、現代日本、クローズド
+
+### Blur（ネタバレ保護）
+
+セッションノートや HO など、未プレイ者への配慮が必要なコンテンツに適用する。
+
+- **未解除**: テキストをぼかして「タップして表示」を重ねる
+- **解除後**: ぼかし解除、「閉じる」ボタンを表示
+- public 表示でのみ有効。owner view では常に解除済みとして扱う
+
+### Tabs / Segmented Control
+
+- Tabs: キャラクター詳細の「ステータス」「セッション」切り替えに使う
+- Segmented Control: 同等の選択肢を並べる小さいセレクター（例: ステータス / セッション）
+
+### Input
+
+| 種別 | 用途 |
+|---|---|
+| Text | 単行テキスト入力 |
+| Select | ドロップダウン選択 |
+| Textarea | 複数行テキスト |
+
+### Iconography
+
+24 種以上のアイコンを定義する。カテゴリー別の主なものを示す。
+
+- ナビ: ホーム、検索、通知、メニュー、共有、編集
+- 操作: 戻る、カレンダー、人物、リンク、外部リンク、コピー
+- システム: システム、セッション、プレイヤー、キャンペーン、ハウス、シナリオ
+- 状態: 展開、折りたたみ、ロック、公開、下書き、その他
 
 ## Shared Surface Rules
 

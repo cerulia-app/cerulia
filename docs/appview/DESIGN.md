@@ -2,8 +2,9 @@
 
 ## Status
 
-This file is an exploratory visual proposal.
-For Cerulia AppView's product-specific source of truth, use [design-system.md](./design-system.md) and [character-detail-wireframes.md](./character-detail-wireframes.md).
+This file is an **obsolete** exploratory visual proposal (dark midnight + glassmorphism 方向性).
+2026-04-24 以降の product-specific なデザイン判断は [design-system.md](./design-system.md) に移行した。
+このファイルは参考記録として残すが、実装上の根拠としては使わない。
  
 ## 1. Overview & Creative North Star
 The "Creative North Star" for this design system is **The Digital Curator**. This philosophy treats social networking not as a chaotic stream, but as a high-end editorial experience. We aim to move beyond the "standard template" look of modern SNS platforms by using intentional asymmetry, breathable negative space, and tonal depth.
