@@ -4,6 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun run src/entrypoints/bun.ts",
+		"dev:e2e": "bun run src/entrypoints/bun-e2e.ts",
 		"dev:worker": "bun x wrangler dev",
 		"build": "tsc --noEmit",
 		"migrate": "bun run scripts/migrate-sqlite.mjs",

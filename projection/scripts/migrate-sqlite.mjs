@@ -6,13 +6,6 @@ const dbPath =
 	process.env.CERULIA_PROJECTION_DB ?? "./cerulia-projection.sqlite";
 const migrationsDir = join(import.meta.dir, "..", "migrations");
 
-function splitStatements(sql) {
-	return sql
-		.split(";")
-		.map((statement) => statement.trim())
-		.filter((statement) => statement.length > 0);
-}
-
 const db = new Database(dbPath, { create: true });
 
 try {
@@ -32,10 +25,8 @@ try {
 		.filter((filename) => filename.endsWith(".sql"))
 		.sort((left, right) => left.localeCompare(right));
 
-	const applyMigration = db.transaction((name, statements, appliedAt) => {
-		for (const statement of statements) {
-			db.run(statement);
-		}
+	const applyMigration = db.transaction((name, sql, appliedAt) => {
+		db.exec(sql);
 
 		db.query(
 			"INSERT INTO schema_migrations (name, applied_at) VALUES (?, ?)",
@@ -48,12 +39,11 @@ try {
 		}
 
 		const sql = await readFile(join(migrationsDir, filename), "utf8");
-		const statements = splitStatements(sql);
-		if (statements.length === 0) {
+		if (sql.trim().length === 0) {
 			continue;
 		}
 
-		applyMigration(filename, statements, new Date().toISOString());
+		applyMigration(filename, sql, new Date().toISOString());
 		console.log(`applied ${filename}`);
 	}
 } finally {

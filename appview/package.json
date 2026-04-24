@@ -14,6 +14,10 @@
 		"lint": "prettier --check README.md package.json src/**/*.{css,ts,svelte} vite.config.ts vitest.config.ts eslint.config.js svelte.config.js tsconfig.json && eslint .",
 		"format": "prettier --write README.md package.json src/**/*.{css,ts,svelte} vite.config.ts vitest.config.ts eslint.config.js svelte.config.js tsconfig.json",
 		"test": "vitest run --passWithNoTests",
+		"test:e2e": "bun run scripts/e2e/run-suite.mjs all",
+		"test:e2e:core": "bun run scripts/e2e/run-suite.mjs core",
+		"test:e2e:discovery": "bun run scripts/e2e/run-suite.mjs discovery",
+		"test:e2e:oauth": "bun run scripts/e2e/run-suite.mjs oauth",
 		"test:watch": "vitest --passWithNoTests",
 		"verify": "bun run check && bun run lint && bun run test && bun run build"
 	},
