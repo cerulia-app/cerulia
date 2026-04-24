@@ -1,0 +1,25 @@
+command = "bun run"
+strip_ansi = true
+trim_lines = true
+
+skip = [
+  "^\\$ ",                              # bun run lifecycle: "$ command here"
+  "^error: script .+ exited with code", # bun failure footer (redundant with actual error output)
+  "^Loading svelte-check in workspace:", # svelte-check noise
+  "^Getting Svelte diagnostics",         # svelte-check noise
+  "^={3,}",                              # svelte-check separator lines
+  "^Unchanged files",                    # svelte-check cache hint
+]
+
+collapse_empty_lines = true
+
+# Strip absolute path prefix from svelte-check diagnostics, keep src/... with line:col
+[[replace]]
+pattern = '^.+[/\\\\](src[/\\\\].+:\\d+:\\d+)$'
+output = "{1}"
+
+[on_success]
+output = "{output}"
+
+[on_failure]
+output = "{output}"

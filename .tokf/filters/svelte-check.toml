@@ -1,0 +1,29 @@
+command = "bunx svelte-check"
+strip_ansi = true
+trim_lines = true
+
+# Short-circuit when there are no errors and no warnings
+match_output = [
+  { contains = "found 0 errors, 0 warnings, and 0 hints", output = "ok (no diagnostics)" },
+  { contains = "found 0 errors and 0 warnings", output = "ok (no diagnostics)" },
+]
+
+skip = [
+  "^Loading svelte-check in workspace:",
+  "^Getting Svelte diagnostics",
+  "^={3,}",
+  "^Unchanged files",
+]
+
+collapse_empty_lines = true
+
+# Strip absolute path prefix from diagnostic lines, keep src/... with line:col
+[[replace]]
+pattern = '^.+[/\\\\](src[/\\\\].+:\\d+:\\d+)$'
+output = "{1}"
+
+[on_success]
+output = "{output}"
+
+[on_failure]
+output = "{output}"

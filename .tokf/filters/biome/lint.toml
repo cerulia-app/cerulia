@@ -1,0 +1,15 @@
+command = "biome lint"
+strip_ansi = true
+
+# Short-circuit when all files checked with no issues
+match_output = [
+  { contains = "Checked ", output = "ok — {line_containing}" },
+]
+
+collapse_empty_lines = true
+
+[on_success]
+output = "{output}"
+
+[on_failure]
+output = "{output}"

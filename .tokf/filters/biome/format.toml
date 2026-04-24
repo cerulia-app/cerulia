@@ -1,0 +1,14 @@
+command = "biome format"
+strip_ansi = true
+
+# Short-circuit when no files needed formatting
+match_output = [
+  { contains = "Formatted 0 file(s)", output = "ok (nothing to format)" },
+  { contains = "Checked ", output = "ok — {line_containing}" },
+]
+
+[on_success]
+output = "{output}"
+
+[on_failure]
+output = "{output}"
