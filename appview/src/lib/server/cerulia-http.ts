@@ -1,10 +1,9 @@
-import { json } from "@sveltejs/kit";
+import { json, type RequestEvent } from "@sveltejs/kit";
 import { createCeruliaAuthHeaders } from "$lib/server/cerulia-auth";
 import {
 	getCeruliaApiBaseUrl,
 	getCeruliaProjectionBaseUrl,
 } from "$lib/server/cerulia-runtime";
-import type { RequestEvent } from "./$types";
 
 type CeruliaService = "api" | "projection";
 
@@ -22,9 +21,16 @@ export async function requestCeruliaJson(
 ) {
 	const headers = new Headers(init.headers);
 	headers.set("accept", "application/json");
+	const method = init.method ?? "GET";
+	const requestUrl = `${getBaseUrl(service)}${path}`;
 
 	for (const [name, value] of Object.entries(
-		createCeruliaAuthHeaders(event.locals.ceruliaViewerAuth),
+		await createCeruliaAuthHeaders(
+			event.locals.ceruliaViewerAuth,
+			service === "api" ? requestUrl : undefined,
+			method,
+			init.body,
+		),
 	)) {
 		if (value.length > 0) {
 			headers.set(name, value);
@@ -35,7 +41,7 @@ export async function requestCeruliaJson(
 		headers.set("content-type", "application/json");
 	}
 
-	return event.fetch(`${getBaseUrl(service)}${path}`, {
+	return event.fetch(requestUrl, {
 		...init,
 		headers,
 	});

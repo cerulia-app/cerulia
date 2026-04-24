@@ -1,11 +1,7 @@
-import {
-	createApiApp,
-	type ApiAppStore,
-	type ApiOAuthFeature,
-} from "../app.js";
+import { createApiApp, type ApiAppStore } from "../app.js";
 import {
 	createAnonymousAuthContext,
-	createSessionAuthResolver,
+	resolveInternalServiceAuthContext,
 } from "../auth.js";
 import type { AuthResolver } from "../auth.js";
 import {
@@ -22,9 +18,10 @@ import { createSqlOauthStores } from "../store/oauth.js";
 
 interface WorkerEnv {
 	DB: D1DatabaseLike;
-	CERULIA_PUBLIC_BASE_URL?: string;
+	CERULIA_APPVIEW_PUBLIC_BASE_URL?: string;
 	CERULIA_OAUTH_PRIVATE_JWK?: string;
 	CERULIA_OAUTH_CLIENT_NAME?: string;
+	CERULIA_APPVIEW_INTERNAL_AUTH_SECRET?: string;
 	CERULIA_DOH_ENDPOINT?: string;
 }
 
@@ -41,13 +38,20 @@ export async function createWorkerApp(env: WorkerEnv) {
 		knownRepoCatalog: oauthStores.knownRepoCatalog,
 		dohEndpoint: env.CERULIA_DOH_ENDPOINT,
 	});
-	const publicBaseUrl = env.CERULIA_PUBLIC_BASE_URL;
+	const publicBaseUrl = env.CERULIA_APPVIEW_PUBLIC_BASE_URL;
 	const privateJwkJson = env.CERULIA_OAUTH_PRIVATE_JWK;
+	const internalAuthSecret = env.CERULIA_APPVIEW_INTERNAL_AUTH_SECRET;
 
-	if (Boolean(publicBaseUrl) !== Boolean(privateJwkJson)) {
+	if (
+		Boolean(publicBaseUrl) ||
+		Boolean(privateJwkJson) ||
+		Boolean(internalAuthSecret)
+	) {
+		if (!(publicBaseUrl && privateJwkJson && internalAuthSecret)) {
 		throw new Error(
-			"CERULIA_PUBLIC_BASE_URL and CERULIA_OAUTH_PRIVATE_JWK must be configured together",
+			"CERULIA_APPVIEW_PUBLIC_BASE_URL, CERULIA_OAUTH_PRIVATE_JWK, and CERULIA_APPVIEW_INTERNAL_AUTH_SECRET must be configured together",
 		);
+		}
 	}
 
 	let store: ApiAppStore = new AtprotoMirrorRecordStore(
@@ -55,7 +59,6 @@ export async function createWorkerApp(env: WorkerEnv) {
 		publicAgentProvider,
 	);
 	let authResolver: AuthResolver = () => createAnonymousAuthContext();
-	let oauthFeature: ApiOAuthFeature | undefined;
 
 	if (publicBaseUrl && privateJwkJson) {
 		const oauthRuntime = await createWorkerOAuthRuntime({
@@ -64,7 +67,6 @@ export async function createWorkerApp(env: WorkerEnv) {
 			knownRepoCatalog: oauthStores.knownRepoCatalog,
 			stateStore: oauthStores.stateStore,
 			sessionStore: oauthStores.sessionStore,
-			browserSessionStore: oauthStores.browserSessionStore,
 			clientName: env.CERULIA_OAUTH_CLIENT_NAME,
 			dohEndpoint: env.CERULIA_DOH_ENDPOINT,
 		});
@@ -72,14 +74,33 @@ export async function createWorkerApp(env: WorkerEnv) {
 			cacheStore,
 			oauthRuntime.agentProvider,
 		);
-		authResolver = createSessionAuthResolver(oauthRuntime.oauthFeature);
-		oauthFeature = oauthRuntime.oauthFeature;
+	}
+
+	if (internalAuthSecret) {
+		authResolver = async (request) => {
+			return (
+				(await resolveInternalServiceAuthContext(request, {
+					sharedSecret: internalAuthSecret,
+				})) ?? createAnonymousAuthContext()
+			);
+		};
 	}
 
 	return createApiApp({
 		store,
 		authResolver,
-		oauthFeature,
+		internalOauthSessionFeature:
+			publicBaseUrl && privateJwkJson && internalAuthSecret
+				? {
+					async upsertSession(did, session) {
+						await oauthStores.sessionStore.set(did, session as never);
+						await oauthStores.knownRepoCatalog.rememberRepoDid(did);
+					},
+					deleteSession(did) {
+						return oauthStores.sessionStore.del(did);
+					},
+				}
+				: undefined,
 	});
 }
 

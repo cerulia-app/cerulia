@@ -108,9 +108,9 @@ public mode の redaction 粒度は record ごとの matrix で固定する。
 
 Cerulia の実装パターンは Authorization Code + PKCE に固定する。
 
-- `api` は confidential OAuth client として動作し、OAuth session、refresh token、DPoP key、binding secret を operational store に保持する
-- `appview` は `api` の browser frontend として動作し、browser 側に atproto token を保持しない
-- `api` は browser session に束ねた OAuth session の DID と session grant を照合して callerProof を確定する
+- `appview` は confidential OAuth client として動作し、callback state、browser session cookie、OAuth session を保持する
+- `api` は mirrored OAuth session、refresh token、DPoP key を operational store に保持する
+- `api` は AppView signed internal auth と mirrored OAuth session の DID を照合して callerProof を確定する
 - repo write/read は `api` が保持する caller session を使って caller の PDS に対して実行する
 - refresh と再認証は caller の PDS / authorization server の current authority に追随する
 

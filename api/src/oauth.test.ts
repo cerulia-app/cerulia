@@ -14,7 +14,7 @@ const didWebDoc = {
 };
 
 describe("createPublicAgentProvider", () => {
-	test("fails closed for worker public-agent lookup until a pre-connect-pinned transport exists", async () => {
+	test("returns a public agent for safe did docs in worker-compatible lookup", async () => {
 		const provider = createPublicAgentProvider({
 			knownRepoCatalog: {
 				listRepoDids: async () => [],
@@ -29,6 +29,6 @@ describe("createPublicAgentProvider", () => {
 			throw new Error("public agent lookup must be configured");
 		}
 		const agent = await getPublicAgent("did:web:example.com");
-		expect(agent).toBeNull();
+		expect(agent).not.toBeNull();
 	});
 });

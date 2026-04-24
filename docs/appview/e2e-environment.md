@@ -77,7 +77,7 @@ readiness suite は次の route を使う。
 
 - Core と Discovery は `CERULIA_ENABLE_HEADER_AUTH_SHIM=1` を使う
 - Core と Discovery の local E2E は test-only API entrypoint を使い、canonical data を local SQLite に直接書けるようにする
-- OAuth smoke は `CERULIA_PUBLIC_BASE_URL` と固定 test JWK を使って OAuth runtime を起動する
+- OAuth smoke は `CERULIA_APPVIEW_PUBLIC_BASE_URL`、固定 test JWK、`CERULIA_APPVIEW_INTERNAL_AUTH_SECRET` を使って AppView OAuth runtime と API mirror session restore を起動する
 - Discovery では projection ingest 用の base URL と token も API に渡す
 
 ### projection

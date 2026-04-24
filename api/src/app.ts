@@ -28,72 +28,23 @@ import {
 	createAnonymousAuthContext,
 	type AuthContext,
 	type AuthResolver,
-	readCookie,
 } from "./auth.js";
 import { toErrorResponse } from "./errors.js";
 import { ApiError } from "./errors.js";
 import { requireReaderDid, requireWriterDid } from "./auth.js";
-import { SESSION_COOKIE_NAME, XRPC_PREFIX } from "./constants.js";
+import { XRPC_PREFIX } from "./constants.js";
 import type { ProjectionIngestFeature } from "./projection.js";
 import { createServices } from "./services/index.js";
 import type { AtomicRecordStore, RecordStore } from "./store/types.js";
 import { jsonXrpcOutput } from "./xrpc-output.js";
 
-export interface ApiOAuthFeature {
-	clientMetadata: Record<string, unknown>;
-	jwks: Record<string, unknown>;
-	beginLogin(identifier: string, returnTo: string): Promise<string>;
-	finishLogin(params: URLSearchParams): Promise<{
-		sessionId: string;
-		did: string;
-		grantedScope: string;
-		returnTo: string | null;
-	}>;
-	signOut(sessionId: string): Promise<void>;
-	getBrowserSession(sessionId: string): Promise<{
-		did: string;
-		grantedScope: string;
-	} | null>;
+export interface ApiInternalOauthSessionFeature {
+	upsertSession(
+		did: string,
+		session: Record<string, unknown>,
+	): Promise<void>;
+	deleteSession(did: string): Promise<void>;
 }
-
-function sanitizeReturnTo(returnTo: string | null | undefined): string {
-	if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//")) {
-		return "/";
-	}
-
-	return returnTo;
-}
-
-function serializeSessionCookie(requestUrl: string, sessionId: string): string {
-	const url = new URL(requestUrl);
-	const secure = url.protocol === "https:";
-	return [
-		`${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
-		"Path=/",
-		"HttpOnly",
-		"SameSite=Lax",
-		secure ? "Secure" : undefined,
-	]
-		.filter((fragment): fragment is string => Boolean(fragment))
-		.join("; ");
-}
-
-function clearSessionCookie(requestUrl: string): string {
-	const url = new URL(requestUrl);
-	const secure = url.protocol === "https:";
-	return [
-		`${SESSION_COOKIE_NAME}=`,
-		"Path=/",
-		"HttpOnly",
-		"SameSite=Lax",
-		"Expires=Thu, 01 Jan 1970 00:00:00 GMT",
-		"Max-Age=0",
-		secure ? "Secure" : undefined,
-	]
-		.filter((fragment): fragment is string => Boolean(fragment))
-		.join("; ");
-}
-
 async function readJsonBody<T>(
 	request: Request,
 	lexiconId: string,
@@ -126,7 +77,7 @@ export type ApiAppStore = AtomicRecordStore;
 export interface ApiAppOptions {
 	store: ApiAppStore;
 	authResolver?: AuthResolver;
-	oauthFeature?: ApiOAuthFeature;
+	internalOauthSessionFeature?: ApiInternalOauthSessionFeature;
 	projectionIngestFeature?: ProjectionIngestFeature;
 }
 
@@ -164,7 +115,7 @@ export function createApiApp(options: ApiAppOptions) {
 	const store = options.store;
 	const authResolver =
 		options.authResolver ?? (() => createAnonymousAuthContext());
-	const oauthFeature = options.oauthFeature;
+	const internalOauthSessionFeature = options.internalOauthSessionFeature;
 	const projectionIngestFeature = options.projectionIngestFeature;
 	const services = createServices(store);
 	const registerCeruliaGet = (
@@ -198,53 +149,56 @@ export function createApiApp(options: ApiAppOptions) {
 		return context.json({ status: "ok" });
 	});
 
-	if (oauthFeature) {
-		app.get("/client-metadata.json", (context) => {
-			return context.json(oauthFeature.clientMetadata);
-		});
-
-		app.get("/jwks.json", (context) => {
-			return context.json(oauthFeature.jwks);
-		});
-
-		app.get("/oauth/login", async (context) => {
-			const identifier = context.req.query("identifier");
-			if (!identifier) {
-				throw new ApiError("InvalidRequest", "identifier is required", 400);
+	if (internalOauthSessionFeature) {
+		app.post("/internal/oauth/session", async (context) => {
+			const callerDid = requireReaderDid(context.get("auth"));
+			const payload = await context.req.json();
+			if (
+				typeof payload !== "object" ||
+				payload === null ||
+				typeof payload.did !== "string" ||
+				payload.did.length === 0 ||
+				typeof payload.session !== "object" ||
+				payload.session === null
+			) {
+				throw new ApiError(
+					"InvalidRequest",
+					"did and session are required",
+					400,
+				);
 			}
 
-			const redirectUrl = await oauthFeature.beginLogin(
-				identifier,
-				sanitizeReturnTo(context.req.query("returnTo")),
-			);
-			return context.redirect(redirectUrl, 302);
-		});
-
-		app.get("/oauth/callback", async (context) => {
-			const result = await oauthFeature.finishLogin(
-				new URL(context.req.url).searchParams,
-			);
-			context.header(
-				"Set-Cookie",
-				serializeSessionCookie(context.req.url, result.sessionId),
-			);
-			return context.redirect(sanitizeReturnTo(result.returnTo), 302);
-		});
-
-		app.get("/oauth/session", async (context) => {
-			const auth = context.get("auth");
-			return context.json({
-				did: auth.callerDid ?? null,
-				scopes: Array.from(auth.scopes),
-			});
-		});
-
-		app.post("/oauth/logout", async (context) => {
-			const sessionId = readCookie(context.req.raw, SESSION_COOKIE_NAME);
-			if (sessionId) {
-				await oauthFeature.signOut(sessionId);
+			if (payload.did !== callerDid) {
+				throw new ApiError(
+					"Forbidden",
+					"did must match the authenticated caller",
+					403,
+				);
 			}
-			context.header("Set-Cookie", clearSessionCookie(context.req.url));
+
+			await internalOauthSessionFeature.upsertSession(
+				payload.did,
+				payload.session as Record<string, unknown>,
+			);
+			return context.json({ ok: true });
+		});
+
+		app.delete("/internal/oauth/session", async (context) => {
+			const callerDid = requireReaderDid(context.get("auth"));
+			const did = context.req.query("did");
+			if (!did) {
+				throw new ApiError("InvalidRequest", "did is required", 400);
+			}
+
+			if (did !== callerDid) {
+				throw new ApiError(
+					"Forbidden",
+					"did must match the authenticated caller",
+					403,
+				);
+			}
+
+			await internalOauthSessionFeature.deleteSession(did);
 			return context.json({ ok: true });
 		});
 	}

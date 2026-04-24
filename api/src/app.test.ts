@@ -7,11 +7,10 @@ import {
 	type AppCeruliaCoreSession,
 } from "@cerulia/protocol";
 import { createApiApp, type ApiAppStore } from "./app.js";
-import { createSessionAuthResolver, resolveHeaderAuthContext } from "./auth.js";
+import { resolveHeaderAuthContext, resolveInternalServiceAuthContext } from "./auth.js";
 import {
 	AUTH_SCOPES,
 	COLLECTIONS,
-	SESSION_COOKIE_NAME,
 	SELF_RKEY,
 	XRPC_PREFIX,
 } from "./constants.js";
@@ -36,6 +35,58 @@ function authHeaders(
 		"content-type": "application/json",
 		"x-cerulia-did": did,
 		"x-cerulia-scopes": scopes.join(","),
+	};
+}
+
+async function createInternalAuthHeaders(options: {
+	url: string;
+	method?: string;
+	did?: string;
+	scopes?: string[];
+	sharedSecret?: string;
+	timestamp?: string;
+	body?: BodyInit | null;
+}) {
+	const method = options.method ?? "GET";
+	const did = options.did ?? DID;
+	const scopes = options.scopes ?? [AUTH_SCOPES.reader, AUTH_SCOPES.writer];
+	const timestamp = options.timestamp ?? `${Date.now()}`;
+	const body = options.body ?? null;
+	const url = new URL(options.url);
+	const bodyDigest = Buffer.from(
+		await crypto.subtle.digest(
+			"SHA-256",
+			body === null
+				? new Uint8Array()
+				: new Uint8Array(await new Response(body).arrayBuffer()),
+		),
+	).toString("base64url");
+	const payload = [
+		method.toUpperCase(),
+		`${url.pathname}${url.search}`,
+		did,
+		scopes.join(","),
+		timestamp,
+		bodyDigest,
+	].join("\n");
+	const key = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(options.sharedSecret ?? "shared-secret"),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const signature = await crypto.subtle.sign(
+		"HMAC",
+		key,
+		new TextEncoder().encode(payload),
+	);
+
+	return {
+		"x-cerulia-did": did,
+		"x-cerulia-scopes": scopes.join(","),
+		"x-cerulia-auth-timestamp": timestamp,
+		"x-cerulia-auth-signature": Buffer.from(signature).toString("base64url"),
 	};
 }
 
@@ -526,24 +577,12 @@ describe("createApiApp", () => {
 		).toHaveLength(0);
 	});
 
-	test("maps an atproto-only browser session to reader access", async () => {
-		const authResolver = createSessionAuthResolver({
-			async getBrowserSession(sessionId) {
-				if (sessionId !== "browser-reader") {
-					return null;
-				}
-
-				return {
-					did: DID,
-					grantedScope: "atproto",
-				};
-			},
-		});
-
-		const auth = await authResolver(
-			new Request("https://cerulia.example.com/oauth/session", {
+	test("maps header reader auth to reader access", async () => {
+		const auth = resolveHeaderAuthContext(
+			new Request("https://cerulia.example.com/xrpc/app.cerulia.dev.character.getHome", {
 				headers: {
-					cookie: `${SESSION_COOKIE_NAME}=browser-reader`,
+					"x-cerulia-did": DID,
+					"x-cerulia-scopes": "app.cerulia.dev.authCoreReader",
 				},
 			}),
 		);
@@ -553,117 +592,144 @@ describe("createApiApp", () => {
 		expect(auth.scopes.has(AUTH_SCOPES.writer)).toBe(false);
 	});
 
-	test("supports oauth routes and cookie-backed session auth", async () => {
-		const store = new SupportedMemoryRecordStore();
-		const browserSessions = new Map<
-			string,
+	test("accepts signed internal service auth headers", async () => {
+		const request = new Request(
+			"https://api.cerulia.example.com/xrpc/app.cerulia.dev.character.getHome",
 			{
-				did: string;
-				grantedScope: string;
-			}
-		>();
-		const oauthFeature = {
-			clientMetadata: {
-				client_id: "https://cerulia.example.com/client-metadata.json",
+				method: "GET",
+				headers: await createInternalAuthHeaders({
+					url: "https://api.cerulia.example.com/xrpc/app.cerulia.dev.character.getHome",
+				}),
 			},
-			jwks: {
-				keys: [],
-			},
-			async beginLogin(identifier: string, returnTo: string) {
-				return `https://auth.example.com/authorize?identifier=${encodeURIComponent(identifier)}&returnTo=${encodeURIComponent(returnTo)}`;
-			},
-			async finishLogin() {
-				browserSessions.set("browser-writer", {
-					did: DID,
-					grantedScope: "atproto transition:generic",
-				});
-				return {
-					sessionId: "browser-writer",
-					did: DID,
-					grantedScope: "atproto transition:generic",
-					returnTo: "/workbench",
-				};
-			},
-			async signOut(sessionId: string) {
-				browserSessions.delete(sessionId);
-			},
-			async getBrowserSession(sessionId: string) {
-				return browserSessions.get(sessionId) ?? null;
-			},
-		};
-		const app = createApiApp({
-			store,
-			authResolver: createSessionAuthResolver(oauthFeature),
-			oauthFeature,
+		);
+
+		const auth = await resolveInternalServiceAuthContext(request, {
+			sharedSecret: "shared-secret",
 		});
 
-		const loginResponse = await app.request(
-			"/oauth/login?identifier=alice.test&returnTo=/workbench",
-		);
-		expect(loginResponse.status).toBe(302);
-		expect(loginResponse.headers.get("location")).toContain(
-			"https://auth.example.com/authorize",
-		);
+		expect(auth).not.toBeNull();
+		expect(auth?.callerDid).toBe(DID);
+		expect(auth?.scopes.has(AUTH_SCOPES.reader)).toBe(true);
+		expect(auth?.scopes.has(AUTH_SCOPES.writer)).toBe(true);
+	});
 
-		const callbackResponse = await app.request("/oauth/callback?code=test");
-		expect(callbackResponse.status).toBe(302);
-		expect(callbackResponse.headers.get("location")).toBe("/workbench");
-
-		const setCookie = callbackResponse.headers.get("set-cookie");
-		expect(setCookie).toBeString();
-		const cookie = setCookie?.split(";")[0] ?? "";
-
-		const schemaResponse = await postJson(
-			app,
-			`${XRPC_PREFIX}/app.cerulia.rule.createSheetSchema`,
-			{
-				baseRulesetNsid: "app.cerulia.rules.coc7",
-				schemaVersion: "1.0.0",
-				title: "Cookie Schema",
-				fieldDefs: [
-					{
-						fieldId: "power",
-						label: "POW",
-						fieldType: "integer",
-						required: true,
+	test("rejects unsigned header spoofing for internal service auth", async () => {
+		const auth = await resolveInternalServiceAuthContext(
+			new Request(
+				"https://api.cerulia.example.com/xrpc/app.cerulia.dev.character.getHome",
+				{
+					headers: {
+						"x-cerulia-did": DID,
+						"x-cerulia-scopes": [AUTH_SCOPES.reader, AUTH_SCOPES.writer].join(","),
 					},
-				],
-			},
+				},
+			),
 			{
-				cookie,
-				"content-type": "application/json",
+				sharedSecret: "shared-secret",
 			},
 		);
-		expect(schemaResponse.status).toBe(200);
-		expectAccepted(await schemaResponse.json());
 
-		const sessionResponse = await getJson(app, "/oauth/session", {
-			cookie,
+		expect(auth).toBeNull();
+	});
+
+	test("rejects stale internal service auth headers", async () => {
+		const auth = await resolveInternalServiceAuthContext(
+			new Request(
+				"https://api.cerulia.example.com/xrpc/app.cerulia.dev.character.getHome",
+				{
+					headers: await createInternalAuthHeaders({
+						url: "https://api.cerulia.example.com/xrpc/app.cerulia.dev.character.getHome",
+						timestamp: `${Date.now() - 120_000}`,
+					}),
+				},
+			),
+			{
+				sharedSecret: "shared-secret",
+				maxSkewMs: 60_000,
+			},
+		);
+
+		expect(auth).toBeNull();
+	});
+
+	test("rejects internal auth when the signed body does not match", async () => {
+		const body = JSON.stringify({ did: DID, session: { refreshJwt: "valid" } });
+		const auth = await resolveInternalServiceAuthContext(
+			new Request("https://api.cerulia.example.com/internal/oauth/session", {
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					...(await createInternalAuthHeaders({
+						url: "https://api.cerulia.example.com/internal/oauth/session",
+						method: "POST",
+						scopes: [AUTH_SCOPES.reader],
+						body,
+					})),
+				},
+				body: JSON.stringify({ did: DID, session: { refreshJwt: "tampered" } }),
+			}),
+			{ sharedSecret: "shared-secret" },
+		);
+
+		expect(auth).toBeNull();
+	});
+
+	test("mirrors OAuth sessions through the internal route", async () => {
+		const mirroredSessions = new Map<string, Record<string, unknown>>();
+		const app = createApiApp({
+			store: new SupportedMemoryRecordStore(),
+			authResolver: async (request) =>
+				(await resolveInternalServiceAuthContext(request, {
+					sharedSecret: "shared-secret",
+				})) ?? { scopes: new Set() },
+			internalOauthSessionFeature: {
+				async upsertSession(did, session) {
+					mirroredSessions.set(did, session);
+				},
+				async deleteSession(did) {
+					mirroredSessions.delete(did);
+				},
+			},
 		});
-		expect(sessionResponse.status).toBe(200);
-		expect(await sessionResponse.json()).toEqual({
+
+		const sessionPayload = {
+			dpopJwk: { kty: "EC" },
+			refreshJwt: "refresh-token",
+		};
+		const body = JSON.stringify({
 			did: DID,
-			scopes: [AUTH_SCOPES.reader, AUTH_SCOPES.writer],
+			session: sessionPayload,
 		});
 
-		const logoutResponse = await app.request("/oauth/logout", {
+		const upsertResponse = await app.request("/internal/oauth/session", {
 			method: "POST",
 			headers: {
-				cookie,
+				"content-type": "application/json",
+				...(await createInternalAuthHeaders({
+					url: "https://api.cerulia.example.com/internal/oauth/session",
+					method: "POST",
+					scopes: [AUTH_SCOPES.reader],
+					body,
+				})),
 			},
+			body,
 		});
-		expect(logoutResponse.status).toBe(200);
-		expect(logoutResponse.headers.get("set-cookie")).toContain(
-			`${SESSION_COOKIE_NAME}=`,
-		);
+		expect(upsertResponse.status).toBe(200);
+		expect(mirroredSessions.get(DID)).toEqual(sessionPayload);
 
-		const signedOutSessionResponse = await getJson(app, "/oauth/session", {
-			cookie,
-		});
-		expect(await signedOutSessionResponse.json()).toEqual({
-			did: null,
-			scopes: [],
-		});
+		const deleteResponse = await app.request(
+			`/internal/oauth/session?did=${encodeURIComponent(DID)}`,
+			{
+				method: "DELETE",
+				headers: await createInternalAuthHeaders({
+					url: `https://api.cerulia.example.com/internal/oauth/session?did=${encodeURIComponent(DID)}`,
+					method: "DELETE",
+					scopes: [AUTH_SCOPES.reader],
+				}),
+			},
+		);
+		expect(deleteResponse.status).toBe(200);
+		expect(mirroredSessions.has(DID)).toBe(false);
 	});
 
 	test("returns lexicon-valid outputs for representative owner and public routes", async () => {

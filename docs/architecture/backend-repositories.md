@@ -151,13 +151,13 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 
 責務:
 
-- OAuth と actor binding
+- mirrored OAuth session restore と actor binding
 - repo write/read
 - authoritative validation
 - record lifecycle の正本判定
 - projection なし最小構成での owner read と direct-ref public read
 - SQLite schema と migration
-- OAuth session、idempotency、cursor などの operational store
+- mirrored OAuth session、idempotency、cursor などの operational store
 - Bun self-host entrypoint
 - Cloudflare Workers entrypoint
 
@@ -190,7 +190,8 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 
 ## 認可・可視性・secret の境界
 
-- OAuth session、token、binding secret などの operational secret は `api` だけが保持する
+- browser-facing OAuth session、callback state、session cookie は `appview` が保持する
+- owner write に必要な mirrored OAuth session と repo actor restore 材料は `api` が保持する
 - permission bundle の解決、owner / public mode の判定、visibility の authoritative judgment は `api` に置く
 - `projection` は public-safe な derived data だけを保持し、draft や owner-only payload を public discovery 用 store に持ち込まない
 - `protocol` は auth state や secret を保持しない
@@ -203,6 +204,7 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 - owner の workbench 系 read/write は `api` だけで成立させる
 - direct ref を知っている public read は `api` だけで成立させる
 - `projection` が必要なのは catalog、discovery、横断検索、大きな reverse index、公開一覧系 surface だけに限る
+- deployable `api` entrypoint は current DID document と safe PDS endpoint を解決して direct-ref public read を成立させてよい。これは Bun / Workers のどちらでも同じ boundary に属する
 
 この制約により、`projection` は optional extension のまま保ち、`api` が無いと成立しない canonical path と、`projection` があると便利になる derived path を分ける。
 
@@ -212,7 +214,9 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 - direct ref が既知の shared detail は `api` で解決できるようにする
 - 一覧、検索、catalog、community discovery は `projection` を使う
 - `projection` が無い構成では、AppView は discovery 導線を縮退させても canonical flow を壊さない
-- auth bundle や visibility の最終判定は常に `api` 側で行い、AppView は advisory UI として扱う
+- browser-facing OAuth route、session cookie、callback state は `appview` が持つ
+- AppView は owner DID / scope を signed internal auth として `api` に渡し、`api` は mirrored OAuth session で repo actor を復元する
+- visibility と owner/public mode の最終判定は常に `api` 側で行う
 
 ## runtime 方針
 

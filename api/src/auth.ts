@@ -4,24 +4,16 @@ import { ApiError } from "./errors.js";
 
 const DID_HEADER = "x-cerulia-did";
 const SCOPE_HEADER = "x-cerulia-scopes";
-
+const INTERNAL_TIMESTAMP_HEADER = "x-cerulia-auth-timestamp";
+const INTERNAL_SIGNATURE_HEADER = "x-cerulia-auth-signature";
 export interface AuthContext {
 	callerDid?: string;
 	scopes: Set<string>;
 }
 
-export interface BrowserSessionGrant {
-	did: string;
-	grantedScope: string;
-}
-
-export interface BrowserSessionLookup {
-	getBrowserSession(sessionId: string): Promise<BrowserSessionGrant | null>;
-}
-
-export interface SessionAuthResolverOptions {
-	allowHeaderShim?: boolean;
-	cookieName?: string;
+export interface InternalServiceAuthOptions {
+	sharedSecret: string;
+	maxSkewMs?: number;
 }
 
 export type AuthResolver = (
@@ -36,13 +28,7 @@ export function createAnonymousAuthContext(): AuthContext {
 
 export function resolveHeaderAuthContext(request: Request): AuthContext {
 	const callerDid = request.headers.get(DID_HEADER) ?? undefined;
-	const rawScopes = request.headers.get(SCOPE_HEADER);
-	const scopes = new Set(
-		rawScopes
-			?.split(",")
-			.map((scope) => toCurrentCeruliaNsid(scope.trim()))
-			.filter((scope) => scope.length > 0) ?? [],
-	);
+	const scopes = new Set(readCanonicalScopes(request.headers.get(SCOPE_HEADER)));
 
 	return {
 		callerDid,
@@ -50,72 +36,131 @@ export function resolveHeaderAuthContext(request: Request): AuthContext {
 	};
 }
 
-export function readCookie(request: Request, name: string): string | undefined {
-	const rawCookie = request.headers.get("cookie");
-	if (!rawCookie) {
-		return undefined;
-	}
-
-	for (const fragment of rawCookie.split(";")) {
-		const trimmed = fragment.trim();
-		if (!trimmed.startsWith(`${name}=`)) {
-			continue;
-		}
-
-		const value = trimmed.slice(name.length + 1);
-		try {
-			return decodeURIComponent(value);
-		} catch {
-			return value;
-		}
-	}
-
-	return undefined;
-}
-
-function grantedScopeToAuthScopes(grantedScope: string): Set<string> {
-	const granted = new Set(
-		grantedScope
-			.split(/\s+/)
-			.map((scope) => scope.trim())
-			.filter((scope) => scope.length > 0),
+function readCanonicalScopes(rawScopes: string | null | undefined): string[] {
+	return (
+		rawScopes
+			?.split(",")
+			.map((scope) => toCurrentCeruliaNsid(scope.trim()))
+			.filter((scope) => scope.length > 0) ?? []
 	);
-	const scopes = new Set<string>();
-
-	if (granted.has("atproto")) {
-		scopes.add(AUTH_SCOPES.reader);
-	}
-
-	if (granted.has("transition:generic")) {
-		scopes.add(AUTH_SCOPES.reader);
-		scopes.add(AUTH_SCOPES.writer);
-	}
-
-	return scopes;
 }
 
-export function createSessionAuthResolver(
-	lookup: BrowserSessionLookup,
-	options: SessionAuthResolverOptions = {},
-): AuthResolver {
-	const allowHeaderShim = options.allowHeaderShim ?? false;
-	const cookieName = options.cookieName ?? "cerulia_session";
+function buildInternalAuthPayload(input: {
+	method: string;
+	pathWithQuery: string;
+	did: string;
+	scopes: string[];
+	timestamp: string;
+	bodySha256: string;
+}) {
+	return [
+		input.method.toUpperCase(),
+		input.pathWithQuery,
+		input.did,
+		input.scopes.join(","),
+		input.timestamp,
+		input.bodySha256,
+	].join("\n");
+}
 
-	return async (request) => {
-		const sessionId = readCookie(request, cookieName);
-		if (sessionId) {
-			const binding = await lookup.getBrowserSession(sessionId);
-			if (binding) {
-				return {
-					callerDid: binding.did,
-					scopes: grantedScopeToAuthScopes(binding.grantedScope),
-				};
-			}
-		}
+async function digestBytes(bytes: ArrayBuffer | Uint8Array) {
+	const normalized =
+		bytes instanceof Uint8Array
+			? (() => {
+					const buffer = new ArrayBuffer(bytes.byteLength);
+					new Uint8Array(buffer).set(bytes);
+					return buffer;
+				})()
+			: bytes;
+	const digest = await crypto.subtle.digest("SHA-256", normalized);
+	return Buffer.from(digest).toString("base64url");
+}
 
-		return allowHeaderShim
-			? resolveHeaderAuthContext(request)
-			: createAnonymousAuthContext();
+async function digestRequestBody(request: Request) {
+	if (request.bodyUsed) {
+		throw new Error("request body must not be consumed before auth resolution");
+	}
+
+	if (!request.body) {
+		return digestBytes(new Uint8Array());
+	}
+
+	const cloned = request.clone();
+	return digestBytes(await cloned.arrayBuffer());
+}
+
+async function signInternalAuthPayload(sharedSecret: string, payload: string) {
+	const key = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(sharedSecret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const signature = await crypto.subtle.sign(
+		"HMAC",
+		key,
+		new TextEncoder().encode(payload),
+	);
+	return Buffer.from(signature).toString("base64url");
+}
+
+function constantTimeEquals(left: string, right: string) {
+	if (left.length !== right.length) {
+		return false;
+	}
+
+	let diff = 0;
+	for (let index = 0; index < left.length; index += 1) {
+		diff |= left.charCodeAt(index) ^ right.charCodeAt(index);
+	}
+
+	return diff === 0;
+}
+
+export async function resolveInternalServiceAuthContext(
+	request: Request,
+	options: InternalServiceAuthOptions,
+): Promise<AuthContext | null> {
+	const callerDid = request.headers.get(DID_HEADER);
+	const timestamp = request.headers.get(INTERNAL_TIMESTAMP_HEADER);
+	const signature = request.headers.get(INTERNAL_SIGNATURE_HEADER);
+	const scopes = readCanonicalScopes(request.headers.get(SCOPE_HEADER));
+	if (!callerDid || !timestamp || !signature || scopes.length === 0) {
+		return null;
+	}
+
+	const timestampMs = Number.parseInt(timestamp, 10);
+	if (!Number.isFinite(timestampMs)) {
+		return null;
+	}
+
+	const maxSkewMs = options.maxSkewMs ?? 60_000;
+	if (Math.abs(Date.now() - timestampMs) > maxSkewMs) {
+		return null;
+	}
+
+	const url = new URL(request.url);
+	const bodySha256 = await digestRequestBody(request);
+	const payload = buildInternalAuthPayload({
+		method: request.method,
+		pathWithQuery: `${url.pathname}${url.search}`,
+		did: callerDid,
+		scopes,
+		timestamp,
+		bodySha256,
+	});
+	const expectedSignature = await signInternalAuthPayload(
+		options.sharedSecret,
+		payload,
+	);
+	if (!constantTimeEquals(signature, expectedSignature)) {
+		return null;
+	}
+
+	return {
+		callerDid,
+		scopes: new Set(scopes),
 	};
 }
 

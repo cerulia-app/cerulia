@@ -1,11 +1,7 @@
-import {
-	createApiApp,
-	type ApiAppStore,
-	type ApiOAuthFeature,
-} from "../app.js";
+import { createApiApp, type ApiAppStore } from "../app.js";
 import {
 	createAnonymousAuthContext,
-	createSessionAuthResolver,
+	resolveInternalServiceAuthContext,
 	resolveHeaderAuthContext,
 } from "../auth.js";
 import type { AuthResolver } from "../auth.js";
@@ -35,18 +31,25 @@ const publicAgentProvider = createPublicAgentProvider({
 	knownRepoCatalog: oauthStores.knownRepoCatalog,
 	dohEndpoint: process.env.CERULIA_DOH_ENDPOINT,
 });
-const publicBaseUrl = process.env.CERULIA_PUBLIC_BASE_URL;
+const publicBaseUrl = process.env.CERULIA_APPVIEW_PUBLIC_BASE_URL;
 const privateJwkJson = process.env.CERULIA_OAUTH_PRIVATE_JWK;
+const internalAuthSecret = process.env.CERULIA_APPVIEW_INTERNAL_AUTH_SECRET;
 const allowHeaderShim = process.env.CERULIA_ENABLE_HEADER_AUTH_SHIM === "1";
 const listenHostname = allowHeaderShim ? "127.0.0.1" : process.env.HOST;
 const projectionBaseUrl = process.env.CERULIA_PROJECTION_INTERNAL_BASE_URL;
 const projectionIngestToken =
 	process.env.CERULIA_PROJECTION_INTERNAL_INGEST_TOKEN;
 
-if (Boolean(publicBaseUrl) !== Boolean(privateJwkJson)) {
+if (
+	Boolean(publicBaseUrl) ||
+	Boolean(privateJwkJson) ||
+	Boolean(internalAuthSecret)
+) {
+	if (!(publicBaseUrl && privateJwkJson && internalAuthSecret)) {
 	throw new Error(
-		"CERULIA_PUBLIC_BASE_URL and CERULIA_OAUTH_PRIVATE_JWK must be configured together",
+		"CERULIA_APPVIEW_PUBLIC_BASE_URL, CERULIA_OAUTH_PRIVATE_JWK, and CERULIA_APPVIEW_INTERNAL_AUTH_SECRET must be configured together",
 	);
+	}
 }
 
 if (Boolean(projectionBaseUrl) !== Boolean(projectionIngestToken)) {
@@ -60,7 +63,6 @@ let store: ApiAppStore = new AtprotoMirrorRecordStore(
 	publicAgentProvider,
 );
 let authResolver: AuthResolver = () => createAnonymousAuthContext();
-let oauthFeature: ApiOAuthFeature | undefined;
 const projectionIngestFeature =
 	projectionBaseUrl && projectionIngestToken
 		? createProjectionIngestFeature({
@@ -87,16 +89,26 @@ if (publicBaseUrl && privateJwkJson) {
 		knownRepoCatalog: oauthStores.knownRepoCatalog,
 		stateStore: oauthStores.stateStore,
 		sessionStore: oauthStores.sessionStore,
-		browserSessionStore: oauthStores.browserSessionStore,
 		publicAgentLookup,
 		clientName: process.env.CERULIA_OAUTH_CLIENT_NAME,
 		dohEndpoint: process.env.CERULIA_DOH_ENDPOINT,
 	});
 	store = new AtprotoMirrorRecordStore(cacheStore, oauthRuntime.agentProvider);
-	authResolver = createSessionAuthResolver(oauthRuntime.oauthFeature, {
-		allowHeaderShim,
-	});
-	oauthFeature = oauthRuntime.oauthFeature;
+}
+
+if (internalAuthSecret) {
+	authResolver = async (request) => {
+		const internalAuth = await resolveInternalServiceAuthContext(request, {
+			sharedSecret: internalAuthSecret,
+		});
+		if (internalAuth) {
+			return internalAuth;
+		}
+
+		return allowHeaderShim
+			? resolveHeaderAuthContext(request)
+			: createAnonymousAuthContext();
+	};
 } else if (allowHeaderShim) {
 	authResolver = resolveHeaderAuthContext;
 }
@@ -104,7 +116,18 @@ if (publicBaseUrl && privateJwkJson) {
 const app = createApiApp({
 	store,
 	authResolver,
-	oauthFeature,
+	internalOauthSessionFeature:
+		publicBaseUrl && privateJwkJson && internalAuthSecret
+			? {
+				async upsertSession(did, session) {
+					await oauthStores.sessionStore.set(did, session as never);
+					await oauthStores.knownRepoCatalog.rememberRepoDid(did);
+				},
+				deleteSession(did) {
+					return oauthStores.sessionStore.del(did);
+				},
+			}
+			: undefined,
 	projectionIngestFeature,
 });
 

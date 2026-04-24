@@ -47,6 +47,8 @@
 		"vitest-browser-svelte": "^2.1.0"
 	},
 	"dependencies": {
+		"@atproto/jwk-jose": "^0.1.11",
+		"@atproto/oauth-client": "^0.6.0",
 		"@atproto/oauth-client-node": "^0.3.17",
 		"@fontsource/newsreader": "^5.2.10",
 		"@fontsource/work-sans": "^5.2.8",

@@ -9,5 +9,6 @@ test("AppView oauth-session readiness route resolves the OAuth session payload t
 	expect(await response.json()).toEqual({
 		did: null,
 		scopes: [],
+		mirroredSessionPresent: false,
 	});
 });

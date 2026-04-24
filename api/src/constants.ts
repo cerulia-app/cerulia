@@ -1,7 +1,6 @@
 import { AUTH_SCOPE_IDS } from "@cerulia/protocol";
 
 export const XRPC_PREFIX = "/xrpc";
-export const SESSION_COOKIE_NAME = "cerulia_session";
 export const OAUTH_SCOPE = "atproto transition:generic";
 
 export const AUTH_SCOPES = AUTH_SCOPE_IDS;

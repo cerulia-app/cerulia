@@ -5,33 +5,21 @@ import { Agent } from "@atproto/api";
 import { isPubliclyRoutableIpLiteral, parseIpLiteral } from "@cerulia/protocol";
 import {
 	OAuthClient,
-	type OAuthSession,
 	requestLocalLock,
 } from "@atproto/oauth-client";
 import { JoseKey } from "@atproto/jwk-jose";
 import { WebcryptoKey } from "@atproto/jwk-webcrypto";
 import { NodeOAuthClient } from "@atproto/oauth-client-node";
-import type { ApiOAuthFeature } from "./app.js";
 import { OAUTH_SCOPE } from "./constants.js";
 import { ApiError } from "./errors.js";
 import type { AgentProvider } from "./store/atproto.js";
 import type {
-	BrowserSessionStore,
 	KnownRepoCatalog,
 	OAuthSessionCatalog,
 	SavedOAuthSessionStore,
 	SavedOAuthStateStore,
 } from "./store/oauth.js";
 import { toOAuthSessionStore, toOAuthStateStore } from "./store/oauth.js";
-
-interface SessionLike {
-	did: string;
-	signOut?: () => Promise<void>;
-	tokenSet?: {
-		scope?: string;
-	};
-	scope?: string;
-}
 
 type FetchLike = (
 	input: URL | RequestInfo,
@@ -41,7 +29,6 @@ type FetchLike = (
 interface BaseOAuthRuntimeOptions {
 	publicBaseUrl: string;
 	privateJwkJson: string;
-	browserSessionStore: BrowserSessionStore;
 	dohEndpoint?: string;
 	publicAgentLookup?: NonNullable<AgentProvider["getPublicAgent"]>;
 	clientName?: string;
@@ -52,14 +39,7 @@ interface BaseOAuthRuntimeOptions {
 }
 
 interface OAuthRuntimeClient {
-	clientMetadata: Record<string, unknown>;
-	jwks: Record<string, unknown>;
-	authorize(input: string, options?: { state?: string }): Promise<URL>;
-	callback(params: URLSearchParams): Promise<{
-		session: OAuthSession;
-		state: string | null;
-	}>;
-	restore(sub: string, refresh?: boolean | "auto"): Promise<OAuthSession>;
+	restore(sub: string, refresh?: boolean | "auto"): Promise<Agent | null>;
 }
 
 export interface BunOAuthRuntimeOptions extends BaseOAuthRuntimeOptions {
@@ -84,14 +64,14 @@ function normalizeBaseUrl(value: string): URL {
 	if (url.protocol !== "https:") {
 		throw new ApiError(
 			"InvalidRequest",
-			"CERULIA_PUBLIC_BASE_URL must use https",
+			"CERULIA_APPVIEW_PUBLIC_BASE_URL must use https",
 			500,
 		);
 	}
 	if (url.username || url.password) {
 		throw new ApiError(
 			"InvalidRequest",
-			"CERULIA_PUBLIC_BASE_URL must not include credentials",
+			"CERULIA_APPVIEW_PUBLIC_BASE_URL must not include credentials",
 			500,
 		);
 	}
@@ -99,7 +79,7 @@ function normalizeBaseUrl(value: string): URL {
 	if (url.pathname !== "/" && url.pathname !== "") {
 		throw new ApiError(
 			"InvalidRequest",
-			"CERULIA_PUBLIC_BASE_URL must not include a path",
+			"CERULIA_APPVIEW_PUBLIC_BASE_URL must not include a path",
 			500,
 		);
 	}
@@ -159,10 +139,6 @@ function createTimeoutFetch(
 	};
 }
 
-function extractGrantedScope(session: SessionLike): string {
-	return session.tokenSet?.scope ?? session.scope ?? OAUTH_SCOPE;
-}
-
 function buildClientMetadata(options: BaseOAuthRuntimeOptions) {
 	const baseUrl = normalizeBaseUrl(options.publicBaseUrl);
 	const baseHref = baseUrl.toString().replace(/\/+$/, "");
@@ -194,18 +170,13 @@ function buildClientMetadata(options: BaseOAuthRuntimeOptions) {
 
 function createOAuthRuntimeBundle(
 	client: OAuthRuntimeClient,
-	browserSessionStore: BrowserSessionStore,
 	sessionCatalog: OAuthSessionCatalog,
 	knownRepoCatalog: KnownRepoCatalog,
 	publicAgentLookup: NonNullable<AgentProvider["getPublicAgent"]>,
-): {
-	agentProvider: AgentProvider;
-	oauthFeature: ApiOAuthFeature;
-} {
+): { agentProvider: AgentProvider } {
 	const agentProvider: AgentProvider = {
 		async getAgent(repoDid: string) {
-			const session = await client.restore(repoDid).catch(() => null);
-			return session ? new Agent(session) : null;
+			return client.restore(repoDid).catch(() => null);
 		},
 		async listRepoDids() {
 			const repoDids = new Set(await knownRepoCatalog.listRepoDids());
@@ -222,71 +193,51 @@ function createOAuthRuntimeBundle(
 
 	return {
 		agentProvider,
-		oauthFeature: {
-			clientMetadata: client.clientMetadata,
-			jwks: client.jwks,
-			async beginLogin(identifier: string, returnTo: string) {
-				const url = await client.authorize(identifier, {
-					state: returnTo,
-				});
-				return url.toString();
-			},
-			async finishLogin(params: URLSearchParams) {
-				const { session, state } = await client.callback(params);
-				const grantedScope = extractGrantedScope(session);
-				if (!grantedScope.split(/\s+/).includes("atproto")) {
-					throw new ApiError(
-						"Forbidden",
-						"OAuth session must grant the atproto scope",
-						403,
-					);
-				}
-
-				const browserSession = await browserSessionStore.createBrowserSession(
-					session.did,
-					grantedScope,
-				);
-
-				return {
-					sessionId: browserSession.sessionId,
-					did: browserSession.did,
-					grantedScope,
-					returnTo: state ?? null,
-				};
-			},
-			async signOut(sessionId: string) {
-				const binding = await browserSessionStore.getBrowserSession(sessionId);
-				if (!binding) {
-					return;
-				}
-
-				const session = await client.restore(binding.did).catch(() => null);
-				if (session && typeof session.signOut === "function") {
-					await session.signOut().catch(() => undefined);
-				}
-
-				await browserSessionStore.deleteBrowserSession(sessionId);
-			},
-			async getBrowserSession(sessionId: string) {
-				const binding = await browserSessionStore.getBrowserSession(sessionId);
-				return binding
-					? {
-							did: binding.did,
-							grantedScope: binding.grantedScope,
-						}
-					: null;
-			},
-		},
 	};
 }
 
 function createPublicAgentLookup(
-	_fetchImpl: FetchLike,
+	fetchImpl: FetchLike,
 	resolveDidDoc: ((repoDid: string) => Promise<unknown | null>) | undefined,
-	_dohEndpoint?: string,
+	dohEndpoint?: string,
 ): NonNullable<AgentProvider["getPublicAgent"]> {
-	void resolveDidDoc;
-	return async () => null;
+	const timedFetch = createTimeoutFetch(fetchImpl, 1_500) as typeof fetch;
+	const identityResolver = resolveDidDoc
+		? null
+		: createIdentityResolver({
+				fetch: timedFetch,
+				handleResolver: new AtprotoDohHandleResolver({
+					dohEndpoint: dohEndpoint ?? "https://cloudflare-dns.com/dns-query",
+					fetch: timedFetch,
+				}),
+			});
+
+	return async (repoDid: string) => {
+		const didDoc = resolveDidDoc
+			? await resolveDidDoc(repoDid).catch(() => null)
+			: (await identityResolver?.resolve(repoDid).catch(() => null))?.didDoc ??
+				null;
+		if (!didDoc || !isValidDidDoc(didDoc)) {
+			return null;
+		}
+
+		const pdsEndpoint = getPdsEndpoint(didDoc);
+		if (!pdsEndpoint) {
+			return null;
+		}
+
+		let safePdsEndpoint: URL;
+		try {
+			safePdsEndpoint = assertSafePublicServiceUrl(pdsEndpoint);
+		} catch {
+			return null;
+		}
+
+		return new Agent({
+			service: safePdsEndpoint.toString(),
+			fetch: timedFetch,
+		});
+	};
 }
 
 export function createPublicAgentProvider(options: {
@@ -338,8 +289,12 @@ export async function createBunOAuthRuntime(options: BunOAuthRuntimeOptions) {
 	});
 
 	return createOAuthRuntimeBundle(
-		client,
-		options.browserSessionStore,
+		{
+			async restore(sub, refresh = "auto") {
+				const session = await client.restore(sub, refresh);
+				return new Agent(session);
+			},
+		},
 		options.sessionStore,
 		options.knownRepoCatalog,
 		options.publicAgentLookup ??
@@ -381,8 +336,12 @@ export async function createWorkerOAuthRuntime(
 	});
 
 	return createOAuthRuntimeBundle(
-		client,
-		options.browserSessionStore,
+		{
+			async restore(sub, refresh = "auto") {
+				const session = await client.restore(sub, refresh);
+				return new Agent(session);
+			},
+		},
 		options.sessionStore,
 		options.knownRepoCatalog,
 		createPublicAgentLookup(fetchImpl, undefined, options.dohEndpoint),

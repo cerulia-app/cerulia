@@ -12,21 +12,17 @@ Cerulia backend の canonical write/read service repository。
 
 - transport は Hono ベースの XRPC route
 - storage は SQLite-first の local mirror と AT Protocol repo write/read の boundary を分離する
-- auth は OAuth BFF と browser session で caller proof boundary を確定し、owner/public mode を API 側で決定する
+- auth は AppView signed internal auth と mirrored OAuth session restore で caller proof boundary を確定し、owner/public mode を API 側で決定する
 - schema / URI / owner consistency は API の semantic validation で再検証
 
 `createApiApp` に渡す store は atomic multi-record write を持つ app composition 用 backend に限る。deployable entrypoint の supported write backend は AtprotoMirrorRecordStore とし、MemoryRecordStore / SqlRecordStore direct write は cache / test utility であって app runtime の supported path には含めない。
 
 character-branch / character-conversion は current branch-centered contract だけを read/write する。api runtime は legacy shape の dual-read や backfill job を持たないため、既存の legacy branch / conversion data を継続利用する場合は deploy 前に operator が手動 migration または再作成を行う。
 
-Bun entrypoint で OAuth を有効にした場合、次の internal route を公開する。
+Bun / Workers entrypoint で AppView OAuth 連携を有効にした場合、API は browser-facing OAuth route を公開しない。代わりに AppView が同期する internal route を公開する。
 
-- `/client-metadata.json`
-- `/jwks.json`
-- `/oauth/login`
-- `/oauth/callback`
-- `/oauth/session`
-- `/oauth/logout`
+- `/internal/oauth/session` `POST`
+- `/internal/oauth/session?did=<did>` `DELETE`
 
 ## Development Auth Shim
 
@@ -46,17 +42,18 @@ bare な `app.cerulia.auth*` scope 名は互換入力として受け入れるが
 
 `.env.example` を `api/.env` にコピーしてから値を埋めると、Bun self-host の起動前提を揃えやすい。
 
-OAuth BFF を有効にする Bun entrypoint では、少なくとも次を設定する。
+AppView BFF 連携を有効にする Bun entrypoint では、少なくとも次を設定する。
 
-- `CERULIA_PUBLIC_BASE_URL`: HTTPS の公開 base URL
+- `CERULIA_APPVIEW_PUBLIC_BASE_URL`: AppView が公開する HTTPS base URL
 - `CERULIA_OAUTH_PRIVATE_JWK`: confidential client 用 private JWK JSON
+- `CERULIA_APPVIEW_INTERNAL_AUTH_SECRET`: AppView signed internal auth 用 shared secret
 
 任意設定:
 
 - `CERULIA_API_DB`: SQLite file path
 - `CERULIA_OAUTH_CLIENT_NAME`: client metadata の表示名
 - `CERULIA_DOH_ENDPOINT`: public read 用の DoH endpoint
-- `CERULIA_ENABLE_HEADER_AUTH_SHIM=1`: browser session auth と並行して header shim を許可する
+- `CERULIA_ENABLE_HEADER_AUTH_SHIM=1`: AppView signed internal auth と並行して local header shim を許可する
 
 Workers では同じ `CERULIA_*` 名を Wrangler の `vars` / `secrets` として設定する。`DB` は environment variable ではなく D1 binding なので、`wrangler.toml` を正本にする。
 

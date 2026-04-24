@@ -1,5 +1,5 @@
 import { mkdir, rm } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import {
 	appviewDir,
@@ -87,9 +87,11 @@ async function runSuite(suite, extraPlaywrightArgs) {
 			apiEnv.CERULIA_ENABLE_HEADER_AUTH_SHIM = "1";
 		}
 		if (suite.api.mode === "oauth") {
-			apiEnv.CERULIA_PUBLIC_BASE_URL = suite.api.publicBaseUrl;
-			apiEnv.CERULIA_OAUTH_PRIVATE_JWK = suite.api.privateJwkJson;
-			apiEnv.CERULIA_OAUTH_CLIENT_NAME = suite.api.clientName;
+			apiEnv.CERULIA_APPVIEW_PUBLIC_BASE_URL = suite.appview.publicBaseUrl;
+			apiEnv.CERULIA_OAUTH_PRIVATE_JWK = suite.appview.privateJwkJson;
+			apiEnv.CERULIA_OAUTH_CLIENT_NAME = suite.appview.clientName;
+			apiEnv.CERULIA_APPVIEW_INTERNAL_AUTH_SECRET =
+				suite.appview.internalAuthSecret;
 		}
 		if (suite.projection) {
 			apiEnv.CERULIA_PROJECTION_INTERNAL_BASE_URL = suite.projection.url;
@@ -134,6 +136,16 @@ async function runSuite(suite, extraPlaywrightArgs) {
 				HOST: suite.appview.host,
 				PORT: `${suite.appview.port}`,
 				ORIGIN: suite.appview.url,
+				CERULIA_APPVIEW_PUBLIC_BASE_URL:
+					suite.appview.publicBaseUrl ?? "",
+				CERULIA_OAUTH_PRIVATE_JWK:
+					suite.appview.privateJwkJson ?? "",
+				CERULIA_APPVIEW_INTERNAL_AUTH_SECRET:
+					suite.appview.internalAuthSecret ?? "",
+				CERULIA_APPVIEW_AUTH_DB: resolve(
+					localRuntimeDir,
+					`${suite.name}-appview-auth.sqlite`,
+				),
 			},
 		);
 		processes.push(appviewProcess);

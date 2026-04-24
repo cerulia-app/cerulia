@@ -71,6 +71,10 @@ export const suiteDefinitions = {
 			url: createUrl(3002),
 			port: 3002,
 			host,
+			publicBaseUrl: "https://cerulia.example.com",
+			privateJwkJson: oauthPrivateJwk,
+			clientName: "Cerulia AppView E2E",
+			internalAuthSecret: "appview-internal-secret",
 		},
 		api: {
 			url: createUrl(8797),
@@ -78,9 +82,6 @@ export const suiteDefinitions = {
 			host,
 			dbPath: resolve(localRuntimeDir, "oauth-api.sqlite"),
 			mode: "oauth",
-			publicBaseUrl: "https://cerulia.example.com",
-			privateJwkJson: oauthPrivateJwk,
-			clientName: "Cerulia AppView E2E",
 		},
 	},
 };
@@ -105,8 +106,9 @@ export function getRuntimeEnv(suite) {
 		CERULIA_E2E_APPVIEW_BASE_URL: suite.appview.url,
 		CERULIA_API_BASE_URL: suite.api.url,
 		CERULIA_E2E_API_BASE_URL: suite.api.url,
-		CERULIA_E2E_API_PUBLIC_BASE_URL:
-			suite.api.publicBaseUrl ?? suite.api.url,
+		CERULIA_E2E_API_DB_PATH: suite.api.dbPath,
+		CERULIA_E2E_APPVIEW_PUBLIC_BASE_URL:
+			suite.appview.publicBaseUrl ?? suite.api.url,
 		CERULIA_PROJECTION_BASE_URL: suite.projection?.url ?? "",
 		CERULIA_E2E_PROJECTION_BASE_URL: suite.projection?.url ?? "",
 		CERULIA_E2E_PROJECTION_INTERNAL_INGEST_TOKEN:
