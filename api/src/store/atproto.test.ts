@@ -778,6 +778,66 @@ describe("AtprotoMirrorRecordStore", () => {
 		expect(await cache.getRecord(publicUri)).not.toBeNull();
 	});
 
+	test("keeps stale exact pins retrievable after a mirrored public record advances", async () => {
+		const cache = new MemoryRecordStore();
+		const remote = createRemoteAgentStore();
+		const uri = buildAtUri(DID, COLLECTIONS.scenario, "stale-pinned-public");
+		remote.records.set(
+			uri,
+			storedRecordFromUri(
+				uri,
+				{
+					$type: COLLECTIONS.scenario,
+					title: "Initial Remote Scenario",
+					ownerDid: DID,
+					createdAt: "2026-04-21T00:00:00.000Z",
+					updatedAt: "2026-04-21T00:00:00.000Z",
+				},
+				"2026-04-21T00:00:00.000Z",
+				"2026-04-21T00:00:00.000Z",
+				"cid-initial-remote",
+			),
+		);
+		remote.cids.set(uri, "cid-initial-remote");
+
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return repoDid === DID ? remote.agent : null;
+			},
+		});
+
+		const initial = await store.getRecord<{ title: string }>(uri);
+		remote.records.set(
+			uri,
+			storedRecordFromUri(
+				uri,
+				{
+					$type: COLLECTIONS.scenario,
+					title: "Updated Remote Scenario",
+					ownerDid: DID,
+					createdAt: "2026-04-21T00:00:00.000Z",
+					updatedAt: "2026-04-21T01:00:00.000Z",
+				},
+				"2026-04-21T00:00:00.000Z",
+				"2026-04-21T01:00:00.000Z",
+				"cid-updated-remote",
+			),
+		);
+		remote.cids.set(uri, "cid-updated-remote");
+
+		const updated = await store.getRecord<{ title: string }>(uri);
+		const stale = await store.getPinnedRecord<{ title: string }>(
+			uri,
+			initial!.cid,
+		);
+
+		expect(updated?.value.title).toBe("Updated Remote Scenario");
+		expect(stale?.value.title).toBe("Initial Remote Scenario");
+	});
+
 	test("recovers from temporary public agent lookup failure by serving cached public data", async () => {
 		const cache = new MemoryRecordStore();
 		const remote = createRemoteAgentStore();

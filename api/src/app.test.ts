@@ -508,6 +508,30 @@ describe("createApiApp", () => {
 		});
 	});
 
+	test("surfaces temporary schema outages on createSheet instead of converting them to invalid-schema-link", async () => {
+		const schemaRef = `at://${DID}/${COLLECTIONS.characterSheetSchema}/schema-outage-write`;
+		const store = new FailingReadMemoryRecordStore();
+		const { app } = createTestApp(store);
+		store.failReadsFor(schemaRef);
+
+		const response = await postJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
+			{
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaPin: await exactPinForUri(undefined, schemaRef),
+				displayName: "Schema Outage Writer",
+				stats: { power: 70 },
+			},
+		);
+
+		expect(response.status).toBe(503);
+		expect(await response.json()).toMatchObject({
+			error: "InternalError",
+			message: "Remote record resolution is temporarily unavailable",
+		});
+	});
+
 	test("retries createSheet once when the branch scope changes before atomic write", async () => {
 		const store = new InterleavingMemoryRecordStore();
 		const { app } = createTestApp(store);
