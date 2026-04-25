@@ -19,6 +19,7 @@ export interface Main {
   baseRulesetNsid: string
   schemaVersion: string
   title: string
+  authoring?: Authoring
   ownerDid: string
   createdAt: string
   fieldDefs: FieldDefRoot[]
@@ -39,6 +40,61 @@ export {
   type Main as Record,
   isMain as isRecord,
   validateMain as validateRecord,
+}
+
+/** Optional authoring metadata for schema-backed character creation. This block is not part of character ledger truth; it is input assistance for AppView create flows. */
+export interface Authoring {
+  $type?: 'app.cerulia.dev.core.characterSheetSchema#authoring'
+  creationRules?: CreationRule[]
+}
+
+const hashAuthoring = 'authoring'
+
+export function isAuthoring<V>(v: V) {
+  return is$typed(v, id, hashAuthoring)
+}
+
+export function validateAuthoring<V>(v: V) {
+  return validate<Authoring & V>(v, id, hashAuthoring)
+}
+
+/** Declarative creation recipe step. Rules may target multiple fields and may depend on other rules for ordering. */
+export interface CreationRule {
+  $type?: 'app.cerulia.dev.core.characterSheetSchema#creationRule'
+  ruleId: string
+  label?: string
+  /** Rule kind identifier (e.g. dice, fixed, derived). Interpreted by AppView. */
+  kind: string
+  targetFieldIds: string[]
+  dice?: DiceRule
+  dependsOnRuleIds?: string[]
+}
+
+const hashCreationRule = 'creationRule'
+
+export function isCreationRule<V>(v: V) {
+  return is$typed(v, id, hashCreationRule)
+}
+
+export function validateCreationRule<V>(v: V) {
+  return validate<CreationRule & V>(v, id, hashCreationRule)
+}
+
+/** Dice-notation based creation rule payload. Server does not validate RNG; this is client-side authoring guidance. */
+export interface DiceRule {
+  $type?: 'app.cerulia.dev.core.characterSheetSchema#diceRule'
+  expression: string
+  notes?: string
+}
+
+const hashDiceRule = 'diceRule'
+
+export function isDiceRule<V>(v: V) {
+  return is$typed(v, id, hashDiceRule)
+}
+
+export function validateDiceRule<V>(v: V) {
+  return validate<DiceRule & V>(v, id, hashDiceRule)
 }
 
 export interface FieldDefLeaf {

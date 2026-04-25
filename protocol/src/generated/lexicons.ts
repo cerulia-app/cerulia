@@ -1852,6 +1852,10 @@ export const schemaDict = {
               type: 'string',
               maxLength: 640,
             },
+            authoring: {
+              type: 'ref',
+              ref: 'lex:app.cerulia.dev.core.characterSheetSchema#authoring',
+            },
             ownerDid: {
               type: 'string',
               format: 'did',
@@ -1877,6 +1881,76 @@ export const schemaDict = {
             'fieldDefs',
           ],
         },
+      },
+      authoring: {
+        type: 'object',
+        description:
+          'Optional authoring metadata for schema-backed character creation. This block is not part of character ledger truth; it is input assistance for AppView create flows.',
+        properties: {
+          creationRules: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.cerulia.dev.core.characterSheetSchema#creationRule',
+            },
+          },
+        },
+      },
+      creationRule: {
+        type: 'object',
+        description:
+          'Declarative creation recipe step. Rules may target multiple fields and may depend on other rules for ordering.',
+        properties: {
+          ruleId: {
+            type: 'string',
+            maxLength: 128,
+          },
+          label: {
+            type: 'string',
+            maxLength: 320,
+          },
+          kind: {
+            type: 'string',
+            description:
+              'Rule kind identifier (e.g. dice, fixed, derived). Interpreted by AppView.',
+            maxLength: 64,
+          },
+          targetFieldIds: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 256,
+            },
+          },
+          dice: {
+            type: 'ref',
+            ref: 'lex:app.cerulia.dev.core.characterSheetSchema#diceRule',
+          },
+          dependsOnRuleIds: {
+            type: 'array',
+            items: {
+              type: 'string',
+              maxLength: 128,
+            },
+          },
+        },
+        required: ['ruleId', 'kind', 'targetFieldIds'],
+      },
+      diceRule: {
+        type: 'object',
+        description:
+          'Dice-notation based creation rule payload. Server does not validate RNG; this is client-side authoring guidance.',
+        properties: {
+          expression: {
+            type: 'string',
+            maxLength: 128,
+          },
+          notes: {
+            type: 'string',
+            maxLength: 2000,
+          },
+        },
+        required: ['expression'],
       },
       fieldDefLeaf: {
         type: 'object',
