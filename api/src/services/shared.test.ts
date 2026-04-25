@@ -129,6 +129,71 @@ describe("getOptionalExactPinnedRecord", () => {
 		expect(record?.value.title).toBe("Initial Scenario");
 	});
 
+	test("falls back to the verified pin cache after a temporary authority-read failure", async () => {
+		const backingStore = new MemoryRecordStore();
+		const cached = await backingStore.createRecord({
+			repoDid: DID,
+			collection: COLLECTIONS.scenario,
+			rkey: "cached-on-outage",
+			value: {
+				$type: COLLECTIONS.scenario,
+				title: "Cached During Outage",
+				ownerDid: DID,
+				createdAt: "2026-04-21T00:00:00.000Z",
+				updatedAt: "2026-04-21T00:00:00.000Z",
+			},
+			createdAt: "2026-04-21T00:00:00.000Z",
+			updatedAt: "2026-04-21T00:00:00.000Z",
+		});
+
+		const store: AtomicRecordStore = {
+			async createRecord() {
+				throw new Error("unused");
+			},
+			async updateRecord() {
+				throw new Error("unused");
+			},
+			async deleteRecord() {},
+			async getRecord() {
+				throw new ApiError(
+					"InternalError",
+					"Remote record resolution is temporarily unavailable",
+					503,
+				);
+			},
+			async getPinnedRecord<T>(uri: string, cid: string) {
+				return backingStore.getPinnedRecord<T>(uri, cid);
+			},
+			async getScopeStateToken() {
+				return { repoDid: DID, collectionVersions: {} };
+			},
+			async listRecords() {
+				return [];
+			},
+			async hasOwnedBlob() {
+				return false;
+			},
+			async registerOwnedBlob() {},
+			async rememberPinnedRecord() {},
+			async applyWrites() {},
+		};
+
+		const record = await getOptionalExactPinnedRecord<{
+			$type: string;
+			title: string;
+			ownerDid: string;
+			createdAt: string;
+			updatedAt: string;
+		}>(
+			createRuntime(store),
+			{ uri: cached.uri, cid: cached.cid },
+			COLLECTIONS.scenario,
+			"scenarioPin",
+		);
+
+		expect(record).toEqual(cached);
+	});
+
 	test("propagates temporary authority-read failures instead of treating them as not found", async () => {
 		const store: AtomicRecordStore = {
 			async createRecord() {

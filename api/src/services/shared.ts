@@ -214,7 +214,14 @@ export async function getOptionalExactPinnedRecord<T>(
 		);
 	}
 
-	const current = await getRecordByUriAlias<T>(runtime, pin.uri);
+	let current: StoredRecord<T> | null = null;
+	let currentReadError: unknown;
+	try {
+		current = await getRecordByUriAlias<T>(runtime, pin.uri);
+	} catch (error) {
+		currentReadError = error;
+	}
+
 	if (current && current.cid === pin.cid) {
 		await rememberPinnedRecordBestEffort(
 			runtime,
@@ -231,6 +238,10 @@ export async function getOptionalExactPinnedRecord<T>(
 		if (cached) {
 			return cached;
 		}
+	}
+
+	if (currentReadError) {
+		throw currentReadError;
 	}
 
 	return null;
