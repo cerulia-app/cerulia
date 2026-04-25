@@ -78,7 +78,7 @@ Cerulia の設計における主要な判断を記録する。
 
 理由: PL は「CoC 7版」を選び、そこから使いたい schema を選びたいだけである。ruleset と manifest を分けることで Cerulia の理解が深くなるわけではなく、transport と作成導線が複雑になる。
 
-補足: scenario から character 作成へ deterministic に遷移したい場合だけ、scenario は `recommendedSheetSchemaRef` を持つ。rulesetNsid だけしか無い scenario は browse 用であり、「このシナリオから作る」導線を持たない。
+補足: scenario から character 作成へ deterministic に遷移したい場合だけ、scenario は `recommendedSheetSchemaPin` を持つ。これは exact version の schema contract を表す。rulesetNsid だけしか無い scenario は browse 用であり、「このシナリオから作る」導線を持たない。
 
 ## 13. scenario は誰でも登録できる
 
@@ -120,11 +120,11 @@ Cerulia の設計における主要な判断を記録する。
 
 ## 19. stats は schema 準拠
 
-採用: sheetSchemaRef がある場合、character-sheet.stats は fieldDefs に準拠する構造化 payload。schema が extension point を宣言している場合、その追加 field は valid とみなす。AppView の validation は advisory preflight に限り、API が唯一の authoritative validation を行う。
+採用: sheetSchemaPin がある場合、character-sheet.stats は fieldDefs に準拠する構造化 payload。schema が extension point を宣言している場合、その追加 field は valid とみなす。AppView の validation は advisory preflight に限り、API が唯一の authoritative validation を行う。
 
 理由: 型付きのキャラクターシートは Cerulia の差別化ポイント。UX の即時性は AppView の preflight で担保し、正本への書き込み可否は API の authoritative validation で固定する。
 
-補足: AppView の primary create flow は schema-backed を前提にする。sheetSchemaRef を持たない schema-less sheet は legacy/import/recovery の safety valve に限り、public/shared surface では structured stats を出さない。
+補足: AppView の primary create flow は schema-backed を前提にする。sheetSchemaPin を持たない schema-less sheet は legacy/import/recovery の safety valve に限り、public/shared surface では structured stats を出さない。
 
 ## 20. 優先度: キャラクター作成 > セッション記録 > 共有
 
@@ -210,10 +210,10 @@ Cerulia の設計における主要な判断を記録する。
 
 補足: missing reference の canonical degradation は次に固定する。
 
-- character detail: current head sheet が残り pinned schema だけが失われた場合、sheet identity と public-safe summary は返し、structured stats block だけを省略する
+- character detail: current head sheet が残り `sheetSchemaPin` だけが unresolved になった場合、sheet identity と public-safe summary は返し、structured stats block だけを省略する
 - character branch: current head sheet 自体が失われた場合、branch line は durable root のままとし、owner workbench は broken-head repair state を優先してよい。public shared detail は minimal unavailable state へ縮退してよい
 - session history: scenarioRef が失われても session record は維持し、stored scenarioLabel があればそれを使う。stored scenarioLabel が無い場合は scenario label block だけを省略する
 - campaign / house: missing rule-profile、house、campaign などの linked block は省略し、root projection は維持する
-- scenario: recommendedSheetSchemaRef が解決できない scenario は browse-only として扱い、create CTA を出さない
+- scenario: recommendedSheetSchemaPin が解決できない scenario は browse-only として扱い、create CTA を出さない
 
 owner-facing surface は missing reference を repair-needed state として明示してよい。public / anonymous surface は public-safe な block だけを残し、欠落した linked block のために route 全体を失敗させない。

@@ -51,7 +51,7 @@ AT Protocol 上の record は原則公開される。visibility: draft は AppVi
 
 ### 6. rules provenance と character data を分ける
 
-character-sheet-schema は rules provenance 層に置く。character-sheet には sheetSchemaRef で参照するだけにし、型定義を sheet 本体に埋め込まない。
+character-sheet-schema は rules provenance 層に置く。character-sheet には sheetSchemaPin で exact pin 参照するだけにし、型定義を sheet 本体に埋め込まない。
 
 ### 7. player-profile は override record として扱う
 
@@ -59,7 +59,7 @@ player-profile は PL の personal repo に置く self record を正本とし、
 
 ### 8. cross-record reference の型を固定する
 
-live 参照は DID authority の AT URI を使う。exact version が必要な provenance だけ strong reference（`uri` + `cid`）を使う。
+live root 参照は DID authority の AT URI を使う。exact version が必要な provenance と validation contract だけ `{ uri, cid }` の exact pin を使う。`character-sheet.sheetSchemaPin`、`scenario.recommendedSheetSchemaPin`、`character-conversion.sourceSheetPin / targetSheetPin` は exact pin に分類する。
 
 ## どこに何を置くか
 

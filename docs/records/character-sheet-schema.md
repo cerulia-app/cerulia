@@ -53,13 +53,14 @@ schema の ownerDid が、新しい schema record version を発行できる。
 
 ## 参照関係
 
-- character-sheet（sheetSchemaRef から参照される）
+- character-sheet（sheetSchemaPin から exact pin 参照される）
 
 ## 設計上の注意
 
 - character-sheet-schema は immutable pin として扱う。更新するときは新しい record を作る。既存 record を上書きしない
-- character-sheet は特定バージョンの schema を sheetSchemaRef で pin する。schema が更新されても、sheet は自分で rebase するまで古い定義で valid のまま動く
-- character-sheet.stats は sheetSchemaRef がある場合 fieldDefs に準拠する構造化 payload として扱う。AppView は preflight validation を行い、API は authoritative validation を再実行する
+- character-sheet は特定バージョンの schema を sheetSchemaPin で pin する。schema が更新されても、sheet は自分で rebase するまで古い定義で valid のまま動く
+- character-sheet.stats は sheetSchemaPin がある場合 fieldDefs に準拠する構造化 payload として扱う。AppView は preflight validation を行い、API は authoritative validation を再実行する
+- API は exact pin を live repo read で検証し、必要に応じて verified pin cache を使って再解決してよい。ただし canonical truth は常に schema owner の repo にある
 - AppView の schema picker に出す短い説明は、追加の author text field を持たず、baseRulesetNsid、fieldDefs の構造、extensible 有無などの metadata から導出してよい
 - extensible な group では、schema に未列挙の追加 field も valid とする。CoC 汎用 schema の追加技能のようなケースをここで受け止める
 - extensible でない位置の未定義 field は invalid とする。authoritative validation はこれを reject する

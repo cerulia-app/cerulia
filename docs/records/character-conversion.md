@@ -11,11 +11,9 @@ PL の個人 repo（target branch owner の repo）。
 ## 主なフィールド
 
 - characterBranchRef
-- sourceSheetRef
-- sourceSheetVersion
+- sourceSheetPin
 - sourceRulesetNsid
-- targetSheetRef
-- targetSheetVersion
+- targetSheetPin
 - targetRulesetNsid
 - conversionContractRef（任意: 変換に使った contract やガイドへの参照）
 - convertedAt
@@ -34,7 +32,7 @@ target branch owner のみ。
 
 - character-conversion は branch の ruleset 切り替え地点を表す same-owner の successor edge である。branch 自体を増やす record ではない
 - accepted な conversion は source branch の current resolved state を carry-forward した新しい target sheet snapshot を作り、branch の `sheetRef` を target sheet へ進める。ruleset 固有の automatic transformation や target-only field の自動補完は product-core contract に含めない
-- sourceSheetVersion と targetSheetVersion で、どの sheet revision を変換したかを pin する
+- sourceSheetPin と targetSheetPin で、どの sheet exact version を変換したかを pin する。shape はいずれも `{ uri, cid }` である
 - sourceRulesetNsid と targetRulesetNsid でどのシステム間の変換かを記録する
 - sourceRulesetNsid と targetRulesetNsid は必ず異ならなければならない
 - same-owner conversion だけを product-core で扱う。cross-owner conversion は consent primitive を持たないため product scope 外とする
@@ -44,6 +42,7 @@ target branch owner のみ。
 - conversion history の canonical ordering は convertedAt 昇順とし、同時刻なら record-key の tid 順で解決する
 - accepted な conversion の `convertedAt` は、current branch head を構成している latest conversion と current epoch の active advancements に対して canonical ordering で後ろに来なければならない。backdated conversion で current head を巻き戻さない
 - same-timestamp の accepted conversion を許可する場合、server は新しい conversion record の tid がその時刻の tie-break floor より lexicographically 後ろになることを保証しなければならない。process-local な単調性だけを acceptance 根拠にしてはならない
+- accepted な conversion は current branch head の source sheet を live に読み、その exact version を `sourceSheetPin` に固定する。materialize した target sheet も `targetSheetPin` に固定する
 - conversion の materialization write は source state の不変を証明する safety fence を伴う。AT Protocol backend が repo-scope compare-and-swap しか提供しない場合、source branch と無関係な同 owner repo write でも保守的に `rebase-needed` へ倒してよい
 - conversion は ruleset 切り替え provenance であり、round-trip 可能性や可逆性を保証しない。carry-forward した target sheet が意図とずれた場合は owner が通常の sheet update で手動修正してよい。target schema の required field を carry-forward state が満たせない場合、runtime は conversion 自体を reject してよい
 - conversionContractRef は変換ガイド、マニュアル、ツール等への public-safe 参照として使える。owner-only 文書や private workspace 参照は入れない

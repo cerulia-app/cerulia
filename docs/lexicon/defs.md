@@ -6,15 +6,17 @@ shared scalar、enum、object は app.cerulia.dev.defs に集約する。
 
 ## 実装固定ルール
 
-- ref 型は Lexicon 上は at-uri string として定義し、どの collection を指すかは semantic invariant で固定する
+- live root ref 型は Lexicon 上は at-uri string として定義し、どの collection を指すかは semantic invariant で固定する
+- exact pin 型は object `{ uri, cid }` として定義する。`uri` は canonical DID authority の normalized at-uri、`cid` は blessed CID string を使う
 - core の `*Ref` は canonical DID authority の normalized at-uri だけを受け入れる
+- core の `*Pin` は exactRecordPin を使い、`uri` が指す record の current read と `cid` が一致するか、verified cache で同じ `cid` を再解決できる場合だけ resolved とみなす
 - record 内の `*Id` field は record-local stable identifier。cross-record reference では `*Ref` at-uri を使う
 - blob 型の override field は `*Blob` 命名を使い、`*Ref`（at-uri）と区別する
 - public 共有面に出る外部 URI は credential-free な公開 URI に限る。embedded credential、署名付き query、one-time token を含む URI は受け入れない
 - payload carrier が record 本体に閉じる場合、public-safe な object を inline field として持つ。payload 専用 record を増やさない
 - 新規 field の追加は optional のみとし、既存 field の rename や type change は行わない
 
-## scalar / ref defs
+## scalar / live root ref defs
 
 | def | format | semantic invariant |
 | --- | --- | --- |
@@ -40,6 +42,7 @@ shared scalar、enum、object は app.cerulia.dev.defs に集約する。
 
 | def | format | semantic invariant |
 | --- | --- | --- |
+| exactRecordPin | object | exact version の record pin。shape は `{ uri: at-uri, cid: cid }` |
 | portraitBlob | blob | caller が自分の repo から参照する public-safe portrait 用 blob |
 | advancementDeltaPayload | object | advancement で追加または変更された public-safe payload |
 | previousValuesSnapshot | object | 上書き前の public-safe 値 snapshot |

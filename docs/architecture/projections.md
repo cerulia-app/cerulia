@@ -104,9 +104,9 @@ character home の branch list は branch-rooted とする。current head sheet 
 
 canonical shared root は character detail のままとし、その主語は branch line で解決する。同じ branch 上の conversion epoch を跨いでも route root は変えない。別 root が必要な parallel line は branch fork で表現する。
 
-sheetSchemaRef が無い branch では、public / anonymous 向けの structured stats block を省略する。raw JSON fallback は hidden payload として扱わず、shared detail の主要 block には出さない。
-sheetSchemaRef record 自体は detail route の root ではない。pinned schema record が欠落した場合も detail route は解決を維持し、structured stats block だけを省略する。
-conversion provenance の canonical replay には source / target の sheet version pin を使う。public-safe summary は version を必須表示しない。
+sheetSchemaPin が無い branch では、public / anonymous 向けの structured stats block を省略する。raw JSON fallback は hidden payload として扱わず、shared detail の主要 block には出さない。
+sheetSchemaPin が指す schema record 自体は detail route の root ではない。live read が `sheetSchemaPin.cid` と一致しない場合や schema record が欠落した場合も detail route は解決を維持し、verified cache で exact pin を復元できなければ structured stats block だけを省略する。
+conversion provenance の canonical replay には source / target の sheet exact pin を使う。public-safe summary は pin を必須表示しない。
 
 ### reader mode
 
@@ -194,7 +194,7 @@ public mode の output は `campaignSummary`、`sessionSummaries`、`ruleOverlay
 ### canonical inputs
 
 - scenario
-- character-sheet-schema（scenario.recommendedSheetSchemaRef がある場合だけ direct に参照する）
+- character-sheet-schema（scenario.recommendedSheetSchemaPin がある場合だけ direct に参照する）
 
 ### blocks
 
@@ -202,9 +202,9 @@ public mode の output は `campaignSummary`、`sessionSummaries`、`ruleOverlay
 - シナリオ詳細（summary、sourceCitationUri）
 - 「このシナリオからキャラクターを作る」への導線
 
-scenario に recommendedSheetSchemaRef があるときだけ `scenario -> character-sheet-schema` を canonical create chain とする。recommendedSheetSchemaRef が無い scenario は browse-only とし、AppView は scenario 起点の create CTA を出さない。
+scenario に recommendedSheetSchemaPin があるときだけ `scenario -> character-sheet-schema` を canonical create chain とする。recommendedSheetSchemaPin が無い scenario は browse-only とし、AppView は scenario 起点の create CTA を出さない。
 
-recommendedSheetSchemaRef の解決に失敗した scenario も readable な browse-only entry として残す。create CTA は出さず、schema 解決に依存する導線だけを止める。
+recommendedSheetSchemaPin の解決に失敗した scenario も readable な browse-only entry として残す。create CTA は出さず、schema 解決に依存する導線だけを止める。
 
 ## House Activity
 
