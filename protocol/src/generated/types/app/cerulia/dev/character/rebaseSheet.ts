@@ -1,47 +1,47 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from "@atproto/xrpc";
-import { type ValidationResult, BlobRef } from "@atproto/lexicon";
-import { CID } from "multiformats/cid";
-import { validate as _validate } from "../../../../../lexicons";
+import { HeadersMap, XRPCError } from '@atproto/xrpc'
+import { type ValidationResult, BlobRef } from '@atproto/lexicon'
+import { CID } from 'multiformats/cid'
+import { validate as _validate } from '../../../../../lexicons'
 import {
-	type $Typed,
-	is$typed as _is$typed,
-	type OmitKey,
-} from "../../../../../util";
-import type * as AppCeruliaDevDefs from "../defs.js";
+  type $Typed,
+  is$typed as _is$typed,
+  type OmitKey,
+} from '../../../../../util'
+import type * as AppCeruliaDevDefs from '../defs.js'
 
 const is$typed = _is$typed,
-	validate = _validate;
-const id = "app.cerulia.dev.character.rebaseSheet";
+  validate = _validate
+const id = 'app.cerulia.dev.character.rebaseSheet'
 
-export type QueryParams = {};
+export type QueryParams = {}
 
 export interface InputSchema {
-	characterSheetRef: string;
-	/** Version the client based the rebase on. Used to detect write conflicts and return rebase-needed. */
-	expectedVersion: number;
-	targetSheetSchemaRef: string;
-	stats?: { [_ in string]: unknown };
-	note?: string;
+  characterSheetRef: string
+  /** Version the client based the rebase on. Used to detect write conflicts and return rebase-needed. */
+  expectedVersion: number
+  targetSheetSchemaPin: AppCeruliaDevDefs.ExactRecordPin
+  stats?: { [_ in string]: unknown }
+  note?: string
 }
 
-export type OutputSchema = AppCeruliaDevDefs.MutationAck;
+export type OutputSchema = AppCeruliaDevDefs.MutationAck
 
 export interface CallOptions {
-	signal?: AbortSignal;
-	headers?: HeadersMap;
-	qp?: QueryParams;
-	encoding?: "application/json";
+  signal?: AbortSignal
+  headers?: HeadersMap
+  qp?: QueryParams
+  encoding?: 'application/json'
 }
 
 export interface Response {
-	success: boolean;
-	headers: HeadersMap;
-	data: OutputSchema;
+  success: boolean
+  headers: HeadersMap
+  data: OutputSchema
 }
 
 export function toKnownErr(e: any) {
-	return e;
+  return e
 }

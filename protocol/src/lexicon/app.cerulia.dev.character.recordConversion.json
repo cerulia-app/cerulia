@@ -13,7 +13,7 @@
 						"characterBranchRef",
 						"expectedRevision",
 						"targetRulesetNsid",
-						"targetSheetSchemaRef",
+						"targetSheetSchemaPin",
 						"convertedAt"
 					],
 					"properties": {
@@ -29,9 +29,9 @@
 							"type": "string",
 							"format": "nsid"
 						},
-						"targetSheetSchemaRef": {
-							"type": "string",
-							"format": "at-uri"
+						"targetSheetSchemaPin": {
+							"type": "ref",
+							"ref": "app.cerulia.dev.defs#exactRecordPin"
 						},
 						"convertedAt": {
 							"type": "string",

@@ -12,25 +12,17 @@
 						"type": "string",
 						"format": "at-uri"
 					},
-					"sourceSheetRef": {
-						"type": "string",
-						"format": "at-uri"
-					},
-					"sourceSheetVersion": {
-						"type": "integer",
-						"minimum": 1
+					"sourceSheetPin": {
+						"type": "ref",
+						"ref": "app.cerulia.dev.defs#exactRecordPin"
 					},
 					"sourceRulesetNsid": {
 						"type": "string",
 						"format": "nsid"
 					},
-					"targetSheetRef": {
-						"type": "string",
-						"format": "at-uri"
-					},
-					"targetSheetVersion": {
-						"type": "integer",
-						"minimum": 1
+					"targetSheetPin": {
+						"type": "ref",
+						"ref": "app.cerulia.dev.defs#exactRecordPin"
 					},
 					"targetRulesetNsid": {
 						"type": "string",
@@ -51,11 +43,9 @@
 				},
 				"required": [
 					"characterBranchRef",
-					"sourceSheetRef",
-					"sourceSheetVersion",
+					"sourceSheetPin",
 					"sourceRulesetNsid",
-					"targetSheetRef",
-					"targetSheetVersion",
+					"targetSheetPin",
 					"targetRulesetNsid",
 					"convertedAt"
 				]

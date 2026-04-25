@@ -22,10 +22,10 @@
 						"format": "did",
 						"description": "DID of the player who owns this character."
 					},
-					"sheetSchemaRef": {
-						"type": "string",
-						"format": "at-uri",
-						"description": "Reference to the character-sheet-schema this sheet conforms to. Required for active records; schema-less is legacy/import/recovery only."
+					"sheetSchemaPin": {
+						"type": "ref",
+						"ref": "app.cerulia.dev.defs#exactRecordPin",
+						"description": "Exact pin to the character-sheet-schema this sheet conforms to. Required for active records; schema-less is legacy/import/recovery only."
 					},
 					"rulesetNsid": {
 						"type": "string",
@@ -48,7 +48,7 @@
 					},
 					"stats": {
 						"type": "unknown",
-						"description": "Structured stats payload conforming to fieldDefs when sheetSchemaRef is present; free-form JSON for legacy/import/recovery otherwise."
+						"description": "Structured stats payload conforming to fieldDefs when sheetSchemaPin is present; free-form JSON for legacy/import/recovery otherwise."
 					},
 					"version": {
 						"type": "integer",

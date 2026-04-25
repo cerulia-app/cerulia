@@ -45,11 +45,11 @@
 		},
 		"sheetSchemaListItem": {
 			"type": "object",
-			"required": ["schemaRef", "baseRulesetNsid", "schemaVersion", "title"],
+			"required": ["schemaPin", "baseRulesetNsid", "schemaVersion", "title"],
 			"properties": {
-				"schemaRef": {
-					"type": "string",
-					"format": "at-uri"
+				"schemaPin": {
+					"type": "ref",
+					"ref": "app.cerulia.dev.defs#exactRecordPin"
 				},
 				"baseRulesetNsid": {
 					"type": "string",

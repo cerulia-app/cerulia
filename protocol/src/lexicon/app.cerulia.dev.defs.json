@@ -2,6 +2,21 @@
 	"lexicon": 1,
 	"id": "app.cerulia.dev.defs",
 	"defs": {
+		"exactRecordPin": {
+			"type": "object",
+			"description": "Exact-version pin for a record. The uri identifies the durable record path and cid identifies the exact record content.",
+			"required": ["uri", "cid"],
+			"properties": {
+				"uri": {
+					"type": "string",
+					"format": "at-uri"
+				},
+				"cid": {
+					"type": "string",
+					"format": "cid"
+				}
+			}
+		},
 		"mutationAck": {
 			"type": "object",
 			"description": "Mutation result acknowledgement. Returned by all mutation procedures.",

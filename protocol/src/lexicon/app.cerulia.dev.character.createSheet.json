@@ -9,15 +9,15 @@
 				"encoding": "application/json",
 				"schema": {
 					"type": "object",
-					"required": ["rulesetNsid", "sheetSchemaRef", "displayName", "stats"],
+					"required": ["rulesetNsid", "sheetSchemaPin", "displayName", "stats"],
 					"properties": {
 						"rulesetNsid": {
 							"type": "string",
 							"format": "nsid"
 						},
-						"sheetSchemaRef": {
-							"type": "string",
-							"format": "at-uri"
+						"sheetSchemaPin": {
+							"type": "ref",
+							"ref": "app.cerulia.dev.defs#exactRecordPin"
 						},
 						"displayName": {
 							"type": "string",

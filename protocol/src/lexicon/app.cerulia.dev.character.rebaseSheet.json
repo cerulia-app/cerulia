@@ -12,7 +12,7 @@
 					"required": [
 						"characterSheetRef",
 						"expectedVersion",
-						"targetSheetSchemaRef"
+						"targetSheetSchemaPin"
 					],
 					"properties": {
 						"characterSheetRef": {
@@ -24,9 +24,9 @@
 							"minimum": 1,
 							"description": "Version the client based the rebase on. Used to detect write conflicts and return rebase-needed."
 						},
-						"targetSheetSchemaRef": {
-							"type": "string",
-							"format": "at-uri"
+						"targetSheetSchemaPin": {
+							"type": "ref",
+							"ref": "app.cerulia.dev.defs#exactRecordPin"
 						},
 						"stats": {
 							"type": "unknown"

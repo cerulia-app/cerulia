@@ -19,9 +19,9 @@
 							"type": "string",
 							"format": "nsid"
 						},
-						"recommendedSheetSchemaRef": {
-							"type": "string",
-							"format": "at-uri"
+						"recommendedSheetSchemaPin": {
+							"type": "ref",
+							"ref": "app.cerulia.dev.defs#exactRecordPin"
 						},
 						"sourceCitationUri": {
 							"type": "string",
