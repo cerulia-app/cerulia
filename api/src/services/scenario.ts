@@ -16,22 +16,28 @@ import {
 	assertCredentialFreeUri,
 	createTypedRecord,
 	createUniqueSlugRkey,
-	loadOptionalSchema,
-	loadSchema,
+	loadExactSchema,
+	loadOptionalExactSchema,
 	requireRecord,
 	updateTypedRecord,
 } from "./shared.js";
 
 async function hasResolvedRecommendedSheetSchema(
 	runtime: ServiceRuntime,
-	schemaRef: string | undefined,
+	schemaPin: { uri: string; cid: string } | undefined,
 ): Promise<boolean> {
-	if (!schemaRef) {
+	if (!schemaPin) {
 		return false;
 	}
 
 	try {
-		return Boolean(await loadOptionalSchema(runtime, schemaRef));
+		return Boolean(
+			await loadOptionalExactSchema(
+				runtime,
+				schemaPin,
+				"recommendedSheetSchemaPin",
+			),
+		);
 	} catch {
 		return false;
 	}
@@ -43,22 +49,26 @@ export function createScenarioService(runtime: ServiceRuntime) {
 			callerDid: string,
 			input: AppCeruliaScenarioCreate.InputSchema,
 		) {
-			if (input.recommendedSheetSchemaRef && !input.rulesetNsid) {
+			if (input.recommendedSheetSchemaPin && !input.rulesetNsid) {
 				return rejected(
 					"invalid-required-field",
-					"recommendedSheetSchemaRef requires rulesetNsid",
+					"recommendedSheetSchemaPin requires rulesetNsid",
 				);
 			}
 
-			if (input.recommendedSheetSchemaRef && input.rulesetNsid) {
-				let schema: Awaited<ReturnType<typeof loadSchema>>;
+			if (input.recommendedSheetSchemaPin && input.rulesetNsid) {
+				let schema: Awaited<ReturnType<typeof loadExactSchema>>;
 				try {
-					schema = await loadSchema(runtime, input.recommendedSheetSchemaRef);
+					schema = await loadExactSchema(
+						runtime,
+						input.recommendedSheetSchemaPin,
+						"recommendedSheetSchemaPin",
+					);
 				} catch (error) {
 					if (error instanceof ApiError && error.status === 404) {
 						return rejected(
 							"invalid-schema-link",
-							"recommendedSheetSchemaRef must reference an existing characterSheetSchema",
+							"recommendedSheetSchemaPin must resolve an existing characterSheetSchema",
 						);
 					}
 
@@ -72,7 +82,7 @@ export function createScenarioService(runtime: ServiceRuntime) {
 				) {
 					return rejected(
 						"invalid-schema-link",
-						"recommendedSheetSchemaRef must match rulesetNsid",
+						"recommendedSheetSchemaPin must match rulesetNsid",
 					);
 				}
 			}
@@ -97,7 +107,7 @@ export function createScenarioService(runtime: ServiceRuntime) {
 				$type: COLLECTIONS.scenario,
 				title: input.title,
 				rulesetNsid: input.rulesetNsid,
-				recommendedSheetSchemaRef: input.recommendedSheetSchemaRef,
+				recommendedSheetSchemaPin: input.recommendedSheetSchemaPin,
 				sourceCitationUri: input.sourceCitationUri,
 				summary: input.summary,
 				ownerDid: callerDid,
@@ -136,30 +146,34 @@ export function createScenarioService(runtime: ServiceRuntime) {
 
 			const nextRulesetNsid = input.rulesetNsid ?? record.value.rulesetNsid;
 			const nextRecommended =
-				input.recommendedSheetSchemaRef ??
-				record.value.recommendedSheetSchemaRef;
+				input.recommendedSheetSchemaPin ??
+				record.value.recommendedSheetSchemaPin;
 
 			if (nextRecommended && !nextRulesetNsid) {
 				return rejected(
 					"invalid-required-field",
-					"recommendedSheetSchemaRef requires rulesetNsid",
+					"recommendedSheetSchemaPin requires rulesetNsid",
 				);
 			}
 
 			if (
 				nextRecommended &&
 				nextRulesetNsid &&
-				(input.recommendedSheetSchemaRef !== undefined ||
+				(input.recommendedSheetSchemaPin !== undefined ||
 					input.rulesetNsid !== undefined)
 			) {
-				let schema: Awaited<ReturnType<typeof loadSchema>>;
+				let schema: Awaited<ReturnType<typeof loadExactSchema>>;
 				try {
-					schema = await loadSchema(runtime, nextRecommended);
+					schema = await loadExactSchema(
+						runtime,
+						nextRecommended,
+						"recommendedSheetSchemaPin",
+					);
 				} catch (error) {
 					if (error instanceof ApiError && error.status === 404) {
 						return rejected(
 							"invalid-schema-link",
-							"recommendedSheetSchemaRef must reference an existing characterSheetSchema",
+							"recommendedSheetSchemaPin must resolve an existing characterSheetSchema",
 						);
 					}
 
@@ -173,7 +187,7 @@ export function createScenarioService(runtime: ServiceRuntime) {
 				) {
 					return rejected(
 						"invalid-schema-link",
-						"recommendedSheetSchemaRef must match rulesetNsid",
+						"recommendedSheetSchemaPin must match rulesetNsid",
 					);
 				}
 			}
@@ -191,7 +205,7 @@ export function createScenarioService(runtime: ServiceRuntime) {
 				...record.value,
 				title: input.title ?? record.value.title,
 				rulesetNsid: nextRulesetNsid,
-				recommendedSheetSchemaRef: nextRecommended,
+				recommendedSheetSchemaPin: nextRecommended,
 				sourceCitationUri:
 					input.sourceCitationUri ?? record.value.sourceCitationUri,
 				summary: input.summary ?? record.value.summary,
@@ -235,7 +249,7 @@ export function createScenarioService(runtime: ServiceRuntime) {
 					rulesetNsid: record.value.rulesetNsid,
 					hasRecommendedSheetSchema: await hasResolvedRecommendedSheetSchema(
 						runtime,
-						record.value.recommendedSheetSchemaRef,
+						record.value.recommendedSheetSchemaPin,
 					),
 					summary: record.value.summary,
 					sourceCitationUri: record.value.sourceCitationUri,

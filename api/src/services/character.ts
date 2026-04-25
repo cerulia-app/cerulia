@@ -34,19 +34,21 @@ import type { ServiceRuntime } from "./runtime.js";
 import {
 	isRecordConflictError,
 	scopeStateTokenEquals,
+	toStoredRecord,
 	type StoredRecord,
 } from "../store/types.js";
 import {
 	applyTypedWrites,
 	assertCredentialFreeUri,
 	areEquivalentRecordUris,
+	buildExactRecordPin,
 	blobBelongsToCaller,
 	createTypedRecord,
 	hasSameOwner,
 	listRecordsByCollectionAlias,
-	loadOptionalSchema,
+	loadExactSchema,
+	loadOptionalExactSchema,
 	loadOptionalSheet,
-	loadSchema,
 	loadSheet,
 	requireRecord,
 	resolveScenarioLabel,
@@ -306,14 +308,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			callerDid: string,
 			input: AppCeruliaCharacterCreateSheet.InputSchema,
 		) {
-			let schema: Awaited<ReturnType<typeof loadSchema>>;
+			let schema: Awaited<ReturnType<typeof loadExactSchema>>;
 			try {
-				schema = await loadSchema(runtime, input.sheetSchemaRef);
+				schema = await loadExactSchema(
+					runtime,
+					input.sheetSchemaPin,
+					"sheetSchemaPin",
+				);
 			} catch (error) {
 				if (error instanceof ApiError && error.status === 404) {
 					return rejected(
 						"invalid-schema-link",
-						"sheetSchemaRef must reference an existing characterSheetSchema",
+						"sheetSchemaPin must resolve an existing characterSheetSchema",
 					);
 				}
 
@@ -327,14 +333,14 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			) {
 				return rejected(
 					"invalid-schema-link",
-					"sheetSchemaRef baseRulesetNsid must match rulesetNsid",
+					"sheetSchemaPin must match rulesetNsid",
 				);
 			}
 
 			if (input.stats === undefined) {
 				return rejected(
 					"invalid-required-field",
-					"stats is required when sheetSchemaRef is provided",
+					"stats is required when sheetSchemaPin is provided",
 				);
 			}
 
@@ -363,7 +369,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			const sheet = {
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: callerDid,
-				sheetSchemaRef: input.sheetSchemaRef,
+				sheetSchemaPin: input.sheetSchemaPin,
 				rulesetNsid: input.rulesetNsid,
 				displayName: input.displayName,
 				portraitBlob: input.portraitBlob,
@@ -484,15 +490,19 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			if (record.value.sheetSchemaRef && input.stats !== undefined) {
-				let schema: Awaited<ReturnType<typeof loadSchema>>;
+			if (record.value.sheetSchemaPin && input.stats !== undefined) {
+				let schema: Awaited<ReturnType<typeof loadExactSchema>>;
 				try {
-					schema = await loadSchema(runtime, record.value.sheetSchemaRef);
+					schema = await loadExactSchema(
+						runtime,
+						record.value.sheetSchemaPin,
+						"sheetSchemaPin",
+					);
 				} catch (error) {
 					if (error instanceof ApiError && error.status === 404) {
 						return rejected(
 							"repair-needed",
-							"current branch sheet schema is missing; repair the branch before updating stats",
+							"current branch sheet schema pin is unresolved; repair the branch before updating stats",
 						);
 					}
 
@@ -573,14 +583,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			let schema: Awaited<ReturnType<typeof loadSchema>>;
+			let schema: Awaited<ReturnType<typeof loadExactSchema>>;
 			try {
-				schema = await loadSchema(runtime, input.targetSheetSchemaRef);
+				schema = await loadExactSchema(
+					runtime,
+					input.targetSheetSchemaPin,
+					"targetSheetSchemaPin",
+				);
 			} catch (error) {
 				if (error instanceof ApiError && error.status === 404) {
 					return rejected(
 						"invalid-schema-link",
-						"targetSheetSchemaRef must reference an existing characterSheetSchema",
+						"targetSheetSchemaPin must resolve an existing characterSheetSchema",
 					);
 				}
 
@@ -594,7 +608,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			) {
 				return rejected(
 					"invalid-schema-link",
-					"targetSheetSchemaRef must match the sheet ruleset",
+					"targetSheetSchemaPin must match the sheet ruleset",
 				);
 			}
 
@@ -614,7 +628,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			const updatedAt = runtime.now();
 			const nextRecord = {
 				...record.value,
-				sheetSchemaRef: input.targetSheetSchemaRef,
+				sheetSchemaPin: input.targetSheetSchemaPin,
 				stats: nextStats,
 				version: record.value.version + 1,
 				updatedAt,
@@ -695,14 +709,15 @@ export function createCharacterService(runtime: ServiceRuntime) {
 					"source branch sheet must belong to the caller",
 				);
 			}
-			const sourceSchema = await loadOptionalSchema(
+			const sourceSchema = await loadOptionalExactSchema(
 				runtime,
-				sourceSheet.value.sheetSchemaRef,
+				sourceSheet.value.sheetSchemaPin,
+				"sheetSchemaPin",
 			);
-			if (sourceSheet.value.sheetSchemaRef && !sourceSchema) {
+			if (sourceSheet.value.sheetSchemaPin && !sourceSchema) {
 				return rejected(
 					"repair-needed",
-					"source sheet schema is missing; repair the branch before branching",
+					"source sheet schema pin is unresolved; repair the branch before branching",
 				);
 			}
 
@@ -770,7 +785,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			const sheet = {
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: callerDid,
-				sheetSchemaRef: sourceSheet.value.sheetSchemaRef,
+				sheetSchemaPin: sourceSheet.value.sheetSchemaPin,
 				rulesetNsid: sourceSheet.value.rulesetNsid,
 				displayName: sourceSheet.value.displayName,
 				portraitBlob: sourceSheet.value.portraitBlob,
@@ -1028,12 +1043,16 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 			if (
-				currentSheet.value.sheetSchemaRef &&
-				!(await loadOptionalSchema(runtime, currentSheet.value.sheetSchemaRef))
+				currentSheet.value.sheetSchemaPin &&
+				!(await loadOptionalExactSchema(
+					runtime,
+					currentSheet.value.sheetSchemaPin,
+					"sheetSchemaPin",
+				))
 			) {
 				return rejected(
 					"repair-needed",
-					"current branch sheet schema is missing; repair the branch before recording advancements",
+					"current branch sheet schema pin is unresolved; repair the branch before recording advancements",
 				);
 			}
 
@@ -1158,14 +1177,18 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				);
 			}
 
-			let targetSchema: Awaited<ReturnType<typeof loadSchema>>;
+			let targetSchema: Awaited<ReturnType<typeof loadExactSchema>>;
 			try {
-				targetSchema = await loadSchema(runtime, input.targetSheetSchemaRef);
+				targetSchema = await loadExactSchema(
+					runtime,
+					input.targetSheetSchemaPin,
+					"targetSheetSchemaPin",
+				);
 			} catch (error) {
 				if (error instanceof ApiError && error.status === 404) {
 					return rejected(
 						"invalid-schema-link",
-						"targetSheetSchemaRef must reference an existing characterSheetSchema",
+						"targetSheetSchemaPin must resolve an existing characterSheetSchema",
 					);
 				}
 
@@ -1179,7 +1202,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			) {
 				return rejected(
 					"invalid-schema-link",
-					"targetSheetSchemaRef must match targetRulesetNsid",
+					"targetSheetSchemaPin must match targetRulesetNsid",
 				);
 			}
 
@@ -1292,7 +1315,6 @@ export function createCharacterService(runtime: ServiceRuntime) {
 
 			const createdAt = runtime.now();
 			const sheetRkey = runtime.nextTid();
-			const targetSheetRef = `at://${callerDid}/${COLLECTIONS.characterSheet}/${sheetRkey}`;
 			const conversionRef = `at://${callerDid}/${COLLECTIONS.characterConversion}/${conversionRkey}`;
 			const sourceStateGuards = [
 				branch,
@@ -1301,7 +1323,7 @@ export function createCharacterService(runtime: ServiceRuntime) {
 			const targetSheet = {
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: callerDid,
-				sheetSchemaRef: input.targetSheetSchemaRef,
+				sheetSchemaPin: input.targetSheetSchemaPin,
 				rulesetNsid: input.targetRulesetNsid,
 				displayName: sourceSheet.value.displayName,
 				portraitBlob: sourceSheet.value.portraitBlob,
@@ -1311,14 +1333,21 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				createdAt,
 				updatedAt: createdAt,
 			} satisfies AppCeruliaCoreCharacterSheet.Main;
+			const targetSheetRecord = toStoredRecord({
+				repoDid: callerDid,
+				collection: COLLECTIONS.characterSheet,
+				rkey: sheetRkey,
+				value: targetSheet,
+				createdAt,
+				updatedAt: createdAt,
+			});
+			const targetSheetRef = targetSheetRecord.uri;
 			const record = {
 				$type: COLLECTIONS.characterConversion,
 				characterBranchRef: input.characterBranchRef,
-				sourceSheetRef: branch.value.sheetRef,
-				sourceSheetVersion: sourceSheet.value.version,
+				sourceSheetPin: buildExactRecordPin(sourceSheet),
 				sourceRulesetNsid: sourceSheet.value.rulesetNsid,
-				targetSheetRef,
-				targetSheetVersion: targetSheet.version,
+				targetSheetPin: buildExactRecordPin(targetSheetRecord),
 				targetRulesetNsid: input.targetRulesetNsid,
 				conversionContractRef: input.conversionContractRef,
 				convertedAt: input.convertedAt,
@@ -1583,9 +1612,10 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				advancements,
 				conversions,
 			);
-			const schema = await loadOptionalSchema(
+			const schema = await loadOptionalExactSchema(
 				runtime,
-				sheet.value.sheetSchemaRef,
+				sheet.value.sheetSchemaPin,
+				"sheetSchemaPin",
 			);
 			const structuredStats = schema
 				? flattenStructuredStats(schema.value.fieldDefs, resolvedStats)

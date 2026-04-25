@@ -1,12 +1,31 @@
 import { describe, expect, test } from "bun:test";
 import type { Agent } from "@atproto/api";
 import { COLLECTIONS } from "../constants.js";
-import { buildAtUri } from "../refs.js";
+import { buildAtUri, parseAtUri } from "../refs.js";
 import { AtprotoMirrorRecordStore } from "./atproto.js";
 import { MemoryRecordStore } from "./memory.js";
-import type { RecordStore, StoredRecord } from "./types.js";
+import { toStoredRecord, type RecordStore, type StoredRecord } from "./types.js";
 
 const DID = "did:plc:alice";
+
+function storedRecordFromUri<T>(
+	uri: string,
+	value: T,
+	createdAt: string,
+	updatedAt: string,
+	cid: string,
+): StoredRecord<T> {
+	const parsed = parseAtUri(uri);
+	return toStoredRecord({
+		repoDid: parsed.repoDid,
+		collection: parsed.collection,
+		rkey: parsed.rkey,
+		value,
+		cid,
+		createdAt,
+		updatedAt,
+	});
+}
 
 function createRemoteAgentStore() {
 	const records = new Map<string, StoredRecord<unknown>>();
@@ -73,21 +92,20 @@ function createRemoteAgentStore() {
 							const rkey = write.rkey ?? "generated";
 							const uri = buildAtUri(input.repo, write.collection, rkey);
 							const cid = nextCid();
-							records.set(uri, {
+							records.set(
 								uri,
-								repoDid: input.repo,
-								collection: write.collection,
-								rkey,
-								value: write.value,
-								createdAt: String(
-									write.value.createdAt ?? "2026-04-21T00:00:00.000Z",
+								storedRecordFromUri(
+									uri,
+									write.value,
+									String(write.value.createdAt ?? "2026-04-21T00:00:00.000Z"),
+									String(
+										write.value.updatedAt ??
+											write.value.createdAt ??
+											"2026-04-21T00:00:00.000Z",
+									),
+									cid,
 								),
-								updatedAt: String(
-									write.value.updatedAt ??
-										write.value.createdAt ??
-										"2026-04-21T00:00:00.000Z",
-								),
-							});
+							);
 							cids.set(uri, cid);
 						}
 
@@ -123,21 +141,20 @@ function createRemoteAgentStore() {
 							input.rkey ?? "generated",
 						);
 						const cid = nextCid();
-						records.set(uri, {
+						records.set(
 							uri,
-							repoDid: input.repo,
-							collection: input.collection,
-							rkey: input.rkey ?? "generated",
-							value: input.record,
-							createdAt: String(
-								input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
+							storedRecordFromUri(
+								uri,
+								input.record,
+								String(input.record.createdAt ?? "2026-04-21T00:00:00.000Z"),
+								String(
+									input.record.updatedAt ??
+										input.record.createdAt ??
+										"2026-04-21T00:00:00.000Z",
+								),
+								cid,
 							),
-							updatedAt: String(
-								input.record.updatedAt ??
-									input.record.createdAt ??
-									"2026-04-21T00:00:00.000Z",
-							),
-						});
+						);
 						cids.set(uri, cid);
 						const commitCid = bumpRepoCommit(input.repo);
 						return {
@@ -180,21 +197,20 @@ function createRemoteAgentStore() {
 						}
 
 						const cid = nextCid();
-						records.set(uri, {
+						records.set(
 							uri,
-							repoDid: input.repo,
-							collection: input.collection,
-							rkey: input.rkey,
-							value: input.record,
-							createdAt: String(
-								input.record.createdAt ?? "2026-04-21T00:00:00.000Z",
+							storedRecordFromUri(
+								uri,
+								input.record,
+								String(input.record.createdAt ?? "2026-04-21T00:00:00.000Z"),
+								String(
+									input.record.updatedAt ??
+										input.record.createdAt ??
+										"2026-04-21T00:00:00.000Z",
+								),
+								cid,
 							),
-							updatedAt: String(
-								input.record.updatedAt ??
-									input.record.createdAt ??
-									"2026-04-21T00:00:00.000Z",
-							),
-						});
+						);
 						cids.set(uri, cid);
 						bumpRepoCommit(input.repo);
 						return {
@@ -331,10 +347,14 @@ describe("AtprotoMirrorRecordStore", () => {
 			async listRecords() {
 				return [];
 			},
+			async getPinnedRecord() {
+				return null;
+			},
 			async hasOwnedBlob() {
 				return false;
 			},
 			async registerOwnedBlob() {},
+			async rememberPinnedRecord() {},
 		};
 		const store = new AtprotoMirrorRecordStore(failingCache, {
 			async getAgent() {
@@ -442,21 +462,19 @@ describe("AtprotoMirrorRecordStore", () => {
 			ownerDid: string;
 			createdAt: string;
 			updatedAt: string;
-		}> = {
-			uri: guardUri,
-			repoDid: DID,
-			collection: COLLECTIONS.scenario,
-			rkey: "guard-record",
-			value: {
+		}> = storedRecordFromUri(
+			guardUri,
+			{
 				$type: COLLECTIONS.scenario,
 				title: "Guard",
 				ownerDid: DID,
 				createdAt: "2026-04-21T00:00:00.000Z",
 				updatedAt: "2026-04-21T00:00:00.000Z",
 			},
-			createdAt: "2026-04-21T00:00:00.000Z",
-			updatedAt: "2026-04-21T00:00:00.000Z",
-		};
+			"2026-04-21T00:00:00.000Z",
+			"2026-04-21T00:00:00.000Z",
+			"cid-guard-record",
+		);
 		remote.records.set(guardUri, guardRecord);
 		remote.cids.set(guardUri, "cid-guard-record");
 		remote.bumpRepoCommit(DID);
@@ -466,14 +484,19 @@ describe("AtprotoMirrorRecordStore", () => {
 				return;
 			}
 			remote.setOnGetRecord(undefined);
-			remote.records.set(guardUri, {
-				...guardRecord,
-				value: {
-					...guardRecord.value,
-					updatedAt: "2026-04-21T01:00:00.000Z",
-				},
-				updatedAt: "2026-04-21T01:00:00.000Z",
-			});
+			remote.records.set(
+				guardUri,
+				storedRecordFromUri(
+					guardUri,
+					{
+						...guardRecord.value,
+						updatedAt: "2026-04-21T01:00:00.000Z",
+					},
+					guardRecord.createdAt,
+					"2026-04-21T01:00:00.000Z",
+					"cid-guard-record-updated",
+				),
+			);
 			remote.cids.set(guardUri, "cid-guard-record-updated");
 			remote.bumpRepoCommit(DID);
 		});
@@ -520,21 +543,22 @@ describe("AtprotoMirrorRecordStore", () => {
 			COLLECTIONS.scenario,
 			"unrelated-write",
 		);
-		remote.records.set(unrelatedUri, {
-			uri: unrelatedUri,
-			repoDid: DID,
-			collection: COLLECTIONS.scenario,
-			rkey: "unrelated-write",
-			value: {
+		remote.records.set(
+			unrelatedUri,
+			storedRecordFromUri(
+				unrelatedUri,
+				{
 				$type: COLLECTIONS.scenario,
 				title: "Unrelated",
 				ownerDid: DID,
 				createdAt: "2026-04-21T03:00:00.000Z",
 				updatedAt: "2026-04-21T03:00:00.000Z",
 			},
-			createdAt: "2026-04-21T03:00:00.000Z",
-			updatedAt: "2026-04-21T03:00:00.000Z",
-		});
+				"2026-04-21T03:00:00.000Z",
+				"2026-04-21T03:00:00.000Z",
+				"cid-unrelated-write",
+			),
+		);
 		remote.cids.set(unrelatedUri, "cid-unrelated-write");
 		remote.bumpRepoCommit(DID);
 
@@ -588,20 +612,21 @@ describe("AtprotoMirrorRecordStore", () => {
 		]);
 
 		const unrelatedUri = buildAtUri(DID, COLLECTIONS.house, "unrelated-update");
-		remote.records.set(unrelatedUri, {
-			uri: unrelatedUri,
-			repoDid: DID,
-			collection: COLLECTIONS.house,
-			rkey: "unrelated-update",
-			value: {
+		remote.records.set(
+			unrelatedUri,
+			storedRecordFromUri(
+				unrelatedUri,
+				{
 				$type: COLLECTIONS.house,
 				title: "Unrelated House",
 				createdAt: "2026-04-21T01:00:00.000Z",
 				updatedAt: "2026-04-21T01:00:00.000Z",
 			},
-			createdAt: "2026-04-21T01:00:00.000Z",
-			updatedAt: "2026-04-21T01:00:00.000Z",
-		});
+				"2026-04-21T01:00:00.000Z",
+				"2026-04-21T01:00:00.000Z",
+				"cid-unrelated-update",
+			),
+		);
 		remote.cids.set(unrelatedUri, "cid-unrelated-update");
 		remote.bumpRepoCommit(DID);
 
@@ -677,21 +702,22 @@ describe("AtprotoMirrorRecordStore", () => {
 		});
 
 		const remoteUri = buildAtUri(DID, COLLECTIONS.scenario, "remote-item");
-		remote.records.set(remoteUri, {
-			uri: remoteUri,
-			repoDid: DID,
-			collection: COLLECTIONS.scenario,
-			rkey: "remote-item",
-			value: {
+		remote.records.set(
+			remoteUri,
+			storedRecordFromUri(
+				remoteUri,
+				{
 				$type: COLLECTIONS.scenario,
 				title: "Remote Scenario",
 				ownerDid: DID,
 				createdAt: "2026-04-21T01:00:00.000Z",
 				updatedAt: "2026-04-21T01:00:00.000Z",
 			},
-			createdAt: "2026-04-21T01:00:00.000Z",
-			updatedAt: "2026-04-21T01:00:00.000Z",
-		});
+				"2026-04-21T01:00:00.000Z",
+				"2026-04-21T01:00:00.000Z",
+				"cid-remote-item",
+			),
+		);
 
 		const staleUri = buildAtUri(DID, COLLECTIONS.scenario, "stale-item");
 		await cache.createRecord({
@@ -720,21 +746,22 @@ describe("AtprotoMirrorRecordStore", () => {
 		const cache = new MemoryRecordStore();
 		const remote = createRemoteAgentStore();
 		const publicUri = buildAtUri(DID, COLLECTIONS.scenario, "public-item");
-		remote.records.set(publicUri, {
-			uri: publicUri,
-			repoDid: DID,
-			collection: COLLECTIONS.scenario,
-			rkey: "public-item",
-			value: {
+		remote.records.set(
+			publicUri,
+			storedRecordFromUri(
+				publicUri,
+				{
 				$type: COLLECTIONS.scenario,
 				title: "Public Scenario",
 				ownerDid: DID,
 				createdAt: "2026-04-21T01:30:00.000Z",
 				updatedAt: "2026-04-21T01:30:00.000Z",
 			},
-			createdAt: "2026-04-21T01:30:00.000Z",
-			updatedAt: "2026-04-21T01:30:00.000Z",
-		});
+				"2026-04-21T01:30:00.000Z",
+				"2026-04-21T01:30:00.000Z",
+				"cid-public-item",
+			),
+		);
 
 		const store = new AtprotoMirrorRecordStore(cache, {
 			async getAgent() {
@@ -768,21 +795,22 @@ describe("AtprotoMirrorRecordStore", () => {
 			createdAt: "2026-04-21T01:45:00.000Z",
 			updatedAt: "2026-04-21T01:45:00.000Z",
 		});
-		remote.records.set(uri, {
+		remote.records.set(
 			uri,
-			repoDid: DID,
-			collection: COLLECTIONS.scenario,
-			rkey: "recovering-item",
-			value: {
+			storedRecordFromUri(
+				uri,
+				{
 				$type: COLLECTIONS.scenario,
 				title: "Remote Scenario",
 				ownerDid: DID,
 				createdAt: "2026-04-21T01:45:00.000Z",
 				updatedAt: "2026-04-21T02:15:00.000Z",
 			},
-			createdAt: "2026-04-21T01:45:00.000Z",
-			updatedAt: "2026-04-21T02:15:00.000Z",
-		});
+				"2026-04-21T01:45:00.000Z",
+				"2026-04-21T02:15:00.000Z",
+				"cid-recovering-item",
+			),
+		);
 
 		let allowPublicAgent = false;
 		const store = new AtprotoMirrorRecordStore(cache, {
@@ -1051,36 +1079,38 @@ describe("AtprotoMirrorRecordStore", () => {
 			COLLECTIONS.scenario,
 			"fresh-second",
 		);
-		remote.records.set(firstUri, {
-			uri: firstUri,
-			repoDid: DID,
-			collection: COLLECTIONS.scenario,
-			rkey: "fresh-first",
-			value: {
+		remote.records.set(
+			firstUri,
+			storedRecordFromUri(
+				firstUri,
+				{
 				$type: COLLECTIONS.scenario,
 				title: "Fresh First",
 				ownerDid: DID,
 				createdAt: "2026-04-21T05:00:00.000Z",
 				updatedAt: "2026-04-21T05:00:00.000Z",
 			},
-			createdAt: "2026-04-21T05:00:00.000Z",
-			updatedAt: "2026-04-21T05:00:00.000Z",
-		});
-		remote.records.set(secondUri, {
-			uri: secondUri,
-			repoDid: secondDid,
-			collection: COLLECTIONS.scenario,
-			rkey: "fresh-second",
-			value: {
+				"2026-04-21T05:00:00.000Z",
+				"2026-04-21T05:00:00.000Z",
+				"cid-fresh-first",
+			),
+		);
+		remote.records.set(
+			secondUri,
+			storedRecordFromUri(
+				secondUri,
+				{
 				$type: COLLECTIONS.scenario,
 				title: "Fresh Second",
 				ownerDid: secondDid,
 				createdAt: "2026-04-21T06:00:00.000Z",
 				updatedAt: "2026-04-21T06:00:00.000Z",
 			},
-			createdAt: "2026-04-21T06:00:00.000Z",
-			updatedAt: "2026-04-21T06:00:00.000Z",
-		});
+				"2026-04-21T06:00:00.000Z",
+				"2026-04-21T06:00:00.000Z",
+				"cid-fresh-second",
+			),
+		);
 
 		const records = await store.listRecords(COLLECTIONS.scenario);
 		expect(records).toHaveLength(2);

@@ -38,8 +38,13 @@ function blobCid(blob: BlobRefLike): string | null {
 
 export class MemoryRecordStore implements RecordStore {
 	private readonly records = new Map<string, StoredRecord<unknown>>();
+	private readonly pinnedRecords = new Map<string, StoredRecord<unknown>>();
 	private readonly ownedBlobs = new Set<string>();
 	private readonly collectionVersions = new Map<string, number>();
+
+	private rememberPinned(record: StoredRecord<unknown>) {
+		this.pinnedRecords.set(`${record.uri}:${record.cid}`, record);
+	}
 
 	private bumpCollectionVersion(repoDid: string, collection: string) {
 		const key = `${repoDid}:${collection}`;
@@ -74,6 +79,7 @@ export class MemoryRecordStore implements RecordStore {
 
 		const record = toStoredRecord(draft);
 		this.records.set(record.uri, record);
+		this.rememberPinned(record);
 		this.bumpCollectionVersion(record.repoDid, record.collection);
 		return record;
 	}
@@ -106,6 +112,7 @@ export class MemoryRecordStore implements RecordStore {
 			throw new RecordConflictError();
 		}
 		this.records.set(record.uri, record);
+		this.rememberPinned(record);
 		this.bumpCollectionVersion(record.repoDid, record.collection);
 		return record;
 	}
@@ -130,6 +137,11 @@ export class MemoryRecordStore implements RecordStore {
 
 	async getRecord<T>(uri: string): Promise<StoredRecord<T> | null> {
 		const record = this.records.get(uri);
+		return (record as StoredRecord<T> | undefined) ?? null;
+	}
+
+	async getPinnedRecord<T>(uri: string, cid: string): Promise<StoredRecord<T> | null> {
+		const record = this.pinnedRecords.get(`${uri}:${cid}`);
 		return (record as StoredRecord<T> | undefined) ?? null;
 	}
 
@@ -183,6 +195,10 @@ export class MemoryRecordStore implements RecordStore {
 		this.ownedBlobs.add(`${repoDid}:${cid}`);
 	}
 
+	async rememberPinnedRecord<T>(record: StoredRecord<T>): Promise<void> {
+		this.rememberPinned(record as StoredRecord<unknown>);
+	}
+
 	seedRecord<T>(
 		uri: string,
 		value: T,
@@ -191,14 +207,16 @@ export class MemoryRecordStore implements RecordStore {
 	): void {
 		const parsed = parseAtUri(uri);
 		this.records.set(uri, {
-			uri,
-			repoDid: parsed.repoDid,
-			collection: parsed.collection,
-			rkey: parsed.rkey,
-			value,
-			createdAt,
-			updatedAt,
+			...toStoredRecord({
+				repoDid: parsed.repoDid,
+				collection: parsed.collection,
+				rkey: parsed.rkey,
+				value,
+				createdAt,
+				updatedAt,
+			}),
 		});
+		this.rememberPinned(this.records.get(uri)!);
 		this.bumpCollectionVersion(parsed.repoDid, parsed.collection);
 	}
 }

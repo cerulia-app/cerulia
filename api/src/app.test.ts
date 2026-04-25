@@ -16,10 +16,12 @@ import {
 } from "./constants.js";
 import { ApiError } from "./errors.js";
 import { paginate } from "./pagination.js";
+import { synthesizeRecordCid } from "./record-cid.js";
 import { buildAtUri, parseAtUri } from "./refs.js";
 import { MemoryRecordStore } from "./store/memory.js";
 import type {
 	ApplyWritesOptions,
+	AtomicRecordStore,
 	RecordWrite,
 	StoredRecord,
 } from "./store/types.js";
@@ -283,6 +285,7 @@ function createTestApp<TStore extends ApiAppStore = SupportedMemoryRecordStore>(
 		store: resolvedStore,
 		authResolver: resolveHeaderAuthContext,
 	});
+	Object.assign(app as object, { __store: resolvedStore });
 
 	return {
 		app,
@@ -309,11 +312,31 @@ function createTestAppWithProjectionFeature(options: {
 				(async () => undefined),
 		},
 	});
+	Object.assign(app as object, { __store: resolvedStore });
 
 	return {
 		app,
 		store: resolvedStore,
 	};
+}
+
+async function exactPinForUri(
+	store: AtomicRecordStore | undefined,
+	uri: string,
+) {
+	const record = store ? await store.getRecord(uri) : null;
+	return {
+		uri,
+		cid: record?.cid ?? synthesizeRecordCid({ uri, missing: true }),
+	};
+}
+
+async function exactPinForApp(app: ReturnType<typeof createApiApp>, uri: string) {
+	return exactPinForUri(
+		(app as ReturnType<typeof createApiApp> & { __store?: AtomicRecordStore })
+			.__store,
+		uri,
+	);
 }
 
 async function postJson(
@@ -453,7 +476,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Missing Stats Investigator",
 			},
 		);
@@ -512,7 +535,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Retry Character",
 				stats: {
 					power: 70,
@@ -557,7 +580,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Mid Batch Failure Character",
 				stats: {
 					power: 70,
@@ -764,7 +787,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Output Contract Character",
 				stats: {
 					power: 70,
@@ -846,7 +869,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.ruleset.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Mixed Ruleset Character",
 				stats: { power: 60 },
 			},
@@ -859,7 +882,7 @@ describe("createApiApp", () => {
 			{
 				title: "Mixed Ruleset Scenario",
 				rulesetNsid: "app.cerulia.ruleset.coc7",
-				recommendedSheetSchemaRef: schemaRef,
+				recommendedSheetSchemaPin: await exactPinForApp(app, schemaRef),
 				sourceCitationUri: "https://example.com/scenarios/mixed-ruleset",
 			},
 		);
@@ -969,7 +992,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Branch Alias Character",
 				stats: { power: 55 },
 				initialBranchVisibility: "public",
@@ -997,6 +1020,8 @@ describe("createApiApp", () => {
 		const createSessionAck = await createSessionResponse.json();
 		expectAccepted(createSessionAck);
 		const [sessionRef] = createSessionAck.emittedRecordRefs;
+		const sheetRecord = await store.getRecord(createSheetAck.emittedRecordRefs[0]);
+		expect(sheetRecord).not.toBeNull();
 
 		store.seedRecord(
 			`at://${DID}/${COLLECTIONS.characterAdvancement}/adv-bare-alias`,
@@ -1017,11 +1042,15 @@ describe("createApiApp", () => {
 			{
 				$type: COLLECTIONS.characterConversion,
 				characterBranchRef: bareBranchRef,
-				sourceSheetRef: createSheetAck.emittedRecordRefs[0],
-				sourceSheetVersion: 1,
+				sourceSheetPin: {
+					uri: createSheetAck.emittedRecordRefs[0],
+					cid: sheetRecord!.cid,
+				},
 				sourceRulesetNsid: "app.cerulia.rules.coc7",
-				targetSheetRef: createSheetAck.emittedRecordRefs[0],
-				targetSheetVersion: 1,
+				targetSheetPin: {
+					uri: createSheetAck.emittedRecordRefs[0],
+					cid: sheetRecord!.cid,
+				},
 				targetRulesetNsid: "app.cerulia.rules.coc7",
 				convertedAt: "2026-04-18T02:00:00.000Z",
 			},
@@ -1097,7 +1126,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Alice Investigator",
 				stats: { power: 0 },
 				initialBranchVisibility: "public",
@@ -1297,7 +1326,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T12:00:00.000Z",
 			},
 			writerHeaders,
@@ -1376,7 +1405,10 @@ describe("createApiApp", () => {
 				$type: COLLECTIONS.characterSheet,
 				displayName: "Schema Missing Investigator",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				sheetSchemaPin: await exactPinForApp(
+					app,
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				),
 				stats: { power: 3 },
 				version: 1,
 				ownerDid: DID,
@@ -1596,7 +1628,10 @@ describe("createApiApp", () => {
 				$type: COLLECTIONS.scenario,
 				title: "Browse Only Scenario",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				recommendedSheetSchemaPin: await exactPinForApp(
+					app,
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				),
 				sourceCitationUri: "https://example.com/scenario/browse-only",
 				summary:
 					"Schema resolution failed, but the route should stay readable.",
@@ -1629,7 +1664,10 @@ describe("createApiApp", () => {
 				$type: COLLECTIONS.scenario,
 				title: "Stale Schema Scenario",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				recommendedSheetSchemaPin: await exactPinForApp(
+					app,
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				),
 				sourceCitationUri: "https://example.com/scenario/stale-schema",
 				summary: "Old summary",
 				ownerDid: DID,
@@ -1859,7 +1897,10 @@ describe("createApiApp", () => {
 			{
 				title: "Missing Schema Scenario",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				recommendedSheetSchemaPin: await exactPinForApp(
+					app,
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
+				),
 				sourceCitationUri: "https://example.com/scenario/missing-schema",
 			},
 			writerHeaders,
@@ -1879,7 +1920,6 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createBranch`,
 			{
 				sourceBranchRef: `at://${DID}/${COLLECTIONS.characterBranch}/missing-branch`,
-				targetSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/missing-schema`,
 				branchLabel: "Missing Source Branch",
 				branchKind: "parallel",
 			},
@@ -1963,7 +2003,7 @@ describe("createApiApp", () => {
 			{
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: DID,
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				rulesetNsid: "app.cerulia.rules.coc7",
 				displayName: "Detached Sheet",
 				stats: { power: 1 },
@@ -1979,7 +2019,7 @@ describe("createApiApp", () => {
 			{
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: DID,
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				rulesetNsid: "app.cerulia.rules.coc7",
 				displayName: "Current Sheet",
 				stats: { power: 2 },
@@ -2027,7 +2067,7 @@ describe("createApiApp", () => {
 			{
 				characterSheetRef: detachedSheetRef,
 				expectedVersion: 1,
-				targetSheetSchemaRef: schemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, schemaRef),
 			},
 			writerHeaders,
 		);
@@ -2073,7 +2113,7 @@ describe("createApiApp", () => {
 			{
 				$type: COLLECTIONS.characterSheet,
 				ownerDid: DID,
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				rulesetNsid: "app.cerulia.rules.coc7",
 				displayName: "Current Sheet",
 				stats: { power: 2 },
@@ -2120,7 +2160,7 @@ describe("createApiApp", () => {
 			{
 				characterSheetRef: bareCurrentSheetRef,
 				expectedVersion: 2,
-				targetSheetSchemaRef: schemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, schemaRef),
 			},
 			writerHeaders,
 		);
@@ -2303,7 +2343,10 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 2,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/target-schema`,
+				targetSheetSchemaPin: await exactPinForApp(
+					app,
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/target-schema`,
+				),
 				convertedAt: "2026-04-22T12:00:00.000Z",
 			},
 			writerHeaders,
@@ -2600,7 +2643,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Race Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -2690,7 +2733,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Child Race Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -2767,7 +2810,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Stale Validation Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -2855,7 +2898,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Post Sheet Race Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -2956,7 +2999,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Race Conversion Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3002,7 +3045,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T11:00:00.000Z",
 			},
 			writerHeaders,
@@ -3071,7 +3114,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Child Race Conversion Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3104,7 +3147,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T11:00:00.000Z",
 			},
 			writerHeaders,
@@ -3170,7 +3213,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Stale Validation Conversion Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3217,7 +3260,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T11:00:00.000Z",
 			},
 			writerHeaders,
@@ -3280,7 +3323,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Final Update Race Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3313,7 +3356,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T11:00:00.000Z",
 			},
 			writerHeaders,
@@ -3381,7 +3424,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Backdated Conversion Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3411,7 +3454,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T10:00:00.000Z",
 			},
 			writerHeaders,
@@ -3475,7 +3518,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Carry Forward Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3492,7 +3535,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T12:00:00.000Z",
 			},
 			writerHeaders,
@@ -3579,7 +3622,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Same Timestamp Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3609,7 +3652,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: emocloSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, emocloSchemaRef),
 				convertedAt: "2026-04-20T10:30:00.000Z",
 			},
 			writerHeaders,
@@ -3625,7 +3668,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 2,
 				targetRulesetNsid: "app.cerulia.rules.foo",
-				targetSheetSchemaRef: fooSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, fooSchemaRef),
 				convertedAt: "2026-04-20T10:30:00.000Z",
 			},
 			writerHeaders,
@@ -3682,7 +3725,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Metadata Race Character",
 				stats: { power: 1 },
 				initialBranchVisibility: "public",
@@ -3760,7 +3803,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Advancement Character",
 				stats: {
 					power: 55,
@@ -3838,7 +3881,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: schemaRef,
+				sheetSchemaPin: await exactPinForApp(app, schemaRef),
 				displayName: "Advancement Mid Batch Character",
 				stats: {
 					power: 55,
@@ -3934,7 +3977,7 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.character.createSheet`,
 			{
 				rulesetNsid: "app.cerulia.rules.coc7",
-				sheetSchemaRef: sourceSchemaRef,
+				sheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				displayName: "Conflict Character",
 				stats: { power: 10 },
 				initialBranchVisibility: "public",
@@ -3951,7 +3994,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.coc7",
-				targetSheetSchemaRef: sourceSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, sourceSchemaRef),
 				convertedAt: "2026-04-20T12:00:00.000Z",
 			},
 			writerHeaders,
@@ -3968,7 +4011,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T12:05:00.000Z",
 			},
 			otherWriterHeaders,
@@ -3997,7 +4040,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 1,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T12:10:00.000Z",
 			},
 			writerHeaders,
@@ -4024,7 +4067,7 @@ describe("createApiApp", () => {
 				characterBranchRef: branchRef,
 				expectedRevision: 3,
 				targetRulesetNsid: "app.cerulia.rules.emoclo",
-				targetSheetSchemaRef: targetSchemaRef,
+				targetSheetSchemaPin: await exactPinForApp(app, targetSchemaRef),
 				convertedAt: "2026-04-20T12:20:00.000Z",
 			},
 			writerHeaders,
@@ -4200,7 +4243,7 @@ describe("createApiApp", () => {
 			{
 				title: "Shadows of Arkham",
 				rulesetNsid: "app.cerulia.rules.coc7",
-				recommendedSheetSchemaRef: schemaRef,
+				recommendedSheetSchemaPin: await exactPinForApp(app, schemaRef),
 				sourceCitationUri: "https://example.com/scenario/shadows-of-arkham",
 				summary: "A spoiler-safe introduction.",
 			},
@@ -4369,7 +4412,10 @@ describe("createApiApp", () => {
 			`${XRPC_PREFIX}/app.cerulia.scenario.create`,
 			{
 				title: "Rejected Projection Scenario",
-				recommendedSheetSchemaRef: `at://${DID}/${COLLECTIONS.characterSheetSchema}/schema`,
+				recommendedSheetSchemaPin: await exactPinForApp(
+					app,
+					`at://${DID}/${COLLECTIONS.characterSheetSchema}/schema`,
+				),
 				sourceCitationUri: "https://example.com/scenario/rejected-projection",
 				summary: "This write should be rejected before notification.",
 			},

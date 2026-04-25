@@ -5,6 +5,7 @@ declare module "multiformats/cid" {
 		Alg = number,
 		Version = 0 | 1,
 	> {
+		static createV1(code: number, digest: unknown): CID;
 		toString(base?: unknown): string;
 	}
 }

@@ -59,7 +59,7 @@ function extractTimestamp(
 		: null;
 }
 
-function toStoredRecord<T>(uri: string, value: T): StoredRecord<T> {
+function toStoredRecord<T>(uri: string, value: T, cid?: string): StoredRecord<T> {
 	const parsed = parseAtUri(uri);
 	const timestampSource =
 		typeof value === "object" && value !== null
@@ -73,6 +73,7 @@ function toStoredRecord<T>(uri: string, value: T): StoredRecord<T> {
 
 	return {
 		uri,
+		cid: cid ?? "",
 		repoDid: parsed.repoDid,
 		collection: parsed.collection,
 		rkey: parsed.rkey,
@@ -91,6 +92,7 @@ async function upsertCachedRecord<T>(
 		collection: record.collection,
 		rkey: record.rkey,
 		value: record.value,
+		cid: record.cid,
 		createdAt: record.createdAt,
 		updatedAt: record.updatedAt,
 	};
@@ -175,8 +177,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 				}
 			}
 		}
+		let response;
 		try {
-			await agent.com.atproto.repo.createRecord({
+			response = await agent.com.atproto.repo.createRecord({
 				repo: draft.repoDid,
 				collection: draft.collection,
 				rkey: draft.rkey,
@@ -191,21 +194,18 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			throw error;
 		}
 
+		const record = toStoredRecord(
+			buildAtUri(draft.repoDid, draft.collection, draft.rkey),
+			draft.value,
+			response?.data.cid,
+		);
 		await bestEffortCacheSync(
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
 		);
 		await bestEffortCacheSync(
-			this.cache.createRecord(draft).then(() => undefined),
+			this.cache.createRecord({ ...draft, cid: record.cid }).then(() => undefined),
 		);
-		return {
-			uri: buildAtUri(draft.repoDid, draft.collection, draft.rkey),
-			repoDid: draft.repoDid,
-			collection: draft.collection,
-			rkey: draft.rkey,
-			value: draft.value,
-			createdAt: draft.createdAt,
-			updatedAt: draft.updatedAt,
-		};
+		return record;
 	}
 
 	async updateRecord<T>(
@@ -249,8 +249,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			}
 		}
 
+		let response;
 		try {
-			await agent.com.atproto.repo.putRecord({
+			response = await agent.com.atproto.repo.putRecord({
 				repo: draft.repoDid,
 				collection: draft.collection,
 				rkey: draft.rkey,
@@ -266,21 +267,18 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			throw error;
 		}
 
+		const record = toStoredRecord(
+			buildAtUri(draft.repoDid, draft.collection, draft.rkey),
+			draft.value,
+			response?.data.cid,
+		);
 		await bestEffortCacheSync(
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
 		);
 		await bestEffortCacheSync(
-			this.cache.updateRecord(draft).then(() => undefined),
+			this.cache.updateRecord({ ...draft, cid: record.cid }).then(() => undefined),
 		);
-		return {
-			uri: buildAtUri(draft.repoDid, draft.collection, draft.rkey),
-			repoDid: draft.repoDid,
-			collection: draft.collection,
-			rkey: draft.rkey,
-			value: draft.value,
-			createdAt: draft.createdAt,
-			updatedAt: draft.updatedAt,
-		};
+		return record;
 	}
 
 	async applyWrites(
@@ -377,6 +375,7 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 				const record = toStoredRecord(
 					response.data.uri,
 					response.data.value as T,
+					response.data.cid,
 				);
 				await bestEffortCacheSync(
 					this.agents.rememberRepoDid?.(parsed.repoDid) ?? Promise.resolve(),
@@ -448,7 +447,7 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 				});
 				remoteRecords.push(
 					...response.data.records.map((record) =>
-						toStoredRecord(record.uri, record.value as T),
+						toStoredRecord(record.uri, record.value as T, record.cid),
 					),
 				);
 				cursor = response.data.cursor;
@@ -475,6 +474,14 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			this.syncCachedCollection(collection, repoDid, remoteRecords),
 		);
 		return remoteRecords;
+	}
+
+	async getPinnedRecord<T>(uri: string, cid: string): Promise<StoredRecord<T> | null> {
+		return this.cache.getPinnedRecord<T>(uri, cid);
+	}
+
+	async rememberPinnedRecord<T>(record: StoredRecord<T>): Promise<void> {
+		await this.cache.rememberPinnedRecord(record);
 	}
 
 	async hasOwnedBlob(

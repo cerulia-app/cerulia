@@ -24,7 +24,9 @@
 		"@atproto/oauth-client": "^0.6.0",
 		"@atproto/oauth-client-node": "^0.3.17",
 		"@cerulia/protocol": "workspace:*",
-		"hono": "^4.10.0"
+		"@ipld/dag-cbor": "^9.2.6",
+		"hono": "^4.10.0",
+		"multiformats": "^13.4.2"
 	},
 	"devDependencies": {
 		"wrangler": "^4.41.0"

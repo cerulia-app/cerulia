@@ -19,6 +19,15 @@ interface RecordRow {
 	collection: string;
 	rkey: string;
 	value_json: string;
+	cid: string;
+	created_at: string;
+	updated_at: string;
+}
+
+interface PinnedRecordRow {
+	uri: string;
+	cid: string;
+	value_json: string;
 	created_at: string;
 	updated_at: string;
 }
@@ -35,6 +44,20 @@ function fromRow<T>(row: RecordRow): StoredRecord<T> {
 		collection: row.collection,
 		rkey: row.rkey,
 		value: JSON.parse(row.value_json) as T,
+		cid: row.cid || undefined,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function fromPinnedRow<T>(row: PinnedRecordRow): StoredRecord<T> {
+	const parsed = parseAtUri(row.uri);
+	return toStoredRecord({
+		repoDid: parsed.repoDid,
+		collection: parsed.collection,
+		rkey: parsed.rkey,
+		value: JSON.parse(row.value_json) as T,
+		cid: row.cid,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	});
@@ -64,6 +87,34 @@ function blobCid(blob: BlobRefLike): string | null {
 
 export class SqlRecordStore implements RecordStore {
 	constructor(private readonly driver: SqlDriver) {}
+
+	private async bestEffortSyncPinnedRecord<T>(record: StoredRecord<T>) {
+		try {
+			await this.rememberPinnedRecord(record);
+		} catch {
+			// Exact-pin cache persistence must not fail the canonical record path.
+		}
+	}
+
+	private async hydrateRow<T>(row: RecordRow): Promise<StoredRecord<T>> {
+		const record = fromRow<T>(row);
+		if (row.cid.length === 0) {
+			try {
+				await this.driver.run(
+					`UPDATE records
+		     SET cid = ?
+		   WHERE repo_did = ? AND collection = ? AND rkey = ? AND cid = ''`,
+					[record.cid, row.repo_did, row.collection, row.rkey],
+				);
+			} catch {
+				// CID backfill is auxiliary for legacy rows; reads should still succeed.
+			}
+		}
+
+		await this.bestEffortSyncPinnedRecord(record);
+
+		return record;
+	}
 
 	async getScopeStateToken(
 		repoDid: string,
@@ -105,6 +156,7 @@ export class SqlRecordStore implements RecordStore {
 		draft: RecordDraft<T>,
 		options?: CreateRecordOptions,
 	): Promise<StoredRecord<T>> {
+		const record = toStoredRecord(draft);
 		const draftValueJson = storedRecordValueJson(draft.value);
 		const expectedScopeEntries = Object.entries(
 			options?.expectedScopeState?.collectionVersions ?? {},
@@ -144,16 +196,17 @@ export class SqlRecordStore implements RecordStore {
 			}
 
 			const changes = await this.driver.run(
-				`INSERT INTO records (repo_did, collection, rkey, value_json, created_at, updated_at)
-       SELECT ?, ?, ?, ?, ?, ?
+				`INSERT INTO records (repo_did, collection, rkey, value_json, cid, created_at, updated_at)
+	     SELECT ?, ?, ?, ?, ?, ?, ?
        WHERE ${guardClauses.join(" AND ")}`,
 				[
-					draft.repoDid,
-					draft.collection,
-					draft.rkey,
+					record.repoDid,
+					record.collection,
+					record.rkey,
 					draftValueJson,
-					draft.createdAt,
-					draft.updatedAt,
+					record.cid,
+					record.createdAt,
+					record.updatedAt,
 					...guardParams,
 				],
 			);
@@ -162,26 +215,29 @@ export class SqlRecordStore implements RecordStore {
 			}
 		} else {
 			await this.driver.run(
-				`INSERT INTO records (repo_did, collection, rkey, value_json, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+				`INSERT INTO records (repo_did, collection, rkey, value_json, cid, created_at, updated_at)
+	     VALUES (?, ?, ?, ?, ?, ?, ?)`,
 				[
-					draft.repoDid,
-					draft.collection,
-					draft.rkey,
+					record.repoDid,
+					record.collection,
+					record.rkey,
 					draftValueJson,
-					draft.createdAt,
-					draft.updatedAt,
+					record.cid,
+					record.createdAt,
+					record.updatedAt,
 				],
 			);
 		}
 
-		return toStoredRecord(draft);
+		await this.bestEffortSyncPinnedRecord(record);
+		return record;
 	}
 
 	async updateRecord<T>(
 		draft: RecordDraft<T>,
 		options?: UpdateRecordOptions<T>,
 	): Promise<StoredRecord<T>> {
+		const record = toStoredRecord(draft);
 		if (
 			options?.expectedScopeState &&
 			options.expectedScopeState.repoDid !== draft.repoDid
@@ -191,11 +247,12 @@ export class SqlRecordStore implements RecordStore {
 
 		const baseParams = [
 			storedRecordValueJson(draft.value),
-			draft.createdAt,
-			draft.updatedAt,
-			draft.repoDid,
-			draft.collection,
-			draft.rkey,
+			record.cid,
+			record.createdAt,
+			record.updatedAt,
+			record.repoDid,
+			record.collection,
+			record.rkey,
 		];
 		const expectedScopeEntries = Object.entries(
 			options?.expectedScopeState?.collectionVersions ?? {},
@@ -219,11 +276,11 @@ export class SqlRecordStore implements RecordStore {
 		const changes = await this.driver.run(
 			guardClauses.length > 0
 				? `UPDATE records
-       SET value_json = ?, created_at = ?, updated_at = ?
+	     SET value_json = ?, cid = ?, created_at = ?, updated_at = ?
 	       WHERE repo_did = ? AND collection = ? AND rkey = ?
 	         AND ${guardClauses.join(" AND ")}`
 				: `UPDATE records
-       SET value_json = ?, created_at = ?, updated_at = ?
+	     SET value_json = ?, cid = ?, created_at = ?, updated_at = ?
        WHERE repo_did = ? AND collection = ? AND rkey = ?`,
 			guardClauses.length > 0 ? [...baseParams, ...guardParams] : baseParams,
 		);
@@ -232,19 +289,31 @@ export class SqlRecordStore implements RecordStore {
 			throw new RecordConflictError();
 		}
 
-		return toStoredRecord(draft);
+		await this.bestEffortSyncPinnedRecord(record);
+		return record;
 	}
 
 	async getRecord<T>(uri: string): Promise<StoredRecord<T> | null> {
 		const parsed = parseAtUri(uri);
 		const row = await this.driver.get<RecordRow>(
-			`SELECT repo_did, collection, rkey, value_json, created_at, updated_at
+			`SELECT repo_did, collection, rkey, value_json, cid, created_at, updated_at
        FROM records
        WHERE repo_did = ? AND collection = ? AND rkey = ?`,
 			[parsed.repoDid, parsed.collection, parsed.rkey],
 		);
 
-		return row ? fromRow<T>(row) : null;
+		return row ? this.hydrateRow<T>(row) : null;
+	}
+
+	async getPinnedRecord<T>(uri: string, cid: string): Promise<StoredRecord<T> | null> {
+		const row = await this.driver.get<PinnedRecordRow>(
+			`SELECT uri, cid, value_json, created_at, updated_at
+       FROM pinned_records
+       WHERE uri = ? AND cid = ?`,
+			[uri, cid],
+		);
+
+		return row ? fromPinnedRow<T>(row) : null;
 	}
 
 	async deleteRecord(uri: string): Promise<void> {
@@ -261,21 +330,21 @@ export class SqlRecordStore implements RecordStore {
 	): Promise<StoredRecord<T>[]> {
 		const rows = repoDid
 			? await this.driver.all<RecordRow>(
-					`SELECT repo_did, collection, rkey, value_json, created_at, updated_at
+					`SELECT repo_did, collection, rkey, value_json, cid, created_at, updated_at
            FROM records
            WHERE collection = ? AND repo_did = ?
            ORDER BY updated_at DESC, created_at DESC, rkey ASC`,
 					[collection, repoDid],
 				)
 			: await this.driver.all<RecordRow>(
-					`SELECT repo_did, collection, rkey, value_json, created_at, updated_at
+					`SELECT repo_did, collection, rkey, value_json, cid, created_at, updated_at
            FROM records
            WHERE collection = ?
            ORDER BY updated_at DESC, created_at DESC, repo_did ASC, rkey ASC`,
 					[collection],
 				);
 
-		return rows.map((row) => fromRow<T>(row));
+		return Promise.all(rows.map((row) => this.hydrateRow<T>(row)));
 	}
 
 	async hasOwnedBlob(repoDid: string, blob: BlobRefLike): Promise<boolean> {
@@ -302,6 +371,20 @@ export class SqlRecordStore implements RecordStore {
 			`INSERT OR REPLACE INTO owned_blobs (repo_did, blob_cid, blob_json)
        VALUES (?, ?, ?)`,
 			[repoDid, cid, JSON.stringify(blob)],
+		);
+	}
+
+	async rememberPinnedRecord<T>(record: StoredRecord<T>): Promise<void> {
+		await this.driver.run(
+			`INSERT OR REPLACE INTO pinned_records (uri, cid, value_json, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?)`,
+			[
+				record.uri,
+				record.cid,
+				storedRecordValueJson(record.value),
+				record.createdAt,
+				record.updatedAt,
+			],
 		);
 	}
 }

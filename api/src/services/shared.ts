@@ -23,6 +23,11 @@ import type {
 import { isCredentialFreeUri } from "../uri-policy.js";
 import type { ServiceRuntime } from "./runtime.js";
 
+export interface ExactRecordPinLike {
+	uri: string;
+	cid: string;
+}
+
 export interface BlueskyProfile {
 	displayName?: string;
 	description?: string;
@@ -101,6 +106,24 @@ export async function getRecordByUriAlias<T>(
 	return null;
 }
 
+export function buildExactRecordPin(record: StoredRecord<unknown>): ExactRecordPinLike {
+	return {
+		uri: record.uri,
+		cid: record.cid,
+	};
+}
+
+async function rememberPinnedRecordBestEffort(
+	runtime: ServiceRuntime,
+	record: StoredRecord<unknown>,
+) {
+	try {
+		await runtime.store.rememberPinnedRecord(record);
+	} catch {
+		// Current-read resolution stays valid even if the auxiliary pin cache write fails.
+	}
+}
+
 export async function createTypedRecord<T extends { $type: string }>(
 	runtime: ServiceRuntime,
 	draft: RecordDraft<T>,
@@ -170,6 +193,66 @@ export async function getOptionalRecord<T>(
 	}
 
 	return getRecordByUriAlias<T>(runtime, uri);
+}
+
+export async function getOptionalExactPinnedRecord<T>(
+	runtime: ServiceRuntime,
+	pin: ExactRecordPinLike | undefined,
+	collection: string,
+	label: string,
+): Promise<StoredRecord<T> | null> {
+	if (!pin) {
+		return null;
+	}
+
+	const parsed = parseAtUri(pin.uri);
+	if (!matchesCollectionAlias(parsed.collection, collection)) {
+		throw new ApiError(
+			"InvalidRequest",
+			`${label} must reference ${collection}`,
+			400,
+		);
+	}
+
+	const current = await getRecordByUriAlias<T>(runtime, pin.uri);
+	if (current && current.cid === pin.cid) {
+		await rememberPinnedRecordBestEffort(
+			runtime,
+			current as StoredRecord<unknown>,
+		);
+		return current;
+	}
+
+	for (const collectionAlias of getCeruliaNsidAliases(parsed.collection)) {
+		const cached = await runtime.store.getPinnedRecord<T>(
+			buildAtUri(parsed.repoDid, collectionAlias, parsed.rkey),
+			pin.cid,
+		);
+		if (cached) {
+			return cached;
+		}
+	}
+
+	return null;
+}
+
+export async function requireExactPinnedRecord<T>(
+	runtime: ServiceRuntime,
+	pin: ExactRecordPinLike,
+	collection: string,
+	label: string,
+): Promise<StoredRecord<T>> {
+	const record = await getOptionalExactPinnedRecord<T>(
+		runtime,
+		pin,
+		collection,
+		label,
+	);
+	if (!record) {
+		throw new ApiError("NotFound", `${label} was not found`, 404);
+	}
+
+	return record;
 }
 
 export function hasSameOwner(uri: string, did: string): boolean {
@@ -243,6 +326,32 @@ export async function loadOptionalSchema(
 		schemaRef,
 		COLLECTIONS.characterSheetSchema,
 		"characterSheetSchemaRef",
+	);
+}
+
+export async function loadExactSchema(
+	runtime: ServiceRuntime,
+	schemaPin: ExactRecordPinLike,
+	label = "sheetSchemaPin",
+): Promise<StoredRecord<AppCeruliaCoreCharacterSheetSchema.Main>> {
+	return requireExactPinnedRecord<AppCeruliaCoreCharacterSheetSchema.Main>(
+		runtime,
+		schemaPin,
+		COLLECTIONS.characterSheetSchema,
+		label,
+	);
+}
+
+export async function loadOptionalExactSchema(
+	runtime: ServiceRuntime,
+	schemaPin: ExactRecordPinLike | undefined,
+	label = "sheetSchemaPin",
+): Promise<StoredRecord<AppCeruliaCoreCharacterSheetSchema.Main> | null> {
+	return getOptionalExactPinnedRecord<AppCeruliaCoreCharacterSheetSchema.Main>(
+		runtime,
+		schemaPin,
+		COLLECTIONS.characterSheetSchema,
+		label,
 	);
 }
 

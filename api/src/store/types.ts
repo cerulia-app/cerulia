@@ -1,3 +1,5 @@
+import { lexToJson } from "@atproto/lexicon";
+import { synthesizeRecordCid } from "../record-cid.js";
 import { buildAtUri } from "../refs.js";
 
 export interface BlobRefLike {
@@ -11,12 +13,14 @@ export interface RecordDraft<T> {
 	collection: string;
 	rkey: string;
 	value: T;
+	cid?: string;
 	createdAt: string;
 	updatedAt: string;
 }
 
 export interface StoredRecord<T> extends RecordDraft<T> {
 	uri: string;
+	cid: string;
 }
 
 export interface ScopeStateToken {
@@ -67,6 +71,7 @@ export interface RecordStore {
 	): Promise<StoredRecord<T>>;
 	deleteRecord(uri: string): Promise<void>;
 	getRecord<T>(uri: string): Promise<StoredRecord<T> | null>;
+	getPinnedRecord<T>(uri: string, cid: string): Promise<StoredRecord<T> | null>;
 	getScopeStateToken(
 		repoDid: string,
 		collections: string[],
@@ -77,6 +82,7 @@ export interface RecordStore {
 	): Promise<StoredRecord<T>[]>;
 	hasOwnedBlob(repoDid: string, blob: BlobRefLike): Promise<boolean>;
 	registerOwnedBlob(repoDid: string, blob: BlobRefLike): Promise<void>;
+	rememberPinnedRecord<T>(record: StoredRecord<T>): Promise<void>;
 	applyWrites?(
 		writes: RecordWrite[],
 		options: ApplyWritesOptions,
@@ -88,14 +94,16 @@ export type AtomicRecordStore = RecordStore & {
 };
 
 export function toStoredRecord<T>(draft: RecordDraft<T>): StoredRecord<T> {
+	const cid = draft.cid ?? synthesizeRecordCid(draft.value);
 	return {
 		...draft,
+		cid,
 		uri: buildAtUri(draft.repoDid, draft.collection, draft.rkey),
 	};
 }
 
 export function storedRecordValueJson(value: unknown) {
-	return JSON.stringify(value);
+	return JSON.stringify(lexToJson(value as never));
 }
 
 export function storedRecordMatchesExpected(

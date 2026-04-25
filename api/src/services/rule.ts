@@ -16,6 +16,7 @@ import { ApiError } from "../errors.js";
 import { parseAtUri } from "../refs.js";
 import { paginate } from "../pagination.js";
 import {
+	buildExactRecordPin,
 	areEquivalentRecordUris,
 	assertCredentialFreeUri,
 	createTypedRecord,
@@ -93,7 +94,7 @@ export function createRuleService(runtime: ServiceRuntime) {
 			return {
 				items: page.items.map((record) => ({
 					$type: "app.cerulia.dev.rule.listSheetSchemas#sheetSchemaListItem",
-					schemaRef: record.uri,
+					schemaPin: buildExactRecordPin(record),
 					baseRulesetNsid: record.value.baseRulesetNsid,
 					schemaVersion: record.value.schemaVersion,
 					title: record.value.title,
