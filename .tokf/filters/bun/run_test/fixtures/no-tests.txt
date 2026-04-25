@@ -1,0 +1,43 @@
+$ bun run --cwd=appview test:e2e:core -- --grep DOES_NOT_EXIST
+$ bun run scripts/e2e/run-suite.mjs core --grep DOES_NOT_EXIST
+cerulia-e2e:suite core
+cerulia-e2e:api:migrate:start
+$ bun run scripts/migrate-sqlite.mjs
+applied 0001_initial.sql
+applied 0002_known_repos.sql
+cerulia-e2e:api:migrate:done
+cerulia-api-e2e listening on http://127.0.0.1:8787
+cerulia-e2e:api:ready
+cerulia-e2e:appview:build:start
+$ vite build
+vite v8.0.9 building client environment for production...
+computing gzip size...
+.svelte-kit/output/client/_app/version.json 0.02 kB | gzip: 0.04 kB
+✓ built in 89ms
+Run npm run preview to preview your production build locally.
+cerulia-e2e:appview:build:done
+$ node build
+Listening on http://127.0.0.1:3000
+cerulia-e2e:appview:ready
+cerulia-e2e:playwright:start core
+Error: No tests found.
+Make sure that arguments are regular expressions matching test files.
+You may need to escape symbols like "$" or "*" and quote the arguments.
+
+appview exited with code 143
+api exited with code 143
+197 |           stderr: "inherit",
+198 |           stdin: "ignore",
+199 |   });
+200 |   const exitCode = await subprocess.exited;
+201 |   if (exitCode !== 0) {
+202 |           throw new Error(`${label} failed with exit code ${exitCode}`);
+                  ^
+error: playwright core failed with exit code 1
+      at runShortLivedProcess (D:\Develop\Data\2026\First_half\0401Cerulia\Cerulia\appview\scripts\e2e\run-suite.mjs:202:13)
+      at runSuite (D:\Develop\Data\2026\First_half\0401Cerulia\Cerulia\appview\scripts\e2e\run-suite.mjs:234:5)
+
+Bun v1.3.11 (Windows x64)
+error: script "test:e2e:core" exited with code 1
+error: script "test:e2e:core" exited with code 1
+cerulia-e2e:cleanup:done core

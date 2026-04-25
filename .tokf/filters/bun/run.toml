@@ -3,19 +3,153 @@ strip_ansi = true
 trim_lines = true
 
 skip = [
-  "^\\$ ",                              # bun run lifecycle: "$ command here"
-  "^error: script .+ exited with code", # bun failure footer (redundant with actual error output)
-  "^Loading svelte-check in workspace:", # svelte-check noise
-  "^Getting Svelte diagnostics",         # svelte-check noise
-  "^={3,}",                              # svelte-check separator lines
-  "^Unchanged files",                    # svelte-check cache hint
+  "^\\$ ",
+  "^error: script .+ exited with code",
+  "^Loading svelte-check in workspace:",
+  "^Getting Svelte diagnostics",
+  "^={3,}",
+  "^Unchanged files",
 ]
 
 collapse_empty_lines = true
 
-# Strip absolute path prefix from svelte-check diagnostics, keep src/... with line:col
+[lua_script]
+lang = "luau"
+source = '''
+if output:find("cerulia-e2e:suite ", 1, true) == nil then
+  return nil
+end
+
+local suite_name = nil
+local current_phase = nil
+local current_phase_lines = {}
+local last_setup_phase = nil
+local last_setup_lines = {}
+local playwright_lines = {}
+local inside_playwright = false
+
+local function normalized_phase(phase)
+  return phase:gsub(":start$", ""):gsub(":done$", "")
+end
+
+local function remember_setup_phase()
+  if inside_playwright then
+    return
+  end
+  if current_phase == nil then
+    return
+  end
+  if #current_phase_lines == 0 then
+    return
+  end
+  last_setup_phase = current_phase
+  last_setup_lines = current_phase_lines
+end
+
+for line in output:gmatch("[^\r\n]+") do
+  local phase, detail = line:match("^cerulia%-e2e:([^ ]+)%s*(.*)$")
+  if phase ~= nil then
+    if phase == "suite" then
+      suite_name = detail
+      current_phase = nil
+      current_phase_lines = {}
+      last_setup_phase = nil
+      last_setup_lines = {}
+      playwright_lines = {}
+      inside_playwright = false
+    else
+      if inside_playwright then
+        playwright_lines = current_phase_lines
+      elseif phase == "playwright:done" then
+        playwright_lines = current_phase_lines
+      else
+        remember_setup_phase()
+      end
+
+      current_phase = normalized_phase(phase)
+      current_phase_lines = {}
+      inside_playwright = phase == "playwright:start"
+    end
+  else
+    local skip_line = line == ""
+      or line:match("^applied %d+_.+%.sql$") ~= nil
+      or line:match("^cerulia%-.+%-e2e listening on http://") ~= nil
+      or line:match("^Listening on http://") ~= nil
+      or line == "✔ done"
+      or line == "✓ done"
+      or line == "appview exited with code 143"
+      or line == "api exited with code 143"
+      or line == "projection exited with code 143"
+      or line:match("^Bun v%S+ %(.+%)$") ~= nil
+      or line:match("^%d+ |") ~= nil
+      or line:match("^%^$") ~= nil
+      or line:match("^at runShortLivedProcess ") ~= nil
+      or line:match("^at runSuite ") ~= nil
+      or line:match("^at async runShortLivedProcess ") ~= nil
+      or line:match("^at async runSuite ") ~= nil
+      or (exit_code == 0 and inside_playwright and line:find("›", 1, true) ~= nil and line:match("%(%d+ms%)$") ~= nil)
+      or (exit_code == 0 and line:match("^[✔✓]%s+%d+") ~= nil)
+
+    if not skip_line then
+      local count, workers = line:match("^Running (%d+) tests? using (%d+) workers?.*")
+      if count ~= nil then
+        line = ("running: %s tests on %s worker(s)"):format(count, workers)
+      end
+
+      local passed, duration = line:match("^(%d+) passed %(([^)]+)%)$")
+      if passed ~= nil then
+        line = ("passed: %s (%s)"):format(passed, duration)
+      end
+
+      local total, files = line:match("^Total: (%d+) tests in (%d+) files$")
+      if total ~= nil then
+        line = ("listed: %s tests in %s files"):format(total, files)
+      end
+
+      local failed_phase, failed_exit_code = line:match("^error: ([%w:%- ]+) failed with exit code (%d+)$")
+      if failed_phase ~= nil then
+        line = ("%s failed (exit %s)"):format(failed_phase, failed_exit_code)
+      end
+
+      table.insert(current_phase_lines, line)
+    end
+  end
+end
+
+if inside_playwright and #current_phase_lines > 0 then
+  playwright_lines = current_phase_lines
+else
+  remember_setup_phase()
+end
+
+local result_lines = {}
+if suite_name ~= nil then
+  table.insert(result_lines, "suite: " .. suite_name)
+end
+
+if exit_code == 0 then
+  for _, line in ipairs(playwright_lines) do
+    table.insert(result_lines, line)
+  end
+else
+  local chosen_lines = playwright_lines
+  if #chosen_lines == 0 then
+    if last_setup_phase ~= nil then
+      table.insert(result_lines, "phase: " .. last_setup_phase)
+    end
+    chosen_lines = last_setup_lines
+  end
+
+  for _, line in ipairs(chosen_lines) do
+    table.insert(result_lines, line)
+  end
+end
+
+return table.concat(result_lines, "\n")
+'''
+
 [[replace]]
-pattern = '^.+[/\\\\](src[/\\\\].+:\\d+:\\d+)$'
+pattern = '^.+[/\\](src[/\\].+:\d+:\d+)$'
 output = "{1}"
 
 [on_success]

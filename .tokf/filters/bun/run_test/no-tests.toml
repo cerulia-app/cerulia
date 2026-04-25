@@ -1,0 +1,18 @@
+name = "no-tests failure keeps only diagnostic lines"
+fixture = "fixtures/no-tests.txt"
+exit_code = 1
+
+[[expect]]
+contains = "suite: core"
+
+[[expect]]
+contains = "Error: No tests found."
+
+[[expect]]
+contains = "playwright core failed (exit 1)"
+
+[[expect]]
+not_contains = "at runSuite"
+
+[[expect]]
+not_contains = ".svelte-kit/output"

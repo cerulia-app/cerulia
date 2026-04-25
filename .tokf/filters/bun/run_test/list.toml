@@ -1,0 +1,15 @@
+name = "list mode keeps only discovered test list"
+fixture = "fixtures/list.txt"
+exit_code = 0
+
+[[expect]]
+contains = "suite: core"
+
+[[expect]]
+contains = "Listing tests:"
+
+[[expect]]
+contains = "listed: 5 tests in 2 files"
+
+[[expect]]
+not_contains = "$ vite build"

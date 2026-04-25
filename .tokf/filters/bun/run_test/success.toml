@@ -1,0 +1,12 @@
+name = "successful core suite keeps only summary lines"
+fixture = "fixtures/success.txt"
+exit_code = 0
+
+[[expect]]
+equals = "suite: core\nrunning: 5 tests on 1 worker(s)\npassed: 5 (1.0s)"
+
+[[expect]]
+not_contains = ".svelte-kit/output"
+
+[[expect]]
+not_contains = "owner-home readiness"

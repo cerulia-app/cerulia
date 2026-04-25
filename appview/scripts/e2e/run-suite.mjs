@@ -14,6 +14,11 @@ import {
 const suiteArg = process.argv[2] ?? "core";
 const extraArgs = process.argv.slice(3);
 
+function emitE2ePhase(phase, detail = "") {
+	const suffix = detail === "" ? "" : ` ${detail}`;
+	console.log(`cerulia-e2e:${phase}${suffix}`);
+}
+
 if (suiteArg === "all") {
 	for (const suiteName of getSuiteNames()) {
 		await runSuite(getSuiteDefinition(suiteName), extraArgs);
@@ -24,6 +29,7 @@ if (suiteArg === "all") {
 await runSuite(getSuiteDefinition(suiteArg), extraArgs);
 
 async function runSuite(suite, extraPlaywrightArgs) {
+	emitE2ePhase("suite", suite.name);
 	await mkdir(localRuntimeDir, { recursive: true });
 	await cleanupSqliteFiles(suite.api.dbPath);
 	if (suite.projection) {
@@ -38,6 +44,7 @@ async function runSuite(suite, extraPlaywrightArgs) {
 		};
 
 		if (suite.projection) {
+			emitE2ePhase("projection:migrate:start");
 			await runShortLivedProcess(
 				"projection migrate",
 				[process.execPath, "run", "migrate"],
@@ -47,6 +54,7 @@ async function runSuite(suite, extraPlaywrightArgs) {
 					CERULIA_PROJECTION_DB: suite.projection.dbPath,
 				},
 			);
+			emitE2ePhase("projection:migrate:done");
 
 			const projectionEnv = {
 				...sharedEnv,
@@ -65,8 +73,10 @@ async function runSuite(suite, extraPlaywrightArgs) {
 			);
 			processes.push(projectionProcess);
 			await waitForUrl(`${suite.projection.url}/_health`);
+			emitE2ePhase("projection:ready");
 		}
 
+		emitE2ePhase("api:migrate:start");
 		await runShortLivedProcess(
 			"api migrate",
 			[process.execPath, "run", "migrate"],
@@ -76,6 +86,7 @@ async function runSuite(suite, extraPlaywrightArgs) {
 				CERULIA_API_DB: suite.api.dbPath,
 			},
 		);
+		emitE2ePhase("api:migrate:done");
 
 		const apiEnv = {
 			...sharedEnv,
@@ -112,7 +123,9 @@ async function runSuite(suite, extraPlaywrightArgs) {
 		);
 		processes.push(apiProcess);
 		await waitForUrl(`${suite.api.url}/_health`);
+		emitE2ePhase("api:ready");
 
+		emitE2ePhase("appview:build:start");
 		await runShortLivedProcess(
 			"appview build",
 			[process.execPath, "run", "build"],
@@ -125,6 +138,7 @@ async function runSuite(suite, extraPlaywrightArgs) {
 				ORIGIN: suite.appview.url,
 			},
 		);
+		emitE2ePhase("appview:build:done");
 
 		const appviewProcess = startLongRunningProcess(
 			"appview",
@@ -150,7 +164,9 @@ async function runSuite(suite, extraPlaywrightArgs) {
 		);
 		processes.push(appviewProcess);
 		await waitForUrl(suite.appview.url);
+		emitE2ePhase("appview:ready");
 
+		emitE2ePhase("playwright:start", suite.name);
 		await runShortLivedProcess(
 			`playwright ${suite.name}`,
 			[
@@ -166,8 +182,10 @@ async function runSuite(suite, extraPlaywrightArgs) {
 			appviewDir,
 			sharedEnv,
 		);
+		emitE2ePhase("playwright:done", suite.name);
 	} finally {
 		await Promise.allSettled(processes.reverse().map(stopProcess));
+		emitE2ePhase("cleanup:done", suite.name);
 	}
 }
 
