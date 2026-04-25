@@ -1612,11 +1612,16 @@ export function createCharacterService(runtime: ServiceRuntime) {
 				advancements,
 				conversions,
 			);
-			const schema = await loadOptionalExactSchema(
-				runtime,
-				sheet.value.sheetSchemaPin,
-				"sheetSchemaPin",
-			);
+			let schema: Awaited<ReturnType<typeof loadOptionalExactSchema>> = null;
+			try {
+				schema = await loadOptionalExactSchema(
+					runtime,
+					sheet.value.sheetSchemaPin,
+					"sheetSchemaPin",
+				);
+			} catch {
+				schema = null;
+			}
 			const structuredStats = schema
 				? flattenStructuredStats(schema.value.fieldDefs, resolvedStats)
 				: undefined;

@@ -279,6 +279,26 @@ class FailingAtomicMemoryRecordStore extends SupportedMemoryRecordStore {
 	}
 }
 
+class FailingReadMemoryRecordStore extends SupportedMemoryRecordStore {
+	private readonly failingUris = new Set<string>();
+
+	failReadsFor(uri: string) {
+		this.failingUris.add(uri);
+	}
+
+	override async getRecord<T>(uri: string) {
+		if (this.failingUris.has(uri)) {
+			throw new ApiError(
+				"InternalError",
+				"Remote record resolution is temporarily unavailable",
+				503,
+			);
+		}
+
+		return super.getRecord<T>(uri);
+	}
+}
+
 function createTestApp<TStore extends ApiAppStore = SupportedMemoryRecordStore>(
 	store?: TStore,
 ) {
@@ -1480,6 +1500,59 @@ describe("createApiApp", () => {
 		expect(payload.sheetSummary.structuredStats).toBeUndefined();
 	});
 
+	test("keeps public branch detail readable when exact schema lookup is temporarily unavailable", async () => {
+		const schemaRef = `at://${DID}/${COLLECTIONS.characterSheetSchema}/schema-outage`;
+		const branchRef = `at://${DID}/${COLLECTIONS.characterBranch}/schema-outage`;
+		const sheetRef = `at://${DID}/${COLLECTIONS.characterSheet}/schema-outage`;
+		const store = new FailingReadMemoryRecordStore();
+		const { app } = createTestApp(store);
+
+		store.seedRecord(
+			sheetRef,
+			{
+				$type: COLLECTIONS.characterSheet,
+				displayName: "Schema Outage Investigator",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				sheetSchemaPin: await exactPinForUri(undefined, schemaRef),
+				stats: { power: 3 },
+				version: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.seedRecord(
+			branchRef,
+			{
+				$type: COLLECTIONS.characterBranch,
+				sheetRef,
+				branchKind: "main",
+				branchLabel: "Schema Outage Branch",
+				visibility: "public",
+				revision: 1,
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.failReadsFor(schemaRef);
+
+		const response = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.character.getBranchView?characterBranchRef=${encodeURIComponent(branchRef)}`,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.sheetSummary.displayName).toBe(
+			"Schema Outage Investigator",
+		);
+		expect(payload.sheetSummary.structuredStats).toBeUndefined();
+	});
+
 	test("keeps branch view available for owners when the current head sheet is missing", async () => {
 		const { app, store } = createTestApp();
 		const readerHeaders = authHeaders(DID, [AUTH_SCOPES.reader]);
@@ -1683,6 +1756,42 @@ describe("createApiApp", () => {
 		expect(response.status).toBe(200);
 		const payload = await response.json();
 		expect(payload.scenarioSummary.title).toBe("Browse Only Scenario");
+		expect(payload.scenarioSummary.hasRecommendedSheetSchema).toBe(false);
+	});
+
+	test("treats temporarily unavailable recommended schema pins as browse-only in scenario detail", async () => {
+		const schemaRef = `at://${DID}/${COLLECTIONS.characterSheetSchema}/browse-only-outage`;
+		const scenarioRef = `at://${DID}/${COLLECTIONS.scenario}/browse-only-outage`;
+		const store = new FailingReadMemoryRecordStore();
+		const { app } = createTestApp(store);
+
+		store.seedRecord(
+			scenarioRef,
+			{
+				$type: COLLECTIONS.scenario,
+				title: "Browse Only Outage Scenario",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				recommendedSheetSchemaPin: await exactPinForUri(undefined, schemaRef),
+				sourceCitationUri: "https://example.com/scenario/browse-only-outage",
+				summary: "Temporary schema failures must not break browse detail.",
+				ownerDid: DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			"2026-04-22T00:00:00.000Z",
+			"2026-04-22T00:00:00.000Z",
+		);
+		store.failReadsFor(schemaRef);
+
+		const response = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.getView?scenarioRef=${encodeURIComponent(scenarioRef)}`,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.scenarioSummary.title).toBe(
+			"Browse Only Outage Scenario",
+		);
 		expect(payload.scenarioSummary.hasRecommendedSheetSchema).toBe(false);
 	});
 
