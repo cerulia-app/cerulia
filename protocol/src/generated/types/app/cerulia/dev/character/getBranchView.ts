@@ -85,7 +85,7 @@ export interface SheetSummary {
   sheetRef: string
   displayName: string
   rulesetNsid: string
-  /** Schema-backed public stats only. Omitted when sheetSchemaRef is absent. */
+  /** Schema-backed public stats only. Omitted when sheetSchemaPin is absent. */
   structuredStats?: StatEntry[]
   portraitBlob?: BlobRef
   profileSummary?: string

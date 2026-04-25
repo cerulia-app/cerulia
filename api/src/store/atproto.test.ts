@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Agent } from "@atproto/api";
 import { COLLECTIONS } from "../constants.js";
+import { ApiError } from "../errors.js";
 import { buildAtUri, parseAtUri } from "../refs.js";
 import { AtprotoMirrorRecordStore } from "./atproto.js";
 import { MemoryRecordStore } from "./memory.js";
@@ -887,6 +888,38 @@ describe("AtprotoMirrorRecordStore", () => {
 			"Cached Fallback",
 		);
 		expect(await store.listRecords(COLLECTIONS.scenario, DID)).toHaveLength(1);
+	});
+
+	test("surfaces temporary public-read failures when the cache is cold", async () => {
+		const cache = new MemoryRecordStore();
+		const uri = buildAtUri(DID, COLLECTIONS.scenario, "cold-cache-failure");
+		const failingAgent = {
+			com: {
+				atproto: {
+					repo: {
+						async getRecord() {
+							const error = new Error("upstream unavailable");
+							(error as Error & { status?: number }).status = 503;
+							throw error;
+						},
+					},
+				},
+			},
+		} as unknown as Agent;
+
+		const store = new AtprotoMirrorRecordStore(cache, {
+			async getAgent() {
+				return null;
+			},
+			async getPublicAgent(repoDid) {
+				return repoDid === DID ? failingAgent : null;
+			},
+		});
+
+		await expect(store.getRecord(uri)).rejects.toMatchObject({
+			code: "InternalError",
+			status: 503,
+		});
 	});
 
 	test("drops cached public lists when the remote repo confirms not found", async () => {

@@ -889,7 +889,7 @@ export const schemaDict = {
               ref: 'lex:app.cerulia.dev.character.getBranchView#statEntry',
             },
             description:
-              'Schema-backed public stats only. Omitted when sheetSchemaRef is absent.',
+              'Schema-backed public stats only. Omitted when sheetSchemaPin is absent.',
           },
           portraitBlob: {
             type: 'blob',

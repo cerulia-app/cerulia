@@ -3,6 +3,8 @@ import {
 	lexicons,
 	toCurrentCeruliaNsid,
 	type AppCeruliaCoreCharacterBranch,
+	type AppCeruliaCoreCharacterConversion,
+	type AppCeruliaCoreCharacterSheet,
 	type AppCeruliaCoreScenario,
 	type AppCeruliaCoreSession,
 } from "@cerulia/protocol";
@@ -1136,6 +1138,11 @@ describe("createApiApp", () => {
 		const createSheetAck = await createSheetResponse.json();
 		expectAccepted(createSheetAck);
 		const [sheetRef, branchRef] = createSheetAck.emittedRecordRefs;
+		const createdSheetRecord =
+			await store.getRecord<AppCeruliaCoreCharacterSheet.Main>(sheetRef);
+		expect(createdSheetRecord?.value.sheetSchemaPin).toEqual(
+			await exactPinForApp(app, schemaRef),
+		);
 
 		const sessionCreateResponse = await postJson(
 			app,
@@ -1339,6 +1346,32 @@ describe("createApiApp", () => {
 		expect(updatedBranchRef).toBe(branchRef);
 		expect(convertedSheetRef).toContain(COLLECTIONS.characterSheet);
 		expect(conversionRef).toContain(COLLECTIONS.characterConversion);
+		const convertedSheetRecord =
+			await store.getRecord<AppCeruliaCoreCharacterSheet.Main>(convertedSheetRef);
+		const conversionRecord =
+			await store.getRecord<AppCeruliaCoreCharacterConversion.Main>(
+				conversionRef,
+			);
+		expect(conversionRecord?.value.sourceSheetPin).toEqual({
+			uri: sheetRef,
+			cid: createdSheetRecord!.cid,
+		});
+		expect(conversionRecord?.value.targetSheetPin).toEqual({
+			uri: convertedSheetRef,
+			cid: convertedSheetRecord!.cid,
+		});
+		expect(
+			await store.getPinnedRecord(
+				conversionRecord!.value.sourceSheetPin.uri,
+				conversionRecord!.value.sourceSheetPin.cid,
+			),
+		).not.toBeNull();
+		expect(
+			await store.getPinnedRecord(
+				conversionRecord!.value.targetSheetPin.uri,
+				conversionRecord!.value.targetSheetPin.cid,
+			),
+		).not.toBeNull();
 
 		const convertedBranchViewResponse = await getJson(
 			app,

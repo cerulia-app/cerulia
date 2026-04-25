@@ -1,4 +1,5 @@
 import { Agent } from "@atproto/api";
+import { ApiError } from "../errors.js";
 import { buildAtUri, parseAtUri } from "../refs.js";
 import type {
 	ApplyWritesOptions,
@@ -46,6 +47,14 @@ function isNotFoundError(error: unknown): boolean {
 	return (
 		(error as { status?: number }).status === 404 ||
 		error.name === "RecordNotFoundError"
+	);
+}
+
+function createRemoteReadUnavailableError() {
+	return new ApiError(
+		"InternalError",
+		"Remote record resolution is temporarily unavailable",
+		503,
 	);
 }
 
@@ -392,11 +401,21 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 					throw error;
 				}
 
-				return this.cache.getRecord<T>(uri);
+				const cached = await this.cache.getRecord<T>(uri);
+				if (cached) {
+					return cached;
+				}
+
+				throw createRemoteReadUnavailableError();
 			}
 		}
 
-		return this.cache.getRecord<T>(uri);
+		const cached = await this.cache.getRecord<T>(uri);
+		if (cached) {
+			return cached;
+		}
+
+		throw createRemoteReadUnavailableError();
 	}
 
 	async listRecords<T>(

@@ -113,7 +113,7 @@
 				"structuredStats": {
 					"type": "array",
 					"items": { "type": "ref", "ref": "#statEntry" },
-					"description": "Schema-backed public stats only. Omitted when sheetSchemaRef is absent."
+					"description": "Schema-backed public stats only. Omitted when sheetSchemaPin is absent."
 				},
 				"portraitBlob": { "type": "blob" },
 				"profileSummary": { "type": "string", "maxLength": 3000 }
