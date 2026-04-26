@@ -35,7 +35,11 @@ function isRfc3339Datetime(value: unknown): value is string {
 		return false;
 	}
 	// RFC3339 with timezone offset or Z and optional fractional seconds.
-	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
+	if (
+		!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
+			value,
+		)
+	) {
 		return false;
 	}
 	return !Number.isNaN(Date.parse(value));
@@ -249,13 +253,23 @@ function validateCreateSheetSchemaInput(value: unknown): string | null {
 		return "createSheetSchema input must be an object";
 	}
 
-	if (typeof value.baseRulesetNsid !== "string" || !isValidNsid(value.baseRulesetNsid)) {
+	if (
+		typeof value.baseRulesetNsid !== "string" ||
+		!isValidNsid(value.baseRulesetNsid)
+	) {
 		return "baseRulesetNsid must be a valid nsid";
 	}
-	if (typeof value.schemaVersion !== "string" || value.schemaVersion.length === 0) {
+	if (
+		typeof value.schemaVersion !== "string" ||
+		value.schemaVersion.length === 0
+	) {
 		return "schemaVersion must be a non-empty string";
 	}
-	if (typeof value.title !== "string" || value.title.length === 0 || value.title.length > 640) {
+	if (
+		typeof value.title !== "string" ||
+		value.title.length === 0 ||
+		value.title.length > 640
+	) {
 		return "title must be a non-empty string with maxLength 640";
 	}
 	if (!Array.isArray(value.fieldDefs)) {
@@ -285,7 +299,10 @@ function validateSessionCreateInput(value: unknown): string | null {
 	if (value.scenarioRef !== undefined && !isAtUri(value.scenarioRef)) {
 		return "scenarioRef must be an at-uri";
 	}
-	if (value.characterBranchRef !== undefined && !isAtUri(value.characterBranchRef)) {
+	if (
+		value.characterBranchRef !== undefined &&
+		!isAtUri(value.characterBranchRef)
+	) {
 		return "characterBranchRef must be an at-uri";
 	}
 	if (value.campaignRef !== undefined && !isAtUri(value.campaignRef)) {
@@ -321,7 +338,10 @@ function validateSessionUpdateInput(value: unknown): string | null {
 	if (value.scenarioRef !== undefined && !isAtUri(value.scenarioRef)) {
 		return "scenarioRef must be an at-uri";
 	}
-	if (value.characterBranchRef !== undefined && !isAtUri(value.characterBranchRef)) {
+	if (
+		value.characterBranchRef !== undefined &&
+		!isAtUri(value.characterBranchRef)
+	) {
 		return "characterBranchRef must be an at-uri";
 	}
 	if (value.campaignRef !== undefined && !isAtUri(value.campaignRef)) {

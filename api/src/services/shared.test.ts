@@ -8,7 +8,13 @@ import type { ServiceRuntime } from "./runtime.js";
 
 const DID = "did:plc:alice";
 
-function createScenarioRecord(): StoredRecord<{ $type: string; title: string; ownerDid: string; createdAt: string; updatedAt: string }> {
+function createScenarioRecord(): StoredRecord<{
+	$type: string;
+	title: string;
+	ownerDid: string;
+	createdAt: string;
+	updatedAt: string;
+}> {
 	return {
 		uri: `at://${DID}/${COLLECTIONS.scenario}/current-scenario`,
 		repoDid: DID,
@@ -118,12 +124,7 @@ describe("getOptionalExactPinnedRecord", () => {
 			ownerDid: string;
 			createdAt: string;
 			updatedAt: string;
-		}>(
-			createRuntime(store),
-			stalePin,
-			COLLECTIONS.scenario,
-			"scenarioPin",
-		);
+		}>(createRuntime(store), stalePin, COLLECTIONS.scenario, "scenarioPin");
 
 		expect(record?.cid).toBe(stalePin.cid);
 		expect(record?.value.title).toBe("Initial Scenario");

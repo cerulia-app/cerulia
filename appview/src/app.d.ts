@@ -5,12 +5,10 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			appLocale: SupportedLocale;
-			ceruliaViewerAuth:
-				| {
-						did: string;
-						scopes: string[];
-				  }
-				| null;
+			ceruliaViewerAuth: {
+				did: string;
+				scopes: string[];
+			} | null;
 			htmlLang: string;
 			textDirection: TextDirection;
 		}

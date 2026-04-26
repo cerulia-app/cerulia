@@ -9,7 +9,10 @@ import {
 	type AppCeruliaCoreSession,
 } from "@cerulia/protocol";
 import { createApiApp, type ApiAppStore } from "./app.js";
-import { resolveHeaderAuthContext, resolveInternalServiceAuthContext } from "./auth.js";
+import {
+	resolveHeaderAuthContext,
+	resolveInternalServiceAuthContext,
+} from "./auth.js";
 import {
 	AUTH_SCOPES,
 	COLLECTIONS,
@@ -353,7 +356,10 @@ async function exactPinForUri(
 	};
 }
 
-async function exactPinForApp(app: ReturnType<typeof createApiApp>, uri: string) {
+async function exactPinForApp(
+	app: ReturnType<typeof createApiApp>,
+	uri: string,
+) {
 	return exactPinForUri(
 		(app as ReturnType<typeof createApiApp> & { __store?: AtomicRecordStore })
 			.__store,
@@ -648,12 +654,15 @@ describe("createApiApp", () => {
 
 	test("maps header reader auth to reader access", async () => {
 		const auth = resolveHeaderAuthContext(
-			new Request("https://cerulia.example.com/xrpc/app.cerulia.dev.character.getHome", {
-				headers: {
-					"x-cerulia-did": DID,
-					"x-cerulia-scopes": "app.cerulia.dev.authCoreReader",
+			new Request(
+				"https://cerulia.example.com/xrpc/app.cerulia.dev.character.getHome",
+				{
+					headers: {
+						"x-cerulia-did": DID,
+						"x-cerulia-scopes": "app.cerulia.dev.authCoreReader",
+					},
 				},
-			}),
+			),
 		);
 
 		expect(auth.callerDid).toBe(DID);
@@ -689,7 +698,9 @@ describe("createApiApp", () => {
 				{
 					headers: {
 						"x-cerulia-did": DID,
-						"x-cerulia-scopes": [AUTH_SCOPES.reader, AUTH_SCOPES.writer].join(","),
+						"x-cerulia-scopes": [AUTH_SCOPES.reader, AUTH_SCOPES.writer].join(
+							",",
+						),
 					},
 				},
 			),
@@ -1066,7 +1077,9 @@ describe("createApiApp", () => {
 		const createSessionAck = await createSessionResponse.json();
 		expectAccepted(createSessionAck);
 		const [sessionRef] = createSessionAck.emittedRecordRefs;
-		const sheetRecord = await store.getRecord(createSheetAck.emittedRecordRefs[0]);
+		const sheetRecord = await store.getRecord(
+			createSheetAck.emittedRecordRefs[0],
+		);
 		expect(sheetRecord).not.toBeNull();
 
 		store.seedRecord(
@@ -1391,7 +1404,9 @@ describe("createApiApp", () => {
 		expect(convertedSheetRef).toContain(COLLECTIONS.characterSheet);
 		expect(conversionRef).toContain(COLLECTIONS.characterConversion);
 		const convertedSheetRecord =
-			await store.getRecord<AppCeruliaCoreCharacterSheet.Main>(convertedSheetRef);
+			await store.getRecord<AppCeruliaCoreCharacterSheet.Main>(
+				convertedSheetRef,
+			);
 		const conversionRecord =
 			await store.getRecord<AppCeruliaCoreCharacterConversion.Main>(
 				conversionRef,
@@ -1571,9 +1586,7 @@ describe("createApiApp", () => {
 		);
 		expect(response.status).toBe(200);
 		const payload = await response.json();
-		expect(payload.sheetSummary.displayName).toBe(
-			"Schema Outage Investigator",
-		);
+		expect(payload.sheetSummary.displayName).toBe("Schema Outage Investigator");
 		expect(payload.sheetSummary.structuredStats).toBeUndefined();
 	});
 
@@ -1813,9 +1826,7 @@ describe("createApiApp", () => {
 		);
 		expect(response.status).toBe(200);
 		const payload = await response.json();
-		expect(payload.scenarioSummary.title).toBe(
-			"Browse Only Outage Scenario",
-		);
+		expect(payload.scenarioSummary.title).toBe("Browse Only Outage Scenario");
 		expect(payload.scenarioSummary.hasRecommendedSheetSchema).toBe(false);
 	});
 

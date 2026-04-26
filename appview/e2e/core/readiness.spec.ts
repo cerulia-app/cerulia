@@ -1,22 +1,25 @@
 import { expect, test } from "@playwright/test";
-import {
-	seedCharacterHomeFixture,
-	setAppviewViewer,
-} from "../fixtures";
+import { seedCharacterHomeFixture, setAppviewViewer } from "../fixtures";
 import { readRequiredEnv } from "../support";
 
 const apiBaseUrl = readRequiredEnv("CERULIA_E2E_API_BASE_URL");
 const appviewBaseUrl = readRequiredEnv("CERULIA_E2E_APPVIEW_BASE_URL");
 
-test("AppView owner-home readiness route rejects anonymous access", async ({ request }) => {
-	const response = await request.get(`${appviewBaseUrl}/__e2e__/readiness/owner-home`);
+test("AppView owner-home readiness route rejects anonymous access", async ({
+	request,
+}) => {
+	const response = await request.get(
+		`${appviewBaseUrl}/__e2e__/readiness/owner-home`,
+	);
 	expect(response.status()).toBe(401);
 	await expect(response.json()).resolves.toMatchObject({
 		error: "Unauthorized",
 	});
 });
 
-test("AppView owner-home readiness route resolves owner data through the server layer", async ({ page }) => {
+test("AppView owner-home readiness route resolves owner data through the server layer", async ({
+	page,
+}) => {
 	const fixture = await seedCharacterHomeFixture({
 		apiBaseUrl,
 		displayName: "AppView Harness Character",

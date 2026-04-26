@@ -19,7 +19,9 @@ export class AtomicSqlRecordStore
 		writes: RecordWrite[],
 		options: ApplyWritesOptions,
 	): Promise<void> {
-		const collections = [...new Set(writes.map((write) => write.draft.collection))];
+		const collections = [
+			...new Set(writes.map((write) => write.draft.collection)),
+		];
 		const currentScopeState = await super.getScopeStateToken(
 			options.expectedScopeState.repoDid,
 			collections,

@@ -1,246 +1,246 @@
 /**
  * GENERATED CODE - DO NOT MODIFY
  */
-import { HeadersMap, XRPCError } from '@atproto/xrpc'
-import { type ValidationResult, BlobRef } from '@atproto/lexicon'
-import { CID } from 'multiformats/cid'
-import { validate as _validate } from '../../../../../lexicons'
+import { HeadersMap, XRPCError } from "@atproto/xrpc";
+import { type ValidationResult, BlobRef } from "@atproto/lexicon";
+import { CID } from "multiformats/cid";
+import { validate as _validate } from "../../../../../lexicons";
 import {
-  type $Typed,
-  is$typed as _is$typed,
-  type OmitKey,
-} from '../../../../../util'
-import type * as AppCeruliaDevCoreCharacterBranch from '../core/characterBranch.js'
-import type * as AppCeruliaDevCoreCharacterSheet from '../core/characterSheet.js'
-import type * as AppCeruliaDevCoreCharacterAdvancement from '../core/characterAdvancement.js'
-import type * as AppCeruliaDevCoreCharacterConversion from '../core/characterConversion.js'
+	type $Typed,
+	is$typed as _is$typed,
+	type OmitKey,
+} from "../../../../../util";
+import type * as AppCeruliaDevCoreCharacterBranch from "../core/characterBranch.js";
+import type * as AppCeruliaDevCoreCharacterSheet from "../core/characterSheet.js";
+import type * as AppCeruliaDevCoreCharacterAdvancement from "../core/characterAdvancement.js";
+import type * as AppCeruliaDevCoreCharacterConversion from "../core/characterConversion.js";
 
 const is$typed = _is$typed,
-  validate = _validate
-const id = 'app.cerulia.dev.character.getBranchView'
+	validate = _validate;
+const id = "app.cerulia.dev.character.getBranchView";
 
 export type QueryParams = {
-  characterBranchRef: string
-}
-export type InputSchema = undefined
+	characterBranchRef: string;
+};
+export type InputSchema = undefined;
 
 export interface OutputSchema {
-  branch?: AppCeruliaDevCoreCharacterBranch.Main
-  sheet?: AppCeruliaDevCoreCharacterSheet.Main
-  /** Full advancement records. Present in owner mode only. */
-  advancements?: AppCeruliaDevCoreCharacterAdvancement.Main[]
-  /** Full conversion records. Present in owner mode only. */
-  conversions?: AppCeruliaDevCoreCharacterConversion.Main[]
-  /** Session list items. Present in owner mode only. */
-  recentSessions?: SessionListItem[]
-  branchSummary?: BranchSummary
-  sheetSummary?: SheetSummary
-  /** Public-safe session summaries. Present in public/anonymous mode only. */
-  recentSessionSummaries?: SessionSummary[]
-  /** Public-safe advancement summaries. Present in public/anonymous mode only. */
-  advancementSummaries?: AdvancementSummary[]
-  /** Public-safe conversion summaries. Present in public/anonymous mode only. */
-  conversionSummaries?: ConversionSummary[]
+	branch?: AppCeruliaDevCoreCharacterBranch.Main;
+	sheet?: AppCeruliaDevCoreCharacterSheet.Main;
+	/** Full advancement records. Present in owner mode only. */
+	advancements?: AppCeruliaDevCoreCharacterAdvancement.Main[];
+	/** Full conversion records. Present in owner mode only. */
+	conversions?: AppCeruliaDevCoreCharacterConversion.Main[];
+	/** Session list items. Present in owner mode only. */
+	recentSessions?: SessionListItem[];
+	branchSummary?: BranchSummary;
+	sheetSummary?: SheetSummary;
+	/** Public-safe session summaries. Present in public/anonymous mode only. */
+	recentSessionSummaries?: SessionSummary[];
+	/** Public-safe advancement summaries. Present in public/anonymous mode only. */
+	advancementSummaries?: AdvancementSummary[];
+	/** Public-safe conversion summaries. Present in public/anonymous mode only. */
+	conversionSummaries?: ConversionSummary[];
 }
 
 export interface CallOptions {
-  signal?: AbortSignal
-  headers?: HeadersMap
+	signal?: AbortSignal;
+	headers?: HeadersMap;
 }
 
 export interface Response {
-  success: boolean
-  headers: HeadersMap
-  data: OutputSchema
+	success: boolean;
+	headers: HeadersMap;
+	data: OutputSchema;
 }
 
 export function toKnownErr(e: any) {
-  return e
+	return e;
 }
 
 /** Public-safe branch display fields. Excludes owner-only linkage. */
 export interface BranchSummary {
-  $type?: 'app.cerulia.dev.character.getBranchView#branchSummary'
-  branchRef: string
-  branchLabel: string
-  branchKind: 'main' | 'campaign-fork' | 'local-override' | (string & {})
-  visibility: 'draft' | 'public' | (string & {})
-  revision: number
-  updatedAt?: string
+	$type?: "app.cerulia.dev.character.getBranchView#branchSummary";
+	branchRef: string;
+	branchLabel: string;
+	branchKind: "main" | "campaign-fork" | "local-override" | (string & {});
+	visibility: "draft" | "public" | (string & {});
+	revision: number;
+	updatedAt?: string;
 }
 
-const hashBranchSummary = 'branchSummary'
+const hashBranchSummary = "branchSummary";
 
 export function isBranchSummary<V>(v: V) {
-  return is$typed(v, id, hashBranchSummary)
+	return is$typed(v, id, hashBranchSummary);
 }
 
 export function validateBranchSummary<V>(v: V) {
-  return validate<BranchSummary & V>(v, id, hashBranchSummary)
+	return validate<BranchSummary & V>(v, id, hashBranchSummary);
 }
 
 /** Public-safe sheet display fields. */
 export interface SheetSummary {
-  $type?: 'app.cerulia.dev.character.getBranchView#sheetSummary'
-  sheetRef: string
-  displayName: string
-  rulesetNsid: string
-  /** Schema-backed public stats only. Omitted when sheetSchemaPin is absent. */
-  structuredStats?: StatEntry[]
-  portraitBlob?: BlobRef
-  profileSummary?: string
+	$type?: "app.cerulia.dev.character.getBranchView#sheetSummary";
+	sheetRef: string;
+	displayName: string;
+	rulesetNsid: string;
+	/** Schema-backed public stats only. Omitted when sheetSchemaPin is absent. */
+	structuredStats?: StatEntry[];
+	portraitBlob?: BlobRef;
+	profileSummary?: string;
 }
 
-const hashSheetSummary = 'sheetSummary'
+const hashSheetSummary = "sheetSummary";
 
 export function isSheetSummary<V>(v: V) {
-  return is$typed(v, id, hashSheetSummary)
+	return is$typed(v, id, hashSheetSummary);
 }
 
 export function validateSheetSummary<V>(v: V) {
-  return validate<SheetSummary & V>(v, id, hashSheetSummary)
+	return validate<SheetSummary & V>(v, id, hashSheetSummary);
 }
 
 /** Public-safe session summary. Excludes note and characterBranchRef. */
 export interface SessionSummary {
-  $type?: 'app.cerulia.dev.character.getBranchView#sessionSummary'
-  sessionRef: string
-  role: 'pl' | 'gm' | (string & {})
-  playedAt: string
-  scenarioLabel?: string
-  hoLabel?: string
-  hoSummary?: string
-  outcomeSummary?: string
-  externalArchiveUris?: string[]
+	$type?: "app.cerulia.dev.character.getBranchView#sessionSummary";
+	sessionRef: string;
+	role: "pl" | "gm" | (string & {});
+	playedAt: string;
+	scenarioLabel?: string;
+	hoLabel?: string;
+	hoSummary?: string;
+	outcomeSummary?: string;
+	externalArchiveUris?: string[];
 }
 
-const hashSessionSummary = 'sessionSummary'
+const hashSessionSummary = "sessionSummary";
 
 export function isSessionSummary<V>(v: V) {
-  return is$typed(v, id, hashSessionSummary)
+	return is$typed(v, id, hashSessionSummary);
 }
 
 export function validateSessionSummary<V>(v: V) {
-  return validate<SessionSummary & V>(v, id, hashSessionSummary)
+	return validate<SessionSummary & V>(v, id, hashSessionSummary);
 }
 
 /** Public-safe advancement summary. Excludes deltaPayload and previousValues. */
 export interface AdvancementSummary {
-  $type?: 'app.cerulia.dev.character.getBranchView#advancementSummary'
-  advancementRef: string
-  advancementKind:
-    | 'xp-spend'
-    | 'milestone'
-    | 'retrain'
-    | 'respec'
-    | 'correction'
-    | (string & {})
-  effectiveAt: string
-  sessionSummary?: AdvancementSessionSummary
+	$type?: "app.cerulia.dev.character.getBranchView#advancementSummary";
+	advancementRef: string;
+	advancementKind:
+		| "xp-spend"
+		| "milestone"
+		| "retrain"
+		| "respec"
+		| "correction"
+		| (string & {});
+	effectiveAt: string;
+	sessionSummary?: AdvancementSessionSummary;
 }
 
-const hashAdvancementSummary = 'advancementSummary'
+const hashAdvancementSummary = "advancementSummary";
 
 export function isAdvancementSummary<V>(v: V) {
-  return is$typed(v, id, hashAdvancementSummary)
+	return is$typed(v, id, hashAdvancementSummary);
 }
 
 export function validateAdvancementSummary<V>(v: V) {
-  return validate<AdvancementSummary & V>(v, id, hashAdvancementSummary)
+	return validate<AdvancementSummary & V>(v, id, hashAdvancementSummary);
 }
 
 /** Public-safe conversion provenance. Excludes version pins. */
 export interface ConversionSummary {
-  $type?: 'app.cerulia.dev.character.getBranchView#conversionSummary'
-  sourceRulesetNsid: string
-  targetRulesetNsid: string
-  convertedAt: string
+	$type?: "app.cerulia.dev.character.getBranchView#conversionSummary";
+	sourceRulesetNsid: string;
+	targetRulesetNsid: string;
+	convertedAt: string;
 }
 
-const hashConversionSummary = 'conversionSummary'
+const hashConversionSummary = "conversionSummary";
 
 export function isConversionSummary<V>(v: V) {
-  return is$typed(v, id, hashConversionSummary)
+	return is$typed(v, id, hashConversionSummary);
 }
 
 export function validateConversionSummary<V>(v: V) {
-  return validate<ConversionSummary & V>(v, id, hashConversionSummary)
+	return validate<ConversionSummary & V>(v, id, hashConversionSummary);
 }
 
 export interface SessionListItem {
-  $type?: 'app.cerulia.dev.character.getBranchView#sessionListItem'
-  sessionRef: string
-  role: 'pl' | 'gm' | (string & {})
-  playedAt: string
-  scenarioLabel?: string
-  visibility: 'draft' | 'public' | (string & {})
+	$type?: "app.cerulia.dev.character.getBranchView#sessionListItem";
+	sessionRef: string;
+	role: "pl" | "gm" | (string & {});
+	playedAt: string;
+	scenarioLabel?: string;
+	visibility: "draft" | "public" | (string & {});
 }
 
-const hashSessionListItem = 'sessionListItem'
+const hashSessionListItem = "sessionListItem";
 
 export function isSessionListItem<V>(v: V) {
-  return is$typed(v, id, hashSessionListItem)
+	return is$typed(v, id, hashSessionListItem);
 }
 
 export function validateSessionListItem<V>(v: V) {
-  return validate<SessionListItem & V>(v, id, hashSessionListItem)
+	return validate<SessionListItem & V>(v, id, hashSessionListItem);
 }
 
 export interface AdvancementSessionSummary {
-  $type?: 'app.cerulia.dev.character.getBranchView#advancementSessionSummary'
-  sessionRef: string
-  role: 'pl' | 'gm' | (string & {})
-  playedAt: string
-  scenarioLabel?: string
+	$type?: "app.cerulia.dev.character.getBranchView#advancementSessionSummary";
+	sessionRef: string;
+	role: "pl" | "gm" | (string & {});
+	playedAt: string;
+	scenarioLabel?: string;
 }
 
-const hashAdvancementSessionSummary = 'advancementSessionSummary'
+const hashAdvancementSessionSummary = "advancementSessionSummary";
 
 export function isAdvancementSessionSummary<V>(v: V) {
-  return is$typed(v, id, hashAdvancementSessionSummary)
+	return is$typed(v, id, hashAdvancementSessionSummary);
 }
 
 export function validateAdvancementSessionSummary<V>(v: V) {
-  return validate<AdvancementSessionSummary & V>(
-    v,
-    id,
-    hashAdvancementSessionSummary,
-  )
+	return validate<AdvancementSessionSummary & V>(
+		v,
+		id,
+		hashAdvancementSessionSummary,
+	);
 }
 
 export interface StatEntry {
-  $type?: 'app.cerulia.dev.character.getBranchView#statEntry'
-  fieldId: string
-  label?: string
-  value: StatValue
+	$type?: "app.cerulia.dev.character.getBranchView#statEntry";
+	fieldId: string;
+	label?: string;
+	value: StatValue;
 }
 
-const hashStatEntry = 'statEntry'
+const hashStatEntry = "statEntry";
 
 export function isStatEntry<V>(v: V) {
-  return is$typed(v, id, hashStatEntry)
+	return is$typed(v, id, hashStatEntry);
 }
 
 export function validateStatEntry<V>(v: V) {
-  return validate<StatEntry & V>(v, id, hashStatEntry)
+	return validate<StatEntry & V>(v, id, hashStatEntry);
 }
 
 /** Bounded public stat value shape. */
 export interface StatValue {
-  $type?: 'app.cerulia.dev.character.getBranchView#statValue'
-  valueKind: 'integer' | 'string' | 'boolean' | 'enum' | (string & {})
-  numberValue?: number
-  textValue?: string
-  boolValue?: boolean
-  enumValue?: string
+	$type?: "app.cerulia.dev.character.getBranchView#statValue";
+	valueKind: "integer" | "string" | "boolean" | "enum" | (string & {});
+	numberValue?: number;
+	textValue?: string;
+	boolValue?: boolean;
+	enumValue?: string;
 }
 
-const hashStatValue = 'statValue'
+const hashStatValue = "statValue";
 
 export function isStatValue<V>(v: V) {
-  return is$typed(v, id, hashStatValue)
+	return is$typed(v, id, hashStatValue);
 }
 
 export function validateStatValue<V>(v: V) {
-  return validate<StatValue & V>(v, id, hashStatValue)
+	return validate<StatValue & V>(v, id, hashStatValue);
 }

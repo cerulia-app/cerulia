@@ -38,10 +38,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 		});
 		mirrored = true;
 		sessionId = (
-			await runtime.commitBrowserSession(
-				result.did,
-				result.grantedScope,
-			)
+			await runtime.commitBrowserSession(result.did, result.grantedScope)
 		).sessionId;
 	} catch (error) {
 		const compensationErrors: unknown[] = [];

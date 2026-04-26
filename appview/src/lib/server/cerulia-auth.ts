@@ -17,10 +17,12 @@ export interface CeruliaViewerAuth {
 }
 
 function parseScopes(rawScopes: string | undefined) {
-	return rawScopes
-		?.split(",")
-		.map((scope) => scope.trim())
-		.filter((scope) => scope.length > 0) ?? [];
+	return (
+		rawScopes
+			?.split(",")
+			.map((scope) => scope.trim())
+			.filter((scope) => scope.length > 0) ?? []
+	);
 }
 
 export function deriveCeruliaAuthScopes(grantedScope: string) {

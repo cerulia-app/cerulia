@@ -1,13 +1,13 @@
 import { defineConfig } from "@playwright/test";
 
-const env = (
-	globalThis as typeof globalThis & {
-		process?: { env?: Record<string, string | undefined> };
-	}
-).process?.env ?? {};
+const env =
+	(
+		globalThis as typeof globalThis & {
+			process?: { env?: Record<string, string | undefined> };
+		}
+	).process?.env ?? {};
 
-const baseURL =
-	env.CERULIA_E2E_APPVIEW_BASE_URL ?? "http://127.0.0.1:3000";
+const baseURL = env.CERULIA_E2E_APPVIEW_BASE_URL ?? "http://127.0.0.1:3000";
 
 export default defineConfig({
 	testDir: ".",

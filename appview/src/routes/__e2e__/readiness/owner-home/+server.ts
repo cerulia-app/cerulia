@@ -4,5 +4,9 @@ import type { RequestHandler } from "./$types";
 
 export const GET: RequestHandler = async (event) => {
 	requireCeruliaE2eMode();
-	return proxyCeruliaJson(event, "api", "/xrpc/app.cerulia.dev.character.getHome");
+	return proxyCeruliaJson(
+		event,
+		"api",
+		"/xrpc/app.cerulia.dev.character.getHome",
+	);
 };

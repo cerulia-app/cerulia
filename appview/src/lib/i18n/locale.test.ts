@@ -75,6 +75,8 @@ describe("resolveLocalePathname", () => {
 
 describe("selectTranslatedText", () => {
 	it("falls back to Japanese when a translation is missing", () => {
-		expect(selectTranslatedText({ ja: "こんにちは", en: "Hello" }, "zh")).toBe("こんにちは");
+		expect(selectTranslatedText({ ja: "こんにちは", en: "Hello" }, "zh")).toBe(
+			"こんにちは",
+		);
 	});
 });

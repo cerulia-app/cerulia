@@ -150,10 +150,8 @@ async function runSuite(suite, extraPlaywrightArgs) {
 				HOST: suite.appview.host,
 				PORT: `${suite.appview.port}`,
 				ORIGIN: suite.appview.url,
-				CERULIA_APPVIEW_PUBLIC_BASE_URL:
-					suite.appview.publicBaseUrl ?? "",
-				CERULIA_OAUTH_PRIVATE_JWK:
-					suite.appview.privateJwkJson ?? "",
+				CERULIA_APPVIEW_PUBLIC_BASE_URL: suite.appview.publicBaseUrl ?? "",
+				CERULIA_OAUTH_PRIVATE_JWK: suite.appview.privateJwkJson ?? "",
 				CERULIA_APPVIEW_INTERNAL_AUTH_SECRET:
 					suite.appview.internalAuthSecret ?? "",
 				CERULIA_APPVIEW_AUTH_DB: resolve(

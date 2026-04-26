@@ -16,7 +16,7 @@ const meta = $derived(
 			en: "A foundation page that demonstrates path-based locale routing, inline translations, and locale-aware metadata.",
 			zh: "用于演示基于路径的语言路由、内联翻译 API 与语言感知 metadata 的基础页面。",
 		},
-	})
+	}),
 );
 
 const pillars = [

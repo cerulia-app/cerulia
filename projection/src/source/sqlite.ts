@@ -44,19 +44,19 @@ export class SqliteCanonicalRecordSource implements CanonicalRecordSource {
 	): Promise<StoredRecord<T>[]> {
 		const rows = repoDid
 			? await this.driver.all<RecordRow>(
-				`SELECT repo_did, collection, rkey, value_json, created_at, updated_at
+					`SELECT repo_did, collection, rkey, value_json, created_at, updated_at
 				 FROM records
 				 WHERE collection = ? AND repo_did = ?
 				 ORDER BY updated_at DESC, created_at DESC, repo_did ASC, rkey ASC`,
-				[collection, repoDid],
-			)
+					[collection, repoDid],
+				)
 			: await this.driver.all<RecordRow>(
-				`SELECT repo_did, collection, rkey, value_json, created_at, updated_at
+					`SELECT repo_did, collection, rkey, value_json, created_at, updated_at
 				 FROM records
 				 WHERE collection = ?
 				 ORDER BY updated_at DESC, created_at DESC, repo_did ASC, rkey ASC`,
-				[collection],
-			);
+					[collection],
+				);
 
 		return rows.map((row) => fromRow<T>(row));
 	}

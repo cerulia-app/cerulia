@@ -106,7 +106,9 @@ export async function getRecordByUriAlias<T>(
 	return null;
 }
 
-export function buildExactRecordPin(record: StoredRecord<unknown>): ExactRecordPinLike {
+export function buildExactRecordPin(
+	record: StoredRecord<unknown>,
+): ExactRecordPinLike {
 	return {
 		uri: record.uri,
 		cid: record.cid,

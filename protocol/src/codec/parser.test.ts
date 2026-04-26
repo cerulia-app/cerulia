@@ -299,11 +299,18 @@ describe("codec parser/validator", () => {
 			createdAt: "2026-04-18T00:00:00.000Z",
 			authoring: {
 				creationRules: [
-					{ ruleId: "r1", kind: "dice", targetFieldIds: ["str"], dice: { expression: "3d6" } },
+					{
+						ruleId: "r1",
+						kind: "dice",
+						targetFieldIds: ["str"],
+						dice: { expression: "3d6" },
+					},
 					{ ruleId: "r1", kind: "derived", targetFieldIds: ["hp"] },
 				],
 			},
-			fieldDefs: [{ fieldId: "str", label: "STR", fieldType: "integer", required: true }],
+			fieldDefs: [
+				{ fieldId: "str", label: "STR", fieldType: "integer", required: true },
+			],
 		};
 
 		const result = validateById(
@@ -333,7 +340,9 @@ describe("codec parser/validator", () => {
 					},
 				],
 			},
-			fieldDefs: [{ fieldId: "hp", label: "HP", fieldType: "integer", required: true }],
+			fieldDefs: [
+				{ fieldId: "hp", label: "HP", fieldType: "integer", required: true },
+			],
 		};
 
 		const result = validateById(
@@ -393,9 +402,13 @@ describe("codec parser/validator", () => {
 			ownerDid: "did:plc:exampleownerdid1234567890",
 			createdAt: "2026-04-18T00:00:00.000Z",
 			authoring: {
-				creationRules: [{ ruleId: "r1", kind: "dice", targetFieldIds: ["str"] }],
+				creationRules: [
+					{ ruleId: "r1", kind: "dice", targetFieldIds: ["str"] },
+				],
 			},
-			fieldDefs: [{ fieldId: "str", label: "STR", fieldType: "integer", required: true }],
+			fieldDefs: [
+				{ fieldId: "str", label: "STR", fieldType: "integer", required: true },
+			],
 		};
 
 		const result = validateById(
@@ -472,7 +485,9 @@ describe("codec parser/validator", () => {
 		const input = {
 			schemaVersion: "1.0.0",
 			title: "Missing baseRulesetNsid",
-			fieldDefs: [{ fieldId: "str", label: "STR", fieldType: "integer", required: true }],
+			fieldDefs: [
+				{ fieldId: "str", label: "STR", fieldType: "integer", required: true },
+			],
 		};
 
 		const result = validateById(
@@ -628,7 +643,12 @@ describe("codec parser/validator", () => {
 	});
 
 	test("validateById rejects session.update empty object (missing sessionRef)", () => {
-		const result = validateById({}, "app.cerulia.session.update", "main", false);
+		const result = validateById(
+			{},
+			"app.cerulia.session.update",
+			"main",
+			false,
+		);
 		expect(result.success).toBe(false);
 	});
 

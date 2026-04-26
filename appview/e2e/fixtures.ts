@@ -1,4 +1,9 @@
-import { expect, request, type APIRequestContext, type Page } from "@playwright/test";
+import {
+	expect,
+	request,
+	type APIRequestContext,
+	type Page,
+} from "@playwright/test";
 import {
 	CERULIA_E2E_DID_COOKIE_NAME,
 	CERULIA_E2E_READER_SCOPE,

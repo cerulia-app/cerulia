@@ -65,14 +65,17 @@ export class I18nRuntime {
 		};
 	}
 
-	t = (translations: TranslatedText): string => selectTranslatedText(translations, this.locale);
+	t = (translations: TranslatedText): string =>
+		selectTranslatedText(translations, this.locale);
 
 	path = (pathname: string, locale: SupportedLocale = this.locale): string =>
 		localizePathname(pathname, locale);
 
-	switchLocale = (locale: SupportedLocale): string => this.path(this.contentPathname, locale);
+	switchLocale = (locale: SupportedLocale): string =>
+		this.path(this.contentPathname, locale);
 
-	meta = (definition: LocalizedMetaDefinition) => buildLocalizedMeta(this.snapshot, definition);
+	meta = (definition: LocalizedMetaDefinition) =>
+		buildLocalizedMeta(this.snapshot, definition);
 }
 
 export function useI18n(): I18nRuntime {

@@ -37,7 +37,9 @@ async function requestMirror(
 		headers,
 	});
 	if (!response.ok) {
-		throw new Error(`API OAuth mirror request failed with status ${response.status}`);
+		throw new Error(
+			`API OAuth mirror request failed with status ${response.status}`,
+		);
 	}
 	return response;
 }

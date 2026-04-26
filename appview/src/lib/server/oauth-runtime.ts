@@ -149,7 +149,10 @@ async function createRuntime(): Promise<CeruliaOauthRuntime> {
 		},
 		async beginLogin(identifier: string, returnTo: string) {
 			if (isCeruliaE2eMode()) {
-				const callbackUrl = new URL("/oauth/callback", "https://appview.e2e.local");
+				const callbackUrl = new URL(
+					"/oauth/callback",
+					"https://appview.e2e.local",
+				);
 				callbackUrl.searchParams.set("e2eDid", "did:plc:e2e-oauth");
 				callbackUrl.searchParams.set(
 					"e2eGrantedScope",
@@ -182,7 +185,9 @@ async function createRuntime(): Promise<CeruliaOauthRuntime> {
 			const grantedScope = extractGrantedScope(session);
 			const savedSession = await localStores.sessionStore.get(session.did);
 			if (!savedSession) {
-				throw new Error("OAuth session store did not persist the callback result");
+				throw new Error(
+					"OAuth session store did not persist the callback result",
+				);
 			}
 
 			return {
@@ -193,10 +198,11 @@ async function createRuntime(): Promise<CeruliaOauthRuntime> {
 			};
 		},
 		async commitBrowserSession(did: string, grantedScope: string) {
-			const browserSession = await localStores.browserSessionStore.createBrowserSession(
-				did,
-				grantedScope,
-			);
+			const browserSession =
+				await localStores.browserSessionStore.createBrowserSession(
+					did,
+					grantedScope,
+				);
 			return { sessionId: browserSession.sessionId };
 		},
 		async rollbackLogin(did: string) {
@@ -222,17 +228,17 @@ async function createRuntime(): Promise<CeruliaOauthRuntime> {
 			}
 		},
 		getBrowserSession(sessionId: string) {
-			return localStores.browserSessionStore.getBrowserSession(sessionId).then(
-				(binding) =>
+			return localStores.browserSessionStore
+				.getBrowserSession(sessionId)
+				.then((binding) =>
 					binding
 						? { did: binding.did, grantedScope: binding.grantedScope }
 						: null,
-			);
+				);
 		},
 		async getLogoutSnapshot(sessionId: string) {
-			const binding = await localStores.browserSessionStore.getBrowserSession(
-				sessionId,
-			);
+			const binding =
+				await localStores.browserSessionStore.getBrowserSession(sessionId);
 			if (!binding) {
 				return null;
 			}

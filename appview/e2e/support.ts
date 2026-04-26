@@ -1,10 +1,16 @@
-import { expect, request, type APIRequestContext, type Page } from "@playwright/test";
+import {
+	expect,
+	request,
+	type APIRequestContext,
+	type Page,
+} from "@playwright/test";
 
-const env = (
-	globalThis as typeof globalThis & {
-		process?: { env?: Record<string, string | undefined> };
-	}
-).process?.env ?? {};
+const env =
+	(
+		globalThis as typeof globalThis & {
+			process?: { env?: Record<string, string | undefined> };
+		}
+	).process?.env ?? {};
 
 export function readRequiredEnv(name: string): string {
 	const value = env[name];
@@ -22,7 +28,9 @@ export async function expectAppviewRoot(page: Page) {
 	await expect(page.locator("main")).toHaveCount(1);
 }
 
-export async function createApiContext(baseURL: string): Promise<APIRequestContext> {
+export async function createApiContext(
+	baseURL: string,
+): Promise<APIRequestContext> {
 	return request.newContext({
 		baseURL,
 		extraHTTPHeaders: {
@@ -31,7 +39,10 @@ export async function createApiContext(baseURL: string): Promise<APIRequestConte
 	});
 }
 
-export async function waitFor(asyncCheck: () => Promise<boolean>, timeoutMs = 5_000) {
+export async function waitFor(
+	asyncCheck: () => Promise<boolean>,
+	timeoutMs = 5_000,
+) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
 		if (await asyncCheck()) {

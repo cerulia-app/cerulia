@@ -3,10 +3,7 @@ import { createIdentityResolver } from "@atproto-labs/identity-resolver";
 import { getPdsEndpoint, isValidDidDoc } from "@atproto/common-web";
 import { Agent } from "@atproto/api";
 import { isPubliclyRoutableIpLiteral, parseIpLiteral } from "@cerulia/protocol";
-import {
-	OAuthClient,
-	requestLocalLock,
-} from "@atproto/oauth-client";
+import { OAuthClient, requestLocalLock } from "@atproto/oauth-client";
 import { JoseKey } from "@atproto/jwk-jose";
 import { WebcryptoKey } from "@atproto/jwk-webcrypto";
 import { NodeOAuthClient } from "@atproto/oauth-client-node";
@@ -215,8 +212,8 @@ function createPublicAgentLookup(
 	return async (repoDid: string) => {
 		const didDoc = resolveDidDoc
 			? await resolveDidDoc(repoDid).catch(() => null)
-			: (await identityResolver?.resolve(repoDid).catch(() => null))?.didDoc ??
-				null;
+			: ((await identityResolver?.resolve(repoDid).catch(() => null))?.didDoc ??
+				null);
 		if (!didDoc || !isValidDidDoc(didDoc)) {
 			return null;
 		}

@@ -4,7 +4,9 @@ import { buildLocalizedMeta, createRouteI18nState } from "./meta";
 
 describe("createRouteI18nState", () => {
 	it("builds a locale-aware route state from the current URL", () => {
-		const state = createRouteI18nState(new URL("https://app.cerulia.example.com/en/characters"));
+		const state = createRouteI18nState(
+			new URL("https://app.cerulia.example.com/en/characters"),
+		);
 
 		expect(state).toMatchObject({
 			locale: "en",
@@ -42,7 +44,9 @@ describe("createRouteI18nState", () => {
 
 describe("buildLocalizedMeta", () => {
 	it("derives canonical and alternate metadata from the same route state", () => {
-		const route = createRouteI18nState(new URL("https://app.cerulia.example.com/zh/characters"));
+		const route = createRouteI18nState(
+			new URL("https://app.cerulia.example.com/zh/characters"),
+		);
 		const meta = buildLocalizedMeta(route, {
 			title: {
 				ja: "キャラクター",

@@ -23,7 +23,10 @@ function hasMirroredSession(did: string) {
 
 export const GET: RequestHandler = async (event) => {
 	requireCeruliaE2eMode();
-	const did = event.url.searchParams.get("did") ?? event.locals.ceruliaViewerAuth?.did ?? E2E_DID;
+	const did =
+		event.url.searchParams.get("did") ??
+		event.locals.ceruliaViewerAuth?.did ??
+		E2E_DID;
 	return json({
 		did: event.locals.ceruliaViewerAuth?.did ?? null,
 		scopes: event.locals.ceruliaViewerAuth?.scopes ?? [],

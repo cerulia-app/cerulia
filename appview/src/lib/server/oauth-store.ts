@@ -99,7 +99,7 @@ class SqliteJsonStore<T> {
 	async clear(): Promise<void> {
 		this.db.prepare(`DELETE FROM ${this.tableName}`).run();
 	}
-	}
+}
 
 class SqliteOauthStateStore implements SavedOauthStateStore {
 	private readonly store: SqliteJsonStore<SavedOauthState>;
@@ -208,7 +208,7 @@ class SqliteBrowserSessionStore implements BrowserSessionStore {
 			.prepare(`DELETE FROM browser_sessions WHERE session_id = ?`)
 			.run(sessionId);
 	}
-	}
+}
 
 function ensureAuthTables(db: DatabaseSync) {
 	db.exec(`

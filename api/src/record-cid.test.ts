@@ -11,7 +11,10 @@ function createTestCid() {
 	const cidClass = CID as unknown as {
 		createV1(code: number, digest: unknown): CID;
 	};
-	return cidClass.createV1(0x55, createDigest(0x12, new Uint8Array(32).fill(7)));
+	return cidClass.createV1(
+		0x55,
+		createDigest(0x12, new Uint8Array(32).fill(7)),
+	);
 }
 
 describe("synthesizeRecordCid", () => {

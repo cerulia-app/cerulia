@@ -39,10 +39,7 @@ import type { AtomicRecordStore, RecordStore } from "./store/types.js";
 import { jsonXrpcOutput } from "./xrpc-output.js";
 
 export interface ApiInternalOauthSessionFeature {
-	upsertSession(
-		did: string,
-		session: Record<string, unknown>,
-	): Promise<void>;
+	upsertSession(did: string, session: Record<string, unknown>): Promise<void>;
 	deleteSession(did: string): Promise<void>;
 }
 async function readJsonBody<T>(

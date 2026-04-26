@@ -5,7 +5,11 @@ import { ApiError } from "../errors.js";
 import { buildAtUri, parseAtUri } from "../refs.js";
 import { AtprotoMirrorRecordStore } from "./atproto.js";
 import { MemoryRecordStore } from "./memory.js";
-import { toStoredRecord, type RecordStore, type StoredRecord } from "./types.js";
+import {
+	toStoredRecord,
+	type RecordStore,
+	type StoredRecord,
+} from "./types.js";
 
 const DID = "did:plc:alice";
 
@@ -549,12 +553,12 @@ describe("AtprotoMirrorRecordStore", () => {
 			storedRecordFromUri(
 				unrelatedUri,
 				{
-				$type: COLLECTIONS.scenario,
-				title: "Unrelated",
-				ownerDid: DID,
-				createdAt: "2026-04-21T03:00:00.000Z",
-				updatedAt: "2026-04-21T03:00:00.000Z",
-			},
+					$type: COLLECTIONS.scenario,
+					title: "Unrelated",
+					ownerDid: DID,
+					createdAt: "2026-04-21T03:00:00.000Z",
+					updatedAt: "2026-04-21T03:00:00.000Z",
+				},
 				"2026-04-21T03:00:00.000Z",
 				"2026-04-21T03:00:00.000Z",
 				"cid-unrelated-write",
@@ -618,11 +622,11 @@ describe("AtprotoMirrorRecordStore", () => {
 			storedRecordFromUri(
 				unrelatedUri,
 				{
-				$type: COLLECTIONS.house,
-				title: "Unrelated House",
-				createdAt: "2026-04-21T01:00:00.000Z",
-				updatedAt: "2026-04-21T01:00:00.000Z",
-			},
+					$type: COLLECTIONS.house,
+					title: "Unrelated House",
+					createdAt: "2026-04-21T01:00:00.000Z",
+					updatedAt: "2026-04-21T01:00:00.000Z",
+				},
 				"2026-04-21T01:00:00.000Z",
 				"2026-04-21T01:00:00.000Z",
 				"cid-unrelated-update",
@@ -708,12 +712,12 @@ describe("AtprotoMirrorRecordStore", () => {
 			storedRecordFromUri(
 				remoteUri,
 				{
-				$type: COLLECTIONS.scenario,
-				title: "Remote Scenario",
-				ownerDid: DID,
-				createdAt: "2026-04-21T01:00:00.000Z",
-				updatedAt: "2026-04-21T01:00:00.000Z",
-			},
+					$type: COLLECTIONS.scenario,
+					title: "Remote Scenario",
+					ownerDid: DID,
+					createdAt: "2026-04-21T01:00:00.000Z",
+					updatedAt: "2026-04-21T01:00:00.000Z",
+				},
 				"2026-04-21T01:00:00.000Z",
 				"2026-04-21T01:00:00.000Z",
 				"cid-remote-item",
@@ -752,12 +756,12 @@ describe("AtprotoMirrorRecordStore", () => {
 			storedRecordFromUri(
 				publicUri,
 				{
-				$type: COLLECTIONS.scenario,
-				title: "Public Scenario",
-				ownerDid: DID,
-				createdAt: "2026-04-21T01:30:00.000Z",
-				updatedAt: "2026-04-21T01:30:00.000Z",
-			},
+					$type: COLLECTIONS.scenario,
+					title: "Public Scenario",
+					ownerDid: DID,
+					createdAt: "2026-04-21T01:30:00.000Z",
+					updatedAt: "2026-04-21T01:30:00.000Z",
+				},
 				"2026-04-21T01:30:00.000Z",
 				"2026-04-21T01:30:00.000Z",
 				"cid-public-item",
@@ -861,12 +865,12 @@ describe("AtprotoMirrorRecordStore", () => {
 			storedRecordFromUri(
 				uri,
 				{
-				$type: COLLECTIONS.scenario,
-				title: "Remote Scenario",
-				ownerDid: DID,
-				createdAt: "2026-04-21T01:45:00.000Z",
-				updatedAt: "2026-04-21T02:15:00.000Z",
-			},
+					$type: COLLECTIONS.scenario,
+					title: "Remote Scenario",
+					ownerDid: DID,
+					createdAt: "2026-04-21T01:45:00.000Z",
+					updatedAt: "2026-04-21T02:15:00.000Z",
+				},
 				"2026-04-21T01:45:00.000Z",
 				"2026-04-21T02:15:00.000Z",
 				"cid-recovering-item",
@@ -1177,12 +1181,12 @@ describe("AtprotoMirrorRecordStore", () => {
 			storedRecordFromUri(
 				firstUri,
 				{
-				$type: COLLECTIONS.scenario,
-				title: "Fresh First",
-				ownerDid: DID,
-				createdAt: "2026-04-21T05:00:00.000Z",
-				updatedAt: "2026-04-21T05:00:00.000Z",
-			},
+					$type: COLLECTIONS.scenario,
+					title: "Fresh First",
+					ownerDid: DID,
+					createdAt: "2026-04-21T05:00:00.000Z",
+					updatedAt: "2026-04-21T05:00:00.000Z",
+				},
 				"2026-04-21T05:00:00.000Z",
 				"2026-04-21T05:00:00.000Z",
 				"cid-fresh-first",
@@ -1193,12 +1197,12 @@ describe("AtprotoMirrorRecordStore", () => {
 			storedRecordFromUri(
 				secondUri,
 				{
-				$type: COLLECTIONS.scenario,
-				title: "Fresh Second",
-				ownerDid: secondDid,
-				createdAt: "2026-04-21T06:00:00.000Z",
-				updatedAt: "2026-04-21T06:00:00.000Z",
-			},
+					$type: COLLECTIONS.scenario,
+					title: "Fresh Second",
+					ownerDid: secondDid,
+					createdAt: "2026-04-21T06:00:00.000Z",
+					updatedAt: "2026-04-21T06:00:00.000Z",
+				},
 				"2026-04-21T06:00:00.000Z",
 				"2026-04-21T06:00:00.000Z",
 				"cid-fresh-second",

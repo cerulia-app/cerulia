@@ -140,7 +140,10 @@ export class MemoryRecordStore implements RecordStore {
 		return (record as StoredRecord<T> | undefined) ?? null;
 	}
 
-	async getPinnedRecord<T>(uri: string, cid: string): Promise<StoredRecord<T> | null> {
+	async getPinnedRecord<T>(
+		uri: string,
+		cid: string,
+	): Promise<StoredRecord<T> | null> {
 		const record = this.pinnedRecords.get(`${uri}:${cid}`);
 		return (record as StoredRecord<T> | undefined) ?? null;
 	}

@@ -10,10 +10,9 @@ function createCidFromBytes(bytes: Uint8Array): string {
 	const cidClass = CID as unknown as {
 		createV1(code: number, digest: unknown): { toString(): string };
 	};
-	return cidClass.createV1(
-		dagCborCode,
-		createDigest(0x12, new Uint8Array(digest)),
-	).toString();
+	return cidClass
+		.createV1(dagCborCode, createDigest(0x12, new Uint8Array(digest)))
+		.toString();
 }
 
 export function synthesizeRecordCid(value: unknown): string {

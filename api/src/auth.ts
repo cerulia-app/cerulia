@@ -28,7 +28,9 @@ export function createAnonymousAuthContext(): AuthContext {
 
 export function resolveHeaderAuthContext(request: Request): AuthContext {
 	const callerDid = request.headers.get(DID_HEADER) ?? undefined;
-	const scopes = new Set(readCanonicalScopes(request.headers.get(SCOPE_HEADER)));
+	const scopes = new Set(
+		readCanonicalScopes(request.headers.get(SCOPE_HEADER)),
+	);
 
 	return {
 		callerDid,

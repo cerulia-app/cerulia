@@ -305,7 +305,10 @@ export class SqlRecordStore implements RecordStore {
 		return row ? this.hydrateRow<T>(row) : null;
 	}
 
-	async getPinnedRecord<T>(uri: string, cid: string): Promise<StoredRecord<T> | null> {
+	async getPinnedRecord<T>(
+		uri: string,
+		cid: string,
+	): Promise<StoredRecord<T> | null> {
 		const row = await this.driver.get<PinnedRecordRow>(
 			`SELECT uri, cid, value_json, created_at, updated_at
        FROM pinned_records

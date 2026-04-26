@@ -1,15 +1,25 @@
 import { expect, test } from "@playwright/test";
-import { createApiContext, expectAppviewRoot, readRequiredEnv } from "../support";
+import {
+	createApiContext,
+	expectAppviewRoot,
+	readRequiredEnv,
+} from "../support";
 
-const appviewPublicBaseUrl = readRequiredEnv("CERULIA_E2E_APPVIEW_PUBLIC_BASE_URL");
+const appviewPublicBaseUrl = readRequiredEnv(
+	"CERULIA_E2E_APPVIEW_PUBLIC_BASE_URL",
+);
 const appviewBaseUrl = readRequiredEnv("CERULIA_E2E_APPVIEW_BASE_URL");
 
-test("AppView built server returns the root page in OAuth suite", async ({ page }) => {
+test("AppView built server returns the root page in OAuth suite", async ({
+	page,
+}) => {
 	await expectAppviewRoot(page);
 });
 
 test("OAuth metadata routes are exposed from appview", async ({ request }) => {
-	const metadataResponse = await request.get(`${appviewBaseUrl}/client-metadata.json`);
+	const metadataResponse = await request.get(
+		`${appviewBaseUrl}/client-metadata.json`,
+	);
 	expect(metadataResponse.status()).toBe(200);
 	expect(await metadataResponse.json()).toMatchObject({
 		client_id: `${appviewPublicBaseUrl}/client-metadata.json`,
@@ -23,7 +33,9 @@ test("OAuth metadata routes are exposed from appview", async ({ request }) => {
 	expect(jwks.keys.length).toBeGreaterThan(0);
 });
 
-test("OAuth session route returns an anonymous session before login", async ({ request }) => {
+test("OAuth session route returns an anonymous session before login", async ({
+	request,
+}) => {
 	const sessionResponse = await request.get(`${appviewBaseUrl}/oauth/session`);
 	expect(sessionResponse.status()).toBe(200);
 	expect(await sessionResponse.json()).toEqual({
@@ -39,8 +51,9 @@ test("OAuth session route returns an anonymous session before login", async ({ r
 	});
 });
 
-
-test("OAuth login, callback, session restore, and logout work through the real routes", async ({ request }) => {
+test("OAuth login, callback, session restore, and logout work through the real routes", async ({
+	request,
+}) => {
 	const appview = await createApiContext(appviewBaseUrl);
 	try {
 		const loginResponse = await appview.get(

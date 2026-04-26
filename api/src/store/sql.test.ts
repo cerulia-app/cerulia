@@ -58,16 +58,15 @@ class StatefulSqlDriver implements SqlDriver {
 		if (sql.includes("FROM records")) {
 			const [repoDid, collection, rkey] = params as [string, string, string];
 			return (
-				(this.records.get(`${repoDid}:${collection}:${rkey}`) as T | undefined) ??
-				null
+				(this.records.get(`${repoDid}:${collection}:${rkey}`) as
+					| T
+					| undefined) ?? null
 			);
 		}
 
 		if (sql.includes("FROM pinned_records")) {
 			const [uri, cid] = params as [string, string];
-			return (
-				(this.pinnedRecords.get(`${uri}:${cid}`) as T | undefined) ?? null
-			);
+			return (this.pinnedRecords.get(`${uri}:${cid}`) as T | undefined) ?? null;
 		}
 
 		return null;
@@ -93,7 +92,10 @@ class StatefulSqlDriver implements SqlDriver {
 			return 1;
 		}
 
-		if (sql.includes("UPDATE records") && sql.includes("WHERE repo_did = ? AND collection = ? AND rkey = ?")) {
+		if (
+			sql.includes("UPDATE records") &&
+			sql.includes("WHERE repo_did = ? AND collection = ? AND rkey = ?")
+		) {
 			const [valueJson, cid, createdAt, updatedAt, repoDid, collection, rkey] =
 				params as [string, string, string, string, string, string, string];
 			this.records.set(`${repoDid}:${collection}:${rkey}`, {

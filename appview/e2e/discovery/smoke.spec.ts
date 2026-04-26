@@ -1,10 +1,16 @@
 // Temporary harness bootstrap check. Delete this file after AppView route behavior E2E exists.
 import { expect, test } from "@playwright/test";
-import { createApiContext, expectAppviewRoot, readRequiredEnv } from "../support";
+import {
+	createApiContext,
+	expectAppviewRoot,
+	readRequiredEnv,
+} from "../support";
 
 const projectionBaseUrl = readRequiredEnv("CERULIA_E2E_PROJECTION_BASE_URL");
 
-test("AppView built server returns the root page in Discovery suite", async ({ page }) => {
+test("AppView built server returns the root page in Discovery suite", async ({
+	page,
+}) => {
 	await expectAppviewRoot(page);
 });
 

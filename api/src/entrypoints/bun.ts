@@ -46,9 +46,9 @@ if (
 	Boolean(internalAuthSecret)
 ) {
 	if (!(publicBaseUrl && privateJwkJson && internalAuthSecret)) {
-	throw new Error(
-		"CERULIA_APPVIEW_PUBLIC_BASE_URL, CERULIA_OAUTH_PRIVATE_JWK, and CERULIA_APPVIEW_INTERNAL_AUTH_SECRET must be configured together",
-	);
+		throw new Error(
+			"CERULIA_APPVIEW_PUBLIC_BASE_URL, CERULIA_OAUTH_PRIVATE_JWK, and CERULIA_APPVIEW_INTERNAL_AUTH_SECRET must be configured together",
+		);
 	}
 }
 
@@ -119,14 +119,14 @@ const app = createApiApp({
 	internalOauthSessionFeature:
 		publicBaseUrl && privateJwkJson && internalAuthSecret
 			? {
-				async upsertSession(did, session) {
-					await oauthStores.sessionStore.set(did, session as never);
-					await oauthStores.knownRepoCatalog.rememberRepoDid(did);
-				},
-				deleteSession(did) {
-					return oauthStores.sessionStore.del(did);
-				},
-			}
+					async upsertSession(did, session) {
+						await oauthStores.sessionStore.set(did, session as never);
+						await oauthStores.knownRepoCatalog.rememberRepoDid(did);
+					},
+					deleteSession(did) {
+						return oauthStores.sessionStore.del(did);
+					},
+				}
 			: undefined,
 	projectionIngestFeature,
 });

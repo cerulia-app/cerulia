@@ -23,8 +23,16 @@ body::before {
 	inset: 0;
 	pointer-events: none;
 	background:
-		radial-gradient(circle at 20% 20%, rgba(97, 184, 255, 0.12), transparent 0 28%),
-		radial-gradient(circle at 80% 0%, rgba(255, 202, 119, 0.14), transparent 0 22%);
+		radial-gradient(
+			circle at 20% 20%,
+			rgba(97, 184, 255, 0.12),
+			transparent 0 28%
+		),
+		radial-gradient(
+			circle at 80% 0%,
+			rgba(255, 202, 119, 0.14),
+			transparent 0 22%
+		);
 	opacity: 0.8;
 	filter: blur(10px);
 	z-index: -1;

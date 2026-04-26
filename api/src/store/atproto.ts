@@ -68,7 +68,11 @@ function extractTimestamp(
 		: null;
 }
 
-function toStoredRecord<T>(uri: string, value: T, cid?: string): StoredRecord<T> {
+function toStoredRecord<T>(
+	uri: string,
+	value: T,
+	cid?: string,
+): StoredRecord<T> {
 	const parsed = parseAtUri(uri);
 	const timestampSource =
 		typeof value === "object" && value !== null
@@ -212,7 +216,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
 		);
 		await bestEffortCacheSync(
-			this.cache.createRecord({ ...draft, cid: record.cid }).then(() => undefined),
+			this.cache
+				.createRecord({ ...draft, cid: record.cid })
+				.then(() => undefined),
 		);
 		return record;
 	}
@@ -285,7 +291,9 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 			this.agents.rememberRepoDid?.(draft.repoDid) ?? Promise.resolve(),
 		);
 		await bestEffortCacheSync(
-			this.cache.updateRecord({ ...draft, cid: record.cid }).then(() => undefined),
+			this.cache
+				.updateRecord({ ...draft, cid: record.cid })
+				.then(() => undefined),
 		);
 		return record;
 	}
@@ -495,7 +503,10 @@ export class AtprotoMirrorRecordStore implements RecordStore {
 		return remoteRecords;
 	}
 
-	async getPinnedRecord<T>(uri: string, cid: string): Promise<StoredRecord<T> | null> {
+	async getPinnedRecord<T>(
+		uri: string,
+		cid: string,
+	): Promise<StoredRecord<T> | null> {
 		return this.cache.getPinnedRecord<T>(uri, cid);
 	}
 

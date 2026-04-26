@@ -1,6 +1,10 @@
 // Temporary harness bootstrap check. Delete this file after AppView route behavior E2E exists.
 import { expect, test } from "@playwright/test";
-import { createApiContext, expectAppviewRoot, readRequiredEnv } from "../support";
+import {
+	createApiContext,
+	expectAppviewRoot,
+	readRequiredEnv,
+} from "../support";
 
 const apiBaseUrl = readRequiredEnv("CERULIA_E2E_API_BASE_URL");
 

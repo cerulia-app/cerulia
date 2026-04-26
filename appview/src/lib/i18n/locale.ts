@@ -50,7 +50,9 @@ export const LOCALE_DEFINITIONS = {
 	},
 } as const satisfies Record<SupportedLocale, LocaleDefinition>;
 
-export function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
+export function isSupportedLocale(
+	value: string | null | undefined,
+): value is SupportedLocale {
 	return SUPPORTED_LOCALES.some((locale) => locale === value);
 }
 
@@ -72,7 +74,10 @@ export function normalizePathname(pathname: string): string {
 	return normalized;
 }
 
-export function localizePathname(pathname: string, locale: SupportedLocale): string {
+export function localizePathname(
+	pathname: string,
+	locale: SupportedLocale,
+): string {
 	const normalizedPathname = normalizePathname(pathname);
 	const prefix = getLocaleDefinition(locale).pathPrefix;
 

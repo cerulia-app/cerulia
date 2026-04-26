@@ -47,7 +47,10 @@ export interface LocalizedPageMeta {
 	alternateLinks: LocaleAlternateLink[];
 }
 
-function buildAlternateLinks(pathname: string, origin: string): LocaleAlternateLink[] {
+function buildAlternateLinks(
+	pathname: string,
+	origin: string,
+): LocaleAlternateLink[] {
 	return SUPPORTED_LOCALES.map((locale) => {
 		const definition = getLocaleDefinition(locale);
 		const localizedPathname = localizePathname(pathname, locale);
@@ -90,8 +93,14 @@ export function buildLocalizedMeta(
 	return {
 		title: selectTranslatedText(definition.title, route.locale),
 		description: selectTranslatedText(definition.description, route.locale),
-		canonicalUrl: new URL(localizePathname(contentPathname, route.locale), route.origin).toString(),
-		xDefaultUrl: new URL(localizePathname(contentPathname, DEFAULT_LOCALE), route.origin).toString(),
+		canonicalUrl: new URL(
+			localizePathname(contentPathname, route.locale),
+			route.origin,
+		).toString(),
+		xDefaultUrl: new URL(
+			localizePathname(contentPathname, DEFAULT_LOCALE),
+			route.origin,
+		).toString(),
 		ogLocale: localeDefinition.ogLocale,
 		ogAlternateLocales: alternateLinks
 			.filter((alternate) => alternate.locale !== route.locale)
