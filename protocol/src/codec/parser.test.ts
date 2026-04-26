@@ -407,6 +407,91 @@ describe("codec parser/validator", () => {
 		expect(result.success).toBe(false);
 	});
 
+	test("validateById rejects creationRules with unknown targetFieldIds", () => {
+		const invalidSchema = {
+			$type: "app.cerulia.core.characterSheetSchema",
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Unknown targetFieldIds schema",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			createdAt: "2026-04-18T00:00:00.000Z",
+			authoring: {
+				creationRules: [
+					{
+						ruleId: "r1",
+						kind: "dice",
+						targetFieldIds: ["unknown-field"],
+						dice: { expression: "3d6" },
+					},
+				],
+			},
+			fieldDefs: [
+				{ fieldId: "str", label: "STR", fieldType: "integer", required: true },
+			],
+		};
+
+		const result = validateById(
+			invalidSchema,
+			"app.cerulia.core.characterSheetSchema",
+			"main",
+			true,
+		);
+		expect(result.success).toBe(false);
+	});
+
+	test("validateById accepts createSheetSchema input with authoring", () => {
+		const input = {
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Create input with authoring",
+			authoring: {
+				creationRules: [
+					{
+						ruleId: "roll-abilities",
+						kind: "dice",
+						targetFieldIds: ["str"],
+						dice: { expression: "3d6" },
+					},
+				],
+			},
+			fieldDefs: [
+				{ fieldId: "str", label: "STR", fieldType: "integer", required: true },
+			],
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.rule.createSheetSchema",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(true);
+	});
+
+	test("validateById rejects createSheetSchema input with kind=dice and no dice payload", () => {
+		const input = {
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Invalid create input with authoring",
+			authoring: {
+				creationRules: [
+					{ ruleId: "r1", kind: "dice", targetFieldIds: ["str"] },
+				],
+			},
+			fieldDefs: [
+				{ fieldId: "str", label: "STR", fieldType: "integer", required: true },
+			],
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.rule.createSheetSchema",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(false);
+	});
+
 	test("validateById rejects invalid createSheetSchema input fieldDefs", () => {
 		const invalidInput = {
 			baseRulesetNsid: "app.cerulia.ruleset.coc7",
@@ -432,7 +517,7 @@ describe("codec parser/validator", () => {
 			invalidInput,
 			"app.cerulia.rule.createSheetSchema",
 			"main",
-			true,
+			false,
 		);
 
 		expect(result.success).toBe(false);
@@ -450,7 +535,7 @@ describe("codec parser/validator", () => {
 			invalidInput,
 			"app.cerulia.session.create",
 			"main",
-			true,
+			false,
 		);
 
 		expect(result.success).toBe(false);
@@ -467,7 +552,7 @@ describe("codec parser/validator", () => {
 			invalidInput,
 			"app.cerulia.session.create",
 			"main",
-			true,
+			false,
 		);
 
 		expect(result.success).toBe(false);
@@ -486,7 +571,7 @@ describe("codec parser/validator", () => {
 			invalidInput,
 			"app.cerulia.session.update",
 			"main",
-			true,
+			false,
 		);
 
 		expect(result.success).toBe(false);

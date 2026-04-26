@@ -354,7 +354,7 @@ archivedAt が設定された campaign に対して archivedAt 以外の mutable
 ### app.cerulia.dev.rule.createSheetSchema
 
 - auth: `app.cerulia.dev.authCoreWriter`
-- input: `baseRulesetNsid`, `schemaVersion`, `title`, `fieldDefs`
+- input: `baseRulesetNsid`, `schemaVersion`, `title`, `authoring?`, `fieldDefs`
 - output: `emittedRecordRefs = [characterSheetSchemaRef]`
 
 ### app.cerulia.dev.character.recordConversion

@@ -40,6 +40,10 @@ schema-backed character 作成のための **任意の authoring metadata**。ch
 
 - `kind = "dice"` のとき `dice` は必須（`dice.expression` を含む）
 
+#### targetFieldIds の参照整合規則（authoritative）
+
+`creationRule.targetFieldIds` は、同一 schema の `fieldDefs` に宣言されている `fieldId`（再帰構造の下位 field を含む）を参照しなければならない。未定義の `fieldId` を含む `targetFieldIds` は invalid として reject する。
+
 ### fieldDefs
 
 フィールド定義のリスト。再帰的な構造（グループ、配列）を許す。

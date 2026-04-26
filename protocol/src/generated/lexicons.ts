@@ -2971,6 +2971,10 @@ export const schemaDict = {
                 type: 'string',
                 maxLength: 640,
               },
+              authoring: {
+                type: 'ref',
+                ref: 'lex:app.cerulia.dev.core.characterSheetSchema#authoring',
+              },
               fieldDefs: {
                 type: 'array',
                 items: {

@@ -23,6 +23,7 @@ export interface InputSchema {
   baseRulesetNsid: string
   schemaVersion: string
   title: string
+  authoring?: AppCeruliaDevCoreCharacterSheetSchema.Authoring
   fieldDefs: AppCeruliaDevCoreCharacterSheetSchema.FieldDefRoot[]
 }
 

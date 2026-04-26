@@ -36,6 +36,40 @@ type CreationRuleLike = {
 	dependsOnRuleIds?: unknown;
 };
 
+function collectDeclaredFieldIds(fieldDefs: unknown): Set<string> | null {
+	if (!Array.isArray(fieldDefs)) {
+		return null;
+	}
+
+	const ids = new Set<string>();
+
+	function visit(node: unknown): void {
+		if (!isObject(node)) {
+			return;
+		}
+		const fieldId = node.fieldId;
+		if (typeof fieldId === "string" && fieldId.length > 0) {
+			ids.add(fieldId);
+		}
+		// Note: additionalFieldDef is a template, not a declared field instance.
+		const children = node.children;
+		if (Array.isArray(children)) {
+			for (const c of children) {
+				visit(c);
+			}
+		}
+		if (isObject(node.itemDef)) {
+			visit(node.itemDef);
+		}
+	}
+
+	for (const root of fieldDefs) {
+		visit(root);
+	}
+
+	return ids;
+}
+
 function validateCharacterSheetSchemaAuthoring(value: unknown): string | null {
 	if (!isObject(value)) {
 		return "characterSheetSchema record must be an object";
@@ -56,6 +90,8 @@ function validateCharacterSheetSchemaAuthoring(value: unknown): string | null {
 	if (!Array.isArray(creationRules)) {
 		return "authoring.creationRules must be an array";
 	}
+
+	const declaredFieldIds = collectDeclaredFieldIds(value.fieldDefs);
 
 	const ruleIds: string[] = [];
 	const ruleIdSet = new Set<string>();
@@ -82,6 +118,15 @@ function validateCharacterSheetSchemaAuthoring(value: unknown): string | null {
 
 		if (!Array.isArray(r.targetFieldIds) || r.targetFieldIds.length === 0) {
 			return `${path}.targetFieldIds must be a non-empty array`;
+		}
+		for (let j = 0; j < r.targetFieldIds.length; j += 1) {
+			const tid = r.targetFieldIds[j];
+			if (typeof tid !== "string" || tid.length === 0) {
+				return `${path}.targetFieldIds[${j}] must be a non-empty string`;
+			}
+			if (declaredFieldIds && !declaredFieldIds.has(tid)) {
+				return `${path}.targetFieldIds[${j}] references unknown fieldId: ${tid}`;
+			}
 		}
 
 		if (r.kind === "dice" && !isObject(r.dice)) {
@@ -396,9 +441,46 @@ export function validateById(
 ): ValidationResult {
 	const canonicalLexiconId = toCurrentCeruliaNsid(lexiconId);
 	const normalizedValue = normalizeValueForValidation(value, lexiconId);
-	const result = enforceLexiconType
-		? validate(normalizedValue, canonicalLexiconId, defId, true)
-		: validate(normalizedValue, canonicalLexiconId, defId);
+	// Procedure inputs are not validated by @atproto/lexicon at runtime. For a
+	// small set of procedure inputs with authoritative extra rules, run focused
+	// checks here so we can detect regressions without inventing a $type convention.
+	if (!enforceLexiconType && defId === "main") {
+		if (canonicalLexiconId === CREATE_SHEET_SCHEMA_ID) {
+			const authoringErr = validateCharacterSheetSchemaAuthoring(normalizedValue);
+			if (authoringErr) {
+				return { success: false, error: new ValidationError(authoringErr) };
+			}
+			const err = validateCharacterSheetSchemaFieldDefs(normalizedValue);
+			return err
+				? { success: false, error: new ValidationError(err) }
+				: { success: true, value: normalizedValue };
+		}
+
+		if (canonicalLexiconId === CREATE_SESSION_ID) {
+			const err = validateSessionInput(normalizedValue, true);
+			return err
+				? { success: false, error: new ValidationError(err) }
+				: { success: true, value: normalizedValue };
+		}
+
+		if (canonicalLexiconId === UPDATE_SESSION_ID) {
+			const err = validateSessionInput(normalizedValue, false);
+			return err
+				? { success: false, error: new ValidationError(err) }
+				: { success: true, value: normalizedValue };
+		}
+	}
+
+	let result: ValidationResult;
+	try {
+		result = enforceLexiconType
+			? validate(normalizedValue, canonicalLexiconId, defId, true)
+			: validate(normalizedValue, canonicalLexiconId, defId);
+	} catch (e) {
+		const message =
+			e instanceof Error ? e.message : "lexicon validation failed";
+		return { success: false, error: new ValidationError(message) };
+	}
 
 	if (!result.success) {
 		return result;
