@@ -34,8 +34,8 @@ function isRfc3339Datetime(value: unknown): value is string {
 	if (typeof value !== "string") {
 		return false;
 	}
-	// RFC3339 with Z and optional milliseconds (matches our canonical examples)
-	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)) {
+	// RFC3339 with timezone offset or Z and optional fractional seconds.
+	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
 		return false;
 	}
 	return !Number.isNaN(Date.parse(value));
@@ -348,6 +348,22 @@ function validateFieldDefNode(
 ): string | null {
 	if (!isObject(node)) {
 		return `${path} must be an object`;
+	}
+
+	if (typeof node.fieldId !== "string" || node.fieldId.length === 0) {
+		return `${path}.fieldId must be a non-empty string`;
+	}
+
+	if (typeof node.label !== "string" || node.label.length === 0) {
+		return `${path}.label must be a non-empty string`;
+	}
+
+	if (typeof node.fieldType !== "string" || node.fieldType.length === 0) {
+		return `${path}.fieldType must be a non-empty string`;
+	}
+
+	if (typeof node.required !== "boolean") {
+		return `${path}.required must be a boolean`;
 	}
 
 	if (depth > 3) {

@@ -484,6 +484,23 @@ describe("codec parser/validator", () => {
 		expect(result.success).toBe(false);
 	});
 
+	test("validateById rejects createSheetSchema input fieldDefs missing fieldId", () => {
+		const input = {
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Missing fieldId in fieldDefs",
+			fieldDefs: [{ label: "STR", fieldType: "integer", required: true }],
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.rule.createSheetSchema",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(false);
+	});
+
 	test("validateById rejects createSheetSchema input with kind=dice and no dice payload", () => {
 		const input = {
 			baseRulesetNsid: "app.cerulia.ruleset.coc7",
@@ -557,6 +574,23 @@ describe("codec parser/validator", () => {
 		expect(result.success).toBe(false);
 	});
 
+	test("validateById accepts session.create with timezone-offset datetime", () => {
+		const input = {
+			role: "gm",
+			playedAt: "2026-04-18T00:00:00+09:00",
+			scenarioLabel: "Offset datetime scenario",
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.session.create",
+			"main",
+			false,
+		);
+
+		expect(result.success).toBe(true);
+	});
+
 	test("validateById rejects session.create with role=pl and no characterBranchRef", () => {
 		const invalidInput = {
 			role: "pl",
@@ -596,5 +630,21 @@ describe("codec parser/validator", () => {
 	test("validateById rejects session.update empty object (missing sessionRef)", () => {
 		const result = validateById({}, "app.cerulia.session.update", "main", false);
 		expect(result.success).toBe(false);
+	});
+
+	test("validateById accepts session.update with timezone-offset datetime", () => {
+		const input = {
+			sessionRef:
+				"at://did:plc:exampleownerdid1234567890/app.cerulia.core.session/3lcabcde12345",
+			playedAt: "2026-04-18T00:00:00+09:00",
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.session.update",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(true);
 	});
 });
