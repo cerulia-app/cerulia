@@ -468,6 +468,22 @@ describe("codec parser/validator", () => {
 		expect(result.success).toBe(true);
 	});
 
+	test("validateById rejects createSheetSchema input missing baseRulesetNsid", () => {
+		const input = {
+			schemaVersion: "1.0.0",
+			title: "Missing baseRulesetNsid",
+			fieldDefs: [{ fieldId: "str", label: "STR", fieldType: "integer", required: true }],
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.rule.createSheetSchema",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(false);
+	});
+
 	test("validateById rejects createSheetSchema input with kind=dice and no dice payload", () => {
 		const input = {
 			baseRulesetNsid: "app.cerulia.ruleset.coc7",
@@ -574,6 +590,11 @@ describe("codec parser/validator", () => {
 			false,
 		);
 
+		expect(result.success).toBe(false);
+	});
+
+	test("validateById rejects session.update empty object (missing sessionRef)", () => {
+		const result = validateById({}, "app.cerulia.session.update", "main", false);
 		expect(result.success).toBe(false);
 	});
 });

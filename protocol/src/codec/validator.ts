@@ -1,4 +1,5 @@
 import { ValidationError, type ValidationResult } from "@atproto/lexicon";
+import { isValidNsid } from "@atproto/syntax";
 import { validate } from "../generated/lexicons.js";
 import {
 	normalizeCeruliaTypedValues,
@@ -6,6 +7,7 @@ import {
 	toCurrentCeruliaNsid,
 	transformCeruliaLexiconValueToCurrent,
 } from "../nsid.js";
+import { parseAtUri } from "../at-uri.js";
 
 const CHARACTER_SHEET_SCHEMA_ID = toCurrentCeruliaNsid(
 	"app.cerulia.core.characterSheetSchema",
@@ -26,6 +28,43 @@ type FieldDefLike = {
 
 function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isRfc3339Datetime(value: unknown): value is string {
+	if (typeof value !== "string") {
+		return false;
+	}
+	// RFC3339 with Z and optional milliseconds (matches our canonical examples)
+	if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)) {
+		return false;
+	}
+	return !Number.isNaN(Date.parse(value));
+}
+
+function isAtUri(value: unknown): value is string {
+	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+	try {
+		parseAtUri(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function isPublicUri(value: unknown): value is string {
+	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+	try {
+		// Lexicon "uri" format expects absolute URIs
+		// eslint-disable-next-line no-new
+		new URL(value);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 type CreationRuleLike = {
@@ -203,6 +242,103 @@ function validateCharacterSheetSchemaAuthoring(value: unknown): string | null {
 	}
 
 	return null;
+}
+
+function validateCreateSheetSchemaInput(value: unknown): string | null {
+	if (!isObject(value)) {
+		return "createSheetSchema input must be an object";
+	}
+
+	if (typeof value.baseRulesetNsid !== "string" || !isValidNsid(value.baseRulesetNsid)) {
+		return "baseRulesetNsid must be a valid nsid";
+	}
+	if (typeof value.schemaVersion !== "string" || value.schemaVersion.length === 0) {
+		return "schemaVersion must be a non-empty string";
+	}
+	if (typeof value.title !== "string" || value.title.length === 0 || value.title.length > 640) {
+		return "title must be a non-empty string with maxLength 640";
+	}
+	if (!Array.isArray(value.fieldDefs)) {
+		return "fieldDefs must be an array";
+	}
+
+	// Validate authoring (if present) against fieldDefs reference integrity, etc.
+	const authoringErr = validateCharacterSheetSchemaAuthoring(value);
+	if (authoringErr) {
+		return authoringErr;
+	}
+
+	// Reuse the existing fieldDefs structural validator.
+	return validateCharacterSheetSchemaFieldDefs(value);
+}
+
+function validateSessionCreateInput(value: unknown): string | null {
+	if (!isObject(value)) {
+		return "session.create input must be an object";
+	}
+	if (value.role !== "pl" && value.role !== "gm") {
+		return "role must be pl or gm";
+	}
+	if (!isRfc3339Datetime(value.playedAt)) {
+		return "playedAt must be a datetime";
+	}
+	if (value.scenarioRef !== undefined && !isAtUri(value.scenarioRef)) {
+		return "scenarioRef must be an at-uri";
+	}
+	if (value.characterBranchRef !== undefined && !isAtUri(value.characterBranchRef)) {
+		return "characterBranchRef must be an at-uri";
+	}
+	if (value.campaignRef !== undefined && !isAtUri(value.campaignRef)) {
+		return "campaignRef must be an at-uri";
+	}
+	if (value.externalArchiveUris !== undefined) {
+		if (!Array.isArray(value.externalArchiveUris)) {
+			return "externalArchiveUris must be an array";
+		}
+		for (let i = 0; i < value.externalArchiveUris.length; i += 1) {
+			if (!isPublicUri(value.externalArchiveUris[i])) {
+				return `externalArchiveUris[${i}] must be a uri`;
+			}
+		}
+	}
+	// exactly-one / conditional required lives in validateSessionInput
+	return validateSessionInput(value, true);
+}
+
+function validateSessionUpdateInput(value: unknown): string | null {
+	if (!isObject(value)) {
+		return "session.update input must be an object";
+	}
+	if (!isAtUri(value.sessionRef)) {
+		return "sessionRef must be an at-uri";
+	}
+	if (value.role !== undefined && value.role !== "pl" && value.role !== "gm") {
+		return "role must be pl or gm";
+	}
+	if (value.playedAt !== undefined && !isRfc3339Datetime(value.playedAt)) {
+		return "playedAt must be a datetime";
+	}
+	if (value.scenarioRef !== undefined && !isAtUri(value.scenarioRef)) {
+		return "scenarioRef must be an at-uri";
+	}
+	if (value.characterBranchRef !== undefined && !isAtUri(value.characterBranchRef)) {
+		return "characterBranchRef must be an at-uri";
+	}
+	if (value.campaignRef !== undefined && !isAtUri(value.campaignRef)) {
+		return "campaignRef must be an at-uri";
+	}
+	if (value.externalArchiveUris !== undefined) {
+		if (!Array.isArray(value.externalArchiveUris)) {
+			return "externalArchiveUris must be an array";
+		}
+		for (let i = 0; i < value.externalArchiveUris.length; i += 1) {
+			if (!isPublicUri(value.externalArchiveUris[i])) {
+				return `externalArchiveUris[${i}] must be a uri`;
+			}
+		}
+	}
+	// exactly-one / conditional required lives in validateSessionInput
+	return validateSessionInput(value, false);
 }
 
 function validateFieldDefNode(
@@ -446,25 +582,21 @@ export function validateById(
 	// checks here so we can detect regressions without inventing a $type convention.
 	if (!enforceLexiconType && defId === "main") {
 		if (canonicalLexiconId === CREATE_SHEET_SCHEMA_ID) {
-			const authoringErr = validateCharacterSheetSchemaAuthoring(normalizedValue);
-			if (authoringErr) {
-				return { success: false, error: new ValidationError(authoringErr) };
-			}
-			const err = validateCharacterSheetSchemaFieldDefs(normalizedValue);
+			const err = validateCreateSheetSchemaInput(normalizedValue);
 			return err
 				? { success: false, error: new ValidationError(err) }
 				: { success: true, value: normalizedValue };
 		}
 
 		if (canonicalLexiconId === CREATE_SESSION_ID) {
-			const err = validateSessionInput(normalizedValue, true);
+			const err = validateSessionCreateInput(normalizedValue);
 			return err
 				? { success: false, error: new ValidationError(err) }
 				: { success: true, value: normalizedValue };
 		}
 
 		if (canonicalLexiconId === UPDATE_SESSION_ID) {
-			const err = validateSessionInput(normalizedValue, false);
+			const err = validateSessionUpdateInput(normalizedValue);
 			return err
 				? { success: false, error: new ValidationError(err) }
 				: { success: true, value: normalizedValue };
