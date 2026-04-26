@@ -647,4 +647,52 @@ describe("codec parser/validator", () => {
 		);
 		expect(result.success).toBe(true);
 	});
+
+	test("validateById rejects session.create with datetime missing timezone", () => {
+		const input = {
+			role: "gm",
+			playedAt: "2026-04-18T00:00:00",
+			scenarioLabel: "No timezone",
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.session.create",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(false);
+	});
+
+	test("validateById rejects session.create with datetime offset missing colon", () => {
+		const input = {
+			role: "gm",
+			playedAt: "2026-04-18T00:00:00+0900",
+			scenarioLabel: "Offset without colon",
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.session.create",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(false);
+	});
+
+	test("validateById rejects session.create with non-datetime string", () => {
+		const input = {
+			role: "gm",
+			playedAt: "not-a-datetime",
+			scenarioLabel: "Invalid format",
+		};
+
+		const result = validateById(
+			input,
+			"app.cerulia.session.create",
+			"main",
+			false,
+		);
+		expect(result.success).toBe(false);
+	});
 });

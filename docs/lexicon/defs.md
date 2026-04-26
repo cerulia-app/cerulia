@@ -35,7 +35,7 @@ shared scalar、enum、object は app.cerulia.dev.defs に集約する。
 | documentUri | uri | credential-free な公開外部 URI を指す |
 | did | did | actor 識別子 |
 | rulesetNsid | nsid | ruleset namespace の根 NSID |
-| datetime | datetime | すべて UTC 前提 |
+| datetime | datetime | RFC 3339 形式。UTC（`Z`）またはタイムゾーンオフセット（例: `+09:00`）を受理する |
 | cursor | string | list query の continuation token |
 
 ## object defs
