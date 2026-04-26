@@ -26,6 +26,20 @@ schema-backed character 作成のための **任意の authoring metadata**。ch
 
 - `authoring.creationRules`: schema 全体の creation recipe。単一 field に閉じない cross-field の作成ルール（能力値の一括生成、順序、依存関係）を表現できる。
 
+#### creationRules の検証規則（authoritative）
+
+`authoring.creationRules` を解釈する実装は、次の条件を **invalid として reject** しなければならない。
+
+- `ruleId` の重複がある
+- `dependsOnRuleIds` が未知の `ruleId` を参照している
+- `dependsOnRuleIds` による依存関係に cycle（循環依存）がある
+
+#### kind と payload の最小整合規則
+
+`creationRule.kind` と payload の関係は、次の最小条件だけを固定する。
+
+- `kind = "dice"` のとき `dice` は必須（`dice.expression` を含む）
+
 ### fieldDefs
 
 フィールド定義のリスト。再帰的な構造（グループ、配列）を許す。

@@ -249,6 +249,164 @@ describe("codec parser/validator", () => {
 		expect(result.success).toBe(false);
 	});
 
+	test("validateById accepts character-sheet-schema with authoring.creationRules", () => {
+		const schema = {
+			$type: "app.cerulia.core.characterSheetSchema",
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Valid schema with authoring",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			createdAt: "2026-04-18T00:00:00.000Z",
+			authoring: {
+				creationRules: [
+					{
+						ruleId: "roll-abilities",
+						kind: "dice",
+						targetFieldIds: ["str", "dex"],
+						dice: { expression: "3d6" },
+					},
+					{
+						ruleId: "derive-hp",
+						kind: "derived",
+						targetFieldIds: ["hp"],
+						dependsOnRuleIds: ["roll-abilities"],
+					},
+				],
+			},
+			fieldDefs: [
+				{ fieldId: "str", label: "STR", fieldType: "integer", required: true },
+				{ fieldId: "dex", label: "DEX", fieldType: "integer", required: true },
+				{ fieldId: "hp", label: "HP", fieldType: "integer", required: true },
+			],
+		};
+
+		const result = validateById(
+			schema,
+			"app.cerulia.core.characterSheetSchema",
+			"main",
+			true,
+		);
+		expect(result.success).toBe(true);
+	});
+
+	test("validateById rejects duplicate creationRules ruleId", () => {
+		const invalidSchema = {
+			$type: "app.cerulia.core.characterSheetSchema",
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Duplicate ruleId schema",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			createdAt: "2026-04-18T00:00:00.000Z",
+			authoring: {
+				creationRules: [
+					{ ruleId: "r1", kind: "dice", targetFieldIds: ["str"], dice: { expression: "3d6" } },
+					{ ruleId: "r1", kind: "derived", targetFieldIds: ["hp"] },
+				],
+			},
+			fieldDefs: [{ fieldId: "str", label: "STR", fieldType: "integer", required: true }],
+		};
+
+		const result = validateById(
+			invalidSchema,
+			"app.cerulia.core.characterSheetSchema",
+			"main",
+			true,
+		);
+		expect(result.success).toBe(false);
+	});
+
+	test("validateById rejects unknown dependsOnRuleIds reference", () => {
+		const invalidSchema = {
+			$type: "app.cerulia.core.characterSheetSchema",
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Unknown dependency schema",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			createdAt: "2026-04-18T00:00:00.000Z",
+			authoring: {
+				creationRules: [
+					{
+						ruleId: "r1",
+						kind: "derived",
+						targetFieldIds: ["hp"],
+						dependsOnRuleIds: ["missing"],
+					},
+				],
+			},
+			fieldDefs: [{ fieldId: "hp", label: "HP", fieldType: "integer", required: true }],
+		};
+
+		const result = validateById(
+			invalidSchema,
+			"app.cerulia.core.characterSheetSchema",
+			"main",
+			true,
+		);
+		expect(result.success).toBe(false);
+	});
+
+	test("validateById rejects creationRules dependency cycle", () => {
+		const invalidSchema = {
+			$type: "app.cerulia.core.characterSheetSchema",
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Cyclic dependency schema",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			createdAt: "2026-04-18T00:00:00.000Z",
+			authoring: {
+				creationRules: [
+					{
+						ruleId: "a",
+						kind: "derived",
+						targetFieldIds: ["x"],
+						dependsOnRuleIds: ["b"],
+					},
+					{
+						ruleId: "b",
+						kind: "derived",
+						targetFieldIds: ["y"],
+						dependsOnRuleIds: ["a"],
+					},
+				],
+			},
+			fieldDefs: [
+				{ fieldId: "x", label: "X", fieldType: "integer", required: true },
+				{ fieldId: "y", label: "Y", fieldType: "integer", required: true },
+			],
+		};
+
+		const result = validateById(
+			invalidSchema,
+			"app.cerulia.core.characterSheetSchema",
+			"main",
+			true,
+		);
+		expect(result.success).toBe(false);
+	});
+
+	test("validateById rejects kind=dice without dice payload", () => {
+		const invalidSchema = {
+			$type: "app.cerulia.core.characterSheetSchema",
+			baseRulesetNsid: "app.cerulia.ruleset.coc7",
+			schemaVersion: "1.0.0",
+			title: "Missing dice payload schema",
+			ownerDid: "did:plc:exampleownerdid1234567890",
+			createdAt: "2026-04-18T00:00:00.000Z",
+			authoring: {
+				creationRules: [{ ruleId: "r1", kind: "dice", targetFieldIds: ["str"] }],
+			},
+			fieldDefs: [{ fieldId: "str", label: "STR", fieldType: "integer", required: true }],
+		};
+
+		const result = validateById(
+			invalidSchema,
+			"app.cerulia.core.characterSheetSchema",
+			"main",
+			true,
+		);
+		expect(result.success).toBe(false);
+	});
+
 	test("validateById rejects invalid createSheetSchema input fieldDefs", () => {
 		const invalidInput = {
 			baseRulesetNsid: "app.cerulia.ruleset.coc7",

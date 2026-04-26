@@ -28,6 +28,138 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+type CreationRuleLike = {
+	ruleId?: unknown;
+	kind?: unknown;
+	targetFieldIds?: unknown;
+	dice?: unknown;
+	dependsOnRuleIds?: unknown;
+};
+
+function validateCharacterSheetSchemaAuthoring(value: unknown): string | null {
+	if (!isObject(value)) {
+		return "characterSheetSchema record must be an object";
+	}
+
+	const authoring = value.authoring;
+	if (authoring === undefined) {
+		return null;
+	}
+	if (!isObject(authoring)) {
+		return "authoring must be an object";
+	}
+
+	const creationRules = authoring.creationRules;
+	if (creationRules === undefined) {
+		return null;
+	}
+	if (!Array.isArray(creationRules)) {
+		return "authoring.creationRules must be an array";
+	}
+
+	const ruleIds: string[] = [];
+	const ruleIdSet = new Set<string>();
+	for (let i = 0; i < creationRules.length; i += 1) {
+		const rule = creationRules[i];
+		const path = `authoring.creationRules[${i}]`;
+		if (!isObject(rule)) {
+			return `${path} must be an object`;
+		}
+
+		const r = rule as CreationRuleLike;
+		if (typeof r.ruleId !== "string" || r.ruleId.length === 0) {
+			return `${path}.ruleId must be a non-empty string`;
+		}
+		if (ruleIdSet.has(r.ruleId)) {
+			return `duplicate ruleId: ${r.ruleId}`;
+		}
+		ruleIdSet.add(r.ruleId);
+		ruleIds.push(r.ruleId);
+
+		if (typeof r.kind !== "string" || r.kind.length === 0) {
+			return `${path}.kind must be a non-empty string`;
+		}
+
+		if (!Array.isArray(r.targetFieldIds) || r.targetFieldIds.length === 0) {
+			return `${path}.targetFieldIds must be a non-empty array`;
+		}
+
+		if (r.kind === "dice" && !isObject(r.dice)) {
+			return `${path}.dice is required when kind=dice`;
+		}
+
+		if (r.dependsOnRuleIds !== undefined) {
+			if (!Array.isArray(r.dependsOnRuleIds)) {
+				return `${path}.dependsOnRuleIds must be an array`;
+			}
+			for (let j = 0; j < r.dependsOnRuleIds.length; j += 1) {
+				const dep = r.dependsOnRuleIds[j];
+				if (typeof dep !== "string" || dep.length === 0) {
+					return `${path}.dependsOnRuleIds[${j}] must be a non-empty string`;
+				}
+			}
+		}
+	}
+
+	// unknown dependsOnRuleIds reject
+	for (let i = 0; i < creationRules.length; i += 1) {
+		const rule = creationRules[i] as Record<string, unknown>;
+		const deps = rule.dependsOnRuleIds;
+		if (!Array.isArray(deps)) {
+			continue;
+		}
+		for (let j = 0; j < deps.length; j += 1) {
+			const dep = deps[j];
+			if (typeof dep !== "string") {
+				continue;
+			}
+			if (!ruleIdSet.has(dep)) {
+				return `unknown dependsOnRuleId: ${dep}`;
+			}
+		}
+	}
+
+	// cycle detection (DFS over ruleId graph)
+	const visiting = new Set<string>();
+	const visited = new Set<string>();
+	const depsById = new Map<string, string[]>();
+	for (let i = 0; i < creationRules.length; i += 1) {
+		const rule = creationRules[i] as Record<string, unknown>;
+		const ruleId = rule.ruleId as string;
+		const deps = Array.isArray(rule.dependsOnRuleIds)
+			? (rule.dependsOnRuleIds.filter((x) => typeof x === "string") as string[])
+			: [];
+		depsById.set(ruleId, deps);
+	}
+
+	function dfs(id: string): boolean {
+		if (visited.has(id)) {
+			return false;
+		}
+		if (visiting.has(id)) {
+			return true;
+		}
+		visiting.add(id);
+		const deps = depsById.get(id) ?? [];
+		for (const dep of deps) {
+			if (dfs(dep)) {
+				return true;
+			}
+		}
+		visiting.delete(id);
+		visited.add(id);
+		return false;
+	}
+
+	for (const id of ruleIds) {
+		if (dfs(id)) {
+			return "creationRules contains cycle";
+		}
+	}
+
+	return null;
+}
+
 function validateFieldDefNode(
 	node: unknown,
 	depth: number,
@@ -143,6 +275,14 @@ function applyExtraValidation(
 	defId: string,
 ): ValidationResult | null {
 	if (lexiconId === CHARACTER_SHEET_SCHEMA_ID && defId === "main") {
+		const authoringErr = validateCharacterSheetSchemaAuthoring(value);
+		if (authoringErr) {
+			return {
+				success: false,
+				error: new ValidationError(authoringErr),
+			};
+		}
+
 		const err = validateCharacterSheetSchemaFieldDefs(value);
 		if (err) {
 			return {
@@ -153,6 +293,14 @@ function applyExtraValidation(
 	}
 
 	if (lexiconId === CREATE_SHEET_SCHEMA_ID && defId === "main") {
+		const authoringErr = validateCharacterSheetSchemaAuthoring(value);
+		if (authoringErr) {
+			return {
+				success: false,
+				error: new ValidationError(authoringErr),
+			};
+		}
+
 		const err = validateCharacterSheetSchemaFieldDefs(value);
 		if (err) {
 			return {
