@@ -16,6 +16,7 @@ const is$typed = _is$typed,
 const id = "app.cerulia.dev.scenario.list";
 
 export type QueryParams = {
+	ownerDid?: string;
 	rulesetNsid?: string;
 	limit?: number;
 	cursor?: string;

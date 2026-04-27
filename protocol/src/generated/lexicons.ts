@@ -3154,6 +3154,10 @@ export const schemaDict = {
 				parameters: {
 					type: "params",
 					properties: {
+						ownerDid: {
+							type: "string",
+							format: "did",
+						},
 						rulesetNsid: {
 							type: "string",
 							format: "nsid",
@@ -3376,6 +3380,10 @@ export const schemaDict = {
 				parameters: {
 					type: "params",
 					properties: {
+						ownerDid: {
+							type: "string",
+							format: "did",
+						},
 						rulesetNsid: {
 							type: "string",
 							format: "nsid",

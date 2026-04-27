@@ -6,6 +6,10 @@ import { ids, schemaDict } from "./generated/lexicons.js";
 
 const LEXICON_DIR = new URL("./lexicon/", import.meta.url);
 const CERULIA_SOURCE_PREFIX = "app.cerulia.dev.";
+const SCENARIO_LIST_LEXICON = new URL(
+	"./lexicon/app.cerulia.dev.scenario.list.json",
+	import.meta.url,
+);
 
 function toBarrelExportName(lexiconId: string): string {
 	const segments = lexiconId.split(".").slice(3);
@@ -68,5 +72,27 @@ describe("generated lexicon parity", () => {
 
 		expect(sourceIds.sort()).toEqual([...generatedIds].sort());
 		expect(sourceIds.sort()).toEqual([...generatedIdSet].sort());
+	});
+
+	test("keeps scenario.list generated registry aligned with its source lexicon", async () => {
+		const content = await readFile(SCENARIO_LIST_LEXICON, "utf8");
+		const parsed = JSON.parse(content) as {
+			defs?: {
+				main?: {
+					parameters?: {
+						properties?: {
+							ownerDid?: unknown;
+						};
+					};
+				};
+			};
+		};
+		const generatedOwnerDid =
+			schemaDict.AppCeruliaDevScenarioList.defs.main.parameters.properties
+				.ownerDid as unknown;
+
+		expect(generatedOwnerDid).toEqual(
+			parsed.defs?.main?.parameters?.properties?.ownerDid,
+		);
 	});
 });
