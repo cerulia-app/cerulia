@@ -27,23 +27,24 @@ function compareScenarioRecords(
 	return left.uri.localeCompare(right.uri);
 }
 
+type ScenarioRecordValue = AppCeruliaCoreScenario.Main & {
+	recommendedSheetSchemaRef?: string;
+};
+
+function getRecommendedSheetSchemaUri(
+	record: ScenarioRecordValue,
+): string | undefined {
+	return record.recommendedSheetSchemaPin?.uri ?? record.recommendedSheetSchemaRef;
+}
+
 async function toCatalogEntry(
 	runtime: ScenarioCatalogRuntime,
 	record: StoredRecord<AppCeruliaCoreScenario.Main>,
 ): Promise<ScenarioCatalogEntry> {
-	let hasRecommendedSheetSchema = false;
-	if (record.value.recommendedSheetSchemaRef) {
-		try {
-			hasRecommendedSheetSchema = Boolean(
-				await getSourceRecordByUriAlias(
-					runtime,
-					record.value.recommendedSheetSchemaRef,
-				),
-			);
-		} catch {
-			hasRecommendedSheetSchema = false;
-		}
-	}
+	const hasRecommendedSheetSchema = await hasResolvedRecommendedSheetSchema(
+		runtime,
+		getRecommendedSheetSchemaUri(record.value),
+	);
 
 	return {
 		scenarioRef: record.uri,
@@ -101,6 +102,23 @@ async function listScenarioRecordsByCollectionAlias(
 	return [...merged.values()];
 }
 
+async function hasResolvedRecommendedSheetSchema(
+	runtime: ScenarioCatalogRuntime,
+	recommendedSheetSchemaUri: string | undefined,
+): Promise<boolean> {
+	if (!recommendedSheetSchemaUri) {
+		return false;
+	}
+
+	try {
+		return Boolean(
+			await getSourceRecordByUriAlias(runtime, recommendedSheetSchemaUri),
+		);
+	} catch {
+		return false;
+	}
+}
+
 async function resolveCurrentSchemaAvailability(
 	runtime: ScenarioCatalogRuntime,
 	scenarioRef: string,
@@ -111,15 +129,13 @@ async function resolveCurrentSchemaAvailability(
 				runtime,
 				scenarioRef,
 			);
-		if (!scenario?.value.recommendedSheetSchemaRef) {
+		if (!scenario) {
 			return false;
 		}
 
-		return Boolean(
-			await getSourceRecordByUriAlias(
-				runtime,
-				scenario.value.recommendedSheetSchemaRef,
-			),
+		return hasResolvedRecommendedSheetSchema(
+			runtime,
+			getRecommendedSheetSchemaUri(scenario.value),
 		);
 	} catch {
 		return false;
