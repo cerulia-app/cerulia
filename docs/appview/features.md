@@ -33,7 +33,8 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 - player profile 表示（public + owner）
 - 公開 character collection（player profile 内の public branch link list）
 - player profile 編集（owner）
-- `/profile` は `updatePlayerProfile` を正本にし、初回は singleton の self record を作成、以後は同じ record を更新する
+- `/profile/[actor]` は `getPlayerProfileView` の表示面とし、`actor` は DID または handle を受け付ける
+- player profile の更新は `updatePlayerProfile` を正本にし、初回は singleton の self record を作成、以後は同じ record を更新する
 - Bluesky 既存項目の fallback 参照（displayName、description、avatar、banner、website、pronouns）。website は credential-free 公開 URI 条件を満たす場合だけ表示する
 - Cerulia 上書き値がある項目は Bluesky 値より優先
 - TRPG 固有項目はすべて任意入力とする
@@ -64,10 +65,10 @@ scenario に recommendedSheetSchemaRef がある場合だけ `scenario -> charac
 
 ## シナリオ
 
-- シナリオの検索・一覧（rulesetNsid でフィルタ）
+- プロフィール内のシナリオタブで、owner が登録したシナリオを一覧表示する
 - シナリオの登録
-- シナリオ詳細（summary + source citation）
-- シナリオ編集（owner）
+- シナリオ詳細（summary + source citation）は右サイドペイン（デスクトップ）またはモーダルボトムシート（モバイル）で表示する
+- シナリオ編集（owner）は同じペイン / シート内で行う
 - recommendedSheetSchemaRef を持つシナリオからだけ character 作成へのナビゲーション
 - scenario detail では ownerDid を作者として扱わず、登録者と sourceCitationUri を見せる
 - `sourceCitationUri` の表示ラベルは `出典リンク` に固定し、内部 field 名を主表示に使わない

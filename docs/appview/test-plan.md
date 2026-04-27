@@ -14,20 +14,22 @@
 ### route / surface
 
 - `/` が public top として価値説明、共有キャラクターへの入口、サインイン導線を持つこと
-- `/characters` と `/characters/new` で owner flow が成立すること
+- `/characters/new` で owner の character create flow が成立すること
 - `/characters/[branch]` が canonical shared detail として direct link で解決すること
-- `/players/[did]` が public profile と public character collection を含む shared surface として direct link で解決すること
-- `/profile` で owner が player profile を編集できること
-- `/profile` の初回保存が self record を作り、再保存が同じ player-profile を更新すること
-- `/sessions` が owner-only workbench として inline detail / edit を持つこと
-- `/scenarios` が scenario catalog として browse できること
-- `/scenarios/[scenario]` が scenario detail として public に解決し、owner には編集導線を出すこと
-- `/campaigns/[campaign]` が campaign detail として public に解決すること
-- `/houses/[house]` が house detail として public に解決すること
+- `/profile/[actor]` が public profile と public character collection を含む shared surface として direct link で解決すること。`actor` は DID と handle の両方を受け付けること
+- `/profile/[actor]/edit` で owner が player profile を編集できること
+- player profile の初回保存が self record を作り、再保存が同じ player-profile を更新すること
+- `/profile/[actor]` のセッションタブが inline detail / edit を持つこと
+- `/profile/[actor]` のシナリオタブが owner 登録シナリオの一覧、detail、owner 編集導線を持つこと
+- `/profile/[actor]` のキャンペーンタブが campaign detail をペイン / シートで表示できること
+- `/profile/[actor]` のハウスタブが house detail をペイン / シートで表示できること
+- ペイン付き URL（例: `/profile/[actor]?pane=session:[recordKey]`）が最前面ペインを direct link として解決すること
 
 ### boundary
 
 - public session 専用 route を持たないこと
+- scenario / house 専用 route を持たないこと
+- scenario 検索 surface を持たないこと
 - player profile route を持っても、canonical shared surface が character detail に固定されること
 - draft の character / session / campaign / house は一覧や discovery から隠れること
 - draft の direct link は draft state を明示して解決すること
@@ -51,7 +53,7 @@
 - character detail の conversion provenance が sourceRuleset、targetRuleset、convertedAt 以外を公開しないこと
 - player profile が public character collection の link-only summary を表示し、owner-only field を含まないこと
 - player profile が fallback と上書きの合成結果だけを見せ、raw Bluesky payload を UI に出さないこと
-- scenario detail が summary と source citation を安定表示すること
+- scenario ペイン / シートが summary と source citation を安定表示すること
 - campaign detail の rule overlay が `適用ルール` の表示語で安定表示されること
 
 ### performance rehearsal

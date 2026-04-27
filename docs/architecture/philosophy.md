@@ -59,7 +59,7 @@ Cerulia の core は次の要素で閉じる。
 - character lineage（作成、分岐、成長、変換）
 - session history（どのシナリオを誰と遊んだかの記録）
 - campaign と house（セッションを束ねるシリーズとコミュニティ）
-- scenario catalog（シナリオの公開台帳）
+- scenario registry（シナリオの公開台帳）
 - rules provenance（システムとハウスルールの由来）
 - character-sheet-schema（キャラクターシートの型定義）
 

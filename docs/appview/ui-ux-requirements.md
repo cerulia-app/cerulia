@@ -46,8 +46,16 @@
 - `pending` は AppView の local state であり、accepted と同じ見え方にしない
 - transport が `rebase-needed` を返しても、UI copy は plain words で「シート定義の更新が必要」のように出し、内部語を前面に出さない
 - 通常の edit 画面に schema 再移行の CTA を主ボタンとして置かない。必要時だけ recovery 導線を出す
-- `/sessions` は owner-only workbench とし、一覧、inline detail、再編集で閉じる
+- session はプロフィール内のタブから開き、一覧、ペイン / シート内 detail、再編集で閉じる
 - session は完走後の記録として扱い、進行中の卓や未完走の状態を管理しない
+
+### scenario / house surfaces
+
+- scenario と house は専用 route を持たず、プロフィール内のタブから右サイドペイン（デスクトップ）またはモーダルボトムシート（モバイル）で開く
+- scenario 検索は AppView の target MVP interaction に含めない
+- scenario の direct share は `/profile/[actor]?pane=scenario:[recordKey]` と scenario record の `at://` URI の両方で提供する
+- house の direct share は `/profile/[actor]?pane=house:[recordKey]` と house record の `at://` URI の両方で提供する
+- ペイン / シートの URL は最前面の対象だけを表し、ペインを開いた順番や背面スタックを表さない
 
 ### public-safe / draft / trust
 

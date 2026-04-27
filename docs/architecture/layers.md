@@ -22,7 +22,7 @@ Cerulia の product-core は PL 個人向けのキャラクター管理・セッ
 
 - character home（PL のキャラクター一覧・詳細）
 - campaign view（長期卓のセッション一覧）
-- scenario catalog（シナリオ検索・一覧）
+- scenario registry view（シナリオ台帳の一覧）
 - house activity（house に紐づくセッション・キャラクターの逆引き）
 
 projection は全 record から自動生成する。PL による手動の curate は不要。
@@ -91,7 +91,7 @@ AppView は caller 自身が owner として control する repo にだけ書く
 
 - character home
 - campaign view
-- scenario catalog
+- scenario registry view
 - house activity
 
 ## 実装上の基本フロー

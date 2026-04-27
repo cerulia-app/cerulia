@@ -164,7 +164,7 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 非責務:
 
 - public discovery 向けの大規模 projection
-- 横断検索と catalog の read model
+- catalog の read model
 - AppView の UI concern
 
 ### projection
@@ -176,8 +176,8 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 - event ingestion
 - projection の更新
 - read-optimized index
-- scenario catalog、campaign view、house activity などの一覧系 query
-- AppView や将来の reader surface 向けの discovery query
+- scenario registry view、campaign view、house activity などの一覧系 query
+- AppView や将来の reader surface 向けの derived query
 - SQLite ベースの derived store
 
 非責務:
@@ -203,7 +203,7 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 
 - owner の workbench 系 read/write は `api` だけで成立させる
 - direct ref を知っている public read は `api` だけで成立させる
-- `projection` が必要なのは catalog、discovery、横断検索、大きな reverse index、公開一覧系 surface だけに限る
+- `projection` が必要なのは catalog、discovery、大きな reverse index、公開一覧系 surface だけに限る
 - deployable `api` entrypoint は current DID document と safe PDS endpoint を解決して direct-ref public read を成立させてよい。これは Bun / Workers のどちらでも同じ boundary に属する
 
 この制約により、`projection` は optional extension のまま保ち、`api` が無いと成立しない canonical path と、`projection` があると便利になる derived path を分ける。
@@ -212,7 +212,7 @@ root repo 自体を docs と code の両方を持つ monorepo とする。
 
 - owner の作成、編集、draft 含む詳細表示は `api` を正本にする
 - direct ref が既知の shared detail は `api` で解決できるようにする
-- 一覧、検索、catalog、community discovery は `projection` を使う
+- 一覧、catalog、community discovery は `projection` を使う
 - `projection` が無い構成では、AppView は discovery 導線を縮退させても canonical flow を壊さない
 - browser-facing OAuth route、session cookie、callback state は `appview` が持つ
 - AppView は owner DID / scope を signed internal auth として `api` に渡し、`api` は mirrored OAuth session で repo actor を復元する

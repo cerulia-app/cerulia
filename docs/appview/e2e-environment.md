@@ -15,7 +15,7 @@
 AppView の設計では、最小 self-host 構成は AppView + API であり、projection は discovery 向けの optional extension である。OAuth はさらに別の失敗軸を持つため、通常の owner flow から分離した方が切り分けが明確になる。
 
 1. Core は AppView + API だけで成立する flow を守る
-2. Discovery は projection を追加したときだけ成立する flow を守る
+2. Discovery は projection を含む構成で成立する flow を守る
 3. OAuth smoke は OAuth route の存在と session 境界だけを薄く確認する
 
 ## 現在の前提
@@ -32,13 +32,13 @@ AppView 側の `+page.server.ts`、`+layout.server.ts`、route 実装、fixture 
 - API が suite ごとの認証モードで起動すること
 - projection が suite ごとの mode で起動すること
 - Core では header auth shim が有効であること
-- Discovery では scenario catalog route と internal ingest guard が有効であること
+- Discovery では scenario registry readiness と internal ingest guard が有効であること
 - OAuth smoke では metadata、JWK、session route が有効であること
 
 現在の readiness suite は、temporary smoke とは別に、AppView server 層が将来の route 実装に必要な橋渡しを既に持っていることを確認する。
 
 - Core readiness: AppView server が owner auth cookie を読み、API の owner home を解決できること
-- Discovery readiness: AppView server が projection catalog を解決できること
+- Discovery readiness: AppView server が projection registry view を解決できること
 - OAuth readiness: AppView server が OAuth session payload を解決できること
 
 将来、AppView 側の `+page.server.ts` と route 実装が揃ったら、temporary smoke suite は削除する。readiness suite も、同じ責務を実際の route behavior E2E が吸収したら削除してよい。
@@ -54,7 +54,7 @@ AppView 側の `+page.server.ts`、`+layout.server.ts`、route 実装、fixture 
 readiness suite は次の route を使う。
 
 - `/__e2e__/readiness/owner-home`
-- `/__e2e__/readiness/scenario-catalog`
+- `/__e2e__/readiness/scenario-registry`
 - `/__e2e__/readiness/oauth-session`
 
 ## 起動契約
@@ -104,11 +104,11 @@ root workspace から実行する。
 - 追加の手動サーバー起動は不要
 - 初回に Playwright browser が未導入なら `bun x playwright install chromium` が必要になる
 
-## 今後の拡張順序
+## Route Behavior Test Scope
 
-1. Core に `/characters`、`/characters/new`、`/characters/[branch]` の route behavior test を追加する
-2. Discovery に `/scenarios`、`/campaigns/[campaign]`、`/houses/[house]` の route behavior test を追加する
-3. AppView route behavior test が置き換わった枠から、現在の `appview/e2e/**/smoke.spec.ts` を削除する
-4. AppView route behavior test が置き換わった枠から、`appview/e2e/**/readiness.spec.ts` も削除する
-5. OAuth smoke に AppView 側の sign-in 導線 test を追加する
+1. Core は `/characters/new`、`/characters/[branch]`、`/profile/[actor]` の route behavior を検証する
+2. Profile workbench は `/profile/[actor]?pane=session:[recordKey]`、`pane=scenario:[recordKey]`、`pane=campaign:[recordKey]`、`pane=house:[recordKey]` の direct pane behavior を検証する
+3. AppView route behavior test が責務を吸収した枠では、`appview/e2e/**/smoke.spec.ts` を suite から外す
+4. AppView route behavior test が責務を吸収した枠では、`appview/e2e/**/readiness.spec.ts` を suite から外す
+5. OAuth smoke は AppView 側の sign-in 導線を検証する
 6. performance rehearsal と low-bandwidth rehearsal は別枠のまま維持する

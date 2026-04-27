@@ -20,7 +20,7 @@
 | Who | 主対象は複数システムを遊ぶ PL。副対象は共有リンク受け手の GM / 卓相手 |
 | What | 価値訴求、正準フローの説明、character detail と player profile の使い分け、サインイン導線 |
 | When | 初回訪問時、共有リンク閲覧後の回遊時、久しぶりの再訪時 |
-| Where | 公開ルート `/`。character detail 共有への主導線は `/characters/[branch]`、自己紹介共有導線は `/players/[did]` |
+| Where | 公開ルート `/`。character detail 共有への主導線は `/characters/[branch]`、自己紹介共有導線は `/profile/[actor]` |
 | How | 平易な文言、視覚的ヒーロー領域、最小限 CTA、モバイル/デスクトップ両立、ロケール対応文言で成立させる |
 
 ## 固定事項（この時点で凍結）
