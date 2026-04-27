@@ -16,16 +16,26 @@ test("AppView scenario-registry readiness route resolves projection data through
 		apiBaseUrl,
 		title: "AppView Discovery Scenario",
 	});
+	const otherFixture = await seedScenarioFixture({
+		apiBaseUrl,
+		title: "AppView Other Owner Scenario",
+		rulesetNsid: fixture.rulesetNsid,
+	});
 	await ingestProjectionRepo({
 		projectionBaseUrl,
 		token: projectionIngestToken,
 		repoDid: fixture.did,
 	});
+	await ingestProjectionRepo({
+		projectionBaseUrl,
+		token: projectionIngestToken,
+		repoDid: otherFixture.did,
+	});
 
 	let payload: { items?: Array<{ title: string; scenarioRef: string }> } = {};
 	await waitFor(async () => {
 		const response = await request.get(
-			`${appviewBaseUrl}/__e2e__/readiness/scenario-registry?rulesetNsid=${encodeURIComponent(fixture.rulesetNsid)}`,
+			`${appviewBaseUrl}/__e2e__/readiness/scenario-registry?rulesetNsid=${encodeURIComponent(fixture.rulesetNsid)}&ownerDid=${encodeURIComponent(fixture.did)}`,
 		);
 		if (response.status() !== 200) {
 			return false;
@@ -33,16 +43,17 @@ test("AppView scenario-registry readiness route resolves projection data through
 
 		payload = await response.json();
 		return Boolean(
-			payload.items?.some((item) => item.scenarioRef === fixture.scenarioRef),
+			payload.items?.some((item) => item.scenarioRef === fixture.scenarioRef) &&
+				!payload.items?.some(
+					(item) => item.scenarioRef === otherFixture.scenarioRef,
+				),
 		);
 	});
 
-	expect(payload.items).toEqual(
-		expect.arrayContaining([
-			expect.objectContaining({
-				scenarioRef: fixture.scenarioRef,
-				title: fixture.title,
-			}),
-		]),
+	expect(payload.items?.map((item) => item.scenarioRef)).toContain(
+		fixture.scenarioRef,
+	);
+	expect(payload.items?.map((item) => item.scenarioRef)).not.toContain(
+		otherFixture.scenarioRef,
 	);
 });
