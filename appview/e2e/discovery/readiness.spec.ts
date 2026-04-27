@@ -9,7 +9,7 @@ const projectionIngestToken = readRequiredEnv(
 	"CERULIA_E2E_PROJECTION_INTERNAL_INGEST_TOKEN",
 );
 
-test("AppView scenario-catalog readiness route resolves projection data through the server layer", async ({
+test("AppView scenario-registry readiness route resolves projection data through the server layer", async ({
 	request,
 }) => {
 	const fixture = await seedScenarioFixture({
@@ -25,7 +25,7 @@ test("AppView scenario-catalog readiness route resolves projection data through 
 	let payload: { items?: Array<{ title: string; scenarioRef: string }> } = {};
 	await waitFor(async () => {
 		const response = await request.get(
-			`${appviewBaseUrl}/__e2e__/readiness/scenario-catalog?rulesetNsid=${encodeURIComponent(fixture.rulesetNsid)}`,
+			`${appviewBaseUrl}/__e2e__/readiness/scenario-registry?rulesetNsid=${encodeURIComponent(fixture.rulesetNsid)}`,
 		);
 		if (response.status() !== 200) {
 			return false;

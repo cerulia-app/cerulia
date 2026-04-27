@@ -14,7 +14,7 @@ test("AppView built server returns the root page in Discovery suite", async ({
 	await expectAppviewRoot(page);
 });
 
-test("projection serves an empty scenario catalog without failing", async () => {
+test("projection serves the scenario registry list endpoint without failing", async () => {
 	const projection = await createApiContext(projectionBaseUrl);
 	const response = await projection.get(
 		"/xrpc/app.cerulia.scenario.list?rulesetNsid=app.cerulia.rules.coc7",

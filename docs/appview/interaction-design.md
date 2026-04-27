@@ -260,7 +260,7 @@
 ### 自分のコンテンツを参照・編集
 
 `/profile/[自分のactor]` には 5 つのタブがある。初期タブはキャラクター。
-`actor` は DID または handle を受け付ける。handle の例は `/profile/vrc.minetake.net`。AppView は handle を DID に解決し、双方向検証に成功した handle だけを有効な actor alias として扱う。
+`actor` は DID または handle を受け付ける。handle の例は `/profile/example.com`。AppView は handle を DID に解決し、双方向検証に成功した handle だけを有効な actor alias として扱う。
 他人のプロフィール `/profile/[相手のactor]` にも同じタブが並ぶが、表示されるのは public 状態の record だけで、編集導線は出さない。
 
 #### キャラクタータブ
