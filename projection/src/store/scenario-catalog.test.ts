@@ -445,4 +445,44 @@ describe("SqlScenarioCatalogStore", () => {
 		);
 		expect(page.items).toHaveLength(0);
 	});
+
+	test("returns only scenarios from the requested ownerDid", async () => {
+		const store = await createSqliteStore();
+
+		await store.replaceRepo("did:plc:alice", [
+			{
+				scenarioRef: "at://did:plc:alice/app.cerulia.core.scenario/alpha",
+				title: "Alice Mission",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				hasRecommendedSheetSchema: false,
+				summary: "Owned by Alice.",
+			},
+		]);
+		await store.replaceRepo("did:plc:bob", [
+			{
+				scenarioRef: "at://did:plc:bob/app.cerulia.core.scenario/beta",
+				title: "Bob Mission",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				hasRecommendedSheetSchema: false,
+				summary: "Owned by Bob.",
+			},
+		]);
+
+		const page = await store.list(
+			"app.cerulia.rules.coc7",
+			undefined,
+			undefined,
+			"did:plc:alice",
+		);
+
+		expect(page.items).toEqual([
+			{
+				scenarioRef: "at://did:plc:alice/app.cerulia.core.scenario/alpha",
+				title: "Alice Mission",
+				rulesetNsid: "app.cerulia.dev.rules.coc7",
+				hasRecommendedSheetSchema: false,
+				summary: "Owned by Alice.",
+			},
+		]);
+	});
 });

@@ -76,6 +76,7 @@ export function createProjectionApp(options: ProjectionAppOptions) {
 				context.req.query("rulesetNsid"),
 				context.req.query("limit"),
 				context.req.query("cursor"),
+				context.req.query("ownerDid"),
 			),
 		);
 	});

@@ -12,6 +12,7 @@ import { SqlScenarioCatalogStore } from "./store/scenario-catalog.js";
 
 const DID = "did:plc:alice";
 
+const OTHER_DID = "did:plc:bob";
 function buildAtUri(collection: string, rkey: string, repoDid = DID): string {
 	return `at://${repoDid}/${collection}/${rkey}`;
 }
@@ -303,6 +304,69 @@ describe("createProjectionApp", () => {
 		const payload = await listResponse.json();
 		expect(payload.items).toHaveLength(1);
 		expect(payload.items[0].title).toBe("Alpha Mission");
+	});
+
+	test("filters scenario catalog by ownerDid when requested", async () => {
+		const source = new MemoryCanonicalRecordSource();
+		source.seedScenario("alpha", {
+			$type: COLLECTIONS.scenario,
+			title: "Alice Mission",
+			rulesetNsid: "app.cerulia.rules.coc7",
+			recommendedSheetSchemaRef: undefined,
+			sourceCitationUri: "https://example.com/scenario/alice",
+			summary: "Owned by Alice.",
+			ownerDid: DID,
+			createdAt: "2026-04-22T00:00:00.000Z",
+			updatedAt: "2026-04-22T00:00:00.000Z",
+		});
+		source.seedScenario(
+			"beta",
+			{
+				$type: COLLECTIONS.scenario,
+				title: "Bob Mission",
+				rulesetNsid: "app.cerulia.rules.coc7",
+				recommendedSheetSchemaRef: undefined,
+				sourceCitationUri: "https://example.com/scenario/bob",
+				summary: "Owned by Bob.",
+				ownerDid: OTHER_DID,
+				createdAt: "2026-04-22T00:00:00.000Z",
+				updatedAt: "2026-04-22T00:00:00.000Z",
+			},
+			OTHER_DID,
+		);
+
+		const app = createProjectionApp({
+			source,
+			catalogStore: await createSqlScenarioCatalogStore(),
+			internalIngestToken: "projection-test-token",
+		});
+
+		await postJson(
+			app,
+			"/internal/ingest/repo",
+			{ repoDid: DID },
+			{ authorization: "Bearer projection-test-token" },
+		);
+		await postJson(
+			app,
+			"/internal/ingest/repo",
+			{ repoDid: OTHER_DID },
+			{ authorization: "Bearer projection-test-token" },
+		);
+
+		const response = await getJson(
+			app,
+			`${XRPC_PREFIX}/app.cerulia.scenario.list?rulesetNsid=${encodeURIComponent("app.cerulia.rules.coc7")}&ownerDid=${encodeURIComponent(DID)}`,
+		);
+		expect(response.status).toBe(200);
+		const payload = await response.json();
+		expect(payload.items).toHaveLength(1);
+		expect(payload.items[0]).toEqual(
+			expect.objectContaining({
+				scenarioRef: buildAtUri(COLLECTIONS.scenario, "alpha"),
+				title: "Alice Mission",
+			}),
+		);
 	});
 
 	test("rejects internal repo ingest with an invalid token", async () => {

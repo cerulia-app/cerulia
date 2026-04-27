@@ -195,11 +195,13 @@ export function createScenarioCatalogService(runtime: ScenarioCatalogRuntime) {
 			rulesetNsid: string | undefined,
 			limit: string | undefined,
 			cursor: string | undefined,
+			ownerDid?: string,
 		): Promise<AppCeruliaScenarioList.OutputSchema> {
 			const page = await runtime.catalog.list(
 				rulesetNsid ? toCurrentCeruliaNsid(rulesetNsid) : undefined,
 				limit,
 				cursor,
+				ownerDid,
 			);
 			const availability = await Promise.all(
 				page.items.map((entry) =>

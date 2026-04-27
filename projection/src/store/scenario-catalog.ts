@@ -133,12 +133,25 @@ export class SqlScenarioCatalogStore {
 		rulesetNsid: string | undefined,
 		limit: string | undefined,
 		cursor: string | undefined,
+		ownerDid?: string,
 	): Promise<Page<ScenarioCatalogEntry>> {
 		const rulesetAliases = rulesetNsid
 			? [...new Set(getCeruliaNsidAliases(rulesetNsid))]
 			: [];
-		const rulesetFilterClause = rulesetAliases.length
-			? `WHERE ruleset_nsid IN (${rulesetAliases.map(() => "?").join(", ")})`
+		const filterClauses: string[] = [];
+		const params: Array<string> = [LEGACY_SCENARIO_CATALOG_REPO_DID];
+		if (ownerDid) {
+			filterClauses.push("repo_did = ?");
+			params.push(ownerDid);
+		}
+		if (rulesetAliases.length) {
+			filterClauses.push(
+				`ruleset_nsid IN (${rulesetAliases.map(() => "?").join(", ")})`,
+			);
+			params.push(...rulesetAliases);
+		}
+		const filterClause = filterClauses.length
+			? `WHERE ${filterClauses.join(" AND ")}`
 			: "";
 		const rows = await this.driver.all<ScenarioCatalogRow>(
 			`WITH active_entries AS (
@@ -160,15 +173,13 @@ export class SqlScenarioCatalogStore {
 						 ORDER BY CASE WHEN repo_did = ? THEN 1 ELSE 0 END ASC, repo_did ASC
 					 ) AS row_priority
 				 FROM active_entries
-				 ${rulesetFilterClause}
+				 ${filterClause}
 			 )
 			 SELECT scenario_ref, title, ruleset_nsid, has_recommended_sheet_schema, summary
 				 FROM ranked_entries
 				WHERE row_priority = 1
 				ORDER BY title COLLATE NOCASE ASC, scenario_ref ASC`,
-			rulesetAliases.length
-				? [LEGACY_SCENARIO_CATALOG_REPO_DID, ...rulesetAliases]
-				: [LEGACY_SCENARIO_CATALOG_REPO_DID],
+			params,
 		);
 
 		return paginate(rows.map(fromRow), limit, cursor);
