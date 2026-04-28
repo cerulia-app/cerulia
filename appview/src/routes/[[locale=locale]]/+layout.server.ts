@@ -1,9 +1,10 @@
-import { redirect } from "@sveltejs/kit";
+import { redirect } from '@sveltejs/kit';
 
-import { createRouteI18nState } from "$lib/i18n/meta";
-import { resolveLocalePathname } from "$lib/i18n/locale";
+import { getLayoutI18n } from './i18n.server';
+import { createRouteI18nState } from '$lib/i18n/meta';
+import { resolveLocalePathname } from '$lib/i18n/locale';
 
-import type { LayoutServerLoad } from "./$types";
+import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = ({ url }) => {
 	const resolved = resolveLocalePathname(url.pathname);
@@ -13,6 +14,6 @@ export const load: LayoutServerLoad = ({ url }) => {
 	}
 
 	return {
-		i18n: createRouteI18nState(url),
+		i18n: getLayoutI18n(createRouteI18nState(url)),
 	};
 };

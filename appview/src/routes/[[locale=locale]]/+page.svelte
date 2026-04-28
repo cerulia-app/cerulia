@@ -1,164 +1,56 @@
 <script lang="ts">
-import { useI18n } from "$lib/i18n/runtime.svelte";
-
-const i18n = useI18n();
-const { t } = i18n;
-
-const meta = $derived(
-	i18n.meta({
-		title: {
-			ja: "Cerulia AppView の多言語基盤",
-			en: "Cerulia AppView locale foundation",
-			zh: "Cerulia AppView 多语言基础",
-		},
-		description: {
-			ja: "パスベースの locale ルーティング、インライン翻訳 API、locale-aware な metadata を確認するための基盤ページです。",
-			en: "A foundation page that demonstrates path-based locale routing, inline translations, and locale-aware metadata.",
-			zh: "用于演示基于路径的语言路由、内联翻译 API 与语言感知 metadata 的基础页面。",
-		},
-	}),
-);
-
-const pillars = [
-	{
-		name: "routing",
-		title: {
-			ja: "URL が locale の正本です",
-			en: "The URL is the locale source of truth",
-			zh: "URL 是语言的单一真相来源",
-		},
-		body: {
-			ja: "未指定の経路は日本語、/en/* は英語、/zh/* は中国語、/ja/* は正規 URL へリダイレクトします。",
-			en: "Unprefixed routes stay Japanese, /en/* stays English, /zh/* stays Chinese, and /ja/* redirects to the canonical path.",
-			zh: "未带前缀的路径使用日语，/en/* 使用英语，/zh/* 使用中文，/ja/* 会重定向到规范 URL。",
-		},
-	},
-	{
-		name: "inline-copy",
-		title: {
-			ja: "翻訳は Svelte ファイルの近くに置きます",
-			en: "Translations stay next to the Svelte code",
-			zh: "翻译内容与 Svelte 代码保持邻近",
-		},
-		body: {
-			ja: "t({ ja: ..., en: ... }) をその場で呼べるため、コンポーネントの文脈を失わずに文言を管理できます。",
-			en: "You can call t({ ja: ..., en: ... }) in place, so the component keeps its copy close to the UI that uses it.",
-			zh: "可以直接调用 t({ ja: ..., en: ... })，让组件文案与对应 UI 保持在同一上下文。",
-		},
-	},
-	{
-		name: "metadata",
-		title: {
-			ja: "head も locale から組み立てます",
-			en: "Head metadata is assembled from the locale state",
-			zh: "head metadata 也从语言状态生成",
-		},
-		body: {
-			ja: "html lang、canonical、hreflang、OG locale を同じ route 状態から導出し、ズレを防ぎます。",
-			en: "html lang, canonical URLs, hreflang links, and Open Graph locale tags come from the same route state to avoid drift.",
-			zh: "html lang、canonical、hreflang 与 Open Graph locale 标签都从同一个路由状态派生，避免彼此漂移。",
-		},
-	},
-];
-
-const checklist = [
-	{
-		label: {
-			ja: "Cerulia の実機能はまだ入れない",
-			en: "Do not implement Cerulia product flows yet",
-			zh: "暂时不要实现 Cerulia 产品流程",
-		},
-	},
-	{
-		label: {
-			ja: "将来の locale 追加で route 構造を増やしすぎない",
-			en: "Do not multiply route trees when a new locale is added",
-			zh: "新增语言时不要复制整棵路由树",
-		},
-	},
-	{
-		label: {
-			ja: "翻訳欠落時は日本語へ安全に戻す",
-			en: "Fall back to Japanese when a translation is missing",
-			zh: "翻译缺失时安全回退到日语",
-		},
-	},
-];
+	let { data } = $props();
 </script>
 
 <svelte:head>
-	<title>{meta.title}</title>
-	<meta name="description" content={meta.description} />
-	<meta name="robots" content={meta.robots} />
-	<link rel="canonical" href={meta.canonicalUrl} />
-	<link rel="alternate" href={meta.xDefaultUrl} hreflang="x-default" />
-	{#each meta.alternateLinks as alternate}
+	<title>{data.i18n.meta.title}</title>
+	<meta name="description" content={data.i18n.meta.description} />
+	<meta name="robots" content={data.i18n.meta.robots} />
+	<link rel="canonical" href={data.i18n.meta.canonicalUrl} />
+	<link rel="alternate" href={data.i18n.meta.xDefaultUrl} hreflang="x-default" />
+	{#each data.i18n.meta.alternateLinks as alternate}
 		<link rel="alternate" href={alternate.href} hreflang={alternate.hrefLang} />
 	{/each}
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="Cerulia" />
-	<meta property="og:title" content={meta.title} />
-	<meta property="og:description" content={meta.description} />
-	<meta property="og:url" content={meta.canonicalUrl} />
-	<meta property="og:locale" content={meta.ogLocale} />
-	{#each meta.ogAlternateLocales as alternateLocale}
+	<meta property="og:title" content={data.i18n.meta.title} />
+	<meta property="og:description" content={data.i18n.meta.description} />
+	<meta property="og:url" content={data.i18n.meta.canonicalUrl} />
+	<meta property="og:locale" content={data.i18n.meta.ogLocale} />
+	{#each data.i18n.meta.ogAlternateLocales as alternateLocale}
 		<meta property="og:locale:alternate" content={alternateLocale} />
 	{/each}
 	<meta name="twitter:card" content="summary" />
-	<meta name="twitter:title" content={meta.title} />
-	<meta name="twitter:description" content={meta.description} />
+	<meta name="twitter:title" content={data.i18n.meta.title} />
+	<meta name="twitter:description" content={data.i18n.meta.description} />
 </svelte:head>
 
 <main id="app-main" class="foundation-page">
 	<section class="hero" aria-labelledby="foundation-title">
 		<div class="hero-copy">
 			<p class="eyebrow">Cerulia AppView</p>
-			<h1 id="foundation-title">
-				{t({
-					ja: "多言語対応の基盤だけを先に成立させる",
-					en: "Establish only the locale foundation first",
-					zh: "先建立多语言基础，而不是功能本体",
-				})}
-			</h1>
-			<p class="lead">
-				{t({
-					ja: "この画面は、Cerulia の機能を実装する前に、locale ルーティング、インライン翻訳、metadata、アクセシビリティの足場を確認するためのプレースホルダーです。",
-					en: "This placeholder verifies locale routing, inline translations, metadata, and accessibility before Cerulia product features exist.",
-					zh: "这个占位页用于先验证语言路由、内联翻译、metadata 与可访问性，再开始实现 Cerulia 的产品功能。",
-				})}
-			</p>
+			<h1 id="foundation-title">{data.i18n.text.heroTitle}</h1>
+			<p class="lead">{data.i18n.text.heroLead}</p>
 		</div>
 
-		<div class="hero-panel" aria-label={t({ ja: "翻訳 API の例", en: "Inline translation API example", zh: "内联翻译 API 示例" })}>
+		<div class="hero-panel" aria-label={data.i18n.text.translationApiExampleAriaLabel}>
 			<p class="panel-label">Svelte</p>
-			<pre><code>{`const { t } = useI18n();
-
-<h1>{t({
-  ja: "こんにちは",
-  en: "Hello",
-  zh: "你好"
-})}</h1>`}</code></pre>
-			<p class="panel-note">
-				{t({
-					ja: "タグ指定や外部キーではなく、文脈の近くに翻訳を書きます。",
-					en: "The translation stays near the component instead of moving into tag syntax or distant keys.",
-					zh: "翻译内容保持在组件上下文附近，而不是拆到标签语法或远处的 key。",
-				})}
-			</p>
+			<pre><code>{data.i18n.text.codeExample}</code></pre>
+			<p class="panel-note">{data.i18n.text.panelNote}</p>
 		</div>
 	</section>
 
 	<section class="pillars" aria-labelledby="pillar-title">
 		<div class="section-heading">
 			<p class="eyebrow">Foundation</p>
-			<h2 id="pillar-title">{t({ ja: "この基盤で固定すること", en: "What this foundation fixes", zh: "这套基础固定了什么" })}</h2>
+			<h2 id="pillar-title">{data.i18n.text.pillarHeading}</h2>
 		</div>
 
 		<div class="pillar-grid">
-			{#each pillars as pillar}
+			{#each data.i18n.text.pillars as pillar}
 				<article class="pillar-card" aria-labelledby={`pillar-${pillar.name}`}>
-					<h3 id={`pillar-${pillar.name}`}>{t(pillar.title)}</h3>
-					<p>{t(pillar.body)}</p>
+					<h3 id={`pillar-${pillar.name}`}>{pillar.title}</h3>
+					<p>{pillar.body}</p>
 				</article>
 			{/each}
 		</div>
@@ -167,12 +59,12 @@ const checklist = [
 	<section class="checklist" aria-labelledby="checklist-title">
 		<div class="section-heading">
 			<p class="eyebrow">Constraints</p>
-			<h2 id="checklist-title">{t({ ja: "今回わざとやらないこと", en: "What this page deliberately avoids", zh: "这个页面刻意不做的事" })}</h2>
+			<h2 id="checklist-title">{data.i18n.text.checklistHeading}</h2>
 		</div>
 
 		<ul>
-			{#each checklist as item}
-				<li>{t(item.label)}</li>
+			{#each data.i18n.text.checklist as item}
+				<li>{item.label}</li>
 			{/each}
 		</ul>
 	</section>
@@ -195,9 +87,9 @@ const checklist = [
 	}
 
 	.hero-copy,
-		.hero-panel,
-		.pillar-card,
-		.checklist {
+	.hero-panel,
+	.pillar-card,
+	.checklist {
 		padding: clamp(1.25rem, 2.5vw, 2rem);
 		border: 1px solid rgba(19, 35, 47, 0.09);
 		border-radius: 1.75rem;
@@ -206,7 +98,7 @@ const checklist = [
 	}
 
 	.eyebrow,
-		.panel-label {
+	.panel-label {
 		margin: 0 0 0.75rem;
 		font-size: 0.82rem;
 		font-weight: 600;
@@ -248,7 +140,7 @@ const checklist = [
 	}
 
 	code {
-		font-family: "SFMono-Regular", "Consolas", monospace;
+		font-family: 'SFMono-Regular', 'Consolas', monospace;
 		font-size: 0.92rem;
 	}
 
@@ -264,7 +156,7 @@ const checklist = [
 	}
 
 	.section-heading h2,
-		.pillar-card h3 {
+	.pillar-card h3 {
 		margin: 0;
 	}
 
@@ -275,7 +167,7 @@ const checklist = [
 	}
 
 	.pillar-card p,
-		.checklist li {
+	.checklist li {
 		line-height: 1.7;
 		color: rgba(19, 35, 47, 0.8);
 	}
@@ -302,9 +194,9 @@ const checklist = [
 		}
 
 		.hero-copy,
-			.hero-panel,
-			.pillar-card,
-			.checklist {
+		.hero-panel,
+		.pillar-card,
+		.checklist {
 			padding: 1.15rem;
 			border-radius: 1.3rem;
 		}

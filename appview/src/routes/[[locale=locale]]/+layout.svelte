@@ -1,60 +1,24 @@
 <script lang="ts">
-import { setContext } from "svelte";
-
-import { I18N_CONTEXT_KEY, I18nRuntime } from "$lib/i18n/runtime.svelte";
-
-let { data, children } = $props();
-
-function createI18nRuntime() {
-	return new I18nRuntime(data.i18n);
-}
-
-const i18n = createI18nRuntime();
-const { t } = i18n;
-
-setContext(I18N_CONTEXT_KEY, i18n);
-
-$effect(() => {
-	i18n.update(data.i18n);
-});
+	let { data, children } = $props();
 </script>
 
-<a class="skip-link" href="#app-main">{t({ ja: "本文へ移動", en: "Skip to content", zh: "跳转到正文" })}</a>
+<a class="skip-link" href="#app-main">{data.i18n.text.skipToContent}</a>
 
 <div class="shell">
 	<header class="shell-header">
 		<div class="brand-cluster">
-			<a
-				class="brand-mark"
-				href={i18n.path("/")}
-				aria-label={t({
-					ja: "Cerulia のホームへ戻る",
-					en: "Return to the Cerulia home page",
-					zh: "返回 Cerulia 首页",
-				})}
-			>
-				Cerulia
-			</a>
-			<p class="brand-copy">
-				{t({
-					ja: "多言語基盤のプレースホルダー。実機能はまだ実装しません。",
-					en: "A locale foundation placeholder. Product flows are intentionally not implemented yet.",
-					zh: "这是多语言基础占位页。产品功能目前故意不实现。",
-				})}
-			</p>
+			<a class="brand-mark" href={data.i18n.homeHref} aria-label={data.i18n.text.homeAriaLabel}> Cerulia </a>
+			<p class="brand-copy">{data.i18n.text.brandCopy}</p>
 		</div>
 
-		<nav
-			class="locale-nav"
-			aria-label={t({ ja: "表示言語", en: "Display language", zh: "显示语言" })}
-		>
-			{#each i18n.availableLocales as option}
+		<nav class="locale-nav" aria-label={data.i18n.text.localeNavAriaLabel}>
+			{#each data.i18n.availableLocales as option}
 				<a
-					class:current-locale={option.locale === i18n.locale}
+					class:current-locale={option.locale === data.i18n.locale}
 					href={option.href}
 					lang={option.hrefLang}
 					hreflang={option.hrefLang}
-					aria-current={option.locale === i18n.locale ? "page" : undefined}
+					aria-current={option.locale === data.i18n.locale ? 'page' : undefined}
 				>
 					{option.label}
 				</a>
@@ -111,7 +75,7 @@ $effect(() => {
 	}
 
 	.brand-mark {
-		font-family: "Newsreader", serif;
+		font-family: 'Newsreader', serif;
 		font-size: clamp(1.65rem, 3vw, 2.25rem);
 		font-weight: 500;
 		letter-spacing: 0.02em;
@@ -143,7 +107,7 @@ $effect(() => {
 	}
 
 	.locale-nav a:hover,
-		.locale-nav a:focus-visible {
+	.locale-nav a:focus-visible {
 		transform: translateY(-1px);
 		border-color: rgba(19, 35, 47, 0.34);
 		background: #ffffff;

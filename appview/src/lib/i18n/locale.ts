@@ -113,3 +113,42 @@ export function selectTranslatedText(
 ): string {
 	return translations[locale] ?? translations.ja;
 }
+
+// ─── Localized copy ──────────────────────────────────────────────────────────
+
+export type LocalizedValues<T> = {
+	[Key in keyof T]: T[Key] extends TranslatedText
+		? string
+		: T[Key] extends readonly (infer Item)[]
+			? LocalizedValues<Item>[]
+			: T[Key] extends object
+				? LocalizedValues<T[Key]>
+				: T[Key];
+};
+
+function isTranslatedText(value: unknown): value is TranslatedText {
+	return (
+		value !== null &&
+		typeof value === 'object' &&
+		'ja' in value &&
+		typeof (value as { ja: unknown }).ja === 'string'
+	);
+}
+
+export function localizeTextValues<T>(value: T, locale: SupportedLocale): LocalizedValues<T> {
+	if (Array.isArray(value)) {
+		return value.map((item) => localizeTextValues(item, locale)) as LocalizedValues<T>;
+	}
+
+	if (isTranslatedText(value)) {
+		return selectTranslatedText(value, locale) as LocalizedValues<T>;
+	}
+
+	if (value !== null && typeof value === 'object') {
+		return Object.fromEntries(
+			Object.entries(value).map(([key, nested]) => [key, localizeTextValues(nested, locale)])
+		) as LocalizedValues<T>;
+	}
+
+	return value as LocalizedValues<T>;
+}

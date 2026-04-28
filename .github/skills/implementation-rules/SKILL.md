@@ -35,13 +35,20 @@ Provide a single source of truth for repository-wide conventions that affect imp
 - Required: Data fetching, AT Protocol calls, pagination assembly, and data transformation are placed in the corresponding `+page.server.ts` or `+layout.server.ts` file and exposed to the component only through the typed `data` prop.
 - Exception: Reactive UI state that has no server-side representation (e.g., open/closed toggles, animation triggers) may live in the component.
 
+### Rule: appview-i18n-server-selection
+
+- Policy: In `appview/src/routes/`, localized strings must be selected in `+*.server.ts` and passed to Svelte components through `data.i18n`.
+- Why: Server-side selection avoids sending all language maps to the client and keeps render files as pure projections.
+- Applies to: Route-level i18n modules such as `i18n.server.ts`, `+layout.server.ts`, `+page.server.ts`, `+layout.svelte`, and `+page.svelte`.
+
 ## Decision Procedure
 
 1. Identify whether the task touches build tooling, scripts, or tests.
 2. If yes, enforce all matching rules in this skill.
 3. If the task touches `appview/src/routes/`, enforce `appview-frontend-is-projection-only`.
-4. If a package-level exception exists, apply the exception and record it in the change rationale.
-5. If no rule exists yet, proceed with minimal change and propose a new rule entry.
+4. If the task touches route-level i18n in `appview/src/routes/`, enforce `appview-i18n-server-selection`.
+5. If a package-level exception exists, apply the exception and record it in the change rationale.
+6. If no rule exists yet, proceed with minimal change and propose a new rule entry.
 
 ## Completion Checks
 
@@ -50,6 +57,7 @@ Provide a single source of truth for repository-wide conventions that affect imp
 - Commands and documentation prefer Bun over npm unless an explicit exception exists.
 - `+page.svelte` and `+layout.svelte` files contain no `fetch` calls, AT Protocol SDK calls, or data transformation logic.
 - Data fetching and shaping in `appview` routes are implemented in `+page.server.ts` or `+layout.server.ts`.
+- Route-level i18n text is selected on the server and passed via `data.i18n`.
 - Any exception is explicitly stated in commit or PR rationale.
 
 ## Maintenance
