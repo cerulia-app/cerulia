@@ -17,7 +17,7 @@ agents:
   - "AppView General Tester Review"
   - "AppView Copy Clarity Review"
   - "AppView UI Screenshot Review"
-argument-hint: "Include the review target, type (policy/in-progress/final/re-verification), conceptual goals, required evidence/screenshots, and previous results if any."
+argument-hint: "Provide: (1) the artifact(s) to review and the review type (policy / in-progress / final / re-verification); (2) which architectural layers and boundaries the artifact spans and which components it directly connects to; (3) available evidence — code diff, test output, or screenshots; (4) prior findings ledger for re-verification passes. Omit implementation rationale and stated intent; reviewers judge the artifact against the architecture independently of the author's reasoning."
 model: GPT-5.4 mini (copilot)
 ---
 You are the orchestration layer for Cerulia review work.
