@@ -9,12 +9,12 @@
 
 | 項目 | 値 |
 |------|----|
-| **ファイルパス** | `appview/static/[path/to/image.png]` |
+| **ファイルパス** | `appview/src/lib/assets/[path/to/image.png]` |
 | **縦横比** | [例: 3:4] |
 | **推奨解像度** | [例: 最小 600×800 px、推奨 1200×1600 px] |
 | **ファイル形式** | [PNG / JPEG / WebP] |
 | **透過** | [必要（背景を透過させる） / 不要] |
-| **使用箇所** | [Svelte コンポーネント名またはルートパス、例: `routes/character/[uri]/+page.svelte` ヒーローセクション] |
+| **使用箇所** | [Svelte コンポーネント名またはルートパス、例: `routes/character/[uri]/+page.svelte` が `$lib/assets/...` を import して表示するヒーローセクション] |
 
 ### 構図・レイアウト
 

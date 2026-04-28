@@ -12,7 +12,7 @@
  * <entry-file> is a path to a markdown file containing one entry block.
  *   Pass "-" to read from stdin instead.
  *
- * <image-path> accepts the full relative path (appview/static/images/foo.png),
+ * <image-path> accepts the full relative path (appview/src/lib/assets/images/foo.png),
  *   a suffix (images/foo.png), or just the filename (foo.png).
  *   A suffix match is used when the exact path does not match.
  */
@@ -30,8 +30,8 @@ appview の実装で必要な画像の制作仕様を記載しています。
 
 1. 各セクションの仕様に従い、外部ツール（生成 AI または手作業）で画像を制作してください。
 2. 制作した画像を「ファイルパス」欄と同じ名前に変更してください。
-3. \`appview/static/\` 内の対応するプレースホルダーファイル（現在は透明 PNG）を置き換えてください。
-4. コードの変更は不要です。ファイルを置き換えるだけで反映されます。`;
+3. \`appview/src/lib/assets/\` 内の対応するプレースホルダーファイル（現在は透明 PNG）を置き換えてください。
+4. import パスは変わりません。コードの変更は不要です。ファイルを置き換えるだけで反映されます。`;
 
 /** Matches the ファイルパス table row and captures the stored path. */
 const FILE_PATH_RE = /\*\*ファイルパス\*\*\s*\|\s*`([^`]+)`/;

@@ -1,6 +1,6 @@
 ---
 name: appview-image-assets
-description: "Use when: implementing appview features that reference image files (portraits, icons, logos, background images, decorative images) that do not yet exist in appview/static/. Creates transparent PNG placeholders at the target paths so implementation proceeds without broken img tags, then writes IMAGE-REQUESTS.md with production-ready specs. The user replaces each placeholder by renaming an externally created image to the exact placeholder filename. Use for: missing image assets, image stubs, image placeholders, asset requests to user, broken image, image not found."
+description: "Use when: implementing appview features that need bundled image assets (portraits, icons, logos, background images, decorative images) that do not yet exist under appview/src/lib/assets/. Creates transparent PNG placeholders at the target paths so SvelteKit modules can import them immediately, then writes IMAGE-REQUESTS.md with production-ready specs. The user replaces each placeholder by renaming an externally created image to the exact placeholder filename. Use for: missing image assets, image stubs, image placeholders, asset requests to user, broken image, image not found."
 argument-hint: "Describe the feature being implemented and list the images it needs"
 ---
 
@@ -10,10 +10,10 @@ argument-hint: "Describe the feature being implemented and list the images it ne
 
 When implementation needs an image that does not yet exist:
 
-1. Runs [create-placeholder.mjs](./scripts/create-placeholder.mjs) to place a transparent PNG at each target path at the intended display resolution — `<img>` tags render without errors and layout reflects real dimensions immediately.
+1. Runs [create-placeholder.mjs](./scripts/create-placeholder.mjs) to place a transparent PNG at each target path at the intended display resolution so SvelteKit modules can import the asset immediately and layout reflects real dimensions.
 2. Uses [manage-image-requests.mjs](./scripts/manage-image-requests.mjs) to append a detailed per-image spec to `IMAGE-REQUESTS.md` at the workspace root.
 
-The user creates the real image externally (by hand or using a generative AI tool), renames it to match the placeholder filename, and drops it into `appview/static/`. No code changes are required.
+The user creates the real image externally (by hand or using a generative AI tool), renames it to match the placeholder filename, and replaces the placeholder file inside `appview/src/lib/assets/`. No code changes are required.
 
 ## Scripts
 
@@ -28,9 +28,9 @@ The user creates the real image externally (by hand or using a generative AI too
 
 For each image the feature needs, determine:
 
-- **Target path**: path relative to `appview/static/` (e.g., `images/character-portrait.png`). This becomes the `src` in `<img src="/images/character-portrait.png">`.
+- **Target path**: path relative to `appview/src/lib/assets/` (e.g., `images/character-portrait.png`). Import it from SvelteKit as `import characterPortrait from "$lib/assets/images/character-portrait.png"`.
 - **Display size**: the CSS-rendered width × height in pixels at which this image is displayed. Use this as the placeholder resolution.
-- **Display context**: which Svelte component renders it and the CSS role (background, `<img>`, `object-fit`, etc.).
+- **Display context**: which Svelte component or supporting module imports it, renders it, and what CSS role it has (`<img>`, background image, `object-fit`, etc.).
 - **Visual role**: portrait, logo, icon, background, decoration, etc.
 
 ### Step 2 — Create Placeholders
@@ -38,21 +38,31 @@ For each image the feature needs, determine:
 For each image, run from the workspace root. Include the intended display resolution so layout matches production dimensions during development:
 
 ```sh
-node .github/skills/appview-image-assets/scripts/create-placeholder.mjs appview/static/<relative-path> <width> <height>
+node .github/skills/appview-image-assets/scripts/create-placeholder.mjs appview/src/lib/assets/<relative-path> <width> <height>
 ```
 
 Example:
 ```sh
-node .github/skills/appview-image-assets/scripts/create-placeholder.mjs appview/static/images/character-portrait.png 240 320
+node .github/skills/appview-image-assets/scripts/create-placeholder.mjs appview/src/lib/assets/images/character-portrait.png 240 320
 ```
 
 The script generates a `width×height` fully-transparent PNG and creates any missing parent directories. If a file already exists at the path, the script skips it without overwriting.
 
 When the display size is not known at the time of implementation, omit the dimensions (defaults to 1×1). Update the placeholder later by deleting the file and re-running the script with explicit dimensions.
 
-### Step 3 — Implement Using Placeholder Paths
+### Step 3 — Implement Using Imported Assets
 
-Reference each image by its final URL path (e.g., `<img src="/images/character-portrait.png" alt="...">`). Do not add `onerror` fallbacks or conditional rendering for missing images — the placeholder guarantees the file exists.
+Import each bundled image from its final `$lib/assets/...` path in the component or module that renders it. Do not reference these bundled assets via raw `/images/...` URLs. Do not add `onerror` fallbacks or conditional rendering for missing images — the placeholder guarantees the file exists.
+
+```svelte
+<script>
+   import characterPortrait from "$lib/assets/images/character-portrait.png";
+</script>
+
+<img src={characterPortrait} alt="..." />
+```
+
+For a background image, import the file in script and pass the imported URL into `style` or a CSS custom property instead of hard-coding a public path.
 
 ### Step 4 — Register Entries in IMAGE-REQUESTS.md
 
@@ -86,7 +96,7 @@ node .github/skills/appview-image-assets/scripts/manage-image-requests.mjs delet
 node .github/skills/appview-image-assets/scripts/manage-image-requests.mjs list
 ```
 
-The `<image-path>` argument for `get`, `delete`, and `update` accepts a suffix match: `appview/static/images/portrait.png`, `images/portrait.png`, and `portrait.png` all resolve to the same entry.
+The `<image-path>` argument for `get`, `delete`, and `update` accepts a suffix match: `appview/src/lib/assets/images/portrait.png`, `images/portrait.png`, and `portrait.png` all resolve to the same entry.
 
 **Entry quality requirements** (fill every field — the user may pass IMAGE-REQUESTS.md directly to a generative AI tool):
 - **構図・レイアウト**: frame, subject positioning, safe zones, crop behaviour.
@@ -100,10 +110,10 @@ The `<image-path>` argument for `get`, `delete`, and `update` accepts a suffix m
 
 List each placeholder path and resolution that was created, then state:
 
-> 画像のプレースホルダーを作成しました。`IMAGE-REQUESTS.md` に各画像の制作仕様を記載しています。外部で画像を作成したら、各プレースホルダーと同じファイル名に変更して `appview/static/` 内のファイルを置き換えてください。コードの変更は不要です。
+> 画像のプレースホルダーを作成しました。`IMAGE-REQUESTS.md` に各画像の制作仕様を記載しています。外部で画像を作成したら、各プレースホルダーと同じファイル名に変更して `appview/src/lib/assets/` 内のファイルを置き換えてください。import パスはそのまま使えるため、コードの変更は不要です。
 
 ## Notes
 
 - If an image requires separate dark-mode and light-mode variants, create a separate placeholder and IMAGE-REQUESTS.md entry for each variant.
 - If a portrait is placed over a non-uniform background in the UI, set **透過: 必要** and note the UI background color in **配色ガイドライン**.
-- Do not create placeholders for images that users upload at runtime (e.g., user-provided character portraits stored via AT Protocol blobs). Placeholders are only for static assets bundled with the appview.
+- Do not create placeholders for images that users upload at runtime (e.g., user-provided character portraits stored via AT Protocol blobs). Placeholders are only for source-controlled bundled assets that appview imports from `$lib`.
