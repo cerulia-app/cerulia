@@ -1,9 +1,5 @@
 import type { Cookies } from "@sveltejs/kit";
 import {
-	CERULIA_E2E_DID_COOKIE_NAME,
-	CERULIA_E2E_SCOPES_COOKIE_NAME,
-} from "$lib/cerulia-e2e";
-import {
 	getCeruliaAppviewInternalAuthSecret,
 	hasCeruliaAppviewInternalAuthSecret,
 	isCeruliaOauthConfigured,
@@ -71,14 +67,14 @@ export function readCeruliaViewerAuth(
 		return Promise.resolve(null);
 	}
 
-	const did = cookies.get(CERULIA_E2E_DID_COOKIE_NAME);
+	const did = cookies.get("cerulia_e2e_did");
 	if (!did) {
 		return Promise.resolve(null);
 	}
 
 	return Promise.resolve({
 		did,
-		scopes: parseScopes(cookies.get(CERULIA_E2E_SCOPES_COOKIE_NAME)),
+		scopes: parseScopes(cookies.get("cerulia_e2e_scopes")),
 	});
 }
 
