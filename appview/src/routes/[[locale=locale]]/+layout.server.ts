@@ -6,6 +6,13 @@ import { resolveLocalePathname, localizePathname } from '$lib/i18n/locale';
 
 import type { LayoutServerLoad } from './$types';
 
+function buildSignInHref(canonicalPathname: string, locale: 'ja' | 'en' | 'zh', search: string) {
+	const signInPath = localizePathname('/sign-in', locale);
+	const params = new URLSearchParams({ returnTo: `${canonicalPathname}${search}` });
+
+	return `${signInPath}?${params.toString()}`;
+}
+
 export const load: LayoutServerLoad = ({ url, locals }) => {
 	const resolved = resolveLocalePathname(url.pathname);
 
@@ -17,7 +24,7 @@ export const load: LayoutServerLoad = ({ url, locals }) => {
 
 	return {
 		i18n: getLayoutI18n(routeState),
-		signInHref: localizePathname('/oauth/login', routeState.locale),
+		signInHref: buildSignInHref(routeState.canonicalPathname, routeState.locale, url.search),
 		viewer: locals.ceruliaViewerAuth ? { did: locals.ceruliaViewerAuth.did } : null
 	};
 };

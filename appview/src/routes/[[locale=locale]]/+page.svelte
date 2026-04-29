@@ -4,9 +4,8 @@
 
 	let { data } = $props();
 
-	// Placeholder example links — replaced when real records exist
-	const exampleCharacterHref = resolve('/characters/example');
-	const exampleProfileHref = '/profile/example.bsky.social';
+	const exampleCharacterHref = '#split-character';
+	const exampleProfileHref = '#split-profile';
 </script>
 
 <svelte:head>
@@ -192,7 +191,7 @@
 					<div class="split-copy">
 						<h3 id="split-profile" class="split-card-title">{data.i18n.text.splitProfileTitle}</h3>
 						<p class="split-card-body">{data.i18n.text.splitProfileBody}</p>
-						<a class="split-cta" href={exampleProfileHref} rel="external">{data.i18n.text.splitProfileCta} →</a>
+						<a class="split-cta" href={exampleProfileHref}>{data.i18n.text.splitProfileCta} →</a>
 					</div>
 				</article>
 			</div>
@@ -213,7 +212,7 @@
 				</a>
 			</div>
 			<p class="cta-tertiary">
-				<a class="text-link" href={exampleProfileHref} rel="external">{data.i18n.text.ctaTertiary}</a>
+				<a class="text-link" href={exampleProfileHref}>{data.i18n.text.ctaTertiary}</a>
 			</p>
 		</div>
 	</section>

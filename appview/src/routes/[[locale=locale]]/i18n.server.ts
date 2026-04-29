@@ -83,6 +83,11 @@ const layoutText = {
 		ja: 'サインイン',
 		en: 'Sign in',
 		zh: '登录'
+	},
+	viewerSignedIn: {
+		ja: 'サインイン済み',
+		en: 'Signed in',
+		zh: '已登录'
 	}
 } as const;
 
