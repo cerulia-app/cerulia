@@ -41,14 +41,23 @@ Provide a single source of truth for repository-wide conventions that affect imp
 - Why: Server-side selection avoids sending all language maps to the client and keeps render files as pure projections.
 - Applies to: Route-level i18n modules such as `i18n.server.ts`, `+layout.server.ts`, `+page.server.ts`, `+layout.svelte`, and `+page.svelte`.
 
+### Rule: appview-icons-use-iconify
+
+- Policy: In `appview`, UI icons must be rendered with Iconify.
+- Why: A single icon system keeps visual consistency and avoids mixed emoji/symbol icon styles.
+- Applies to: All icon-like visual markers in `appview/src/` templates and components.
+- Required: Use the Iconify Svelte component from `@iconify/svelte`.
+- Prohibited: Emoji or ad-hoc text symbols as UI icons.
+
 ## Decision Procedure
 
 1. Identify whether the task touches build tooling, scripts, or tests.
 2. If yes, enforce all matching rules in this skill.
 3. If the task touches `appview/src/routes/`, enforce `appview-frontend-is-projection-only`.
 4. If the task touches route-level i18n in `appview/src/routes/`, enforce `appview-i18n-server-selection`.
-5. If a package-level exception exists, apply the exception and record it in the change rationale.
-6. If no rule exists yet, proceed with minimal change and propose a new rule entry.
+5. If the task touches icons in `appview`, enforce `appview-icons-use-iconify`.
+6. If a package-level exception exists, apply the exception and record it in the change rationale.
+7. If no rule exists yet, proceed with minimal change and propose a new rule entry.
 
 ## Completion Checks
 
@@ -58,6 +67,7 @@ Provide a single source of truth for repository-wide conventions that affect imp
 - `+page.svelte` and `+layout.svelte` files contain no `fetch` calls, AT Protocol SDK calls, or data transformation logic.
 - Data fetching and shaping in `appview` routes are implemented in `+page.server.ts` or `+layout.server.ts`.
 - Route-level i18n text is selected on the server and passed via `data.i18n`.
+- Icons in `appview` are rendered via Iconify, not emoji or text symbols.
 - Any exception is explicitly stated in commit or PR rationale.
 
 ## Maintenance

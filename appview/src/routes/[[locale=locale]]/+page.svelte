@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 
 	let { data } = $props();
 
@@ -80,19 +81,25 @@
 
 			<div class="pillars-grid">
 				<article class="pillar-card" aria-labelledby="pillar-create">
-					<div class="pillar-icon" aria-hidden="true">✦</div>
+					<div class="pillar-icon" aria-hidden="true">
+						<Icon icon="lucide:sparkles" width="28" height="28" />
+					</div>
 					<h3 id="pillar-create" class="pillar-title">{data.i18n.text.pillarCreate}</h3>
 					<p class="pillar-body">{data.i18n.text.pillarCreateBody}</p>
 				</article>
 
 				<article class="pillar-card" aria-labelledby="pillar-record">
-					<div class="pillar-icon" aria-hidden="true">📋</div>
+					<div class="pillar-icon" aria-hidden="true">
+						<Icon icon="lucide:clipboard-list" width="28" height="28" />
+					</div>
 					<h3 id="pillar-record" class="pillar-title">{data.i18n.text.pillarRecord}</h3>
 					<p class="pillar-body">{data.i18n.text.pillarRecordBody}</p>
 				</article>
 
 				<article class="pillar-card" aria-labelledby="pillar-share">
-					<div class="pillar-icon" aria-hidden="true">🔗</div>
+					<div class="pillar-icon" aria-hidden="true">
+						<Icon icon="lucide:link-2" width="28" height="28" />
+					</div>
 					<h3 id="pillar-share" class="pillar-title">{data.i18n.text.pillarShare}</h3>
 					<p class="pillar-body">{data.i18n.text.pillarShareBody}</p>
 				</article>
@@ -442,7 +449,9 @@
 	}
 
 	.pillar-icon {
-		font-size: 28px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		margin-bottom: 1rem;
 	}
 

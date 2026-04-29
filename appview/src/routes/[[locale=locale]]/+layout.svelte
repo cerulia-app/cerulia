@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 
 	let { data, children } = $props();
 
@@ -33,7 +34,9 @@
 						href={resolve('/home')}
 						aria-current={$page.url.pathname === '/home' ? 'page' : undefined}
 					>
-						<span class="nav-icon" aria-hidden="true">🏠</span>
+						<span class="nav-icon" aria-hidden="true">
+							<Icon icon="lucide:house" width="18" height="18" />
+						</span>
 						{data.i18n.text.navHome}
 					</a>
 				</li>
@@ -43,7 +46,9 @@
 						href={resolve(`/profile/${data.viewer.did}#characters`)}
 						aria-current={$page.url.hash === '#characters' ? 'page' : undefined}
 					>
-						<span class="nav-icon" aria-hidden="true">◇</span>
+						<span class="nav-icon" aria-hidden="true">
+							<Icon icon="lucide:sparkles" width="18" height="18" />
+						</span>
 						{data.i18n.text.navCharacters}
 					</a>
 				</li>
@@ -53,7 +58,9 @@
 						href={resolve(`/profile/${data.viewer.did}#sessions`)}
 						aria-current={$page.url.hash === '#sessions' ? 'page' : undefined}
 					>
-						<span class="nav-icon" aria-hidden="true">📋</span>
+						<span class="nav-icon" aria-hidden="true">
+							<Icon icon="lucide:clipboard-list" width="18" height="18" />
+						</span>
 						{data.i18n.text.navSessions}
 					</a>
 				</li>
@@ -63,7 +70,9 @@
 						href={resolve(`/profile/${data.viewer.did}`)}
 						aria-current={$page.url.pathname === `/profile/${data.viewer.did}` ? 'page' : undefined}
 					>
-						<span class="nav-icon" aria-hidden="true">👤</span>
+						<span class="nav-icon" aria-hidden="true">
+							<Icon icon="lucide:user-round" width="18" height="18" />
+						</span>
 						{data.i18n.text.navProfile}
 					</a>
 				</li>
@@ -72,7 +81,9 @@
 			<div class="sidebar-footer">
 				<div class="create-split-btn">
 					<a class="create-main" href={resolve('/characters/new')}>
-						<span aria-hidden="true">＋</span>
+						<span class="create-main-icon" aria-hidden="true">
+							<Icon icon="lucide:plus" width="16" height="16" />
+						</span>
 						{data.i18n.text.navCreate}
 					</a>
 					<button
@@ -81,7 +92,7 @@
 						aria-expanded={createMenuOpen}
 						onclick={toggleCreateMenu}
 					>
-						∨
+						<Icon icon="lucide:chevron-down" width="16" height="16" aria-hidden="true" />
 					</button>
 				</div>
 
@@ -92,25 +103,33 @@
 					<ul class="create-menu" role="list">
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
-								<span aria-hidden="true">✦</span>
+								<span class="create-menu-icon" aria-hidden="true">
+									<Icon icon="lucide:sparkles" width="16" height="16" />
+								</span>
 								{data.i18n.text.navCreateSession}
 							</button>
 						</li>
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
-								<span aria-hidden="true">□</span>
+								<span class="create-menu-icon" aria-hidden="true">
+									<Icon icon="lucide:square" width="16" height="16" />
+								</span>
 								{data.i18n.text.navCreateScenario}
 							</button>
 						</li>
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
-								<span aria-hidden="true">◎</span>
+								<span class="create-menu-icon" aria-hidden="true">
+									<Icon icon="lucide:circle" width="16" height="16" />
+								</span>
 								{data.i18n.text.navCreateCampaign}
 							</button>
 						</li>
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
-								<span aria-hidden="true">⌂</span>
+								<span class="create-menu-icon" aria-hidden="true">
+									<Icon icon="lucide:house" width="16" height="16" />
+								</span>
 								{data.i18n.text.navCreateHouse}
 							</button>
 						</li>
@@ -148,11 +167,15 @@
 				href={resolve('/home')}
 				aria-current={$page.url.pathname === '/home' ? 'page' : undefined}
 			>
-				<span aria-hidden="true">🏠</span>
+				<span class="tab-icon" aria-hidden="true">
+					<Icon icon="lucide:house" width="18" height="18" />
+				</span>
 				<span class="tab-label">{data.i18n.text.navHome}</span>
 			</a>
 			<a class="tab-item" href={resolve(`/profile/${data.viewer.did}#characters`)}>
-				<span aria-hidden="true">◇</span>
+				<span class="tab-icon" aria-hidden="true">
+					<Icon icon="lucide:sparkles" width="18" height="18" />
+				</span>
 				<span class="tab-label">{data.i18n.text.navCharacters}</span>
 			</a>
 			<a
@@ -160,14 +183,20 @@
 				href={resolve('/characters/new')}
 				aria-label={data.i18n.text.navCreateCharacter}
 			>
-				<span class="tab-create-icon" aria-hidden="true">＋</span>
+				<span class="tab-create-icon" aria-hidden="true">
+					<Icon icon="lucide:plus" width="24" height="24" />
+				</span>
 			</a>
 			<a class="tab-item" href={resolve(`/profile/${data.viewer.did}#sessions`)}>
-				<span aria-hidden="true">📋</span>
+				<span class="tab-icon" aria-hidden="true">
+					<Icon icon="lucide:clipboard-list" width="18" height="18" />
+				</span>
 				<span class="tab-label">{data.i18n.text.navSessions}</span>
 			</a>
 			<a class="tab-item" href={resolve(`/profile/${data.viewer.did}`)}>
-				<span aria-hidden="true">👤</span>
+				<span class="tab-icon" aria-hidden="true">
+					<Icon icon="lucide:user-round" width="18" height="18" />
+				</span>
 				<span class="tab-label">{data.i18n.text.navProfile}</span>
 			</a>
 		</nav>
@@ -372,9 +401,18 @@
 	}
 
 	.nav-icon {
-		font-size: 16px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		width: 20px;
-		text-align: center;
+	}
+
+	.create-main-icon,
+	.create-menu-icon,
+	.tab-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.sidebar-footer {
