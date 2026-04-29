@@ -1,7 +1,5 @@
-import { AtprotoDohHandleResolver } from "@atproto-labs/handle-resolver";
-import { createIdentityResolver } from "@atproto-labs/identity-resolver";
-import { getPdsEndpoint, isValidDidDoc } from "@atproto/common-web";
 import { Agent } from "@atproto/api";
+import { getPdsEndpoint, isValidDidDoc } from "@atproto/common-web";
 import { isPubliclyRoutableIpLiteral, parseIpLiteral } from "@cerulia/protocol";
 import { OAuthClient, requestLocalLock } from "@atproto/oauth-client";
 import { JoseKey } from "@atproto/jwk-jose";
@@ -17,6 +15,7 @@ import type {
 	SavedOAuthStateStore,
 } from "./store/oauth.js";
 import { toOAuthSessionStore, toOAuthStateStore } from "./store/oauth.js";
+import { createDidResolverWithFetch, DohHandleResolver } from "./identity.js";
 
 type FetchLike = (
 	input: URL | RequestInfo,
@@ -26,8 +25,6 @@ type FetchLike = (
 interface BaseOAuthRuntimeOptions {
 	publicBaseUrl: string;
 	privateJwkJson: string;
-	dohEndpoint?: string;
-	publicAgentLookup?: NonNullable<AgentProvider["getPublicAgent"]>;
 	clientName?: string;
 	clientId?: string;
 	redirectUri?: string;
@@ -43,17 +40,14 @@ export interface BunOAuthRuntimeOptions extends BaseOAuthRuntimeOptions {
 	knownRepoCatalog: KnownRepoCatalog;
 	stateStore: SavedOAuthStateStore;
 	sessionStore: SavedOAuthSessionStore & OAuthSessionCatalog;
-	clientName?: string;
-	clientId?: string;
-	redirectUri?: string;
-	clientUri?: string;
-	jwksUri?: string;
+	publicAgentLookup?: NonNullable<AgentProvider["getPublicAgent"]>;
 }
 
 export interface WorkerOAuthRuntimeOptions extends BaseOAuthRuntimeOptions {
 	knownRepoCatalog: KnownRepoCatalog;
 	stateStore: SavedOAuthStateStore;
 	sessionStore: SavedOAuthSessionStore & OAuthSessionCatalog;
+	dohEndpoint?: string;
 }
 
 function normalizeBaseUrl(value: string): URL {
@@ -196,24 +190,19 @@ function createOAuthRuntimeBundle(
 function createPublicAgentLookup(
 	fetchImpl: FetchLike,
 	resolveDidDoc: ((repoDid: string) => Promise<unknown | null>) | undefined,
-	dohEndpoint?: string,
 ): NonNullable<AgentProvider["getPublicAgent"]> {
 	const timedFetch = createTimeoutFetch(fetchImpl, 1_500) as typeof fetch;
-	const identityResolver = resolveDidDoc
+	const didResolver = resolveDidDoc
 		? null
-		: createIdentityResolver({
+		: createDidResolverWithFetch({
 				fetch: timedFetch,
-				handleResolver: new AtprotoDohHandleResolver({
-					dohEndpoint: dohEndpoint ?? "https://cloudflare-dns.com/dns-query",
-					fetch: timedFetch,
-				}),
+				timeoutMs: 1_500,
 			});
 
 	return async (repoDid: string) => {
 		const didDoc = resolveDidDoc
 			? await resolveDidDoc(repoDid).catch(() => null)
-			: ((await identityResolver?.resolve(repoDid).catch(() => null))?.didDoc ??
-				null);
+			: ((await didResolver?.resolve(repoDid).catch(() => null)) ?? null);
 		if (!didDoc || !isValidDidDoc(didDoc)) {
 			return null;
 		}
@@ -239,7 +228,6 @@ function createPublicAgentLookup(
 
 export function createPublicAgentProvider(options: {
 	knownRepoCatalog: KnownRepoCatalog;
-	dohEndpoint?: string;
 	fetchImpl?: FetchLike;
 	resolveDidDoc?: (repoDid: string) => Promise<unknown | null>;
 }): AgentProvider {
@@ -254,7 +242,6 @@ export function createPublicAgentProvider(options: {
 		getPublicAgent: createPublicAgentLookup(
 			fetchImpl,
 			options.resolveDidDoc,
-			options.dohEndpoint,
 		),
 		rememberRepoDid(repoDid: string) {
 			return options.knownRepoCatalog.rememberRepoDid(repoDid);
@@ -295,7 +282,7 @@ export async function createBunOAuthRuntime(options: BunOAuthRuntimeOptions) {
 		options.sessionStore,
 		options.knownRepoCatalog,
 		options.publicAgentLookup ??
-			createPublicAgentLookup(fetchImpl, undefined, options.dohEndpoint),
+			createPublicAgentLookup(fetchImpl, undefined),
 	);
 }
 
@@ -311,9 +298,8 @@ export async function createWorkerOAuthRuntime(
 		keyset: [key],
 		stateStore: toOAuthStateStore(options.stateStore),
 		sessionStore: toOAuthSessionStore(options.sessionStore),
-		handleResolver: new AtprotoDohHandleResolver({
-			dohEndpoint:
-				options.dohEndpoint ?? "https://cloudflare-dns.com/dns-query",
+		handleResolver: new DohHandleResolver({
+			dohEndpoint: options.dohEndpoint,
 			fetch: fetchImpl,
 		}),
 		runtimeImplementation: {
@@ -341,6 +327,6 @@ export async function createWorkerOAuthRuntime(
 		},
 		options.sessionStore,
 		options.knownRepoCatalog,
-		createPublicAgentLookup(fetchImpl, undefined, options.dohEndpoint),
+		createPublicAgentLookup(fetchImpl, undefined),
 	);
 }

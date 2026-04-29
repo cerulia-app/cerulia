@@ -1,6 +1,6 @@
 import { parseAtUri } from "@cerulia/protocol";
 import type { CanonicalRecordSource, StoredRecord } from "../source.js";
-import type { SqlDriver } from "../store/bun-sqlite.js";
+import type { SqlDriver } from "../store/sql.js";
 
 interface RecordRow {
 	repo_did: string;

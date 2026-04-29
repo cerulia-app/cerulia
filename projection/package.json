@@ -12,10 +12,9 @@
 		"check": "tsc --noEmit && bun test"
 	},
 	"dependencies": {
-		"@atproto-labs/handle-resolver": "^0.3.6",
-		"@atproto-labs/identity-resolver": "^0.3.6",
 		"@atproto/api": "^0.19.9",
 		"@atproto/common-web": "^0.4.21",
+		"@atproto/identity": "^0.4.12",
 		"@atproto/lexicon": "^0.6.2",
 		"@cerulia/protocol": "workspace:*",
 		"hono": "^4.10.0"

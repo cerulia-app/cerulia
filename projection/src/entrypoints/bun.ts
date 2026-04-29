@@ -24,7 +24,6 @@ await seedKnownRepoCatalog(
 const source = new AtprotoPublicRecordSource(
 	createPublicAgentProvider({
 		knownRepoCatalog,
-		dohEndpoint: process.env.CERULIA_DOH_ENDPOINT,
 	}),
 );
 const catalogStore = new SqlScenarioCatalogStore(driver);

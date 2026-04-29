@@ -1,5 +1,3 @@
-import { AtprotoDohHandleResolver } from "@atproto-labs/handle-resolver";
-import { createIdentityResolver } from "@atproto-labs/identity-resolver";
 import { getPdsEndpoint, isValidDidDoc } from "@atproto/common-web";
 import { Agent } from "@atproto/api";
 import {
@@ -13,6 +11,7 @@ import * as https from "node:https";
 import { Readable } from "node:stream";
 import type { AgentProvider } from "./store/atproto.js";
 import type { KnownRepoCatalog } from "./store/oauth.js";
+import { createDidResolverWithFetch } from "./identity.js";
 
 type FetchLike = (
 	input: URL | RequestInfo,
@@ -198,28 +197,25 @@ function createPinnedFetch(): FetchLike {
 	};
 }
 
-export function createNodePublicAgentLookup(
-	dohEndpoint?: string,
-): NonNullable<AgentProvider["getPublicAgent"]> {
+export function createNodePublicAgentLookup(): NonNullable<
+	AgentProvider["getPublicAgent"]
+> {
 	const pinnedFetch = createTimeoutFetch(
 		createPinnedFetch(),
 		1500,
 	) as typeof fetch;
-	const identityResolver = createIdentityResolver({
+	const didResolver = createDidResolverWithFetch({
 		fetch: pinnedFetch,
-		handleResolver: new AtprotoDohHandleResolver({
-			dohEndpoint: dohEndpoint ?? "https://cloudflare-dns.com/dns-query",
-			fetch: pinnedFetch,
-		}),
+		timeoutMs: 1_500,
 	});
 
 	return async (repoDid: string) => {
-		const identity = await identityResolver.resolve(repoDid).catch(() => null);
-		if (!identity || !isValidDidDoc(identity.didDoc)) {
+		const didDoc = await didResolver.resolve(repoDid).catch(() => null);
+		if (!didDoc || !isValidDidDoc(didDoc)) {
 			return null;
 		}
 
-		const pdsEndpoint = getPdsEndpoint(identity.didDoc);
+		const pdsEndpoint = getPdsEndpoint(didDoc);
 		if (!pdsEndpoint) {
 			return null;
 		}
@@ -240,7 +236,6 @@ export function createNodePublicAgentLookup(
 
 export function createPublicAgentProvider(options: {
 	knownRepoCatalog: KnownRepoCatalog;
-	dohEndpoint?: string;
 }): AgentProvider {
 	return {
 		async getAgent() {
@@ -249,7 +244,7 @@ export function createPublicAgentProvider(options: {
 		listRepoDids() {
 			return options.knownRepoCatalog.listRepoDids();
 		},
-		getPublicAgent: createNodePublicAgentLookup(options.dohEndpoint),
+		getPublicAgent: createNodePublicAgentLookup(),
 		rememberRepoDid(repoDid: string) {
 			return options.knownRepoCatalog.rememberRepoDid(repoDid);
 		},

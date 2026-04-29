@@ -24,12 +24,9 @@ const dbPath = process.env.CERULIA_API_DB ?? "./cerulia-api.sqlite";
 const cacheStore = createBunSqliteStore(dbPath);
 const driver = createBunSqliteDriver(dbPath);
 const oauthStores = createSqlOauthStores(driver);
-const publicAgentLookup = createNodePublicAgentLookup(
-	process.env.CERULIA_DOH_ENDPOINT,
-);
+const publicAgentLookup = createNodePublicAgentLookup();
 const publicAgentProvider = createPublicAgentProvider({
 	knownRepoCatalog: oauthStores.knownRepoCatalog,
-	dohEndpoint: process.env.CERULIA_DOH_ENDPOINT,
 });
 const publicBaseUrl = process.env.CERULIA_APPVIEW_PUBLIC_BASE_URL;
 const privateJwkJson = process.env.CERULIA_OAUTH_PRIVATE_JWK;
@@ -91,7 +88,6 @@ if (publicBaseUrl && privateJwkJson) {
 		sessionStore: oauthStores.sessionStore,
 		publicAgentLookup,
 		clientName: process.env.CERULIA_OAUTH_CLIENT_NAME,
-		dohEndpoint: process.env.CERULIA_DOH_ENDPOINT,
 	});
 	store = new AtprotoMirrorRecordStore(cacheStore, oauthRuntime.agentProvider);
 }

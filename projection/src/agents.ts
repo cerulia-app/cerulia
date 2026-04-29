@@ -104,7 +104,6 @@ export interface PublicAgentProvider {
 function createPublicAgentLookup(
 	_fetchImpl: FetchLike,
 	resolveDidDoc: ((repoDid: string) => Promise<unknown | null>) | undefined,
-	_dohEndpoint?: string,
 ): PublicAgentProvider["getPublicAgent"] {
 	void resolveDidDoc;
 	return async () => null;
@@ -112,7 +111,6 @@ function createPublicAgentLookup(
 
 export function createPublicAgentProvider(options: {
 	knownRepoCatalog: KnownRepoCatalog;
-	dohEndpoint?: string;
 	resolveDidDoc?: (repoDid: string) => Promise<unknown | null>;
 	fetchImpl?: FetchLike;
 }): PublicAgentProvider {
@@ -125,7 +123,6 @@ export function createPublicAgentProvider(options: {
 		getPublicAgent: createPublicAgentLookup(
 			fetchImpl,
 			options.resolveDidDoc,
-			options.dohEndpoint,
 		),
 		rememberRepoDid(repoDid: string) {
 			return options.knownRepoCatalog.rememberRepoDid(repoDid);

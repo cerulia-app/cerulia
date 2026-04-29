@@ -36,7 +36,6 @@ export async function createWorkerApp(env: WorkerEnv) {
 	const oauthStores = createSqlOauthStores(driver);
 	const publicAgentProvider = createPublicAgentProvider({
 		knownRepoCatalog: oauthStores.knownRepoCatalog,
-		dohEndpoint: env.CERULIA_DOH_ENDPOINT,
 	});
 	const publicBaseUrl = env.CERULIA_APPVIEW_PUBLIC_BASE_URL;
 	const privateJwkJson = env.CERULIA_OAUTH_PRIVATE_JWK;

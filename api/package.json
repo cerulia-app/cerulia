@@ -14,10 +14,9 @@
 		"check": "tsc --noEmit && bun test"
 	},
 	"dependencies": {
-		"@atproto-labs/handle-resolver": "^0.3.6",
-		"@atproto-labs/identity-resolver": "^0.3.6",
 		"@atproto/api": "^0.19.9",
 		"@atproto/common-web": "^0.4.21",
+		"@atproto/identity": "^0.4.12",
 		"@atproto/jwk-jose": "^0.1.11",
 		"@atproto/jwk-webcrypto": "^0.2.0",
 		"@atproto/lexicon": "^0.6.2",
