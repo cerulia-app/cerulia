@@ -4,10 +4,6 @@
 
 	let { data, children } = $props();
 
-	const viewer = $derived(data.viewer);
-	const i18n = $derived(data.i18n);
-	const signInHref = $derived(data.signInHref);
-
 	let createMenuOpen = $state(false);
 
 	function toggleCreateMenu() {
@@ -19,14 +15,14 @@
 	}
 </script>
 
-<a class="skip-link" href="#app-main">{i18n.text.skipToContent}</a>
+<a class="skip-link" href="#app-main">{data.i18n.text.skipToContent}</a>
 
-{#if viewer}
+{#if data.viewer}
 	<!-- Signed-in shell: sidebar (desktop) + bottom tabs (mobile) -->
 	<div class="app-shell">
 		<!-- Desktop sidebar -->
 		<nav class="sidebar" aria-label="メインナビゲーション">
-			<a class="brand-mark" href={resolve(i18n.homeHref)} aria-label={i18n.text.homeAriaLabel}>
+			<a class="brand-mark" href={resolve(data.i18n.homeHref)} aria-label={data.i18n.text.homeAriaLabel}>
 				Cerulia
 			</a>
 
@@ -38,37 +34,37 @@
 						aria-current={$page.url.pathname === '/home' ? 'page' : undefined}
 					>
 						<span class="nav-icon" aria-hidden="true">🏠</span>
-						{i18n.text.navHome}
+						{data.i18n.text.navHome}
 					</a>
 				</li>
 				<li>
 					<a
 						class="nav-item"
-						href={resolve(`/profile/${viewer.did}#characters`)}
+						href={resolve(`/profile/${data.viewer.did}#characters`)}
 						aria-current={$page.url.hash === '#characters' ? 'page' : undefined}
 					>
 						<span class="nav-icon" aria-hidden="true">◇</span>
-						{i18n.text.navCharacters}
+						{data.i18n.text.navCharacters}
 					</a>
 				</li>
 				<li>
 					<a
 						class="nav-item"
-						href={resolve(`/profile/${viewer.did}#sessions`)}
+						href={resolve(`/profile/${data.viewer.did}#sessions`)}
 						aria-current={$page.url.hash === '#sessions' ? 'page' : undefined}
 					>
 						<span class="nav-icon" aria-hidden="true">📋</span>
-						{i18n.text.navSessions}
+						{data.i18n.text.navSessions}
 					</a>
 				</li>
 				<li>
 					<a
 						class="nav-item"
-						href={resolve(`/profile/${viewer.did}`)}
-						aria-current={$page.url.pathname === `/profile/${viewer.did}` ? 'page' : undefined}
+						href={resolve(`/profile/${data.viewer.did}`)}
+						aria-current={$page.url.pathname === `/profile/${data.viewer.did}` ? 'page' : undefined}
 					>
 						<span class="nav-icon" aria-hidden="true">👤</span>
-						{i18n.text.navProfile}
+						{data.i18n.text.navProfile}
 					</a>
 				</li>
 			</ul>
@@ -77,11 +73,11 @@
 				<div class="create-split-btn">
 					<a class="create-main" href={resolve('/characters/new')}>
 						<span aria-hidden="true">＋</span>
-						{i18n.text.navCreate}
+						{data.i18n.text.navCreate}
 					</a>
 					<button
 						class="create-chevron"
-						aria-label={i18n.text.navCreateAriaLabel}
+						aria-label={data.i18n.text.navCreateAriaLabel}
 						aria-expanded={createMenuOpen}
 						onclick={toggleCreateMenu}
 					>
@@ -97,25 +93,25 @@
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
 								<span aria-hidden="true">✦</span>
-								{i18n.text.navCreateSession}
+								{data.i18n.text.navCreateSession}
 							</button>
 						</li>
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
 								<span aria-hidden="true">□</span>
-								{i18n.text.navCreateScenario}
+								{data.i18n.text.navCreateScenario}
 							</button>
 						</li>
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
 								<span aria-hidden="true">◎</span>
-								{i18n.text.navCreateCampaign}
+								{data.i18n.text.navCreateCampaign}
 							</button>
 						</li>
 						<li>
 							<button class="create-menu-item" onclick={closeCreateMenu}>
 								<span aria-hidden="true">⌂</span>
-								{i18n.text.navCreateHouse}
+								{data.i18n.text.navCreateHouse}
 							</button>
 						</li>
 					</ul>
@@ -123,15 +119,15 @@
 			</div>
 
 			<div class="locale-row">
-				<nav aria-label={i18n.text.localeNavAriaLabel}>
-					{#each i18n.availableLocales as option (option.locale)}
+				<nav aria-label={data.i18n.text.localeNavAriaLabel}>
+					{#each data.i18n.availableLocales as option (option.locale)}
 						<a
 							class="locale-link"
-							class:current={option.locale === i18n.locale}
+							class:current={option.locale === data.i18n.locale}
 							href={resolve(option.href)}
 							lang={option.hrefLang}
 							hreflang={option.hrefLang}
-							aria-current={option.locale === i18n.locale ? 'page' : undefined}
+							aria-current={option.locale === data.i18n.locale ? 'page' : undefined}
 						>
 							{option.label}
 						</a>
@@ -153,26 +149,26 @@
 				aria-current={$page.url.pathname === '/home' ? 'page' : undefined}
 			>
 				<span aria-hidden="true">🏠</span>
-				<span class="tab-label">{i18n.text.navHome}</span>
+				<span class="tab-label">{data.i18n.text.navHome}</span>
 			</a>
-			<a class="tab-item" href={resolve(`/profile/${viewer.did}#characters`)}>
+			<a class="tab-item" href={resolve(`/profile/${data.viewer.did}#characters`)}>
 				<span aria-hidden="true">◇</span>
-				<span class="tab-label">{i18n.text.navCharacters}</span>
+				<span class="tab-label">{data.i18n.text.navCharacters}</span>
 			</a>
 			<a
 				class="tab-item tab-create"
 				href={resolve('/characters/new')}
-				aria-label={i18n.text.navCreateCharacter}
+				aria-label={data.i18n.text.navCreateCharacter}
 			>
 				<span class="tab-create-icon" aria-hidden="true">＋</span>
 			</a>
-			<a class="tab-item" href={resolve(`/profile/${viewer.did}#sessions`)}>
+			<a class="tab-item" href={resolve(`/profile/${data.viewer.did}#sessions`)}>
 				<span aria-hidden="true">📋</span>
-				<span class="tab-label">{i18n.text.navSessions}</span>
+				<span class="tab-label">{data.i18n.text.navSessions}</span>
 			</a>
-			<a class="tab-item" href={resolve(`/profile/${viewer.did}`)}>
+			<a class="tab-item" href={resolve(`/profile/${data.viewer.did}`)}>
 				<span aria-hidden="true">👤</span>
-				<span class="tab-label">{i18n.text.navProfile}</span>
+				<span class="tab-label">{data.i18n.text.navProfile}</span>
 			</a>
 		</nav>
 	</div>
@@ -181,28 +177,28 @@
 	<div class="public-shell">
 		<header class="public-header">
 			<div class="header-inner">
-				<a class="brand-mark" href={resolve(i18n.homeHref)} aria-label={i18n.text.homeAriaLabel}>
+				<a class="brand-mark" href={resolve(data.i18n.homeHref)} aria-label={data.i18n.text.homeAriaLabel}>
 					Cerulia
 				</a>
 
 				<div class="header-right">
-					<nav class="locale-nav" aria-label={i18n.text.localeNavAriaLabel}>
-						{#each i18n.availableLocales as option (option.locale)}
+					<nav class="locale-nav" aria-label={data.i18n.text.localeNavAriaLabel}>
+						{#each data.i18n.availableLocales as option (option.locale)}
 							<a
 								class="locale-link"
-								class:current={option.locale === i18n.locale}
+								class:current={option.locale === data.i18n.locale}
 								href={resolve(option.href)}
 								lang={option.hrefLang}
 								hreflang={option.hrefLang}
-								aria-current={option.locale === i18n.locale ? 'page' : undefined}
+								aria-current={option.locale === data.i18n.locale ? 'page' : undefined}
 							>
 								{option.label}
 							</a>
 						{/each}
 					</nav>
 
-					<a class="signin-btn" href={resolve(signInHref)}>
-						{i18n.text.navSignIn}
+					<a class="signin-btn" href={resolve(data.signInHref)}>
+						{data.i18n.text.navSignIn}
 					</a>
 				</div>
 			</div>

@@ -3,9 +3,6 @@
 
 	let { data } = $props();
 
-	const t = $derived(data.i18n.text);
-	const signInHref = $derived(data.signInHref);
-
 	// Placeholder example links — replaced when real records exist
 	const exampleCharacterHref = resolve('/characters/example');
 	const exampleProfileHref = '/profile/example.bsky.social';
@@ -39,15 +36,15 @@
 	<section id="top-hero" class="hero-section" aria-labelledby="hero-heading">
 		<div class="hero-inner">
 			<div class="hero-copy">
-				<p class="eyebrow">{t.heroEyebrow}</p>
-				<h1 id="hero-heading" class="hero-title">{t.heroTitle}</h1>
-				<p class="hero-lead">{t.heroLead}</p>
+				<p class="eyebrow">{data.i18n.text.heroEyebrow}</p>
+				<h1 id="hero-heading" class="hero-title">{data.i18n.text.heroTitle}</h1>
+				<p class="hero-lead">{data.i18n.text.heroLead}</p>
 				<div class="hero-ctas">
-					<a class="btn-primary" href={resolve(signInHref)}>
-						{t.heroCtaPrimary}
+					<a class="btn-primary" href={resolve(data.signInHref)}>
+						{data.i18n.text.heroCtaPrimary}
 					</a>
 					<a class="btn-ghost" href={exampleCharacterHref}>
-						{t.heroCtaSecondary}
+						{data.i18n.text.heroCtaSecondary}
 					</a>
 				</div>
 			</div>
@@ -77,27 +74,27 @@
 	<section id="top-value-pillars" class="pillars-section" aria-labelledby="pillars-heading">
 		<div class="section-inner">
 			<div class="section-header">
-				<p class="eyebrow">{t.pillarsEyebrow}</p>
-				<h2 id="pillars-heading" class="section-title">{t.pillarsHeading}</h2>
+				<p class="eyebrow">{data.i18n.text.pillarsEyebrow}</p>
+				<h2 id="pillars-heading" class="section-title">{data.i18n.text.pillarsHeading}</h2>
 			</div>
 
 			<div class="pillars-grid">
 				<article class="pillar-card" aria-labelledby="pillar-create">
 					<div class="pillar-icon" aria-hidden="true">✦</div>
-					<h3 id="pillar-create" class="pillar-title">{t.pillarCreate}</h3>
-					<p class="pillar-body">{t.pillarCreateBody}</p>
+					<h3 id="pillar-create" class="pillar-title">{data.i18n.text.pillarCreate}</h3>
+					<p class="pillar-body">{data.i18n.text.pillarCreateBody}</p>
 				</article>
 
 				<article class="pillar-card" aria-labelledby="pillar-record">
 					<div class="pillar-icon" aria-hidden="true">📋</div>
-					<h3 id="pillar-record" class="pillar-title">{t.pillarRecord}</h3>
-					<p class="pillar-body">{t.pillarRecordBody}</p>
+					<h3 id="pillar-record" class="pillar-title">{data.i18n.text.pillarRecord}</h3>
+					<p class="pillar-body">{data.i18n.text.pillarRecordBody}</p>
 				</article>
 
 				<article class="pillar-card" aria-labelledby="pillar-share">
 					<div class="pillar-icon" aria-hidden="true">🔗</div>
-					<h3 id="pillar-share" class="pillar-title">{t.pillarShare}</h3>
-					<p class="pillar-body">{t.pillarShareBody}</p>
+					<h3 id="pillar-share" class="pillar-title">{data.i18n.text.pillarShare}</h3>
+					<p class="pillar-body">{data.i18n.text.pillarShareBody}</p>
 				</article>
 			</div>
 		</div>
@@ -107,33 +104,33 @@
 	<section id="top-flow-preview" class="flow-section" aria-labelledby="flow-heading">
 		<div class="section-inner">
 			<div class="section-header">
-				<p class="eyebrow">{t.flowEyebrow}</p>
-				<h2 id="flow-heading" class="section-title">{t.flowHeading}</h2>
+				<p class="eyebrow">{data.i18n.text.flowEyebrow}</p>
+				<h2 id="flow-heading" class="section-title">{data.i18n.text.flowHeading}</h2>
 			</div>
 
 			<ol class="flow-steps" role="list">
 				<li class="flow-step">
 					<div class="flow-step-num" aria-hidden="true">1</div>
-					<h3 class="flow-step-title">{t.flowStep1}</h3>
-					<p class="flow-step-body">{t.flowStep1Body}</p>
+					<h3 class="flow-step-title">{data.i18n.text.flowStep1}</h3>
+					<p class="flow-step-body">{data.i18n.text.flowStep1Body}</p>
 				</li>
 				<div class="flow-arrow" aria-hidden="true">→</div>
 				<li class="flow-step">
 					<div class="flow-step-num" aria-hidden="true">2</div>
-					<h3 class="flow-step-title">{t.flowStep2}</h3>
-					<p class="flow-step-body">{t.flowStep2Body}</p>
+					<h3 class="flow-step-title">{data.i18n.text.flowStep2}</h3>
+					<p class="flow-step-body">{data.i18n.text.flowStep2Body}</p>
 				</li>
 				<div class="flow-arrow" aria-hidden="true">→</div>
 				<li class="flow-step">
 					<div class="flow-step-num" aria-hidden="true">3</div>
-					<h3 class="flow-step-title">{t.flowStep3}</h3>
-					<p class="flow-step-body">{t.flowStep3Body}</p>
+					<h3 class="flow-step-title">{data.i18n.text.flowStep3}</h3>
+					<p class="flow-step-body">{data.i18n.text.flowStep3Body}</p>
 				</li>
 				<div class="flow-arrow" aria-hidden="true">→</div>
 				<li class="flow-step">
 					<div class="flow-step-num" aria-hidden="true">4</div>
-					<h3 class="flow-step-title">{t.flowStep4}</h3>
-					<p class="flow-step-body">{t.flowStep4Body}</p>
+					<h3 class="flow-step-title">{data.i18n.text.flowStep4}</h3>
+					<p class="flow-step-body">{data.i18n.text.flowStep4Body}</p>
 				</li>
 			</ol>
 		</div>
@@ -143,8 +140,8 @@
 	<section id="top-surface-split" class="split-section" aria-labelledby="split-heading">
 		<div class="section-inner">
 			<div class="section-header">
-				<p class="eyebrow">{t.splitEyebrow}</p>
-				<h2 id="split-heading" class="section-title">{t.splitHeading}</h2>
+				<p class="eyebrow">{data.i18n.text.splitEyebrow}</p>
+				<h2 id="split-heading" class="section-title">{data.i18n.text.splitHeading}</h2>
 			</div>
 
 			<div class="split-grid">
@@ -164,9 +161,9 @@
 						</div>
 					</div>
 					<div class="split-copy">
-						<h3 id="split-character" class="split-card-title">{t.splitCharacterTitle}</h3>
-						<p class="split-card-body">{t.splitCharacterBody}</p>
-						<a class="split-cta" href={exampleCharacterHref}>{t.splitCharacterCta} →</a>
+						<h3 id="split-character" class="split-card-title">{data.i18n.text.splitCharacterTitle}</h3>
+						<p class="split-card-body">{data.i18n.text.splitCharacterBody}</p>
+						<a class="split-cta" href={exampleCharacterHref}>{data.i18n.text.splitCharacterCta} →</a>
 					</div>
 				</article>
 
@@ -186,9 +183,9 @@
 						</div>
 					</div>
 					<div class="split-copy">
-						<h3 id="split-profile" class="split-card-title">{t.splitProfileTitle}</h3>
-						<p class="split-card-body">{t.splitProfileBody}</p>
-						<a class="split-cta" href={exampleProfileHref} rel="external">{t.splitProfileCta} →</a>
+						<h3 id="split-profile" class="split-card-title">{data.i18n.text.splitProfileTitle}</h3>
+						<p class="split-card-body">{data.i18n.text.splitProfileBody}</p>
+						<a class="split-cta" href={exampleProfileHref} rel="external">{data.i18n.text.splitProfileCta} →</a>
 					</div>
 				</article>
 			</div>
@@ -198,18 +195,18 @@
 	<!-- ── 5. Primary CTA ───────────────────────────────────────────────── -->
 	<section id="top-primary-cta" class="cta-section" aria-labelledby="cta-heading">
 		<div class="cta-inner">
-			<h2 id="cta-heading" class="cta-title">{t.ctaHeading}</h2>
-			<p class="cta-body">{t.ctaBody}</p>
+			<h2 id="cta-heading" class="cta-title">{data.i18n.text.ctaHeading}</h2>
+			<p class="cta-body">{data.i18n.text.ctaBody}</p>
 			<div class="cta-btns">
-				<a class="btn-primary" href={resolve(signInHref)}>
-					{t.ctaPrimary}
+				<a class="btn-primary" href={resolve(data.signInHref)}>
+					{data.i18n.text.ctaPrimary}
 				</a>
 				<a class="btn-ghost" href={exampleCharacterHref}>
-					{t.ctaSecondary}
+					{data.i18n.text.ctaSecondary}
 				</a>
 			</div>
 			<p class="cta-tertiary">
-				<a class="text-link" href={exampleProfileHref} rel="external">{t.ctaTertiary}</a>
+				<a class="text-link" href={exampleProfileHref} rel="external">{data.i18n.text.ctaTertiary}</a>
 			</p>
 		</div>
 	</section>
@@ -217,7 +214,7 @@
 	<!-- ── 6. Trust copy ────────────────────────────────────────────────── -->
 	<section id="top-trust-copy" class="trust-section">
 		<div class="section-inner">
-			<p class="trust-body">{t.trustBody}</p>
+			<p class="trust-body">{data.i18n.text.trustBody}</p>
 		</div>
 	</section>
 </div>
