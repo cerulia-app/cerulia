@@ -8,8 +8,8 @@ import {
 	SUPPORTED_LOCALES,
 	type SupportedLocale,
 	type TextDirection,
-	type TranslatedText,
-} from "./locale";
+	type TranslatedText
+} from './locale';
 
 export interface LocaleAlternateLink {
 	locale: SupportedLocale;
@@ -47,10 +47,7 @@ export interface LocalizedPageMeta {
 	alternateLinks: LocaleAlternateLink[];
 }
 
-function buildAlternateLinks(
-	pathname: string,
-	origin: string,
-): LocaleAlternateLink[] {
+function buildAlternateLinks(pathname: string, origin: string): LocaleAlternateLink[] {
 	return SUPPORTED_LOCALES.map((locale) => {
 		const definition = getLocaleDefinition(locale);
 		const localizedPathname = localizePathname(pathname, locale);
@@ -60,7 +57,7 @@ function buildAlternateLinks(
 			label: definition.label,
 			hrefLang: definition.htmlLang,
 			pathname: localizedPathname,
-			href: new URL(localizedPathname, origin).toString(),
+			href: new URL(localizedPathname, origin).toString()
 		};
 	});
 }
@@ -76,13 +73,13 @@ export function createRouteI18nState(url: URL): RouteI18nState {
 		contentPathname: resolved.contentPathname,
 		canonicalPathname: resolved.canonicalPathname,
 		origin: url.origin,
-		alternates: buildAlternateLinks(resolved.contentPathname, url.origin),
+		alternates: buildAlternateLinks(resolved.contentPathname, url.origin)
 	};
 }
 
 export function buildLocalizedMeta(
 	route: RouteI18nState,
-	definition: LocalizedMetaDefinition,
+	definition: LocalizedMetaDefinition
 ): LocalizedPageMeta {
 	const contentPathname = definition.pathname
 		? normalizePathname(definition.pathname)
@@ -93,19 +90,16 @@ export function buildLocalizedMeta(
 	return {
 		title: selectTranslatedText(definition.title, route.locale),
 		description: selectTranslatedText(definition.description, route.locale),
-		canonicalUrl: new URL(
-			localizePathname(contentPathname, route.locale),
-			route.origin,
-		).toString(),
+		canonicalUrl: new URL(localizePathname(contentPathname, route.locale), route.origin).toString(),
 		xDefaultUrl: new URL(
 			localizePathname(contentPathname, DEFAULT_LOCALE),
-			route.origin,
+			route.origin
 		).toString(),
 		ogLocale: localeDefinition.ogLocale,
 		ogAlternateLocales: alternateLinks
 			.filter((alternate) => alternate.locale !== route.locale)
 			.map((alternate) => getLocaleDefinition(alternate.locale).ogLocale),
-		robots: definition.robots ?? "index,follow",
-		alternateLinks,
+		robots: definition.robots ?? 'index,follow',
+		alternateLinks
 	};
 }

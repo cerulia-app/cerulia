@@ -1,12 +1,8 @@
-import { proxyCeruliaJson } from "$lib/server/cerulia-http";
-import { requireCeruliaE2eMode } from "$lib/server/cerulia-runtime";
-import type { RequestHandler } from "./$types";
+import { proxyCeruliaJson } from '$lib/server/cerulia-http';
+import { requireCeruliaE2eMode } from '$lib/server/cerulia-runtime';
+import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async (event) => {
 	requireCeruliaE2eMode();
-	return proxyCeruliaJson(
-		event,
-		"api",
-		"/xrpc/app.cerulia.dev.character.getHome",
-	);
+	return proxyCeruliaJson(event, 'api', '/xrpc/app.cerulia.dev.character.getHome');
 };

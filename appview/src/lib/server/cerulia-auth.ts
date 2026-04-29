@@ -1,11 +1,11 @@
-import type { Cookies } from "@sveltejs/kit";
+import type { Cookies } from '@sveltejs/kit';
 import {
 	getCeruliaAppviewInternalAuthSecret,
 	hasCeruliaAppviewInternalAuthSecret,
 	isCeruliaOauthConfigured,
-	isCeruliaE2eMode,
-} from "$lib/server/cerulia-runtime";
-import { getCeruliaOauthRuntime } from "$lib/server/oauth-runtime";
+	isCeruliaE2eMode
+} from '$lib/server/cerulia-runtime';
+import { getCeruliaOauthRuntime } from '$lib/server/oauth-runtime';
 
 export interface CeruliaViewerAuth {
 	did: string;
@@ -15,7 +15,7 @@ export interface CeruliaViewerAuth {
 function parseScopes(rawScopes: string | undefined) {
 	return (
 		rawScopes
-			?.split(",")
+			?.split(',')
 			.map((scope) => scope.trim())
 			.filter((scope) => scope.length > 0) ?? []
 	);
@@ -26,26 +26,24 @@ export function deriveCeruliaAuthScopes(grantedScope: string) {
 		grantedScope
 			.split(/\s+/)
 			.map((scope) => scope.trim())
-			.filter((scope) => scope.length > 0),
+			.filter((scope) => scope.length > 0)
 	);
 	const scopes: string[] = [];
-	if (granted.has("atproto")) {
-		scopes.push("app.cerulia.dev.authCoreReader");
+	if (granted.has('atproto')) {
+		scopes.push('app.cerulia.dev.authCoreReader');
 	}
-	if (granted.has("transition:generic")) {
-		if (!scopes.includes("app.cerulia.dev.authCoreReader")) {
-			scopes.push("app.cerulia.dev.authCoreReader");
+	if (granted.has('transition:generic')) {
+		if (!scopes.includes('app.cerulia.dev.authCoreReader')) {
+			scopes.push('app.cerulia.dev.authCoreReader');
 		}
-		scopes.push("app.cerulia.dev.authCoreWriter");
+		scopes.push('app.cerulia.dev.authCoreWriter');
 	}
 	return scopes;
 }
 
-export function readCeruliaViewerAuth(
-	cookies: Cookies,
-): Promise<CeruliaViewerAuth | null> {
+export function readCeruliaViewerAuth(cookies: Cookies): Promise<CeruliaViewerAuth | null> {
 	if (isCeruliaOauthConfigured()) {
-		const sessionId = cookies.get("cerulia_session");
+		const sessionId = cookies.get('cerulia_session');
 		if (!sessionId) {
 			return Promise.resolve(null);
 		}
@@ -58,7 +56,7 @@ export function readCeruliaViewerAuth(
 
 			return {
 				did: binding.did,
-				scopes: deriveCeruliaAuthScopes(binding.grantedScope),
+				scopes: deriveCeruliaAuthScopes(binding.grantedScope)
 			};
 		});
 	}
@@ -67,14 +65,14 @@ export function readCeruliaViewerAuth(
 		return Promise.resolve(null);
 	}
 
-	const did = cookies.get("cerulia_e2e_did");
+	const did = cookies.get('cerulia_e2e_did');
 	if (!did) {
 		return Promise.resolve(null);
 	}
 
 	return Promise.resolve({
 		did,
-		scopes: parseScopes(cookies.get("cerulia_e2e_scopes")),
+		scopes: parseScopes(cookies.get('cerulia_e2e_scopes'))
 	});
 }
 
@@ -90,23 +88,19 @@ async function createInternalAuthSignature(input: {
 		input.method.toUpperCase(),
 		input.pathWithQuery,
 		input.did,
-		input.scopes.join(","),
+		input.scopes.join(','),
 		input.timestamp,
-		input.bodySha256,
-	].join("\n");
+		input.bodySha256
+	].join('\n');
 	const key = await crypto.subtle.importKey(
-		"raw",
+		'raw',
 		new TextEncoder().encode(getCeruliaAppviewInternalAuthSecret()),
-		{ name: "HMAC", hash: "SHA-256" },
+		{ name: 'HMAC', hash: 'SHA-256' },
 		false,
-		["sign"],
+		['sign']
 	);
-	const signature = await crypto.subtle.sign(
-		"HMAC",
-		key,
-		new TextEncoder().encode(payload),
-	);
-	return Buffer.from(signature).toString("base64url");
+	const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
+	return Buffer.from(signature).toString('base64url');
 }
 
 async function digestRequestBody(body: BodyInit | null | undefined) {
@@ -114,15 +108,15 @@ async function digestRequestBody(body: BodyInit | null | undefined) {
 		body === null || body === undefined
 			? new Uint8Array()
 			: new Uint8Array(await new Response(body).arrayBuffer());
-	const digest = await crypto.subtle.digest("SHA-256", bytes);
-	return Buffer.from(digest).toString("base64url");
+	const digest = await crypto.subtle.digest('SHA-256', bytes);
+	return Buffer.from(digest).toString('base64url');
 }
 
 export async function createCeruliaAuthHeaders(
 	viewerAuth: CeruliaViewerAuth | null,
 	requestUrl?: string,
-	method = "GET",
-	body?: BodyInit | null,
+	method = 'GET',
+	body?: BodyInit | null
 ) {
 	if (!viewerAuth) {
 		return {};
@@ -130,15 +124,15 @@ export async function createCeruliaAuthHeaders(
 
 	if (!requestUrl) {
 		return {
-			"x-cerulia-did": viewerAuth.did,
-			"x-cerulia-scopes": viewerAuth.scopes.join(","),
+			'x-cerulia-did': viewerAuth.did,
+			'x-cerulia-scopes': viewerAuth.scopes.join(',')
 		};
 	}
 
 	if (isCeruliaE2eMode() && !hasCeruliaAppviewInternalAuthSecret()) {
 		return {
-			"x-cerulia-did": viewerAuth.did,
-			"x-cerulia-scopes": viewerAuth.scopes.join(","),
+			'x-cerulia-did': viewerAuth.did,
+			'x-cerulia-scopes': viewerAuth.scopes.join(',')
 		};
 	}
 
@@ -151,13 +145,13 @@ export async function createCeruliaAuthHeaders(
 		did: viewerAuth.did,
 		scopes: viewerAuth.scopes,
 		timestamp,
-		bodySha256,
+		bodySha256
 	});
 
 	return {
-		"x-cerulia-did": viewerAuth.did,
-		"x-cerulia-scopes": viewerAuth.scopes.join(","),
-		"x-cerulia-auth-timestamp": timestamp,
-		"x-cerulia-auth-signature": signature,
+		'x-cerulia-did': viewerAuth.did,
+		'x-cerulia-scopes': viewerAuth.scopes.join(','),
+		'x-cerulia-auth-timestamp': timestamp,
+		'x-cerulia-auth-signature': signature
 	};
 }

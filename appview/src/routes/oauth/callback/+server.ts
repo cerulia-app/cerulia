@@ -1,14 +1,14 @@
-import { redirect } from "@sveltejs/kit";
+import { redirect } from '@sveltejs/kit';
 import {
 	deleteMirroredOauthSessionFromApi,
-	mirrorOauthSessionToApi,
-} from "$lib/server/cerulia-oauth-mirror";
-import { getCeruliaOauthRuntime } from "$lib/server/oauth-runtime";
-import type { RequestHandler } from "./$types";
+	mirrorOauthSessionToApi
+} from '$lib/server/cerulia-oauth-mirror';
+import { getCeruliaOauthRuntime } from '$lib/server/oauth-runtime';
+import type { RequestHandler } from './$types';
 
 function sanitizeReturnTo(returnTo: string | null | undefined) {
-	if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//")) {
-		return "/";
+	if (!returnTo || !returnTo.startsWith('/') || returnTo.startsWith('//')) {
+		return '/';
 	}
 
 	return returnTo;
@@ -16,12 +16,12 @@ function sanitizeReturnTo(returnTo: string | null | undefined) {
 
 function createSessionCookie(url: URL, sessionId: string) {
 	return {
-		name: "cerulia_session",
+		name: 'cerulia_session',
 		value: sessionId,
-		path: "/",
+		path: '/',
 		httpOnly: true,
-		sameSite: "lax" as const,
-		secure: url.protocol === "https:",
+		sameSite: 'lax' as const,
+		secure: url.protocol === 'https:'
 	};
 }
 
@@ -29,24 +29,23 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 	const runtime = await getCeruliaOauthRuntime();
 	const result = await runtime.finishLogin(url.searchParams);
 	let mirrored = false;
+	// eslint-disable-next-line no-useless-assignment
 	let sessionId: string | null = null;
 	try {
 		await mirrorOauthSessionToApi({
 			did: result.did,
 			grantedScope: result.grantedScope,
-			savedSession: result.savedSession,
+			savedSession: result.savedSession
 		});
 		mirrored = true;
-		sessionId = (
-			await runtime.commitBrowserSession(result.did, result.grantedScope)
-		).sessionId;
+		({ sessionId } = await runtime.commitBrowserSession(result.did, result.grantedScope));
 	} catch (error) {
 		const compensationErrors: unknown[] = [];
 		if (mirrored) {
 			try {
 				await deleteMirroredOauthSessionFromApi({
 					did: result.did,
-					grantedScope: result.grantedScope,
+					grantedScope: result.grantedScope
 				});
 			} catch (compensationError) {
 				compensationErrors.push(compensationError);
@@ -60,10 +59,11 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 		if (compensationErrors.length > 0) {
 			throw new AggregateError(
 				[error, ...compensationErrors],
-				"OAuth callback compensation failed",
+				'OAuth callback compensation failed',
+				{ cause: error }
 			);
 		}
-		throw error;
+		throw new Error('OAuth callback failed', { cause: error });
 	}
 
 	const cookie = createSessionCookie(url, sessionId);

@@ -1,16 +1,16 @@
-import { randomUUID } from "node:crypto";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
-import { DatabaseSync } from "node:sqlite";
-import { JoseKey } from "@atproto/jwk-jose";
+import { randomUUID } from 'node:crypto';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { JoseKey } from '@atproto/jwk-jose';
 import type {
 	InternalStateData,
 	Jwk,
 	Key,
 	Session,
 	SessionStore,
-	StateStore,
-} from "@atproto/oauth-client";
+	StateStore
+} from '@atproto/oauth-client';
 
 interface JsonRow {
 	value_json: string;
@@ -33,10 +33,7 @@ export interface BrowserSessionBinding {
 }
 
 export interface BrowserSessionStore {
-	createBrowserSession(
-		did: string,
-		grantedScope: string,
-	): Promise<BrowserSessionBinding>;
+	createBrowserSession(did: string, grantedScope: string): Promise<BrowserSessionBinding>;
 	getBrowserSession(sessionId: string): Promise<BrowserSessionBinding | null>;
 	deleteBrowserSession(sessionId: string): Promise<void>;
 }
@@ -48,7 +45,7 @@ type JwkBackedStore<K extends string, V> = {
 	clear?(): Promise<void>;
 };
 
-type ToDpopJwkValue<V extends { dpopKey: Key }> = Omit<V, "dpopKey"> & {
+type ToDpopJwkValue<V extends { dpopKey: Key }> = Omit<V, 'dpopKey'> & {
 	dpopJwk: Jwk;
 };
 
@@ -70,30 +67,26 @@ class SqliteJsonStore<T> {
 		private readonly db: DatabaseSync,
 		private readonly tableName: string,
 		private readonly keyColumn: string,
-		private readonly timestampColumn: string,
+		private readonly timestampColumn: string
 	) {}
 
 	async set(key: string, value: T, timestamp: string): Promise<void> {
 		this.db
 			.prepare(
-				`INSERT OR REPLACE INTO ${this.tableName} (${this.keyColumn}, value_json, ${this.timestampColumn}) VALUES (?, ?, ?)`,
+				`INSERT OR REPLACE INTO ${this.tableName} (${this.keyColumn}, value_json, ${this.timestampColumn}) VALUES (?, ?, ?)`
 			)
 			.run(key, JSON.stringify(value), timestamp);
 	}
 
 	async get(key: string): Promise<T | undefined> {
 		const row = this.db
-			.prepare(
-				`SELECT value_json FROM ${this.tableName} WHERE ${this.keyColumn} = ?`,
-			)
+			.prepare(`SELECT value_json FROM ${this.tableName} WHERE ${this.keyColumn} = ?`)
 			.get(key) as JsonRow | undefined;
 		return row ? (JSON.parse(row.value_json) as T) : undefined;
 	}
 
 	async del(key: string): Promise<void> {
-		this.db
-			.prepare(`DELETE FROM ${this.tableName} WHERE ${this.keyColumn} = ?`)
-			.run(key);
+		this.db.prepare(`DELETE FROM ${this.tableName} WHERE ${this.keyColumn} = ?`).run(key);
 	}
 
 	async clear(): Promise<void> {
@@ -107,9 +100,9 @@ class SqliteOauthStateStore implements SavedOauthStateStore {
 	constructor(db: DatabaseSync) {
 		this.store = new SqliteJsonStore<SavedOauthState>(
 			db,
-			"oauth_states",
-			"state_key",
-			"created_at",
+			'oauth_states',
+			'state_key',
+			'created_at'
 		);
 	}
 
@@ -136,9 +129,9 @@ class SqliteOauthSessionStore implements SavedOauthSessionStore {
 	constructor(db: DatabaseSync) {
 		this.store = new SqliteJsonStore<SavedOauthSession>(
 			db,
-			"oauth_sessions",
-			"subject",
-			"updated_at",
+			'oauth_sessions',
+			'subject',
+			'updated_at'
 		);
 	}
 
@@ -162,15 +155,12 @@ class SqliteOauthSessionStore implements SavedOauthSessionStore {
 class SqliteBrowserSessionStore implements BrowserSessionStore {
 	constructor(private readonly db: DatabaseSync) {}
 
-	async createBrowserSession(
-		did: string,
-		grantedScope: string,
-	): Promise<BrowserSessionBinding> {
+	async createBrowserSession(did: string, grantedScope: string): Promise<BrowserSessionBinding> {
 		const timestamp = new Date().toISOString();
-		const sessionId = randomUUID().replace(/-/g, "");
+		const sessionId = randomUUID().replace(/-/g, '');
 		this.db
 			.prepare(
-				`INSERT INTO browser_sessions (session_id, did, granted_scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+				`INSERT INTO browser_sessions (session_id, did, granted_scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
 			)
 			.run(sessionId, did, grantedScope, timestamp, timestamp);
 
@@ -179,16 +169,14 @@ class SqliteBrowserSessionStore implements BrowserSessionStore {
 			did,
 			grantedScope,
 			createdAt: timestamp,
-			updatedAt: timestamp,
+			updatedAt: timestamp
 		};
 	}
 
-	async getBrowserSession(
-		sessionId: string,
-	): Promise<BrowserSessionBinding | null> {
+	async getBrowserSession(sessionId: string): Promise<BrowserSessionBinding | null> {
 		const row = this.db
 			.prepare(
-				`SELECT session_id, did, granted_scope, created_at, updated_at FROM browser_sessions WHERE session_id = ?`,
+				`SELECT session_id, did, granted_scope, created_at, updated_at FROM browser_sessions WHERE session_id = ?`
 			)
 			.get(sessionId) as BrowserSessionRow | undefined;
 
@@ -198,15 +186,13 @@ class SqliteBrowserSessionStore implements BrowserSessionStore {
 					did: row.did,
 					grantedScope: row.granted_scope,
 					createdAt: row.created_at,
-					updatedAt: row.updated_at,
+					updatedAt: row.updated_at
 				}
 			: null;
 	}
 
 	async deleteBrowserSession(sessionId: string): Promise<void> {
-		this.db
-			.prepare(`DELETE FROM browser_sessions WHERE session_id = ?`)
-			.run(sessionId);
+		this.db.prepare(`DELETE FROM browser_sessions WHERE session_id = ?`).run(sessionId);
 	}
 }
 
@@ -234,21 +220,21 @@ CREATE TABLE IF NOT EXISTS browser_sessions (
 `);
 }
 
-export function toOauthKeyStore<
-	K extends string,
-	V extends { dpopKey: Key; dpopJwk?: never },
->(store: JwkBackedStore<K, ToDpopJwkValue<V>>): JwkBackedStore<K, V> {
+export function toOauthKeyStore<K extends string, V extends { dpopKey: Key; dpopJwk?: never }>(
+	store: JwkBackedStore<K, ToDpopJwkValue<V>>
+): JwkBackedStore<K, V> {
 	return {
 		async set(key: K, value: V) {
 			const dpopJwk = value.dpopKey.privateJwk;
 			if (!dpopJwk) {
-				throw new Error("Private DPoP JWK is missing.");
+				throw new Error('Private DPoP JWK is missing.');
 			}
 
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { dpopKey: _, ...rest } = value;
 			await store.set(key, {
 				...rest,
-				dpopJwk,
+				dpopJwk
 			} as ToDpopJwkValue<V>);
 		},
 
@@ -262,12 +248,12 @@ export function toOauthKeyStore<
 			const dpopKey = await JoseKey.fromJWK(dpopJwk);
 			return {
 				...rest,
-				dpopKey,
+				dpopKey
 			} as unknown as V;
 		},
 
 		del: store.del.bind(store),
-		clear: store.clear?.bind(store),
+		clear: store.clear?.bind(store)
 	};
 }
 
@@ -275,9 +261,7 @@ export function toOauthStateStore(store: SavedOauthStateStore): StateStore {
 	return toOauthKeyStore<string, InternalStateData>(store);
 }
 
-export function toOauthSessionStore(
-	store: SavedOauthSessionStore,
-): SessionStore {
+export function toOauthSessionStore(store: SavedOauthSessionStore): SessionStore {
 	return toOauthKeyStore<string, Session>(store);
 }
 
@@ -292,6 +276,6 @@ export function createAppviewOauthStores(dbPath: string): AppviewOauthStores {
 		browserSessionStore: new SqliteBrowserSessionStore(db),
 		close() {
 			db.close();
-		},
+		}
 	};
 }

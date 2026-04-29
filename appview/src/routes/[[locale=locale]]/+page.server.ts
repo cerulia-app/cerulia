@@ -5,6 +5,6 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {
 	return {
-		i18n: getPageI18n(createRouteI18nState(url)),
+		i18n: getPageI18n(createRouteI18nState(url))
 	};
 };

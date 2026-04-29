@@ -1,45 +1,35 @@
-import { getCeruliaApiBaseUrl } from "$lib/server/cerulia-runtime";
-import {
-	createCeruliaAuthHeaders,
-	deriveCeruliaAuthScopes,
-} from "$lib/server/cerulia-auth";
+import { getCeruliaApiBaseUrl } from '$lib/server/cerulia-runtime';
+import { createCeruliaAuthHeaders, deriveCeruliaAuthScopes } from '$lib/server/cerulia-auth';
 
-async function requestMirror(
-	path: string,
-	init: RequestInit,
-	did: string,
-	grantedScope: string,
-) {
+async function requestMirror(path: string, init: RequestInit, did: string, grantedScope: string) {
 	const url = `${getCeruliaApiBaseUrl()}${path}`;
-	const method = init.method ?? "GET";
+	const method = init.method ?? 'GET';
 	const headers = new Headers(init.headers);
-	headers.set("accept", "application/json");
+	headers.set('accept', 'application/json');
 	for (const [name, value] of Object.entries(
 		await createCeruliaAuthHeaders(
 			{
 				did,
-				scopes: deriveCeruliaAuthScopes(grantedScope),
+				scopes: deriveCeruliaAuthScopes(grantedScope)
 			},
 			url,
 			method,
-			init.body,
-		),
+			init.body
+		)
 	)) {
 		headers.set(name, value);
 	}
 
-	if (init.body && !headers.has("content-type")) {
-		headers.set("content-type", "application/json");
+	if (init.body && !headers.has('content-type')) {
+		headers.set('content-type', 'application/json');
 	}
 
 	const response = await fetch(url, {
 		...init,
-		headers,
+		headers
 	});
 	if (!response.ok) {
-		throw new Error(
-			`API OAuth mirror request failed with status ${response.status}`,
-		);
+		throw new Error(`API OAuth mirror request failed with status ${response.status}`);
 	}
 	return response;
 }
@@ -50,16 +40,16 @@ export async function mirrorOauthSessionToApi(options: {
 	savedSession: Record<string, unknown>;
 }) {
 	await requestMirror(
-		"/internal/oauth/session",
+		'/internal/oauth/session',
 		{
-			method: "POST",
+			method: 'POST',
 			body: JSON.stringify({
 				did: options.did,
-				session: options.savedSession,
-			}),
+				session: options.savedSession
+			})
 		},
 		options.did,
-		options.grantedScope,
+		options.grantedScope
 	);
 }
 
@@ -70,9 +60,9 @@ export async function deleteMirroredOauthSessionFromApi(options: {
 	await requestMirror(
 		`/internal/oauth/session?did=${encodeURIComponent(options.did)}`,
 		{
-			method: "DELETE",
+			method: 'DELETE'
 		},
 		options.did,
-		options.grantedScope,
+		options.grantedScope
 	);
 }

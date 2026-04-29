@@ -1,4 +1,4 @@
-import type { SupportedLocale, TextDirection } from "$lib/i18n/locale";
+import type { SupportedLocale, TextDirection } from '$lib/i18n/locale';
 
 declare global {
 	namespace App {
