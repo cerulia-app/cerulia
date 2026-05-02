@@ -11,8 +11,7 @@ const pageMeta = {
 		ja: 'Cerulia に公開されたキャラクターの詳細を確認できます。',
 		en: 'View character details shared on Cerulia.',
 		zh: '查看在 Cerulia 上共享的角色详情。'
-	},
-	robots: 'index,follow'
+	}
 } as const;
 
 const pageText = {
@@ -86,21 +85,6 @@ const pageText = {
 		en: 'GM',
 		zh: 'GM'
 	},
-	notFound: {
-		ja: 'キャラクターが見つかりません',
-		en: 'Character not found',
-		zh: '未找到角色'
-	},
-	notFoundBody: {
-		ja: 'このキャラクターは存在しないか、公開されていません。',
-		en: 'This character does not exist or is not accessible.',
-		zh: '此角色不存在或无法访问。'
-	},
-	backToTop: {
-		ja: 'トップへ戻る',
-		en: 'Back to top',
-		zh: '返回顶部'
-	},
 	ownerEdit: {
 		ja: '編集',
 		en: 'Edit',
@@ -118,25 +102,51 @@ const pageText = {
 	}
 } as const;
 
-export function getCharacterDetailI18n(route: RouteI18nState) {
+const errorText = {
+	notFound: {
+		ja: 'キャラクターが見つかりません',
+		en: 'Character not found',
+		zh: '未找到角色'
+	},
+	notFoundBody: {
+		ja: 'このキャラクターは存在しないか、公開されていません。',
+		en: 'This character does not exist or is not accessible.',
+		zh: '此角色不存在或无法访问。'
+	},
+	backToTop: {
+		ja: 'トップへ戻る',
+		en: 'Back to top',
+		zh: '返回顶部'
+	},
+	errorTitle: {
+		ja: 'キャラクターを表示できません',
+		en: 'Unable to show this character',
+		zh: '无法显示此角色'
+	},
+	errorBody: {
+		ja: '時間をおいて再試行してください。',
+		en: 'Please try again later.',
+		zh: '请稍后重试。'
+	}
+} as const;
+
+export function getPageI18n(route: RouteI18nState, displayName?: string) {
+	const title = displayName
+		? {
+				ja: `${displayName} | Cerulia`,
+				en: `${displayName} | Cerulia`,
+				zh: `${displayName} | Cerulia`
+			}
+		: pageMeta.title;
+
 	return {
-		meta: buildLocalizedMeta(route, pageMeta),
+		meta: buildLocalizedMeta(route, { ...pageMeta, title }),
 		text: localizeTextValues(pageText, route.locale)
 	};
 }
 
-export function getCharacterDetailTitleI18n(
-	route: RouteI18nState,
-	displayName: string
-) {
-	const base = localizeTextValues(pageMeta, route.locale);
-	const title = {
-		ja: `${displayName} | Cerulia`,
-		en: `${displayName} | Cerulia`,
-		zh: `${displayName} | Cerulia`
-	};
+export function getErrorI18n(route: RouteI18nState) {
 	return {
-		meta: buildLocalizedMeta(route, { ...pageMeta, title }),
-		text: localizeTextValues(pageText, route.locale)
+		text: localizeTextValues(errorText, route.locale)
 	};
 }

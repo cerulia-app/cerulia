@@ -33,7 +33,6 @@ export interface LocalizedMetaDefinition {
 	title: TranslatedText;
 	description: TranslatedText;
 	pathname?: string;
-	robots?: string;
 }
 
 export interface LocalizedPageMeta {
@@ -43,7 +42,6 @@ export interface LocalizedPageMeta {
 	xDefaultUrl: string;
 	ogLocale: string;
 	ogAlternateLocales: string[];
-	robots: string;
 	alternateLinks: LocaleAlternateLink[];
 }
 
@@ -99,7 +97,6 @@ export function buildLocalizedMeta(
 		ogAlternateLocales: alternateLinks
 			.filter((alternate) => alternate.locale !== route.locale)
 			.map((alternate) => getLocaleDefinition(alternate.locale).ogLocale),
-		robots: definition.robots ?? 'index,follow',
 		alternateLinks
 	};
 }

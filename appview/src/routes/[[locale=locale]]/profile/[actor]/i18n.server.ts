@@ -11,26 +11,10 @@ const pageMeta = {
 		ja: 'Cerulia に登録されたプレイヤーのプロフィールを確認できます。',
 		en: 'View a player profile registered on Cerulia.',
 		zh: '查看在 Cerulia 上注册的玩家个人主页。'
-	},
-	robots: 'index,follow'
+	}
 } as const;
 
 const pageText = {
-	notFound: {
-		ja: 'プロフィールが見つかりません',
-		en: 'Profile not found',
-		zh: '未找到个人主页'
-	},
-	notFoundBody: {
-		ja: 'このプロフィールは存在しないか、公開されていません。',
-		en: 'This profile does not exist or is not accessible.',
-		zh: '此个人主页不存在或无法访问。'
-	},
-	backToTop: {
-		ja: 'トップへ戻る',
-		en: 'Back to top',
-		zh: '返回顶部'
-	},
 	sectionTrpgProfile: {
 		ja: 'TRPG プロフィール',
 		en: 'TRPG Profile',
@@ -113,21 +97,51 @@ const pageText = {
 	}
 } as const;
 
-export function getProfilePageI18n(route: RouteI18nState) {
+const errorText = {
+	notFound: {
+		ja: 'プロフィールが見つかりません',
+		en: 'Profile not found',
+		zh: '未找到个人主页'
+	},
+	notFoundBody: {
+		ja: 'このプロフィールは存在しないか、公開されていません。',
+		en: 'This profile does not exist or is not accessible.',
+		zh: '此个人主页不存在或无法访问。'
+	},
+	backToTop: {
+		ja: 'トップへ戻る',
+		en: 'Back to top',
+		zh: '返回顶部'
+	},
+	errorTitle: {
+		ja: 'プロフィールを表示できません',
+		en: 'Unable to show this profile',
+		zh: '无法显示此个人主页'
+	},
+	errorBody: {
+		ja: '時間をおいて再試行してください。',
+		en: 'Please try again later.',
+		zh: '请稍后重试。'
+	}
+} as const;
+
+export function getPageI18n(route: RouteI18nState, displayName?: string) {
+	const title = displayName
+		? {
+				ja: `${displayName} | Cerulia`,
+				en: `${displayName} | Cerulia`,
+				zh: `${displayName} | Cerulia`
+			}
+		: pageMeta.title;
+
 	return {
-		meta: buildLocalizedMeta(route, pageMeta),
+		meta: buildLocalizedMeta(route, { ...pageMeta, title }),
 		text: localizeTextValues(pageText, route.locale)
 	};
 }
 
-export function getProfilePageTitleI18n(route: RouteI18nState, displayName: string) {
-	const title = {
-		ja: `${displayName} | Cerulia`,
-		en: `${displayName} | Cerulia`,
-		zh: `${displayName} | Cerulia`
-	};
+export function getErrorI18n(route: RouteI18nState) {
 	return {
-		meta: buildLocalizedMeta(route, { ...pageMeta, title }),
-		text: localizeTextValues(pageText, route.locale)
+		text: localizeTextValues(errorText, route.locale)
 	};
 }

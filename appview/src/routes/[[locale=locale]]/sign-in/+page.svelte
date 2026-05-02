@@ -1,19 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import PageHead from '$lib/components/PageHead.svelte';
 
 	let { data } = $props();
 </script>
 
-<svelte:head>
-	<title>{data.i18n.meta.title}</title>
-	<meta name="description" content={data.i18n.meta.description} />
-	<meta name="robots" content={data.i18n.meta.robots} />
-	<link rel="canonical" href={data.i18n.meta.canonicalUrl} />
-	<link rel="alternate" href={data.i18n.meta.xDefaultUrl} hreflang="x-default" />
-	{#each data.i18n.meta.alternateLinks as alternate (alternate.locale)}
-		<link rel="alternate" href={alternate.href} hreflang={alternate.hrefLang} />
-	{/each}
-</svelte:head>
+<PageHead meta={data.i18n.meta} robots="noindex,nofollow" ogType="website" twitterCard="summary" />
 
 <section class="sign-in-page" aria-labelledby="sign-in-heading">
 	<div class="sign-in-inner">
@@ -23,7 +15,7 @@
 			<p class="sign-in-lead">{data.i18n.text.lead}</p>
 		</div>
 
-		<form class="sign-in-form" method="GET" action={resolve(data.loginAction)}>
+		<form class="sign-in-form" method="GET" action="/oauth/login">
 			<input type="hidden" name="returnTo" value={data.returnTo} />
 			<label class="field-label" for="identifier">{data.i18n.text.identifierLabel}</label>
 			<p class="field-hint">{data.i18n.text.identifierHint}</p>
@@ -37,7 +29,7 @@
 				required
 			/>
 			<button class="submit-btn" type="submit">{data.i18n.text.submit}</button>
-			<a class="back-link" href={data.backHref}>{data.i18n.text.back}</a>
+			<a class="back-link" href={resolve(data.backHref)}>{data.i18n.text.back}</a>
 		</form>
 	</div>
 </section>

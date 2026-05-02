@@ -1,46 +1,17 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import PageHead from '$lib/components/PageHead.svelte';
 	import Icon from '@iconify/svelte';
 
 	let { data } = $props();
 </script>
 
-<svelte:head>
-	<title>{data.i18n.meta.title}</title>
-	<meta name="description" content={data.i18n.meta.description} />
-	<meta name="robots" content={data.i18n.meta.robots} />
-	<link rel="canonical" href={data.i18n.meta.canonicalUrl} />
-	<link rel="alternate" href={data.i18n.meta.xDefaultUrl} hreflang="x-default" />
-	{#each data.i18n.meta.alternateLinks as alternate (alternate.locale)}
-		<link rel="alternate" href={alternate.href} hreflang={alternate.hrefLang} />
-	{/each}
-	<meta property="og:type" content="profile" />
-	<meta property="og:site_name" content="Cerulia" />
-	<meta property="og:title" content={data.i18n.meta.title} />
-	<meta property="og:description" content={data.i18n.meta.description} />
-	<meta property="og:url" content={data.i18n.meta.canonicalUrl} />
-	<meta property="og:locale" content={data.i18n.meta.ogLocale} />
-	<meta name="twitter:card" content="summary" />
-	<meta name="twitter:title" content={data.i18n.meta.title} />
-	<meta name="twitter:description" content={data.i18n.meta.description} />
-</svelte:head>
+<PageHead meta={data.i18n.meta} robots="index,follow" ogType="profile" twitterCard="summary" />
 
-{#if !data.found}
-	<!-- ── Not found ───────────────────────────────────────────────── -->
-	<div class="not-found-page">
-		<div class="not-found-inner">
-			<div class="not-found-icon" aria-hidden="true">
-				<Icon icon="lucide:user-x" width="48" height="48" />
-			</div>
-			<h1 class="not-found-title">{data.i18n.text.notFound}</h1>
-			<p class="not-found-body">{data.i18n.text.notFoundBody}</p>
-			<a class="back-link" href={resolve('/')}>{data.i18n.text.backToTop}</a>
-		</div>
-	</div>
-{:else}
-	{@const summary = data.view.profileSummary}
-	{@const branches = data.view.publicBranches ?? []}
-	{@const isOwner = data.viewer?.did === summary?.did}
+{#if data.view}
+	{@const view = data.view!}
+	{@const summary = view.profileSummary}
+	{@const branches = view.publicBranches ?? []}
 
 	<div class="profile-page">
 		<!-- ── 1. Hero ───────────────────────────────────────────────── -->
@@ -247,48 +218,6 @@
 {/if}
 
 <style>
-	/* ─── Not found ──────────────────────────────────────────────────── */
-	.not-found-page {
-		padding: 5rem 1.5rem;
-		text-align: center;
-	}
-
-	.not-found-inner {
-		max-width: 480px;
-		margin: 0 auto;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.not-found-icon {
-		color: var(--text-muted);
-	}
-
-	.not-found-title {
-		font-size: clamp(20px, 3vw, 28px);
-		color: var(--text-primary);
-		margin: 0;
-	}
-
-	.not-found-body {
-		font-size: 15px;
-		color: var(--text-secondary);
-		line-height: 1.6;
-		margin: 0;
-	}
-
-	.back-link {
-		font-size: 14px;
-		color: var(--action-primary);
-		text-decoration: none;
-	}
-
-	.back-link:hover {
-		text-decoration: underline;
-	}
-
 	/* ─── Profile page ───────────────────────────────────────────────── */
 	.profile-page {
 		display: flex;

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import PageHead from '$lib/components/PageHead.svelte';
 	import Icon from '@iconify/svelte';
 
 	let { data } = $props();
@@ -8,28 +9,12 @@
 	const exampleProfileHref = '#split-profile';
 </script>
 
-<svelte:head>
-	<title>{data.i18n.meta.title}</title>
-	<meta name="description" content={data.i18n.meta.description} />
-	<meta name="robots" content={data.i18n.meta.robots} />
-	<link rel="canonical" href={data.i18n.meta.canonicalUrl} />
-	<link rel="alternate" href={data.i18n.meta.xDefaultUrl} hreflang="x-default" />
-	{#each data.i18n.meta.alternateLinks as alternate (alternate.locale)}
-		<link rel="alternate" href={alternate.href} hreflang={alternate.hrefLang} />
-	{/each}
-	<meta property="og:type" content="website" />
-	<meta property="og:site_name" content="Cerulia" />
-	<meta property="og:title" content={data.i18n.meta.title} />
-	<meta property="og:description" content={data.i18n.meta.description} />
-	<meta property="og:url" content={data.i18n.meta.canonicalUrl} />
-	<meta property="og:locale" content={data.i18n.meta.ogLocale} />
-	{#each data.i18n.meta.ogAlternateLocales as alternateLocale (alternateLocale)}
-		<meta property="og:locale:alternate" content={alternateLocale} />
-	{/each}
-	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content={data.i18n.meta.title} />
-	<meta name="twitter:description" content={data.i18n.meta.description} />
-</svelte:head>
+<PageHead
+	meta={data.i18n.meta}
+	robots="index,follow"
+	ogType="website"
+	twitterCard="summary_large_image"
+/>
 
 <div class="top-page">
 	<!-- ── 1. Hero ──────────────────────────────────────────────────────── -->
@@ -167,9 +152,12 @@
 						</div>
 					</div>
 					<div class="split-copy">
-						<h3 id="split-character" class="split-card-title">{data.i18n.text.splitCharacterTitle}</h3>
+						<h3 id="split-character" class="split-card-title">
+							{data.i18n.text.splitCharacterTitle}
+						</h3>
 						<p class="split-card-body">{data.i18n.text.splitCharacterBody}</p>
-						<a class="split-cta" href={exampleCharacterHref}>{data.i18n.text.splitCharacterCta} →</a>
+						<a class="split-cta" href={exampleCharacterHref}>{data.i18n.text.splitCharacterCta} →</a
+						>
 					</div>
 				</article>
 

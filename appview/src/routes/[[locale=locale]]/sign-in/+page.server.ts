@@ -3,7 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { createRouteI18nState } from '$lib/i18n/meta';
 import { localizePathname } from '$lib/i18n/locale';
 
-import { getSignInPageI18n } from './i18n.server';
+import { getPageI18n } from './i18n.server';
 
 import type { PageServerLoad } from './$types';
 
@@ -25,8 +25,7 @@ export const load: PageServerLoad = ({ url, locals }) => {
 	}
 
 	return {
-		i18n: getSignInPageI18n(routeState),
-		loginAction: '/oauth/login',
+		i18n: getPageI18n(routeState),
 		returnTo,
 		backHref: fallbackReturnTo
 	};

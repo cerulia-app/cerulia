@@ -6,11 +6,14 @@
 
 <a class="skip-link" href="#app-main">{data.i18n.text.skipToContent}</a>
 
-
 <div class="public-shell">
 	<header class="public-header">
 		<div class="header-inner">
-			<a class="brand-mark" href={resolve(data.i18n.homeHref)} aria-label={data.i18n.text.homeAriaLabel}>
+			<a
+				class="brand-mark"
+				href={resolve(data.i18n.homeHref)}
+				aria-label={data.i18n.text.homeAriaLabel}
+			>
 				Cerulia
 			</a>
 

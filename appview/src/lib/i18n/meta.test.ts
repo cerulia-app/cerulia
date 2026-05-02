@@ -67,7 +67,6 @@ describe('buildLocalizedMeta', () => {
 			xDefaultUrl: 'https://app.cerulia.example.com/characters/branch-main',
 			ogLocale: 'zh_CN',
 			ogAlternateLocales: ['ja_JP', 'en_US'],
-			robots: 'index,follow',
 			alternateLinks: [
 				{
 					locale: 'ja',

@@ -1,8 +1,9 @@
 import { error } from '@sveltejs/kit';
 
 import { createRouteI18nState } from '$lib/i18n/meta';
+import { localizePathname } from '$lib/i18n/locale';
 import { requestCeruliaJson } from '$lib/server/cerulia-http';
-import { getProfilePageTitleI18n } from './i18n.server';
+import { getErrorI18n, getPageI18n } from './i18n.server';
 
 import type { PageServerLoad } from './$types';
 
@@ -49,29 +50,34 @@ export const load: PageServerLoad = async (event) => {
 	);
 
 	if (response.status === 404) {
-		const i18n = getProfilePageTitleI18n(routeState, '');
-		return {
-			i18n,
-			found: false as const
-		};
+		const errorI18n = getErrorI18n(routeState).text;
+		const notFoundError = {
+			message: errorI18n.notFound,
+			detail: errorI18n.notFoundBody,
+			backToTop: errorI18n.backToTop,
+			homeHref: localizePathname('/', routeState.locale)
+		} as App.Error;
+		error(404, notFoundError);
 	}
 
 	if (!response.ok) {
-		error(response.status >= 500 ? 500 : 502, 'Failed to load profile');
+		const errorI18n = getErrorI18n(routeState).text;
+		const loadFailedError = {
+			message: errorI18n.errorTitle,
+			detail: errorI18n.errorBody,
+			backToTop: errorI18n.backToTop,
+			homeHref: localizePathname('/', routeState.locale)
+		} as App.Error;
+		error(response.status >= 500 ? 500 : 502, loadFailedError);
 	}
 
 	const data: ProfileViewData = await response.json();
 
 	const displayName = data.profileSummary?.displayName ?? actor;
-	const i18n = getProfilePageTitleI18n(routeState, displayName);
 
 	return {
-		i18n,
-		found: true as const,
+		i18n: getPageI18n(routeState, displayName),
 		actor,
-		view: data,
-		viewer: event.locals.ceruliaViewerAuth
-			? { did: event.locals.ceruliaViewerAuth.did }
-			: null
+		view: data
 	};
 };

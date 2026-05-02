@@ -12,8 +12,7 @@ const pageMeta = {
 		en: 'Sign in to Cerulia with your Bluesky or AT Protocol-compatible account.',
 		zh: '使用您的 Bluesky 或兼容 AT Protocol 的账户登录 Cerulia。'
 	},
-	pathname: '/sign-in',
-	robots: 'noindex,nofollow'
+	pathname: '/sign-in'
 } as const;
 
 const pageText = {
@@ -59,7 +58,7 @@ const pageText = {
 	}
 } as const;
 
-export function getSignInPageI18n(route: RouteI18nState) {
+export function getPageI18n(route: RouteI18nState) {
 	return {
 		meta: buildLocalizedMeta(route, pageMeta),
 		text: localizeTextValues(pageText, route.locale)

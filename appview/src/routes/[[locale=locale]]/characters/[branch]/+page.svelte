@@ -1,52 +1,26 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import PageHead from '$lib/components/PageHead.svelte';
 	import Icon from '@iconify/svelte';
 
 	let { data } = $props();
 </script>
 
-<svelte:head>
-	<title>{data.i18n.meta.title}</title>
-	<meta name="description" content={data.i18n.meta.description} />
-	<meta name="robots" content={data.i18n.meta.robots} />
-	<link rel="canonical" href={data.i18n.meta.canonicalUrl} />
-	<link rel="alternate" href={data.i18n.meta.xDefaultUrl} hreflang="x-default" />
-	{#each data.i18n.meta.alternateLinks as alternate (alternate.locale)}
-		<link rel="alternate" href={alternate.href} hreflang={alternate.hrefLang} />
-	{/each}
-	<meta property="og:type" content="profile" />
-	<meta property="og:site_name" content="Cerulia" />
-	<meta property="og:title" content={data.i18n.meta.title} />
-	<meta property="og:description" content={data.i18n.meta.description} />
-	<meta property="og:url" content={data.i18n.meta.canonicalUrl} />
-	<meta property="og:locale" content={data.i18n.meta.ogLocale} />
-	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content={data.i18n.meta.title} />
-	<meta name="twitter:description" content={data.i18n.meta.description} />
-</svelte:head>
+<PageHead
+	meta={data.i18n.meta}
+	robots="index,follow"
+	ogType="profile"
+	twitterCard="summary_large_image"
+/>
 
-{#if !data.found}
-	<!-- ── Not found ───────────────────────────────────────────────── -->
-	<div class="not-found-page">
-		<div class="not-found-inner">
-			<div class="not-found-icon" aria-hidden="true">
-				<Icon icon="lucide:user-x" width="48" height="48" />
-			</div>
-			<h1 class="not-found-title">{data.i18n.text.notFound}</h1>
-			<p class="not-found-body">{data.i18n.text.notFoundBody}</p>
-			<a class="back-link" href={resolve('/')}>{data.i18n.text.backToTop}</a>
-		</div>
-	</div>
-{:else}
-	{@const branch = data.view.branchSummary}
-	{@const sheet = data.view.sheetSummary}
-	{@const sessions = data.view.recentSessionSummaries ?? []}
-	{@const advancements = data.view.advancementSummaries ?? []}
+{#if data.view}
+	{@const view = data.view!}
+	{@const branch = view.branchSummary}
+	{@const sheet = view.sheetSummary}
+	{@const sessions = view.recentSessionSummaries ?? []}
+	{@const advancements = view.advancementSummaries ?? []}
 	{@const isDraft = branch?.visibility === 'draft'}
-	{@const isOwner = data.viewer?.did != null && branch != null}
 
 	<div class="character-detail">
-
 		<!-- ── Draft notice ─────────────────────────────────────────── -->
 		{#if isDraft}
 			<div class="draft-banner" role="status">
@@ -138,9 +112,7 @@
 							<li class="session-card">
 								<div class="session-header">
 									<span class="session-role-badge">
-										{session.role === 'gm'
-											? data.i18n.text.roleGm
-											: data.i18n.text.rolePl}
+										{session.role === 'gm' ? data.i18n.text.roleGm : data.i18n.text.rolePl}
 									</span>
 									<time class="session-date" datetime={session.playedAt}>
 										{new Date(session.playedAt).toLocaleDateString()}
@@ -162,7 +134,12 @@
 													target="_blank"
 													rel="noopener noreferrer"
 												>
-													<Icon icon="lucide:external-link" width="14" height="14" aria-hidden="true" />
+													<Icon
+														icon="lucide:external-link"
+														width="14"
+														height="14"
+														aria-hidden="true"
+													/>
 													{uri}
 												</a>
 											</li>
@@ -201,69 +178,10 @@
 				</div>
 			</section>
 		{/if}
-
-		<!-- ── 5. Owner tools ────────────────────────────────────── -->
-		{#if isOwner}
-			<section class="owner-section" aria-label="オーナー操作">
-				<div class="section-inner">
-					<div class="owner-actions">
-						<a
-							class="owner-action-btn"
-							href={resolve(`/characters/${encodeURIComponent(data.branchRef)}/edit`)}
-						>
-							<Icon icon="lucide:pencil" width="16" height="16" aria-hidden="true" />
-							{data.i18n.text.ownerEdit}
-						</a>
-					</div>
-				</div>
-			</section>
-		{/if}
 	</div>
 {/if}
 
 <style>
-	/* ─── Not found ──────────────────────────────────────────────────── */
-	.not-found-page {
-		padding: 5rem 1.5rem;
-		text-align: center;
-	}
-
-	.not-found-inner {
-		max-width: 480px;
-		margin: 0 auto;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.not-found-icon {
-		color: var(--text-muted);
-	}
-
-	.not-found-title {
-		font-size: clamp(20px, 3vw, 28px);
-		color: var(--text-primary);
-		margin: 0;
-	}
-
-	.not-found-body {
-		font-size: 15px;
-		color: var(--text-secondary);
-		line-height: 1.6;
-		margin: 0;
-	}
-
-	.back-link {
-		font-size: 14px;
-		color: var(--action-primary);
-		text-decoration: none;
-	}
-
-	.back-link:hover {
-		text-decoration: underline;
-	}
-
 	/* ─── Draft banner ───────────────────────────────────────────────── */
 	.draft-banner {
 		display: flex;
@@ -566,41 +484,6 @@
 		font-size: 14px;
 		color: var(--text-muted);
 		margin: 0;
-	}
-
-	/* ─── Owner section ──────────────────────────────────────────────── */
-	.owner-section {
-		padding: 1.5rem 0;
-		background: var(--bg-surface);
-		border-top: 1px solid var(--border-subtle);
-	}
-
-	.owner-actions {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.owner-action-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.55rem 1rem;
-		border: 1px solid var(--border-default);
-		border-radius: var(--radius-full);
-		background: var(--bg-canvas);
-		color: var(--text-primary);
-		font-size: 14px;
-		font-weight: 500;
-		text-decoration: none;
-		transition:
-			border-color 120ms,
-			background 120ms;
-	}
-
-	.owner-action-btn:hover {
-		border-color: var(--color-gray-400);
-		background: var(--color-gray-50);
 	}
 
 	/* ─── Responsive ─────────────────────────────────────────────────── */

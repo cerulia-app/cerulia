@@ -2,7 +2,12 @@ import type { SupportedLocale, TextDirection } from '$lib/i18n/locale';
 
 declare global {
 	namespace App {
-		// interface Error {}
+		interface Error {
+			message: string;
+			detail?: string;
+			homeHref?: string;
+			backToTop?: string;
+		}
 		interface Locals {
 			appLocale: SupportedLocale;
 			ceruliaViewerAuth: {
