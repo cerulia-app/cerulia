@@ -29,8 +29,7 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 	const runtime = await getCeruliaOauthRuntime();
 	const result = await runtime.finishLogin(url.searchParams);
 	let mirrored = false;
-	// eslint-disable-next-line no-useless-assignment
-	let sessionId: string | null = null;
+	let sessionId: string;
 	try {
 		await mirrorOauthSessionToApi({
 			did: result.did,
@@ -38,7 +37,8 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 			savedSession: result.savedSession
 		});
 		mirrored = true;
-		({ sessionId } = await runtime.commitBrowserSession(result.did, result.grantedScope));
+		const committedSession = await runtime.commitBrowserSession(result.did, result.grantedScope);
+		sessionId = committedSession.sessionId;
 	} catch (error) {
 		const compensationErrors: unknown[] = [];
 		if (mirrored) {

@@ -1,10 +1,13 @@
-import { json, type RequestHandler } from '@sveltejs/kit';
+import { error, json, type RequestHandler } from '@sveltejs/kit';
 
 import { proxyCeruliaJson } from '$lib/server/cerulia-http';
-import { requireCeruliaE2eMode } from '$lib/server/cerulia-runtime';
+import { isCeruliaE2eMode } from '$lib/server/cerulia-runtime';
 
 export const GET: RequestHandler = async (event) => {
-	requireCeruliaE2eMode();
+	if (!isCeruliaE2eMode()) {
+		error(404, { message: 'Not found' });
+	}
+
 	const ownerDid = event.url.searchParams.get('ownerDid');
 	if (!ownerDid) {
 		return json(

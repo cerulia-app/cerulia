@@ -225,13 +225,12 @@ export function toOauthKeyStore<K extends string, V extends { dpopKey: Key; dpop
 ): JwkBackedStore<K, V> {
 	return {
 		async set(key: K, value: V) {
-			const dpopJwk = value.dpopKey.privateJwk;
+			const { dpopKey, ...rest } = value;
+			const dpopJwk = dpopKey.privateJwk;
 			if (!dpopJwk) {
 				throw new Error('Private DPoP JWK is missing.');
 			}
 
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			const { dpopKey: _, ...rest } = value;
 			await store.set(key, {
 				...rest,
 				dpopJwk

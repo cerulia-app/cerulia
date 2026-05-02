@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
-import { json } from '@sveltejs/kit';
-import { getCeruliaE2eApiDbPath, requireCeruliaE2eMode } from '$lib/server/cerulia-runtime';
+import { error, json } from '@sveltejs/kit';
+import { getCeruliaE2eApiDbPath, isCeruliaE2eMode } from '$lib/server/cerulia-runtime';
 import type { RequestHandler } from './$types';
 
 const E2E_DID = 'did:plc:e2e-oauth';
@@ -15,7 +15,10 @@ function hasMirroredSession(did: string) {
 }
 
 export const GET: RequestHandler = async (event) => {
-	requireCeruliaE2eMode();
+	if (!isCeruliaE2eMode()) {
+		error(404, { message: 'Not found' });
+	}
+
 	const did = event.url.searchParams.get('did') ?? event.locals.ceruliaViewerAuth?.did ?? E2E_DID;
 	return json({
 		did: event.locals.ceruliaViewerAuth?.did ?? null,
